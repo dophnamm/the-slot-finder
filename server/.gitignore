@@ -1,0 +1,9 @@
+cmd/migrations/.env
+cmd/server/.env
+cmd/server/__debug_*
+cmd/server/gcs-credential.json
+.DS_Store
+.idea
+
+# Test coverage files
+bin/*

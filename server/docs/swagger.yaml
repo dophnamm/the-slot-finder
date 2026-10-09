@@ -1,0 +1,117 @@
+basePath: /api/v1
+definitions:
+  dtos.HealthResponse:
+    properties:
+      service:
+        example: slot-finder
+        type: string
+      status:
+        example: healthy
+        type: string
+      timestamp:
+        example: "2021-01-01T00:00:00Z"
+        type: string
+      version:
+        example: 1.0.0
+        type: string
+    type: object
+  dtos.Meta:
+    description: Metadata for pagination
+    properties:
+      code:
+        example: 400
+        type: integer
+      error_code:
+        example: BAD_REQUEST
+        type: string
+      message:
+        example: Request is invalid
+        type: string
+      page:
+        example: 1
+        type: integer
+      page_size:
+        example: 20
+        type: integer
+      total:
+        example: 18
+        type: integer
+    type: object
+info:
+  contact: {}
+  description: Staffing and capacity planning API for The Slot Finder
+  title: The Slot Finder API
+  version: "1.0"
+paths:
+  /:
+    get:
+      consumes:
+      - application/json
+      description: Check if the service is running
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.HealthResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      summary: Health Check
+      tags:
+      - Health
+  /health/database:
+    get:
+      consumes:
+      - application/json
+      description: Check if the database connection is healthy
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                type: object
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      summary: Database Health Check
+      tags:
+      - Health
+  /health/metrics:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed database connection metrics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                type: object
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      summary: Database Connection Metrics
+      tags:
+      - Health
+schemes:
+- http
+- https
+securityDefinitions:
+  BasicAuth:
+    type: basic
+  BearerAuth:
+    description: Bearer Token Authentication. Use "Bearer {token}" as the value.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

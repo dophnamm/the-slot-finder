@@ -1,0 +1,1 @@
+export { StaffingDraftPage } from './component'

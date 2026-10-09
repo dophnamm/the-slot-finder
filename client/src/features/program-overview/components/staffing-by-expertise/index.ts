@@ -1,0 +1,1 @@
+export { StaffingByExpertise } from './component'

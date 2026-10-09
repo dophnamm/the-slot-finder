@@ -1,0 +1,1 @@
+export { ScopeCard } from './component'

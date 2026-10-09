@@ -1,0 +1,12 @@
+# OS and editor files
+.DS_Store
+.idea/
+
+# Local Claude Code state; the project skills in .claude/skills are shared
+.claude/*
+!.claude/skills/
+
+# Local environment files (the .env.example files are committed)
+.env
+.env.*
+!.env.example

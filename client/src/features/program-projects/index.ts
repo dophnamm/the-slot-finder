@@ -1,0 +1,1 @@
+export { ProgramProjects } from './component'

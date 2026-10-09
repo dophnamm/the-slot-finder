@@ -1,0 +1,1 @@
+export { ProgramHeader } from './component'

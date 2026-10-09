@@ -1,0 +1,1 @@
+export { ProgramDetailPage } from './component'

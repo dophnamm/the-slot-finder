@@ -1,0 +1,8 @@
+# Secrets and local settings never go into the image
+**/.env
+**/.env.*
+!**/.env.example
+.vscode
+deploy
+*.md
+coverage*

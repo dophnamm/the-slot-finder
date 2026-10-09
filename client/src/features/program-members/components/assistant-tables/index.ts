@@ -1,0 +1,1 @@
+export { AssistantTables } from './component'
