@@ -3,7 +3,7 @@
 **Goal:** the system knows who can do what, at which level, and how many hours each person has free per week. This is the supply side for staffing (G1) and the heatmap (G2) in the [root README](../../README.md#1-problem-and-scope).
 
 **Roles:** planner (manages people), lead (reads), specialist (own absences).
-**Target:** 11 Oct · **Depends on:** [sign-in](sign-in.md) · **Branch:** `feat/people-and-skills`
+**Target:** 11 Oct · **Depends on:** [sign-in](sign-in.md) · **Branch:** `feat/people-and-skills` · **Status:** In review
 
 ## In scope
 
@@ -12,7 +12,7 @@
 - ABSENCE: personal leave, and **company-wide holidays only** (`person_id` and `location` both null).
 - `capacity(person, week)` as in the [root README §6](../../README.md#6-data-model), without capacity changes or location holidays.
 - `isoweek.Week`: the Go type for ISO weeks (`2026-W42`). Capacity is the first code that needs it.
-- `/me` gains `personId`, linked by `keycloak_id`, falling back to email on the first sign-in.
+- `/me` gains `person_id`, linked by `keycloak_id`, falling back to email on the first sign-in.
 - Seed data: 12 people, 4 expertises, 3 leave periods, company-wide holidays, and the three demo users as people.
 
 ## Not now
@@ -45,7 +45,7 @@
 - `approved` absence always counts. `planned` absence counts when `COUNT_PLANNED_ABSENCE` is on.
 - Capacity is 0 before `start_date` and after `end_date`, and never below 0.
 - `authz` gains `CanManagePeople` and `CanEditAbsence(personID)` (planner, or the person themselves).
-- Capacity is a pure function in the availability service, so it is tested without a database.
+- Capacity is a pure function (`internal/capacity`), so it is tested without a database. When a person starts or leaves mid-week, the base hours shrink to the working days they are employed; overlapping absences count once per day. No endpoint returns capacity yet; team-heatmap is its first user.
 
 ## Client
 
@@ -54,7 +54,7 @@
   - a person form (create and edit) with a skills editor
   - an absence list per person
 - `/me`: the signed-in specialist's own absences, with "report leave".
-- Feature folders: `features/people`, `features/person-form`, `features/absences`.
+- Feature folders: `features/people` (list, person dialog, skills editor), `features/absences`, `features/holidays`. The People page composes them and opens a person's absences in a dialog.
 - Holidays: a small list with "add holiday" for planners, on the people page.
 
 ## Acceptance criteria
@@ -66,26 +66,26 @@
 5. A company-wide holiday lowers everyone's capacity that week.
 6. With `COUNT_PLANNED_ABSENCE` false, planned leave does not lower capacity. Approved leave still does.
 7. A specialist can add and remove their own absence, and gets `403` for someone else's.
-8. After sign-in, `/me` returns the demo user's `personId`.
+8. After sign-in, `/me` returns the demo user's `person_id`.
 9. `make seed` loads the seed data into an empty database, and running it again adds no duplicates.
 
 ## Tasks
 
 **Server**
-- [ ] Models, repositories, services, handlers and DTOs for people, expertise, skills, absences and holidays
-- [ ] `isoweek` package: parse, format, Monday date, add weeks, range
-- [ ] Capacity function and its config (`WORKING_WEEKDAYS`, `DEFAULT_NON_PROJECT_HOURS`, `COUNT_PLANNED_ABSENCE`)
-- [ ] `/me` links PERSON by `keycloak_id`, then by email
-- [ ] Migration, route constants, role lists, messages, error codes, Swagger
-- [ ] `cmd/seed` and `make seed`, idempotent
+- [x] Models, repositories, services, handlers and DTOs for people, expertise, skills, absences and holidays
+- [x] `isoweek` package: parse, format, Monday date, add weeks, range
+- [x] Capacity function and its config (`WORKING_WEEKDAYS`, `DEFAULT_NON_PROJECT_HOURS`, `COUNT_PLANNED_ABSENCE`)
+- [x] `/me` links PERSON by `keycloak_id`, then by email
+- [x] Migration, route constants, role lists, messages, error codes, Swagger
+- [x] `cmd/seed` and `make seed`, idempotent
 
 **Client**
-- [ ] People list, person form, skills editor, absences, holidays
-- [ ] `/me` absences with "report leave"
-- [ ] Endpoints in `resources/endpoints`, routes and RBAC in `resources`
+- [x] People list, person form, skills editor, absences, holidays
+- [x] `/me` absences with "report leave"
+- [x] Endpoints in `resources/endpoints`, routes and RBAC in `resources`
 
 **Tests**
-- [ ] Capacity table tests (absence overlap, start and end dates, holidays, planned vs approved)
-- [ ] `isoweek` tests across year boundaries (2026 has 53 weeks: 2026-W53 runs 28 Dec 2026 – 3 Jan 2027, and 2027-W01 starts 4 Jan 2027)
-- [ ] Service tests for uniqueness and the primary-skill rule
-- [ ] RBAC tests for absences (self vs other)
+- [x] Capacity table tests (absence overlap, start and end dates, holidays, planned vs approved)
+- [x] `isoweek` tests across year boundaries (2026 has 53 weeks: 2026-W53 runs 28 Dec 2026 – 3 Jan 2027, and 2027-W01 starts 4 Jan 2027)
+- [x] Service tests for uniqueness and the primary-skill rule
+- [x] RBAC tests for absences (self vs other)

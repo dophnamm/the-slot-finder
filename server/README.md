@@ -17,6 +17,7 @@ From the repo root (see the root `Makefile`):
 make setup     # .env files + Go and npm dependencies
 make up        # Docker: Postgres, Redis, Keycloak, OTel collector, Jaeger, migrations, API on :3000
 make dev       # or: infra in Docker, API and client on the host
+make seed      # demo data: expertises, 12 people with skills, leave, holidays (safe to run again)
 ```
 
 Inside `server/`:
@@ -99,10 +100,12 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 |---|---|---|---|
 | GET | `/me` | Current user, role, programs they assist, enabled features (e.g. the AI assistant) | everyone |
 | GET, POST | `/people` | List or create people (start and end dates, location, timezone, non-project hours) | planner |
-| PUT | `/people/{id}/skills` | Update expertise and levels | planner |
+| PATCH | `/people/{id}` | Edit a person: only the sent fields; `start_date` and `end_date` accept null to clear them | planner |
+| PUT | `/people/{id}/skills` | Replace expertise and levels (exactly one primary) | planner |
 | PUT | `/people/{id}/tags` | Replace a person's skill tags | planner |
 | GET, POST | `/people/{id}/capacity-changes` | Effective-dated weekly hours (`from_week`, `weekly_hours`) | planner |
-| GET, POST | `/people/{id}/absences` | Leave calendar | planner, the person themselves |
+| GET, POST | `/people/{id}/absences` | Leave calendar. A person's own absence is always `planned`; planners choose the status | planner, the person themselves |
+| DELETE | `/absences/{id}` | Remove an absence, or a holiday (planner) | planner, the person themselves |
 | GET | `/people/{id}/assignments?from=&to=` | Everything a person owns in the baseline: project, demand, **expertise**, kind, hours per week | planner, lead, the person themselves |
 | GET | `/expertises` | Expertise catalogue | everyone |
 | GET, POST | `/tags` | Tag catalogue (`name`, `category`: technology / domain / language / client) | GET everyone, POST planner |
