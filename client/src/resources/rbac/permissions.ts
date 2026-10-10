@@ -17,7 +17,8 @@ export const PERMISSIONS = {
   'my-schedule:view': [ROLES.SPECIALIST],
 } as const satisfies Record<string, readonly Role[]>
 
-export function can(role: Role | null | undefined, permission: Permission): boolean {
+/** `role` is empty or missing while the user is unknown or holds no application role. */
+export function can(role: Role | '' | null | undefined, permission: Permission): boolean {
   const allowed: readonly Role[] = PERMISSIONS[permission]
-  return role != null && allowed.includes(role)
+  return !!role && allowed.includes(role)
 }

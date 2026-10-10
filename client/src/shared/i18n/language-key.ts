@@ -18,6 +18,8 @@ export type LanguageKey = {
   'Contribution %': string
   Cost: string
   'Cost (hours)': string
+  'Could not finish signing in.': string
+  'Could not reach the sign-in service.': string
   Dashboard: string
   'Demand, timeline, assigned people, risks and scope points.': string
   Description: string
@@ -30,18 +32,20 @@ export type LanguageKey = {
   External: string
   Forecast: string
   Gap: string
+  'Go to your home page': string
   'Goal: {goal}': string
   'Incoming projects across programs, with “Propose squad”.': string
   Intake: string
   'Intake queue': string
   Internal: string
+  Lead: string
   'List of programs with status, timeline and the four progress bars.': string
-  'Log in': string
   Member: string
   Members: string
   'My schedule': string
   Name: string
   'Next milestone: {name}, {week}': string
+  'No access': string
   Open: string
   'Page not found': string
   People: string
@@ -51,6 +55,7 @@ export type LanguageKey = {
   'Person × week heatmap, with overload and deadline-risk alerts.': string
   Planned: string
   'Planned to date': string
+  Planner: string
   'Program brief': string
   'Program {id}': string
   Programs: string
@@ -63,7 +68,13 @@ export type LanguageKey = {
   'Server: checking…': string
   'Server: OK': string
   'Server: unreachable': string
+  'Sign in': string
   'Sign in to reach the dashboard or your own schedule.': string
+  'Sign in with Keycloak': string
+  'Sign out': string
+  'Signed in as {name}': string
+  'Signing you in…': string
+  Specialist: string
   Staffing: string
   'Staffing %': string
   'Staffing by expertise': string
@@ -74,7 +85,10 @@ export type LanguageKey = {
   Time: string
   'Timeline: {start} – {end} ({dates})': string
   Total: string
+  'Try again': string
   'Unexpected error.': string
   'What-if scenarios': string
   'Your projects by week, and a place to report leave.': string
+  'Your role cannot open this page.': string
+  'Your session has ended. Sign in again.': string
 }

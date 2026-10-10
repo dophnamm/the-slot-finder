@@ -24,3 +24,6 @@ export const CLIENT_ERROR_CODE = {
   network: 'NETWORK_ERROR',
   unknown: 'UNKNOWN_ERROR',
 } as const
+
+/** The server answers 401 when it no longer accepts the access token. */
+export const UNAUTHORIZED_STATUS = 401
