@@ -59,13 +59,14 @@ Files per module follow the pattern `handlers/<module>.go`, `services/<module>.g
 | Module | Responsibility | Owns data | Publishes events |
 |---|---|---|---|
 | **identity** | Keycloak token validation, roles, mapping the token to a PERSON (`keycloak_id`), permission checks (including assistant read access) | none (accounts live in Keycloak) | |
-| **people** | People, expertise, levels, contracted hours | PERSON, EXPERTISE, PERSON_SKILL | `PersonJoined`, `PersonLeft`, `SkillChanged` |
-| **availability** | Leave and public holidays; computes `capacity(person, week)` | ABSENCE | `AbsenceAdded`, `AbsenceRemoved` |
-| **programs** | Programs, projects, phases (and their slip propagation), staffing demand (budget hours), forecast overrides, scope points, milestones, assistants, program and project lifecycles | PROGRAM, PROJECT, PROJECT_PHASE, DEMAND, MILESTONE, PROGRAM_ASSISTANT | `ProgramSlipped`, `ProgramCancelled`, `ProjectCreated`, `ProjectSlipped`, `PhaseSlipped`, `DemandChanged` |
-| **planning** | Baseline, staffing drafts, scenarios; calls the engine; accept and publish | PLAN, ALLOCATION | `PlanPublished` |
-| **insights** | Heatmap, utilization, program and project metrics, at-risk lists (read-only) | none (read-only) | |
-| **events** | Records ChangeEvents, assesses impact, creates re-plan jobs | CHANGE_EVENT | |
-| **integrations** | Imports (CSV, HR), notifications (Email/Slack) to members and assistants | import_job | |
+| **people** | People, expertise, levels, skill tags, contracted and non-project hours, start and end dates, location | PERSON, EXPERTISE, PERSON_SKILL, TAG, PERSON_TAG | `PersonJoined`, `PersonLeft`, `SkillChanged` (also for tags) |
+| **availability** | Leave, holidays per location, effective-dated weekly hours; computes `capacity(person, week)` | ABSENCE, CAPACITY_CHANGE | `AbsenceAdded`, `AbsenceRemoved`, `CapacityChanged` |
+| **programs** | Programs, projects, phases (and their slip propagation), staffing demand (budget hours, profile, tags, preferred person), forecast overrides, scope points, confidence, milestones, assistants, program and project lifecycles (including `staffed_at`) | PROGRAM, PROJECT, PROJECT_PHASE, DEMAND, DEMAND_TAG, MILESTONE, PROGRAM_ASSISTANT | `ProgramSlipped`, `ProgramCancelled`, `ProjectCreated`, `ProjectSlipped`, `PhaseSlipped`, `DemandChanged` |
+| **planning** | Baseline, staffing drafts, scenarios; assignments and their kind (primary / cross-expertise / stretch) and alternatives; calls the engine; accept and publish | PLAN, ASSIGNMENT, ALLOCATION | `PlanPublished` |
+| **insights** | Heatmap, utilization, program and project metrics, at-risk lists, capacity forecast, bench list, sustained overload, plan churn, hours per point (read-only) | none (read-only) | |
+| **events** | Records ChangeEvents, debounces them, assesses impact, creates re-plan jobs (one open auto draft per baseline) | CHANGE_EVENT | |
+| **integrations** | Imports (CSV, HR), notifications (Email/Slack) to members and assistants, the LLM provider client (later) | import_job | |
+| **ai** (later) | The AI assistant: intake extraction, what-if chat, draft summaries, Q&A. Runs the function-calling loop with the LLM; each tool wraps another module's service and runs with the caller's identity (section 9) | none | |
 
 ## 3. API (REST/JSON)
 
@@ -75,11 +76,16 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
-| GET | `/me` | Current user, role, programs they assist | everyone |
-| GET, POST | `/people` | List or create people | planner |
+| GET | `/me` | Current user, role, programs they assist, enabled features (e.g. the AI assistant) | everyone |
+| GET, POST | `/people` | List or create people (start and end dates, location, timezone, non-project hours) | planner |
 | PUT | `/people/{id}/skills` | Update expertise and levels | planner |
+| PUT | `/people/{id}/tags` | Replace a person's skill tags | planner |
+| GET, POST | `/people/{id}/capacity-changes` | Effective-dated weekly hours (`from_week`, `weekly_hours`) | planner |
 | GET, POST | `/people/{id}/absences` | Leave calendar | planner, the person themselves |
+| GET | `/people/{id}/assignments?from=&to=` | Everything a person owns in the baseline: project, demand, **expertise**, kind, hours per week | planner, lead, the person themselves |
 | GET | `/expertises` | Expertise catalogue | everyone |
+| GET, POST | `/tags` | Tag catalogue (`name`, `category`: technology / domain / language / client) | GET everyone, POST planner |
+| GET, POST | `/holidays` | Holidays per `location` (no location = company-wide) | GET everyone, POST planner |
 
 **Programs and projects**
 
@@ -89,21 +95,22 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | GET | `/programs/{id}` | Program record: brief, timeline, status | planner, lead, internal assistant |
 | PATCH | `/programs/{id}` | Edit a program. Moving the end date emits `ProgramSlipped` | planner, lead (own) |
 | POST | `/programs/{id}/actions/{hold\|resume\|start-closing\|close\|cancel}` | Change program state through an action | planner, lead (own) |
-| GET | `/programs/{id}/overview` | Header metrics, scope and cost cards, staffing by expertise | planner, lead, internal assistant |
+| GET | `/programs/{id}/overview` | Header metrics, scope and cost cards (including EAC hours when shown), staffing by expertise | planner, lead, internal assistant |
 | PATCH | `/programs/{id}/forecast` | Set or clear `forecast_override_hours` per demand | planner, lead (own) |
-| GET | `/programs/{id}/projects` | Projects tab: rows with Time / Scope / Cost / Staffing and next milestone | planner, lead, internal assistant |
+| GET | `/programs/{id}/projects` | Projects tab: rows with Time / Scope / Planned burn / Staffing and next milestone | planner, lead, internal assistant |
 | POST | `/programs/{id}/projects` | Add a project to the program | planner, lead (own) |
-| GET | `/programs/{id}/members` | Members tab: members with hours in this program and overall utilization (next 4 weeks) | planner, lead, internal assistant |
+| GET | `/programs/{id}/members` | Members tab: each member with the expertises they hold here (hours and kind per expertise) and overall utilization (next 4 weeks) | planner, lead, internal assistant |
 | GET, POST | `/programs/{id}/assistants` | List or add assistants (`kind`: internal or external) | planner, lead (own); internal assistants may list |
 | DELETE | `/programs/{id}/assistants/{assistantId}` | Remove an assistant | planner, lead (own) |
 | GET, POST | `/programs/{id}/milestones` | List or add milestones | planner, lead (own); internal assistants may list |
 | PATCH | `/milestones/{id}` | Edit a milestone or mark it delivered | planner, lead (own) |
 | GET | `/projects` | Projects across programs (filter by `status`) | planner, lead |
-| PATCH | `/projects/{id}` | Edit a project, including `scope_points` and `done_points`. Moving the deadline emits `ProjectSlipped` | planner, lead (own) |
+| PATCH | `/projects/{id}` | Edit a project, including `scope_points`, `done_points` and `confidence`. Moving the deadline emits `ProjectSlipped` | planner, lead (own) |
 | POST | `/projects/{id}/actions/{hold\|resume\|complete\|cancel}` | Change project state through an action | planner, lead (own) |
 | GET, PUT | `/projects/{id}/phases` | Ordered phases of a project (PUT replaces the whole list) | planner, lead (own); GET also internal assistant |
 | PATCH | `/phases/{id}` | Edit a phase. Moving its end week later shifts every later phase by the same weeks and emits `PhaseSlipped` | planner, lead (own) |
-| PUT | `/projects/{id}/demands` | Staffing demand: budget hours per expertise and level, each with an optional `phase_id` | planner, lead (own) |
+| PUT | `/projects/{id}/demands` | Staffing demand: budget hours per expertise and level, each with an optional `phase_id`, a `profile`, required and preferred tags, and an optional preferred person | planner, lead (own) |
+| GET | `/projects/{id}/hours-suggestion` | Suggested budget hours per expertise: `scope_points × hours_per_point(expertise)` from done projects, with the ratio used | planner, lead (own) |
 
 **Planning and insights**
 
@@ -111,16 +118,27 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 |---|---|---|---|
 | GET | `/plans/current` | The baseline | everyone (specialists see only their own part) |
 | POST | `/staffing-drafts` | Generate a draft: `{ projectIds }` or `{ changeEventId }` | planner |
-| GET | `/staffing-drafts/{id}` | Draft with diff against the baseline and reasons | planner, lead |
-| PATCH | `/staffing-drafts/{id}/allocations` | Manual edits, lock/unlock allocations | planner |
-| POST | `/staffing-drafts/{id}/accept` | Publish (`{ baseVersion }`; `409` if the baseline changed) | planner |
+| GET | `/staffing-drafts/{id}` | Draft with diff against the baseline, plan churn, reasons and alternatives | planner, lead |
+| PATCH | `/staffing-drafts/{id}/assignments` | Add or remove an assignment (any person to any demand; the server sets `kind`), swap to an alternative in one call, change weekly hours, lock or unlock | planner |
+| POST | `/staffing-drafts/{id}/accept` | Publish (`{ baseVersion }`; `409 PLAN_VERSION_CONFLICT` if the baseline changed) | planner |
 | POST | `/staffing-drafts/{id}/reject` | Discard a draft | planner |
 | POST | `/scenarios` | Create a what-if from a list of hypothetical changes | planner |
 | GET | `/scenarios/{id}/diff` | Compare a scenario with the baseline | planner |
-| GET | `/insights/heatmap?from=&to=&expertise=` | Person × week matrix | planner, lead |
-| GET | `/insights/risks` | Understaffed and at-risk projects, overloaded people, overdue milestones | planner, lead |
+| GET | `/insights/heatmap?from=&to=&expertise=` | Person × week matrix. Each cell holds total hours plus hours per expertise; `expertise=` keeps people who hold that expertise in the range | planner, lead |
+| GET | `/insights/risks` | Understaffed and at-risk projects, delivery behind time, likely over budget, overloaded people (sustained overload first), overdue milestones | planner, lead |
+| GET | `/insights/capacity-forecast?from=&to=&expertise=` | Per expertise × week: free capacity, unmet confirmed demand, expected pipeline demand (× confidence), and shortfall signals | planner, lead |
+| GET | `/insights/bench` | People below the underused band for each of the next `bench_weeks`, with suggested actions | planner |
+| GET | `/insights/churn?from=&to=` | Plan churn per accepted draft: people changed, hours moved | planner |
 | GET | `/events?programId=` | Change history and processing status; the program page uses it for the re-plan banner | planner, lead |
 | POST | `/imports/{csv\|hr}` | Import data (runs in the background) | planner |
+
+**AI assistant** (later). While `AI_ENABLED` is false, these return `503` with `AI_DISABLED`.
+
+| Method | Path | Purpose | Roles |
+|---|---|---|---|
+| POST | `/ai/intake-extractions` | `text` or one uploaded file (multipart), optional `programId` → a suggested project (phases, demand, tags) with a source quote per field. Saves nothing | planner, lead |
+| POST | `/ai/chat` | One turn: the visible conversation plus optional context (`programId`, `scenarioId`) → the reply and links to any scenario or draft it created | planner, lead, specialist (own data only) |
+| GET | `/staffing-drafts/{id}/summary` | Plain-language summary of the draft's diff, reasons and unmet; facts only. Made once per draft version and reused by `notify` | planner, lead |
 
 **Response envelope** (success and error):
 
@@ -137,6 +155,7 @@ Error example (HTTP 409):
 **Payload rules:**
 - Write payloads contain only fields the user may edit. The Server ignores or rejects computed fields such as `status`, `utilization`, `gap_hours` and `total_*`.
 - The Server computes and returns all metrics and aggregated numbers. The Client never accumulates them itself.
+- `PATCH /staffing-drafts/{id}/assignments`, accept and reject on a **superseded** draft version return `409` with `DRAFT_SUPERSEDED`. The Client reloads the latest version.
 
 ## 4. Planning engine
 
@@ -151,17 +170,27 @@ Error example (HTTP 409):
     "targetUtilization": 0.8,
     "maxUtilization": 1.0,
     "maxProjectsPerPersonWeek": 3,
-    "weights": { "deadline": 1.0, "balance": 0.6, "stability": 0.5, "continuity": 0.3 }
+    "maxExpertisesPerPersonWeek": 2,
+    "minHoursPerWeek": 8,
+    "maxAlternatives": 3,
+    "weights": { "deadline": 1.0, "primaryFit": 0.8, "tagFit": 0.5, "preference": 0.4,
+                 "balance": 0.6, "stability": 0.5, "continuity": 0.3 }
   },
   "people": [
-    { "id": "p1", "skills": [{ "expertise": "QA", "level": 3 }], "capacity": { "2026-W42": 40, "2026-W43": 24 } }
+    { "id": "p1",
+      "skills": [{ "expertise": "Engineer", "level": 4, "primary": true }, { "expertise": "QA", "level": 3 }],
+      "tags": ["go", "payments", "acme"],
+      "capacity": { "2026-W42": 36, "2026-W43": 20, "2026-W44": 0 } }  // dates, non-project hours, changes and absence already applied
   ],
   "demands": [
-    { "id": "d1", "projectId": "pr1", "priority": 2, "expertise": "QA", "minLevel": 2,
-      "headcount": 1, "hours": 120, "fromWeek": "2026-W42", "toWeek": "2026-W48" }
+    { "id": "d1", "projectId": "pr1", "programId": "pg1", "client": "acme",  // opaque ids, used for continuity
+      "priority": 2, "expertise": "QA", "minLevel": 2, "headcount": 1, "hours": 120,
+      "fromWeek": "2026-W42", "toWeek": "2026-W48", "profile": "back",
+      "requiredTags": ["payments"], "preferredTags": ["go"], "preferredPersonId": "p7" }
   ],
   "existing": [
-    { "personId": "p1", "demandId": "d0", "week": "2026-W42", "hours": 16, "locked": true }
+    { "personId": "p1", "demandId": "d0", "kind": "primary",
+      "allocations": [{ "week": "2026-W42", "hours": 16, "locked": true }] }
   ]
 }
 ```
@@ -170,12 +199,24 @@ Error example (HTTP 409):
 
 ```jsonc
 {
-  "allocations": [
-    { "personId": "p1", "demandId": "d1", "week": "2026-W42", "hours": 24,
-      "reason": ["QA level 3 ≥ 2", "24h free", "already on project pr1"] }
+  "assignments": [
+    { "personId": "p1", "demandId": "d1", "kind": "cross_expertise",
+      "reason": ["QA cover: Engineer (primary) with QA level 3 ≥ 2", "no free QA-primary person before W48",
+                 "already on project pr1", "preferred person p7 not used: on leave W44–W46"],
+      "allocations": [{ "week": "2026-W42", "hours": 12 }, { "week": "2026-W43", "hours": 16 }],
+      "alternatives": [
+        { "personId": "p5", "score": 0.71, "reason": "QA primary, but only 8 h free before W48" },
+        { "personId": "p9", "score": 0.64, "reason": "missing preferred tag go" }
+      ] }
   ],
-  "unmet": [{ "demandId": "d2", "hours": 40, "reason": "NO_CAPACITY_BEFORE_DEADLINE" }],
-  "conflicts": [{ "type": "OVER_CAPACITY", "personId": "p3", "week": "2026-W44", "utilization": 1.15 }],
+  "unmet": [
+    { "demandId": "d2", "hours": 40, "reason": "NO_CAPACITY_BEFORE_DEADLINE" },
+    { "demandId": "d3", "hours": 60, "reason": "NO_TAG_MATCH" }
+  ],
+  "conflicts": [
+    { "type": "OVER_CAPACITY", "personId": "p3", "week": "2026-W44", "utilization": 1.15 },
+    { "type": "TOO_MANY_EXPERTISES", "personId": "p4", "week": "2026-W45", "expertises": 3 }
+  ],
   "score": { "deadlineMet": 0.92, "loadBalance": 0.81, "stability": 0.95 }
 }
 ```
@@ -183,23 +224,27 @@ Error example (HTTP 409):
 **`unmet` reason codes:**
 - `NO_SKILL`: nobody has this expertise
 - `LEVEL_TOO_LOW`
+- `NO_TAG_MATCH`: nobody with the expertise and level has every required tag
 - `NO_CAPACITY_BEFORE_DEADLINE`
 - `BLOCKED_BY_LOCKED`
 
 **Greedy strategy (MVP):**
-1. Sort demand by priority (high first), then deadline (earliest first), then scarcity of the expertise.
-2. For each demand, keep candidates with the right expertise, level ≥ `minLevel`, and free capacity inside the project's window.
-3. Score candidates using `weights`: free capacity, already on the project (continuity), load kept near `targetUtilization`.
-4. Fill hours week by week from `fromWeek`, split across `headcount` people, until `hours` is covered.
-5. Record any shortfall in `unmet` with a reason code. Never throw.
+1. Sort demand by priority (high first), then deadline (earliest first), then scarcity of the expertise and its required tags.
+2. For each demand, keep candidates who have the demand's expertise, primary or secondary, at level ≥ `minLevel`, and every tag in `requiredTags`. They also need free capacity inside the demand's window and must stay within `maxExpertisesPerPersonWeek`.
+3. Score candidates using `weights`: primary-expertise match (`primaryFit`), preferred tags (`tagFit`), the preferred person (`preference`), free capacity, continuity (same project, then program, then client), load kept near `targetUtilization`. A cross-expertise person wins only when no primary person can cover the hours in time, or when using them clearly balances load. The reason says which. The next `maxAlternatives` candidates are kept as `alternatives`.
+4. Split `hours` into `headcount` seats of about `hours ÷ headcount`. Spread each seat's hours across the window by `profile` (`flat`, `front`, `back`). Keep one person per seat; split a seat between two people only when nobody has the capacity, and say so in the reason.
+5. Never allocate less than `minHoursPerWeek` in a week, except a demand's last remainder.
+6. Record any shortfall in `unmet` with a reason code. Never throw.
 
 **Demand windows:** the engine never sees phases. When building the snapshot, the planning service sets each demand's `fromWeek`–`toWeek` to its phase's weeks, or to the project's start week through its deadline week when the demand has no phase.
+
+**Kinds:** the engine returns `primary` or `cross_expertise` and never `stretch`. Stretch assignments only come in through `existing`: they are locked by a Planner and are left untouched.
 
 **Re-planning** uses the same function. The difference: `existing` holds the whole baseline, the `stability` weight is raised so that the result changes as little as possible, and `locked` allocations are kept as they are.
 
 ## 5. Program metrics
 
-The **insights** module computes these for `/programs/{id}/overview`, `/programs/{id}/projects` and `/programs/{id}/members`. Formulas are in the [root README, section 7](../README.md#7-program-view).
+The **insights** module computes these for `/programs/{id}/overview`, `/programs/{id}/projects` and `/programs/{id}/members`. Formulas are in the [root README, section 7](../README.md#7-metrics).
 
 | Rule | Detail |
 |---|---|
@@ -207,7 +252,14 @@ The **insights** module computes these for `/programs/{id}/overview`, `/programs
 | Program values | Sums over the program's projects that are not cancelled |
 | "Today" | The organization's current date, in its timezone. Week-based metrics use the current ISO week |
 | Division by zero | A ratio with a zero denominator returns `null`. The Client shows "—" |
-| Cost % in the MVP | Planned hours in weeks up to and including the current week ÷ budget hours. Phase 2 swaps in actual hours from a timesheet import |
+| Planned burn % in the MVP | Planned hours in weeks up to and including the current week ÷ budget hours. Phase 2 swaps in actual hours from a timesheet import. No "behind plan" warning until then |
+| Delivery warning | Scope % lower than Time % by more than `SCOPE_LAG_THRESHOLD` |
+| EAC hours | Hours used to date ÷ Scope %. Returned as `null` while Scope % < `EAC_MIN_SCOPE_PERCENT`. EAC > budget sets **likely over budget** |
+| Gap and Staffing % | Returned side by side; they show the same shortfall unless a forecast override is set |
+| Hours per point | Per expertise: Σ allocated hours on `done` projects ÷ Σ their `scope_points`. `null` with no done projects, and the form then offers no suggestion |
+| Time-to-staff (goal G1) | `staffed_at − created_at` per project. `staffed_at` is set when the first draft covering the project is accepted |
+| Capacity forecast | Free capacity = capacity − baseline load. Pipeline demand = hours of `incoming` projects without accepted assignments, spread by profile × `confidence`. A shortfall in consecutive weeks is reported in FTE (hours ÷ `FTE_WEEKLY_HOURS`) |
+| Team signals | Sustained overload: over 100 % for `SUSTAINED_OVERLOAD_WEEKS` weeks in a row. Bench: under the underused band for each of the next `BENCH_WEEKS`. Plan churn: per accepted draft, people whose allocations changed and Σ \|hours moved\| |
 | Members tab | Members come from the baseline (anyone with allocations in the program) plus the program and project leads. Utilization covers the next 4 ISO weeks across **all** projects |
 
 ## 6. Background jobs
@@ -216,9 +268,11 @@ In the MVP, jobs run inside the server process: a small runner started from an F
 
 | Job | Triggered by | Does |
 |---|---|---|
-| `replan` | A ChangeEvent | Assesses impact. If there is a conflict, calls the engine, saves a staffing draft and alerts the Planner |
+| `replan` | ChangeEvents, batched over `REPLAN_DEBOUNCE` | Assesses impact. If there is a conflict, calls the engine, saves a staffing draft and alerts the Planner. If an auto draft is already open for the baseline, it regenerates that draft instead (see below) |
 | `import` | `POST /imports/*` | Reads the source, validates it, writes through each module's public interface |
 | `notify` | `PlanPublished`, alerts | Sends Email/Slack messages to the affected members and to the program's assistants (internal and external) |
+
+**One open auto draft per baseline.** A draft is "auto" when change events link to it. When a new event arrives while one is open, `replan` regenerates it from the current baseline plus every linked event. Assignments the Planner added by hand and locked allocations are carried over. The old draft version becomes `superseded` and all events point to the new one. The worker saves the new version only if the old one has not changed since it read it; otherwise it regenerates again, so a Planner's edit is never dropped silently. An edit, accept or reject that reaches the old version afterwards gets `409 DRAFT_SUPERSEDED`.
 
 Every job must be **idempotent** (re-running it creates no duplicates) and must record its processing status.
 
@@ -247,3 +301,71 @@ server/
 ```
 
 Tests sit next to the code (`*_test.go`). Engine property tests and metric tests go in `internal/engine` and `internal/services`.
+
+## 8. Settings
+
+Planning policy and metric thresholds are server config: fields in `internal/config/config.go`, listed in `cmd/server/.env.example`. The planning service copies the policy values into each `PlanningRequest`; the engine reads no config itself. Values below are example defaults.
+
+| Setting | Used for | Example |
+|---|---|---|
+| `PLANNING_TARGET_UTILIZATION` | `targetUtilization`: load the engine aims for | 0.8 |
+| `PLANNING_MAX_UTILIZATION` | `maxUtilization`: hard ceiling on load ÷ capacity | 1.0 |
+| `PLANNING_MAX_PROJECTS_PER_PERSON_WEEK` | `maxProjectsPerPersonWeek` | 3 |
+| `PLANNING_MAX_EXPERTISES_PER_PERSON_WEEK` | `maxExpertisesPerPersonWeek` | 2 |
+| `PLANNING_MIN_HOURS_PER_WEEK` | `minHoursPerWeek`: smallest weekly allocation, except a demand's last remainder | 8 |
+| `PLANNING_MAX_ALTERNATIVES` | `maxAlternatives`: runner-ups kept per assignment | 3 |
+| `PLANNING_WEIGHT_<NAME>` | One per weight: `DEADLINE`, `PRIMARY_FIT`, `TAG_FIT`, `PREFERENCE`, `BALANCE`, `STABILITY`, `CONTINUITY` | as in the sample request |
+| `PLANNING_REPLAN_STABILITY_WEIGHT` | The raised `stability` weight used for re-plans | 2.0 |
+| `DEFAULT_NON_PROJECT_HOURS` | `PERSON.non_project_hours` when a person is created without one | 4 |
+| `COUNT_PLANNED_ABSENCE` | Whether `planned` absence reduces capacity (`approved` always does) | true |
+| `REPLAN_DEBOUNCE` | Window in which change events are batched into one re-plan | 5m |
+| `ALERT_HORIZON_WEEKS` | A deadline this close turns a gap into **at risk** | 4 |
+| `UTILIZATION_UNDERUSED_BELOW` · `UTILIZATION_NEAR_FULL_FROM` | Utilization band limits (overloaded is always over 100 %) | 0.5 · 0.85 |
+| `SCOPE_LAG_THRESHOLD` | Percentage points by which Scope % may trail Time % before **behind on delivery** (not scope points) | 20 |
+| `EAC_MIN_SCOPE_PERCENT` | Scope % needed before EAC hours is shown | 10 |
+| `SUSTAINED_OVERLOAD_WEEKS` | Consecutive weeks over 100 % for **sustained overload** | 3 |
+| `BENCH_WEEKS` | Weeks ahead a person must stay underused to be on the bench list | 4 |
+| `FTE_WEEKLY_HOURS` | Hours in one FTE for capacity-forecast signals | 40 |
+| `AI_ENABLED` | Turns the AI assistant (later) on | false |
+| `AI_PROVIDER` | Which LLM provider implementation to use | gemini |
+| `AI_API_KEY` | The provider's API key. A secret: never logged, never sent to the Client | empty |
+| `AI_MODEL_INTAKE` · `AI_MODEL_CHAT` · `AI_MODEL_SUMMARY` | The model per task | no default; set with the provider |
+| `AI_MAX_OUTPUT_TOKENS` | Upper limit on one model response | 4096 |
+| `AI_TIMEOUT` | Limit for one AI request, including its tool calls | 60s |
+| `AI_MAX_TOOL_CALLS` | Tool calls allowed in one request | 8 |
+| `AI_UPLOAD_MAX_BYTES` | Largest document accepted by intake extraction | 5MB |
+| `AI_CHAT_MAX_TURNS` | Conversation turns sent with a chat message; older ones are dropped | 20 |
+
+## 9. AI assistant (later)
+
+Not in the MVP: it stays off until `AI_API_KEY` is set and the data policy question below is approved. The principle, capabilities and boundaries are in the [root README, section 15](../README.md#15-ai-assistant-later).
+
+**Code:** `handlers/ai.go` and `services/ai.go` (the function-calling loop and tool definitions), and `internal/integration/llm` (a `Provider` interface plus one implementation per `AI_PROVIDER`; Gemini first). Nothing outside `integration/llm` knows which provider is used.
+
+**Tools** (each wraps an existing service method):
+
+| Tool | Wraps | Used by | Writes |
+|---|---|---|---|
+| `find_people` | people: search by name | chat, Q&A | no |
+| `find_projects` | programs: search projects and programs | chat, Q&A | no |
+| `find_free_people` | insights: heatmap filtered by expertise, minimum level and weeks | chat, Q&A | no |
+| `get_person_schedule` | planning: a person's assignments | chat, Q&A | no |
+| `get_program_overview` | insights: a program's metrics | chat, Q&A | no |
+| `get_risks` | insights: risk lists | chat, Q&A | no |
+| `get_capacity_forecast` | insights: capacity forecast by expertise | chat, Q&A | no |
+| `get_staffing_draft` | planning: a draft's diff, reasons and unmet | chat | no |
+| `create_scenario` | planning: create a scenario from `assumptions` | what-if chat | a scenario |
+| `get_scenario_diff` | planning: compare a scenario with the baseline | what-if chat | no |
+| `create_staffing_draft` | planning: generate a draft for projects | chat | a draft |
+
+- **Permissions:** before calling the service, a tool checks the same role list constant as the matching route (e.g. `constants.ScenarioCreateRoles`). The service then applies the per-program rules using the caller from `ctx`. The model is offered only the tools the caller's role allows. A refused tool gives the same `403` the route would, and the reply says so.
+- **Intake extraction** uses no data tools. The expertise and tag catalogues go into the prompt, and the model answers through one output function whose schema is the suggested project. The Server then:
+  - drops any field whose quote does not appear in the source text
+  - flags an expertise or tag that is not in the catalogue (it never creates one)
+  - fills in hours from hours per point when the text has only scope points
+- **Draft summaries** use no tools. The input is the draft's structured output. The Server checks that every number in the summary appears in that input. If one does not, it retries once and then falls back to a summary built from a template.
+- **Limits:** `AI_MAX_TOOL_CALLS`, `AI_TIMEOUT`, `AI_MAX_OUTPUT_TOKENS`, `AI_UPLOAD_MAX_BYTES`. A provider error or timeout returns the normal error envelope. A scenario or draft already created stays as it is, since it changes nothing in force.
+- **Audit:** every write through a tool records the user as the actor, `via = ai_assistant` and the tool name.
+- **Observability:** per request: latency, input and output tokens, tool-call count, provider and model. There is one OTel span per LLM call and per tool call. Prompts, documents and replies are not logged. Logs carry the request id, user id and tool names.
+
+**Open question:** customer documents and personnel data would be sent to an external LLM provider. The company data policy must approve this before `AI_ENABLED` is turned on.

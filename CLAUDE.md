@@ -59,11 +59,11 @@ There is no client test runner yet.
 
 ### Domain flow
 
-A Program contains Projects. A Project is split into ordered **Phases** (week ranges) and has Demand: budget hours per expertise and minimum level, placed in one phase or across the whole project. A phase ending later shifts every later phase (`PhaseSlipped`) and triggers a re-plan; this is how "QA waits for Engineering" is modelled. The pure **Planning Engine**, `propose(snapshot, policy)`, turns people (skills, levels, weekly capacity minus leave) and demand into allocations.
+A Program contains Projects. A Project is split into ordered **Phases** (week ranges) and has Demand: budget hours per expertise and minimum level, placed in one phase or across the whole project. A phase ending later shifts every later phase (`PhaseSlipped`) and triggers a re-plan; this is how "QA waits for Engineering" is modelled. Ownership is an `ASSIGNMENT` (person × demand, kind `primary` / `cross_expertise` / `stretch`) with weekly `ALLOCATION`s. A person can hold several expertises in the same week, against one shared capacity; the engine prefers primary-expertise people and never proposes stretch. The pure **Planning Engine**, `propose(snapshot, policy)`, turns people (skills, levels, tags, capacity) and demand (profile, required and preferred tags) into allocations. Capacity is weekly hours (effective-dated) minus non-project hours and absence, and 0 outside a person's start and end dates.
 - A result is saved as a versioned `PLAN` of kind `draft`, shown in the UI as a "staffing draft". The word "proposal" is avoided because it means a business proposal.
 - A Planner accepts the draft with `baseVersion` and it becomes the new `baseline`. A stale version gets `409`.
-- A ChangeEvent (leave, slipped deadline) triggers a re-plan into a new draft.
-- All metrics (utilization, gap, staffing %, Time/Scope/Cost %) are computed on the server. The formulas are in `README.md` section 7.
+- A ChangeEvent (leave, slipped deadline) triggers a re-plan. Events are debounced, and there is at most one open auto re-plan draft per baseline: later events are merged into it, keeping the Planner's edits and locks.
+- All metrics (utilization, gap, staffing %, Time/Scope/Planned burn %, EAC hours, capacity forecast) are computed on the server. The formulas are in `README.md` section 7. Thresholds and policy defaults are server config (`server/README.md` section 8).
 
 ### Server (Go, Echo v5, not Gin)
 
