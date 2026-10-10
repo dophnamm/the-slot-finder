@@ -3,7 +3,7 @@
 **Goal:** every user signs in through Keycloak and reaches exactly the screens and API their role allows. Every later feature, and so every goal (G1–G3 in the [root README](../../README.md#1-problem-and-scope)), builds on it.
 
 **Roles:** planner, lead, specialist.
-**Target:** 10–11 Oct · **Depends on:** none · **Branch:** `feat/sign-in`
+**Target:** 10–11 Oct · **Depends on:** none · **Branch:** `feat/sign-in` · **Status:** Done (PR #3)
 
 ## In scope
 
@@ -73,22 +73,22 @@
 ## Tasks
 
 **Server**
-- [ ] `deploy/keycloak/realm.json` with placeholders filled from the environment; compose mounts it and runs `start-dev --import-realm`
-- [ ] JWT verifier with cached JWKS (issuer, audience or azp, expiry, skew); `AuthMiddleware` uses it; no introspection per request
-- [ ] Claims in the request context with nil-safe accessors; `RequireRole` reads them
-- [ ] `authz` service with role checks; `GET /me` handler, DTO and route constants
-- [ ] Groundwork: body limit before body logging, multipart skipped, payload truncated; rate limiter envelope and config, IP extractor; `cfg.AppName` instead of the hardcoded service name; basic auth on `/health/metrics`; Clock via FX instead of `time.Local`
-- [ ] `.env.example` entries for every new setting; Swagger regenerated
+- [x] `deploy/keycloak/realm.json` with placeholders filled from the environment; compose mounts it and runs `start-dev --import-realm`
+- [x] JWT verifier with cached JWKS (issuer, audience or azp, expiry, skew); `AuthMiddleware` uses it; no introspection per request
+- [x] Claims in the request context with nil-safe accessors; `RequireRole` reads them
+- [x] `authz` service with role checks; `GET /me` handler, DTO and route constants
+- [x] Groundwork: body limit before body logging, multipart skipped, payload truncated; rate limiter envelope and config, IP extractor; `cfg.AppName` instead of the hardcoded service name; basic auth on `/health/metrics`; Clock via FX instead of `time.Local`
+- [x] `.env.example` entries for every new setting; Swagger regenerated
 
 **Client**
-- [ ] `oidc-client-ts` setup from env (`VITE_OIDC_AUTHORITY`, `VITE_OIDC_CLIENT_ID`), auth store, `/login` and `/auth/callback` pages
-- [ ] Silent renewal and sign-out
-- [ ] Route guards by role, a "no access" page, navigation filtered by role
-- [ ] `http.ts` takes the token from the auth store; `/me` hook
+- [x] `oidc-client-ts` setup from env (`VITE_OIDC_AUTHORITY`, `VITE_OIDC_CLIENT_ID`), auth store, `/login` and `/auth/callback` pages
+- [x] Silent renewal and sign-out
+- [x] Route guards by role, a "no access" page, navigation filtered by role
+- [x] `http.ts` takes the token from the auth store; `/me` hook
 
 **Tests**
-- [ ] Verifier: valid, expired, wrong issuer, wrong audience, unknown `kid` refresh, bad signature
-- [ ] RBAC through the real middleware chain: each role gets 200 or 403, no token gets 401
-- [ ] `/me` handler and nil-safe claims
-- [ ] Rate-limit, body-limit and metrics basic-auth responses
-- [ ] `.github/workflows/check.yml` runs `make check` on pull requests
+- [x] Verifier: valid, expired, wrong issuer, wrong audience, unknown `kid` refresh, bad signature
+- [x] RBAC through the real middleware chain: each role gets 200 or 403, no token gets 401
+- [x] `/me` handler and nil-safe claims
+- [x] Rate-limit, body-limit and metrics basic-auth responses
+- [x] `.github/workflows/check.yml` runs `make check` on pull requests
