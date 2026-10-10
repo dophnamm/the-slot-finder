@@ -9,18 +9,21 @@ The Client is a web SPA. Its job is to **display data and capture user actions**
 
 ```bash
 npm install
-cp .env.example .env    # VITE_API_BASE_URL, defaults to /api/v1
+cp .env.example .env    # API base URL and the Keycloak realm + client used for sign-in
 npm run dev             # http://localhost:5173, proxies /api to the server on :3000
 npm run build           # type-check + production build
 npm run lint
 npx shadcn@latest add <component>   # adds a component to src/shared/ui
 ```
 
+Sign in with a demo user (`planner`, `lead` or `specialist`; see [`server/README.md`](../server/README.md#0-run-locally)). Keycloak must be running (`make infra` or `make up`).
+
 ## 1. Screens
 
 | Route | Screen | Roles | Main API |
 |---|---|---|---|
-| `/login` | Log in | everyone | `POST /auth/login` |
+| `/login` | **Sign in**: one button that redirects to Keycloak | everyone | Keycloak (OIDC, PKCE) |
+| `/auth/callback` | Finishes the Keycloak round trip and returns to the page the user asked for | everyone | Keycloak token endpoint |
 | `/` | **Dashboard**: person × week heatmap, overload and deadline-risk alerts | planner, lead | `/insights/heatmap`, `/insights/risks` |
 | `/programs` | **Programs**: list with status, timeline and the four progress bars | planner, lead, internal assistant | `/programs` |
 | `/programs/:id` | **Program detail** (see section 2) | planner, lead, internal assistant | `/programs/:id`, `/programs/:id/overview`, `/programs/:id/projects`, `/programs/:id/members`, `/programs/:id/assistants`, `/events?programId=` |
@@ -168,11 +171,17 @@ flowchart TB
    - unwraps the `{ meta, data }` envelope: `request<T>()` returns `data`, `requestWithMeta<T>()` returns `{ data, meta }` for pagination
    - turns every failure into an `ApiError` (`status`, `code`, `message`, `details`)
 4. Write payloads send **only the fields the user changed**. Never send `status`, `utilization`, `gap_hours` or computed totals. To change state, call the action endpoint.
-5. Permissions come from `/me` and are used only to show or hide controls. The Server checks them again. AI controls (later) appear only when `/me` reports the AI assistant enabled.
+5. Permissions come from `/me` (`useCurrentUser`) and are used only to show or hide controls. The Server checks them again. AI controls (later) appear only when `/me` reports the AI assistant enabled.
 6. Every failed query or mutation goes through **one shared handler** in `shared/api/query-client.ts`, which shows a toast. For `409 PLAN_VERSION_CONFLICT`, the draft-review feature asks the user whether to regenerate the draft. For `409 DRAFT_SUPERSEDED`, it reloads the latest draft version.
 7. Show weeks as ISO weeks (`2026-W42`) together with their date range. Do week math only with the dayjs helpers in `@/utils/functions` (`toIsoWeek`, `isoWeekRange`, `formatIsoWeekRange`).
 8. A metric the Server returns as `null` (zero denominator) is shown as "—".
-9. **All user-facing text goes through `t()`** from `@/shared/i18n`. The key is the English text itself and is declared in `LanguageKey`; English needs no locale file. Server data (names, emails) is shown as-is.
+9. **Sign-in** uses [`oidc-client-ts`](https://github.com/authts/oidc-client-ts): Authorization Code with PKCE (S256) against the Keycloak realm in `VITE_OIDC_AUTHORITY`. It was chosen over `keycloak-js` because it is standard OIDC (not tied to Keycloak), typed, maintained, and renews tokens silently with the refresh token instead of a hidden iframe.
+   - `shared/auth/` holds the OIDC client, the session functions (`startAuthSession`, `signIn`, `completeSignIn`, `signOut`) and `useCurrentUser`
+   - the session token lives in `shared/stores/auth-store.ts`; `http.ts` reads it from there
+   - `app/router.tsx` wraps the app in `RequireAuth` (signed-out users go to `/login`) and each route group in `RequirePermission` (other roles see "No access")
+   - the home route sends planners and leads to the dashboard and specialists to their schedule
+   - a `401` from the API ends the session in the shared error handler
+10. **All user-facing text goes through `t()`** from `@/shared/i18n`. The key is the English text itself and is declared in `LanguageKey`; English needs no locale file. Server data (names, emails) is shown as-is.
 
 ## 6. Folder layout
 
@@ -187,7 +196,8 @@ client/
     │   ├── main.tsx              ← entry point
     │   ├── router.tsx            ← all routes (paths from resources/routes)
     │   ├── app-providers/        ← QueryClientProvider, RouterProvider, Toaster
-    │   └── app-layout/           ← sidebar + <Outlet/> (constants.ts, utils.ts, types.ts)
+    │   ├── app-layout/           ← sidebar filtered by role, signed-in user, sign out + <Outlet/>
+    │   ├── require-auth/ · require-permission/ · home-route/   ← route guards
     ├── pages/                    ← one folder per route, e.g. program-detail/ → ProgramDetailPage
     ├── features/                 ← one folder per feature
     │   ├── health/               ← api.ts · use-health.ts · types.ts · index.ts
@@ -203,6 +213,7 @@ client/
     │   └── functions/            ← shared helpers: cn, dayjs + ISO-week helpers
     └── shared/
         ├── api/                  ← http.ts (Axios), constants.ts, types.ts (envelope, ApiError), query-client.ts
+        ├── auth/                 ← OIDC client (oidc-client-ts), session functions, useCurrentUser
         ├── i18n/                 ← language-key.ts (LanguageKey), translate.ts (t, translate), locales/, language-store.ts
         ├── ui/                   ← shadcn components, managed by the shadcn CLI
         ├── components/           ← app-level shared components, e.g. page-placeholder/

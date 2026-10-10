@@ -29,7 +29,21 @@ make swagger-load                            # regenerate docs/ after changing h
 make migrate-generate name=<change>          # Atlas diff from GORM models (needs the Atlas CLI + Docker)
 ```
 
-Swagger UI: `http://localhost:3000/swagger/index.html` (basic auth from `BASIC_AUTH_USER` / `BASIC_AUTH_SECRET`, non-production only). Keycloak: `http://localhost:8080/auth`.
+Swagger UI: `http://localhost:3000/swagger/index.html` (basic auth from `BASIC_AUTH_USER` / `BASIC_AUTH_SECRET`, non-production only). `/api/v1/health/metrics` uses the same basic auth. Keycloak: `http://localhost:8080/auth`.
+
+**Sign-in.** On a fresh start, Keycloak imports [`deploy/keycloak/realm.json`](deploy/keycloak/realm.json): the realm, the roles `planner` / `lead` / `specialist`, the web app client (Authorization Code + PKCE) and the API client. Its `${...}` placeholders come from `cmd/server/.env` (`KEYCLOAK_REALM`, `KEYCLOAK_SPA_CLIENT_ID`, `KEYCLOAK_CLIENT_ID`, `CLIENT_APP_URL`, ...). `make reset-data` deletes the Keycloak data, so the next start imports the realm again.
+
+Demo users, **for development only**. Their password is `KEYCLOAK_DEMO_PASSWORD` (`dev-only-password` in `.env.example`); never reuse it outside a local machine.
+
+| User | Role | Lands on |
+|---|---|---|
+| `planner` | planner | Dashboard |
+| `lead` | lead | Dashboard |
+| `specialist` | specialist | My schedule |
+
+The server verifies access tokens locally against the realm's JWKS, cached and refreshed every `AUTH_JWKS_REFRESH_INTERVAL` (and on an unknown key id). It calls Keycloak only to fetch those keys, never per request. `KEYCLOAK_URL` is how the server reaches Keycloak; `KEYCLOAK_PUBLIC_URL` is the issuer in the tokens, as the browser sees it.
+
+**Sentry** is off (no `SENTRY_DSN`). Before setting `SENTRY_DSN`, fix the redaction of the request headers and body that the router's error hook attaches to Sentry events.
 
 ## 1. Architecture style
 

@@ -22,7 +22,7 @@ The server is Echo v5 + Uber FX + GORM, layered `handlers → services → repos
 
 Then wire it in:
 1. `cmd/server/main.go`: add `Provide*` for the repository, service and handler to `fx.Provide`.
-2. `cmd/server/routes/router.go`: add a group under `v1` with `AuthMiddleware` on the group and `RequireRole` on each route.
+2. `cmd/server/routes/router.go`: register each route under `v1` with the `authenticated` middleware and a `RequireRole(constants.<X>Roles...)`. Set them per route, not on a group with an empty prefix, which would turn every unknown path into 401. Inside services, use `AuthzService` named checks (`Require(ctx, CanX)`) for rules that need more than a role.
 3. Regenerate Swagger: `make swagger-load`. Without the `swag` binary, run the same command as `go run github.com/swaggo/swag/cmd/swag@v1.16.6 init` with the Makefile's flags.
 4. Create the migration: `make migrate-generate name=<change>`. This needs the Atlas CLI (`brew install ariga/tap/atlas`) and Docker. If either is missing, say so in your report. Never hand-write migration SQL or edit `atlas.sum`.
 

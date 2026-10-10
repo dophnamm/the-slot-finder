@@ -23,7 +23,7 @@ Run `make` at the repo root to list the shortcuts:
 | First run: `.env` files and dependencies | `make setup` |
 | Whole stack in Docker: Postgres, Redis, Keycloak, OTel, Jaeger, migrations, API on `:3000` | `make up` · stop with `make down` · logs with `make logs` |
 | Infra in Docker, server and client on the host | `make dev` (or `make infra`, then `make server` / `make client`) |
-| Lint, test and build both sides | `make check` |
+| Lint, test and build both sides (CI runs it on every pull request: `.github/workflows/check.yml`) | `make check` |
 | Wipe local data (DB and Keycloak volumes) | `make reset-data` |
 
 Compose lives in `server/docker-compose.yml` and reads `server/cmd/server/.env`. The `server` service overrides the hosts so they point at containers. The `migrate` service runs `atlas migrate apply` before the API starts.
@@ -73,6 +73,10 @@ A Program contains Projects. A Project is split into ordered **Phases** (week ra
   - a logical module is a set of same-named files across the layers
 - `cmd/server/main.go` wires providers with **Uber FX**. `cmd/server/routes/router.go` holds the middleware chain and routes under `/api/v1`, protected by `AuthMiddleware` + `RequireRole`.
 - Auth uses Keycloak JWTs. Roles `planner`, `lead` and `specialist` are in `internal/constants/roles.go`. CSRF is on: unsafe requests need `X-CSRF-Token`, which the server exposes in a response header.
+  - `AuthMiddleware` verifies tokens locally against the realm's cached JWKS (`internal/integration/auth/verifier.go`), with no Keycloak call per request. It puts a `request.Principal` in the request context.
+  - Routes add `RequireRole(constants.<X>Roles...)`. Services ask `AuthzService` for named checks (`Require(ctx, CanViewOwnProfile)`).
+  - Keycloak imports `deploy/keycloak/realm.json` on a fresh start (placeholders from `.env`). The demo users `planner`, `lead` and `specialist` are for development only.
+- "Now" comes from `clock.Clock` (FX, organization time zone from `TIMEZONE`). Nothing sets `time.Local`.
 - Every response is the envelope `{ meta: { error_code, message, code, page, page_size, total }, data }`, built by `internal/errors` (`AppError`, `ErrorHandler`) and `BaseHandler`.
 - `docs/` is generated Swagger (code-first, Swagger 2.0). Do not edit it by hand.
 - Migrations are Atlas files in `cmd/migrations/sql`, generated from GORM models. The directory is currently empty.
@@ -91,7 +95,8 @@ A Program contains Projects. A Project is split into ordered **Phases** (week ra
   - `request<T>()` returns the unwrapped `data`; `requestWithMeta<T>()` returns `{ data, meta }`.
   - Every failure becomes an `ApiError`.
   - JWT and CSRF headers are added automatically.
-- Server state lives in TanStack Query: invalidate after mutations, and `shared/api/query-client.ts` shows one shared toast on error. Zustand holds UI and session state only.
+- Server state lives in TanStack Query: invalidate after mutations, and `shared/api/query-client.ts` shows one shared toast on error (a `401` ends the session). Zustand holds UI and session state only.
+- Sign-in: `oidc-client-ts` (PKCE) in `shared/auth/`. The session token is in `shared/stores/auth-store.ts`; the role comes from `/me` via `useCurrentUser`. `app/router.tsx` guards routes with `RequireAuth` and `RequirePermission` (permissions in `resources/rbac`).
 - shadcn here uses **Base UI**: components take a `render` prop, not `asChild`. Files in `src/shared/ui` are project code; add variants there rather than overriding them from outside.
 
 ## Conventions (load the skill before touching that area)

@@ -53,6 +53,7 @@ if err := s.repo.Create(ctx, person); err != nil {
 
 - Everything is UTC (GORM `NowFunc` is UTC).
 - ISO weeks: `year, week := t.ISOWeek()`, formatted as `fmt.Sprintf("%d-W%02d", year, week)`. Put the format in a constant.
+- "Now" comes from the `clock.Clock` provided by FX (organization time zone from `TIMEZONE`). Never call `time.Now()` in services and never set `time.Local`. Tests use `clock.NewFixed(t)`.
 - Pure code (engine, metrics) receives "now" as a parameter.
 
 ## Design
