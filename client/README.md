@@ -24,12 +24,14 @@ npx shadcn@latest add <component>   # adds a component to src/shared/ui
 | `/` | **Dashboard**: person × week heatmap, overload and deadline-risk alerts | planner, lead | `/insights/heatmap`, `/insights/risks` |
 | `/programs` | **Programs**: list with status, timeline and the four progress bars | planner, lead, internal assistant | `/programs` |
 | `/programs/:id` | **Program detail** (see section 2) | planner, lead, internal assistant | `/programs/:id`, `/programs/:id/overview`, `/programs/:id/projects`, `/programs/:id/members`, `/programs/:id/assistants`, `/events?programId=` |
-| `/intake` | **Intake queue**: incoming projects across programs, "Propose squad" | planner, lead | `/projects?status=incoming`, `/staffing-drafts` |
-| `/projects/:id` | **Project detail**: phase timeline, demand per phase, assigned people, risks, scope points | planner, lead | `/projects/:id`, `/projects/:id/phases`, `/plans/current` |
-| `/staffing-drafts/:id` | **Staffing draft review**: assignment grid, reasons, diff, manual edits, lock, accept | planner | `/staffing-drafts/:id` |
+| `/intake` | **Intake queue**: incoming projects across programs with their confidence, "Propose squad" | planner, lead | `/projects?status=incoming`, `/staffing-drafts` |
+| `/intake/from-document` | **Intake from a document** (later, AI): paste or upload a brief, review the suggested project with a source quote per field, edit, confirm | planner, lead | `/ai/intake-extractions`, then `/programs/:id/projects`, `/projects/:id/phases`, `/projects/:id/demands` |
+| `/projects/:id` | **Project detail**: project form (with confidence), phase timeline, demand per phase with hours suggestion, assigned people, risks, scope points | planner, lead | `/projects/:id`, `/projects/:id/phases`, `/projects/:id/demands`, `/projects/:id/hours-suggestion`, `/plans/current` |
+| `/staffing-drafts/:id` | **Staffing draft review**: assignment grid, reasons, alternatives with one-click swap, diff with plan churn, manual edits, lock, accept, AI summary (later) | planner | `/staffing-drafts/:id`, `/staffing-drafts/:id/assignments`, `/staffing-drafts/:id/summary` |
 | `/scenarios` | **What-if**: build scenarios (move a project, add leave), view the diff | planner | `/scenarios` |
-| `/people` | **People**: expertise and level matrix, leave calendar, capacity | planner | `/people`, `/people/:id/absences` |
-| `/me` | **My schedule**: projects by week, report leave | specialist | `/plans/current`, `/people/me/absences` |
+| `/people` | **People**: expertise and level matrix, skill tags, start and end dates, location, leave and holidays, capacity changes | planner | `/people`, `/people/:id/absences`, `/people/:id/tags`, `/people/:id/capacity-changes`, `/tags`, `/holidays` |
+| `/insights` | **Insights**: capacity forecast by expertise (with pipeline × confidence and shortfall signals), bench list, plan churn over time | planner, lead (forecast only) | `/insights/capacity-forecast`, `/insights/bench`, `/insights/churn` |
+| `/me` | **My schedule**: my assignments by week, grouped by expertise (primary first, cross-expertise and stretch marked), report leave | specialist | `/people/me/assignments`, `/people/me/absences` |
 | `/events` | **Change history** and re-plan status | planner | `/events` |
 
 ```mermaid
@@ -45,7 +47,11 @@ flowchart LR
   dash --> scenarios["/scenarios"]
   dash --> people["/people"]
   dash --> events["/events"]
+  dash --> insights["/insights"]
+  insights -->|"Bench: stretch assignment"| draft
   intake -->|"Propose squad"| draft
+  intake -->|"From a document (later)"| extract["/intake/from-document"]
+  extract -->|"Confirm"| project
   events -->|"Open re-plan draft"| draft
   scenarios -->|"Turn scenario into draft"| draft
   draft -->|"Accept"| program
@@ -59,7 +65,7 @@ Layout:
 ┌───────────────────────────────────────────────────────────────────────────────┐
 │ HEADER  Program name [Open]   Brief · Charter   Members: ◯◯◯                   │
 │         Timeline: start – end · Next milestone (⚠ overdue)                     │
-│         Progress:  Time ▇▇▇▇ %   Scope ▇▇ %   Cost ▇▇▇ %   Staffing ▇▇▇▇ %      │
+│         Progress:  Time ▇▇▇ %  Scope ▇▇ %  Planned burn ▇▇ %  Staffing ▇▇▇ %    │
 ├───────────────────────────────────────────────────────────────────────────────┤
 │ ⚠ RE-PLAN BANNER  "A change produced a staffing draft for this program → View" │
 ├───────────────────────────────────────────────────────────────────────────────┤
@@ -67,7 +73,7 @@ Layout:
 ├──────────────────────────────────────┬────────────────────────────────────────┤
 │ SCOPE (points)                       │ COST (hours)                           │
 │ Total · Done · Done %                │ Budget · Planned · Planned to date ·   │
-│                                      │ Gap  (Actual: phase 2)                 │
+│                                      │ Gap · EAC ⚠  (Actual: phase 2)         │
 ├──────────────────────────────────────┴────────────────────────────────────────┤
 │ STAFFING BY EXPERTISE                                                          │
 │  chart: budget vs forecast hours per expertise                                 │
@@ -75,21 +81,23 @@ Layout:
 ├───────────────────────────────────────────────────────────────────────────────┤
 │ [ PROJECTS ] [ MEMBERS ]                                                        │
 │  Projects: Squad | Project + status | Start–End + next milestone | Phase |     │
-│            Time/Scope/Cost bars | Staffing % ⚠ unmet | [Propose squad]          │
+│            Time/Scope/Burn bars | Staffing % · gap ⚠ | [Propose squad]          │
 │  Members:  [ Member ] [ Assistant ]                                             │
-│            Member:    Person | Squad role | Expertise | Hours here (4 wks) |   │
-│                       Overall utilization (4 wks) ⚠                             │
+│            Member:    Person | Squad role | Expertise chips (hours, ↔ cross,   │
+│                       ⚠ stretch) | Overall utilization (4 wks) ⚠              │
 │            Assistant: Internal  → Person | Email | Remove                      │
 │                       External  → Name | Email | Description | Remove          │
 └───────────────────────────────────────────────────────────────────────────────┘
 ```
 
 **Behaviour:**
-- **Header bars** come straight from `/programs/:id/overview`. Each bar shows ⚠ when the Server flags it (over 100% time, over-planned, understaffed).
+- **Header bars** come straight from `/programs/:id/overview`. Each bar shows ⚠ when the Server flags it (over 100% time, behind on delivery, over-planned, understaffed). Planned burn has no warning in the MVP.
+- **EAC hours** on the Cost card comes from the overview. It is hidden while the Server returns `null` (too little scope done) and shows ⚠ when the Server flags **likely over budget**.
+- **Staffing and gap** are shown together, e.g. "Staffing 80% · 40 h gap", because they show the same shortfall.
 - **Re-plan banner** appears when `/events?programId=` returns an event with status `draft_created`. It links to the staffing draft.
 - **Forecast ✎**: editing calls `PATCH /programs/:id/forecast` for that demand. Clearing the field goes back to planned hours. The table is refetched after the save.
 - **Propose squad** is visible to planners when a project's gap is above 0. It calls `POST /staffing-drafts { projectIds: [id] }` and opens the draft.
-- **Members** are read-only here. To add or remove a member, edit a staffing draft. The **Assistant** sub-tab lets planners and the program lead add or remove assistants.
+- **Members** are read-only here. A member appears once, with a chip for each expertise they hold in this program. To add or remove a member or an assignment, edit a staffing draft. The **Assistant** sub-tab lets planners and the program lead add or remove assistants.
 - Internal assistants see the whole page read-only, without edit controls or the Propose squad button.
 
 ## 3. Layers
@@ -113,6 +121,9 @@ flowchart TB
     f7["scenarios"]
     f8["people"]
     f9["my-schedule"]
+    f10["insights"]
+    f11["intake-extraction"]
+    f12["ai-chat"]
   end
   subgraph shared["shared/ · utils/ · resources/"]
     s1["api/<br/>Axios instance, envelope types,<br/>QueryClient"]
@@ -132,13 +143,20 @@ flowchart TB
 
 | Component | Description |
 |---|---|
-| **Heatmap grid** | Rows are people (grouped by expertise), columns are weeks. Colour shows utilization: under 50% / 50–85% / 85–100% / over 100%. Click a cell to see that week's projects |
-| **Progress bars** | Time, Scope, Cost and Staffing with a percentage and a ⚠ flag from the Server |
+| **Heatmap grid** | Rows are people (grouped by primary expertise), columns are weeks. Colour shows utilization: under 50% / 50–85% / 85–100% / over 100%. A cell shows a small split of its hours by expertise, so someone covering QA as an Engineer is visible. Click a cell to see that week's assignments. Filtering by an expertise keeps everyone who holds it that week, with non-primary people marked. Planned (not yet approved) absence is drawn as **tentative** (hatched) |
+| **Progress bars** | Time, Scope, Planned burn and Staffing with a percentage and a ⚠ flag from the Server |
 | **Staffing by expertise** | Chart and table of budget, planned, forecast and gap hours per expertise, with an inline forecast editor |
 | **Phase timeline** | Ordered phases as bars on ISO weeks. Moving a phase end later previews which later phases will shift, before saving |
-| **Demand form** | One row per need: expertise, minimum level, headcount, budget hours, phase (or "whole project") |
-| **Allocation editor** | Person × week grid for one staffing draft. Edit hours, lock or unlock, see why the engine chose each person |
-| **Diff viewer** | Baseline versus a draft or scenario: who was added or removed, how hours changed, which projects changed risk status |
+| **Project form** | Name, priority, earliest start, deadline, scope points and, for an incoming project, **confidence** (0–100 %) |
+| **Demand form** | One row per need: expertise, minimum level, headcount, budget hours, phase (or "whole project"), profile (flat / front / back), required and preferred tags, preferred person. Budget hours show a suggestion from `/projects/:id/hours-suggestion` (scope points × hours per point); the lead accepts it or types their own |
+| **Assignment editor** | Person × week grid for one staffing draft, grouped by assignment (person × demand). Add a person to any demand, edit weekly hours, lock or unlock, and see the reason and kind of each assignment. Each assignment lists its **alternatives** (score and why they lost); **Swap** replaces the person in one click. A person below the demand's level becomes a **stretch** assignment: shown with ⚠, locked, and confirmed again on accept. If a re-plan merge has superseded the draft, a save, accept or reject gets `409 DRAFT_SUPERSEDED`; the editor reloads the latest version and tells the Planner to check it again |
+| **Expertise chip** | Expertise name with hours. Plain for primary, marked ↔ for cross-expertise, ⚠ for stretch. Used in the Members tab, My schedule and the heatmap popover |
+| **Diff viewer** | Baseline versus a draft or scenario: who was added or removed, how hours changed, which projects changed risk status. The header shows **plan churn** (people changed, hours moved) |
+| **Capacity forecast** | Per expertise × week: free capacity against unmet confirmed demand and pipeline demand × confidence, with shortfall signals such as "short 1.5 FTE QA in W50–W03" |
+| **Bench list** | People under the underused band for the coming weeks, with suggested actions (stretch assignment, training, internal work). Acting on one is a Planner decision |
+| **Intake extraction review** (later) | The suggested project from `/ai/intake-extractions`, field by field. Each field shows its source quote, highlighted in the document; flagged fields (unknown expertise or tag, hours suggested from points) are marked. The lead edits, then **Confirm** saves through the normal project, phase and demand calls. Nothing is saved before that |
+| **AI chat panel** (later) | A side panel on every page for planners, leads and specialists. Sends the visible conversation to `/ai/chat`, shows the reply and links to any scenario or draft it created. Marked as AI-generated |
+| **AI summary** (later) | A card on the staffing draft page with the text from `/staffing-drafts/:id/summary`, next to the reasons it is based on. Marked as AI-generated |
 | **Assistant manager** | Internal assistant picker (people search) and external assistant form (name, email, description) |
 
 ## 5. Data and state rules
@@ -150,8 +168,8 @@ flowchart TB
    - unwraps the `{ meta, data }` envelope: `request<T>()` returns `data`, `requestWithMeta<T>()` returns `{ data, meta }` for pagination
    - turns every failure into an `ApiError` (`status`, `code`, `message`, `details`)
 4. Write payloads send **only the fields the user changed**. Never send `status`, `utilization`, `gap_hours` or computed totals. To change state, call the action endpoint.
-5. Permissions come from `/me` and are used only to show or hide controls. The Server checks them again.
-6. Every failed query or mutation goes through **one shared handler** in `shared/api/query-client.ts`, which shows a toast. For `409 PLAN_VERSION_CONFLICT`, the draft-review feature asks the user whether to regenerate the draft.
+5. Permissions come from `/me` and are used only to show or hide controls. The Server checks them again. AI controls (later) appear only when `/me` reports the AI assistant enabled.
+6. Every failed query or mutation goes through **one shared handler** in `shared/api/query-client.ts`, which shows a toast. For `409 PLAN_VERSION_CONFLICT`, the draft-review feature asks the user whether to regenerate the draft. For `409 DRAFT_SUPERSEDED`, it reloads the latest draft version.
 7. Show weeks as ISO weeks (`2026-W42`) together with their date range. Do week math only with the dayjs helpers in `@/utils/functions` (`toIsoWeek`, `isoWeekRange`, `formatIsoWeekRange`).
 8. A metric the Server returns as `null` (zero denominator) is shown as "—".
 9. **All user-facing text goes through `t()`** from `@/shared/i18n`. The key is the English text itself and is declared in `LanguageKey`; English needs no locale file. Server data (names, emails) is shown as-is.
