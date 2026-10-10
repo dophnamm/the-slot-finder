@@ -7,6 +7,7 @@
 Details per part:
 - [`server/README.md`](server/README.md): modules, API, planning engine, data rules
 - [`client/README.md`](client/README.md): screens, feature modules, API usage rules
+- [`docs/features/`](docs/features/README.md): one spec per feature, in build order, with acceptance criteria and tasks
 
 ---
 
@@ -126,7 +127,7 @@ flowchart TB
 | **Server API** | Source of truth: data, permissions, state transitions, transactions, metrics | The scheduling algorithm (that lives in the Engine) |
 | **Planning Engine** | The pure function `propose(snapshot, policy) → result` | Database or network access |
 | **Background Worker** | Heavy or asynchronous jobs: re-planning after changes, imports, notifications. In the MVP these run inside the server process; a separate worker process comes later | Serving user requests |
-| **Job queue** | Passes jobs from the API to the Worker. The MVP may run it in-process | |
+| **Job queue** | Passes jobs from the API to the Worker: rows in Postgres (change events as a transactional outbox), claimed with `FOR UPDATE SKIP LOCKED`. No separate queue service | |
 | **Database** | Stores people, skills, tags, absences and holidays, capacity changes, programs, projects, demand, milestones, plans, allocations, events and audit records | |
 
 The `server/` folder holds the Server API, the Background Worker and the Planning Engine in one Go codebase. The `client/` folder holds the web SPA.
@@ -627,7 +628,7 @@ stateDiagram-v2
 | **Server language / runtime** | Go | One codebase for API, background jobs and the planning engine |
 | **HTTP + wiring** | Echo v5, Uber FX | FX wires providers in `cmd/server/main.go`; routes live in `cmd/server/routes/router.go` under `/api/v1` |
 | **Database** | PostgreSQL, GORM, Atlas migrations | Migrations are generated from GORM models into `cmd/migrations/sql` |
-| **Cache / future queue** | Redis | Also the base for a job queue when background jobs move out of process |
+| **Cache** | Redis | Background jobs use Postgres (outbox + `SKIP LOCKED`), not Redis |
 | **Auth** | Keycloak (JWT) | Roles `planner`, `lead`, `specialist` |
 | **Observability** | Zap, OpenTelemetry, Sentry (optional) | Local stack: OTel collector + Jaeger via docker compose |
 | **API docs** | swaggo (Swagger 2.0, generated from handler annotations) | `server/docs/swagger.yaml` is the contract the Client builds against |
@@ -675,7 +676,7 @@ the-slot-finder/
 | ADR-3 | The planning unit is **hours per week** | Fine-grained enough for staffing decisions and keeps the engine light | No day-level or hour-level scheduling |
 | ADR-4 | Every plan is a **versioned PLAN** | What-if, diff and rollback share one model | More allocation rows to store |
 | ADR-5 | **A human approves** every plan | Users need to trust it; the engine always gives reasons | Not fully automatic |
-| ADR-6 | Re-planning runs **in the background** | Doesn't block requests and can batch several changes | MVP runs jobs in-process; a separate worker with a Redis queue comes later |
+| ADR-6 | Re-planning runs **in the background** | Doesn't block requests and can batch several changes | Jobs are Postgres rows (an outbox) run in-process at first; a separate worker process can use the same table later, without a queue service |
 | ADR-7 | A **Program** level groups projects | Matches how customer engagements are run and reviewed | One more level of aggregation |
 | ADR-8 | **Cost is hours only**; no money, no billing, no score | Hours are what staffing decisions need | Financial reporting stays in other tools |
 | ADR-9 | **Scope points are entered by hand** at project level | Gives a delivery signal without task tracking | Depends on leads keeping them up to date |
