@@ -34,7 +34,7 @@ Sign in with a demo user (`planner`, `lead` or `specialist`; see [`server/README
 | `/scenarios` | **What-if**: build scenarios (move a project, add leave), view the diff | planner | `/scenarios` |
 | `/people` | **People**: expertise and level matrix, skill tags, start and end dates, location, leave and holidays, capacity changes | planner | `/people`, `/people/:id/absences`, `/people/:id/tags`, `/people/:id/capacity-changes`, `/tags`, `/holidays` |
 | `/insights` | **Insights**: capacity forecast by expertise (with pipeline × confidence and shortfall signals), bench list, plan churn over time | planner, lead (forecast only) | `/insights/capacity-forecast`, `/insights/bench`, `/insights/churn` |
-| `/me` | **My schedule**: my assignments by week, grouped by expertise (primary first, cross-expertise and stretch marked), report leave | specialist | `/people/me/assignments`, `/people/me/absences` |
+| `/me` | **My schedule**: my assignments by week, grouped by expertise (primary first, cross-expertise and stretch marked), report leave | specialist | `/me`, `/people/:id/assignments`, `/people/:id/absences` (id from `/me`) |
 | `/events` | **Change history** and re-plan status | planner | `/events` |
 
 ```mermaid
