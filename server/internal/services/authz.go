@@ -23,6 +23,21 @@ func CanViewOwnProfile(principal request.Principal) bool {
 	return principal.HasAnyRole(constants.CurrentUserViewRoles...)
 }
 
+// CanViewPeople allows planners and leads to list people and their skills.
+func CanViewPeople(principal request.Principal) bool {
+	return principal.HasAnyRole(constants.PeopleViewRoles...)
+}
+
+// CanManagePeople allows planners to create and edit people and their skills.
+func CanManagePeople(principal request.Principal) bool {
+	return principal.HasAnyRole(constants.PeopleManageRoles...)
+}
+
+// CanViewExpertises allows every application role to read the expertise catalogue.
+func CanViewExpertises(principal request.Principal) bool {
+	return principal.HasAnyRole(constants.ExpertiseViewRoles...)
+}
+
 // AuthzService answers who is signed in and what they may do.
 type AuthzService interface {
 	// Principal returns the signed-in user, or a 401 error when there is none.

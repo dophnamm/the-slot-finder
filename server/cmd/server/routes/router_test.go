@@ -57,9 +57,11 @@ func newTestRouter(cfg *config.Config) *echo.Echo {
 		"specialist-token": userClaims("specialist", constants.RoleSpecialist),
 		"no-role-token":    userClaims("nobody", "offline_access"),
 	}
-	identity := handlers.ProvideIdentityHandler(services.ProvideAuthzService())
+	authz := services.ProvideAuthzService()
+	identity := handlers.ProvideIdentityHandler(authz)
 	health := handlers.ProvideHealthHandler(cfg, nil)
-	return Router(health, identity, verifier, cfg)
+	person := handlers.ProvidePersonHandler(nil, authz, nil)
+	return Router(health, identity, person, verifier, cfg)
 }
 
 func baseConfig() *config.Config {
@@ -148,4 +150,34 @@ func TestRouter_RateLimit(t *testing.T) {
 	var body dtos.BaseResponse[dtos.RateLimitResponse]
 	require.NoError(t, json.Unmarshal(last.Body.Bytes(), &body))
 	assert.Equal(t, constants.RateLimitExceeded, body.Meta.ErrorCode)
+}
+
+func TestRouter_People_RBAC(t *testing.T) {
+	e := newTestRouter(baseConfig())
+	tests := []struct {
+		name       string
+		method     string
+		path       string
+		token      string
+		wantStatus int
+	}{
+		{name: "specialist cannot list people", method: http.MethodGet, path: constants.PathPeople, token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "lead cannot create people", method: http.MethodPost, path: constants.PathPeople, token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "lead cannot edit skills", method: http.MethodPut, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/skills", token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "no token", method: http.MethodGet, path: constants.PathExpertises, wantStatus: http.StatusUnauthorized},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(tt.method, constants.PathAPIBase+tt.path, nil)
+			req.RemoteAddr = "192.0.2.10:5000"
+			// CSRF runs before auth; unsafe methods from the same origin pass it.
+			req.Header.Set("Sec-Fetch-Site", "same-origin")
+			if tt.token != "" {
+				req.Header.Set(echo.HeaderAuthorization, "Bearer "+tt.token)
+			}
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+			assert.Equal(t, tt.wantStatus, rec.Code, rec.Body.String())
+		})
+	}
 }
