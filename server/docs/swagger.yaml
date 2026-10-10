@@ -1,5 +1,70 @@
 basePath: /api/v1
 definitions:
+  dtos.AbsenceResponse:
+    properties:
+      from_date:
+        example: "2026-10-19"
+        type: string
+      hours_per_day:
+        example: 8
+        type: number
+      id:
+        type: string
+      person_id:
+        type: string
+      status:
+        example: approved
+        type: string
+      to_date:
+        example: "2026-10-23"
+        type: string
+      type:
+        example: leave
+        type: string
+    type: object
+  dtos.CreateAbsenceRequest:
+    properties:
+      from_date:
+        example: "2026-10-19"
+        type: string
+      hours_per_day:
+        example: 8
+        maximum: 24
+        type: number
+      status:
+        enum:
+        - planned
+        - approved
+        type: string
+      to_date:
+        example: "2026-10-23"
+        type: string
+      type:
+        enum:
+        - leave
+        - training
+        type: string
+    required:
+    - from_date
+    - to_date
+    - type
+    type: object
+  dtos.CreateHolidayRequest:
+    properties:
+      from_date:
+        example: "2026-12-24"
+        type: string
+      hours_per_day:
+        example: 8
+        maximum: 24
+        type: number
+      to_date:
+        example: "2026-12-25"
+        type: string
+    required:
+    - from_date
+    - to_date
+    type: object
   dtos.CreatePersonRequest:
     properties:
       email:
@@ -216,6 +281,44 @@ paths:
       summary: Health Check
       tags:
       - Health
+  /absences/{id}:
+    delete:
+      description: A person may remove their own absences; planners anyone's and holidays.
+      parameters:
+      - description: Absence id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Remove an absence or a holiday
+      tags:
+      - Availability
   /expertises:
     get:
       produces:
@@ -277,6 +380,68 @@ paths:
       summary: Database Connection Metrics
       tags:
       - Health
+  /holidays:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/dtos.AbsenceResponse'
+                type: array
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Company-wide holidays
+      tags:
+      - Availability
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Holiday
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateHolidayRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.AbsenceResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add a company-wide holiday
+      tags:
+      - Availability
   /me:
     get:
       description: 'The signed-in user, read from the verified access token: id, username,
@@ -448,6 +613,98 @@ paths:
       summary: Edit a person
       tags:
       - People
+  /people/{id}/absences:
+    get:
+      description: Leave and training of one person, oldest first. A person may read
+        their own; planners anyone's.
+      parameters:
+      - description: Person id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/dtos.AbsenceResponse'
+                type: array
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: A person's absences
+      tags:
+      - Availability
+    post:
+      consumes:
+      - application/json
+      description: Adds leave or training for a person (dates inclusive). A person
+        may add their own, always as planned; planners may add anyone's and choose
+        the status.
+      parameters:
+      - description: Person id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Absence
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateAbsenceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.AbsenceResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Report an absence
+      tags:
+      - Availability
   /people/{id}/skills:
     put:
       consumes:

@@ -28,7 +28,7 @@ func TestAuthzService_Require(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ProvideAuthzService().Require(tt.ctx, CanViewOwnProfile)
+			got, err := ProvideAuthzService(nil).Require(tt.ctx, CanViewOwnProfile)
 			if tt.wantStatus == 0 {
 				require.NoError(t, err)
 				assert.Equal(t, planner, got)

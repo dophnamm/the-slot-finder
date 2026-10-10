@@ -21,4 +21,13 @@ var (
 	PeopleManageRoles = []string{RolePlanner}
 	// ExpertiseViewRoles may read the expertise catalogue.
 	ExpertiseViewRoles = []string{RolePlanner, RoleLead, RoleSpecialist}
+	// AbsenceRoles may reach the absence routes; the service lets a person act only on
+	// their own absences unless they hold AbsenceManageRoles.
+	AbsenceRoles = []string{RolePlanner, RoleLead, RoleSpecialist}
+	// AbsenceManageRoles may manage anyone's absences and approve them.
+	AbsenceManageRoles = []string{RolePlanner}
+	// HolidayViewRoles may read the company-wide holidays.
+	HolidayViewRoles = []string{RolePlanner, RoleLead, RoleSpecialist}
+	// HolidayManageRoles may add and remove holidays.
+	HolidayManageRoles = []string{RolePlanner}
 )

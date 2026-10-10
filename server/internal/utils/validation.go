@@ -13,8 +13,10 @@ import (
 
 // Custom validation tags (names live in constants so error messages can match them).
 const (
-	ValidationTagRole = constants.ValidationTagRole
-	ValidationTagDate = constants.ValidationTagDate
+	ValidationTagRole          = constants.ValidationTagRole
+	ValidationTagDate          = constants.ValidationTagDate
+	ValidationTagAbsenceType   = constants.ValidationTagAbsenceType
+	ValidationTagAbsenceStatus = constants.ValidationTagAbsenceStatus
 )
 
 // RegisterValidations adds the project's custom validation tags to v and makes validation
@@ -28,6 +30,12 @@ func RegisterValidations(v *validator.Validate) error {
 		ValidationTagDate: func(fl validator.FieldLevel) bool {
 			_, err := time.Parse(constants.DateLayout, fl.Field().String())
 			return err == nil
+		},
+		ValidationTagAbsenceType: func(fl validator.FieldLevel) bool {
+			return slices.Contains(constants.PersonalAbsenceTypes, fl.Field().String())
+		},
+		ValidationTagAbsenceStatus: func(fl validator.FieldLevel) bool {
+			return slices.Contains(constants.AbsenceStatuses, fl.Field().String())
 		},
 	}
 	for tag, fn := range validations {

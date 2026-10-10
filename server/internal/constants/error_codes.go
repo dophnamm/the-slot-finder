@@ -17,6 +17,10 @@ const (
 	PersonDatesInvalid       = "PERSON_DATES_INVALID"
 	PersonSkillsInvalid      = "PERSON_SKILLS_INVALID"
 
+	// Absence errors
+	AbsenceNotFound     = "ABSENCE_NOT_FOUND"
+	AbsenceDatesInvalid = "ABSENCE_DATES_INVALID"
+
 	// Email errors
 	EmailSendError = "EMAIL_SEND_ERROR"
 

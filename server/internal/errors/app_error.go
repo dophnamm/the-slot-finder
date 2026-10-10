@@ -149,6 +149,11 @@ func ParseValidationErrors(err error) map[string]string {
 			fieldTag := validationErr.Tag()
 			fieldValue := validationErr.Value()
 
+			if message, ok := customTagMessage(fieldName, fieldTag); ok {
+				fieldErrors[fieldName] = message
+				continue
+			}
+
 			// Create user-friendly error messages based on validation tag
 			var errorMessage string
 			switch fieldTag {
@@ -160,10 +165,6 @@ func ParseValidationErrors(err error) map[string]string {
 				errorMessage = fmt.Sprintf("%s must be at least %s characters long", fieldName, validationErr.Param())
 			case "max":
 				errorMessage = fmt.Sprintf("%s must be at most %s characters long", fieldName, validationErr.Param())
-			case constants.ValidationTagRole:
-				errorMessage = fmt.Sprintf("%s must be one of: %s", fieldName, strings.Join(constants.Roles, ", "))
-			case constants.ValidationTagDate:
-				errorMessage = fieldName + " " + constants.MsgDateInvalid
 			case "len":
 				errorMessage = fmt.Sprintf("%s must be exactly %s characters long", fieldName, validationErr.Param())
 			case "numeric":
@@ -204,6 +205,25 @@ func ParseValidationErrors(err error) map[string]string {
 	}
 
 	return fieldErrors
+}
+
+// customTagMessage explains a failed project-specific validation tag (see constants/validation.go).
+func customTagMessage(fieldName, tag string) (string, bool) {
+	oneOf := func(values []string) string {
+		return fmt.Sprintf("%s must be one of: %s", fieldName, strings.Join(values, ", "))
+	}
+	switch tag {
+	case constants.ValidationTagRole:
+		return oneOf(constants.Roles), true
+	case constants.ValidationTagAbsenceType:
+		return oneOf(constants.PersonalAbsenceTypes), true
+	case constants.ValidationTagAbsenceStatus:
+		return oneOf(constants.AbsenceStatuses), true
+	case constants.ValidationTagDate:
+		return fieldName + " " + constants.MsgDateInvalid, true
+	default:
+		return "", false
+	}
 }
 
 // NotFoundError creates a not found error

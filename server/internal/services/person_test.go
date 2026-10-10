@@ -111,6 +111,13 @@ func validCreateInput() CreatePersonInput {
 	}
 }
 
+func requireStatus(t *testing.T, err error, status int) {
+	t.Helper()
+	var appErr *errors.AppError
+	require.ErrorAs(t, err, &appErr)
+	assert.Equal(t, status, appErr.HTTPStatus)
+}
+
 func requireAppError(t *testing.T, err error, code string, status int) {
 	t.Helper()
 	var appErr *errors.AppError

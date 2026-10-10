@@ -46,6 +46,67 @@ const docTemplate = `{
                 }
             }
         },
+        "/absences/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "A person may remove their own absences; planners anyone's and holidays.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Availability"
+                ],
+                "summary": "Remove an absence or a holiday",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Absence id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/expertises": {
             "get": {
                 "security": [
@@ -134,6 +195,107 @@ const docTemplate = `{
                                 "data": {
                                     "type": "object"
                                 },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/holidays": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Availability"
+                ],
+                "summary": "Company-wide holidays",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/dtos.AbsenceResponse"
+                                    }
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Availability"
+                ],
+                "summary": "Add a company-wide holiday",
+                "parameters": [
+                    {
+                        "description": "Holiday",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateHolidayRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.AbsenceResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
                                 "meta": {
                                     "$ref": "#/definitions/dtos.Meta"
                                 }
@@ -413,6 +575,147 @@ const docTemplate = `{
                 }
             }
         },
+        "/people/{id}/absences": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Leave and training of one person, oldest first. A person may read their own; planners anyone's.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Availability"
+                ],
+                "summary": "A person's absences",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Person id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/dtos.AbsenceResponse"
+                                    }
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Adds leave or training for a person (dates inclusive). A person may add their own, always as planned; planners may add anyone's and choose the status.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Availability"
+                ],
+                "summary": "Report an absence",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Person id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Absence",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateAbsenceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.AbsenceResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/people/{id}/skills": {
             "put": {
                 "security": [
@@ -491,6 +794,96 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dtos.AbsenceResponse": {
+            "type": "object",
+            "properties": {
+                "from_date": {
+                    "type": "string",
+                    "example": "2026-10-19"
+                },
+                "hours_per_day": {
+                    "type": "number",
+                    "example": 8
+                },
+                "id": {
+                    "type": "string"
+                },
+                "person_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "approved"
+                },
+                "to_date": {
+                    "type": "string",
+                    "example": "2026-10-23"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "leave"
+                }
+            }
+        },
+        "dtos.CreateAbsenceRequest": {
+            "type": "object",
+            "required": [
+                "from_date",
+                "to_date",
+                "type"
+            ],
+            "properties": {
+                "from_date": {
+                    "type": "string",
+                    "example": "2026-10-19"
+                },
+                "hours_per_day": {
+                    "type": "number",
+                    "maximum": 24,
+                    "example": 8
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "planned",
+                        "approved"
+                    ]
+                },
+                "to_date": {
+                    "type": "string",
+                    "example": "2026-10-23"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "leave",
+                        "training"
+                    ]
+                }
+            }
+        },
+        "dtos.CreateHolidayRequest": {
+            "type": "object",
+            "required": [
+                "from_date",
+                "to_date"
+            ],
+            "properties": {
+                "from_date": {
+                    "type": "string",
+                    "example": "2026-12-24"
+                },
+                "hours_per_day": {
+                    "type": "number",
+                    "maximum": 24,
+                    "example": 8
+                },
+                "to_date": {
+                    "type": "string",
+                    "example": "2026-12-25"
+                }
+            }
+        },
         "dtos.CreatePersonRequest": {
             "type": "object",
             "required": [

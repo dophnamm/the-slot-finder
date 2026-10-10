@@ -47,6 +47,20 @@ const (
 	MsgDatabaseReadFailed    = "Could not read from the database"
 )
 
+// Absence and holiday messages.
+const (
+	MsgAbsencesListed      = "Absences retrieved"
+	MsgAbsenceCreated      = "Absence created"
+	MsgAbsenceDeleted      = "Absence deleted"
+	MsgHolidaysListed      = "Holidays retrieved"
+	MsgHolidayCreated      = "Holiday created"
+	MsgAbsenceNotFound     = "Absence not found"
+	MsgAbsenceDatesInvalid = "to_date must not be before from_date"
+	MsgAbsenceListFailed   = "Could not list absences"
+	MsgAbsenceCreateFailed = "Could not create the absence"
+	MsgAbsenceDeleteFailed = "Could not delete the absence"
+)
+
 // Request limit messages.
 const (
 	MsgRateLimitExceeded       = "Rate limit exceeded"

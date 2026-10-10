@@ -103,7 +103,7 @@ func TestPersonHandler_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			people := &fakePeople{err: tt.serviceErr}
-			h := ProvidePersonHandler(people, services.ProvideAuthzService(), newTestValidator(t))
+			h := ProvidePersonHandler(people, services.ProvideAuthzService(nil), newTestValidator(t))
 			rec, envelope := serve(t, constants.PathPeople, http.MethodPost, constants.PathPeople, tt.body, h.Create)
 
 			require.Equal(t, tt.wantStatus, rec.Code, rec.Body.String())
@@ -129,7 +129,7 @@ func TestPersonHandler_Create(t *testing.T) {
 func TestPersonHandler_Update(t *testing.T) {
 	t.Run("clears end_date and keeps other fields", func(t *testing.T) {
 		people := &fakePeople{}
-		h := ProvidePersonHandler(people, services.ProvideAuthzService(), newTestValidator(t))
+		h := ProvidePersonHandler(people, services.ProvideAuthzService(nil), newTestValidator(t))
 		rec, _ := serve(t, constants.PathPerson, http.MethodPatch, "/people/"+testPersonID,
 			`{"weekly_hours":32,"end_date":null}`, h.Update)
 		require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
@@ -142,13 +142,13 @@ func TestPersonHandler_Update(t *testing.T) {
 	})
 
 	t.Run("bad id", func(t *testing.T) {
-		h := ProvidePersonHandler(&fakePeople{}, services.ProvideAuthzService(), newTestValidator(t))
+		h := ProvidePersonHandler(&fakePeople{}, services.ProvideAuthzService(nil), newTestValidator(t))
 		rec, _ := serve(t, constants.PathPerson, http.MethodPatch, "/people/not-a-uuid", `{}`, h.Update)
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 	})
 
 	t.Run("bad date", func(t *testing.T) {
-		h := ProvidePersonHandler(&fakePeople{}, services.ProvideAuthzService(), newTestValidator(t))
+		h := ProvidePersonHandler(&fakePeople{}, services.ProvideAuthzService(nil), newTestValidator(t))
 		rec, envelope := serve(t, constants.PathPerson, http.MethodPatch, "/people/"+testPersonID, `{"start_date":"tomorrow"}`, h.Update)
 		require.Equal(t, http.StatusBadRequest, rec.Code)
 		assert.Contains(t, string(envelope.Data), "start_date")
@@ -156,7 +156,7 @@ func TestPersonHandler_Update(t *testing.T) {
 }
 
 func TestPersonHandler_List(t *testing.T) {
-	h := ProvidePersonHandler(&fakePeople{}, services.ProvideAuthzService(), newTestValidator(t))
+	h := ProvidePersonHandler(&fakePeople{}, services.ProvideAuthzService(nil), newTestValidator(t))
 	rec, envelope := serve(t, constants.PathPeople, http.MethodGet, constants.PathPeople+"?page=2&page_size=5", "", h.List)
 	require.Equal(t, http.StatusOK, rec.Code)
 	assert.Equal(t, 2, envelope.Meta.Page)
