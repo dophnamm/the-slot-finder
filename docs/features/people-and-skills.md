@@ -3,7 +3,7 @@
 **Goal:** the system knows who can do what, at which level, and how many hours each person has free per week. This is the supply side for staffing (G1) and the heatmap (G2) in the [root README](../../README.md#1-problem-and-scope).
 
 **Roles:** planner (manages people), lead (reads), specialist (own absences).
-**Target:** 11 Oct · **Depends on:** [sign-in](sign-in.md) · **Branch:** `feat/people-and-skills` · **Status:** In review
+**Target:** 11 Oct · **Depends on:** [sign-in](sign-in.md) · **Branch:** `feat/people-and-skills` · **Status:** Done (PR #5)
 
 ## In scope
 
