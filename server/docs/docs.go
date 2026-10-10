@@ -312,7 +312,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "The signed-in user, read from the verified access token: id, username, name, email and role.",
+                "description": "The signed-in user, read from the verified access token: id, username, name, email and role, plus person_id. On the first sign-in the person record is matched by email and linked to the account.",
                 "produces": [
                     "application/json"
                 ],
@@ -942,6 +942,11 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Pat Planner"
+                },
+                "person_id": {
+                    "description": "PersonID is the user's person record, or null when the account has none.",
+                    "type": "string",
+                    "example": "0192f3a4-0000-7000-8000-0000000000aa"
                 },
                 "role": {
                     "type": "string",
