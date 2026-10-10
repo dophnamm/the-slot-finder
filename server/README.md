@@ -61,7 +61,7 @@ Files per module follow the pattern `handlers/<module>.go`, `services/<module>.g
 | **identity** | Keycloak token validation, roles, mapping the token to a PERSON (`keycloak_id`), permission checks (including assistant read access) | none (accounts live in Keycloak) | |
 | **people** | People, expertise, levels, contracted hours | PERSON, EXPERTISE, PERSON_SKILL | `PersonJoined`, `PersonLeft`, `SkillChanged` |
 | **availability** | Leave and public holidays; computes `capacity(person, week)` | ABSENCE | `AbsenceAdded`, `AbsenceRemoved` |
-| **programs** | Programs, projects, staffing demand (budget hours), forecast overrides, scope points, milestones, assistants, program and project lifecycles | PROGRAM, PROJECT, DEMAND, MILESTONE, PROGRAM_ASSISTANT | `ProgramSlipped`, `ProgramCancelled`, `ProjectCreated`, `ProjectSlipped`, `DemandChanged` |
+| **programs** | Programs, projects, phases (and their slip propagation), staffing demand (budget hours), forecast overrides, scope points, milestones, assistants, program and project lifecycles | PROGRAM, PROJECT, PROJECT_PHASE, DEMAND, MILESTONE, PROGRAM_ASSISTANT | `ProgramSlipped`, `ProgramCancelled`, `ProjectCreated`, `ProjectSlipped`, `PhaseSlipped`, `DemandChanged` |
 | **planning** | Baseline, staffing drafts, scenarios; calls the engine; accept and publish | PLAN, ALLOCATION | `PlanPublished` |
 | **insights** | Heatmap, utilization, program and project metrics, at-risk lists (read-only) | none (read-only) | |
 | **events** | Records ChangeEvents, assesses impact, creates re-plan jobs | CHANGE_EVENT | |
@@ -101,7 +101,9 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | GET | `/projects` | Projects across programs (filter by `status`) | planner, lead |
 | PATCH | `/projects/{id}` | Edit a project, including `scope_points` and `done_points`. Moving the deadline emits `ProjectSlipped` | planner, lead (own) |
 | POST | `/projects/{id}/actions/{hold\|resume\|complete\|cancel}` | Change project state through an action | planner, lead (own) |
-| PUT | `/projects/{id}/demands` | Staffing demand (budget hours per expertise) | planner, lead (own) |
+| GET, PUT | `/projects/{id}/phases` | Ordered phases of a project (PUT replaces the whole list) | planner, lead (own); GET also internal assistant |
+| PATCH | `/phases/{id}` | Edit a phase. Moving its end week later shifts every later phase by the same weeks and emits `PhaseSlipped` | planner, lead (own) |
+| PUT | `/projects/{id}/demands` | Staffing demand: budget hours per expertise and level, each with an optional `phase_id` | planner, lead (own) |
 
 **Planning and insights**
 
@@ -190,6 +192,8 @@ Error example (HTTP 409):
 3. Score candidates using `weights`: free capacity, already on the project (continuity), load kept near `targetUtilization`.
 4. Fill hours week by week from `fromWeek`, split across `headcount` people, until `hours` is covered.
 5. Record any shortfall in `unmet` with a reason code. Never throw.
+
+**Demand windows:** the engine never sees phases. When building the snapshot, the planning service sets each demand's `fromWeek`–`toWeek` to its phase's weeks, or to the project's start week through its deadline week when the demand has no phase.
 
 **Re-planning** uses the same function. The difference: `existing` holds the whole baseline, the `stability` weight is raised so that the result changes as little as possible, and `locked` allocations are kept as they are.
 

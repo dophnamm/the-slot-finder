@@ -25,7 +25,7 @@ npx shadcn@latest add <component>   # adds a component to src/shared/ui
 | `/programs` | **Programs**: list with status, timeline and the four progress bars | planner, lead, internal assistant | `/programs` |
 | `/programs/:id` | **Program detail** (see section 2) | planner, lead, internal assistant | `/programs/:id`, `/programs/:id/overview`, `/programs/:id/projects`, `/programs/:id/members`, `/programs/:id/assistants`, `/events?programId=` |
 | `/intake` | **Intake queue**: incoming projects across programs, "Propose squad" | planner, lead | `/projects?status=incoming`, `/staffing-drafts` |
-| `/projects/:id` | **Project detail**: demand, timeline, assigned people, risks, scope points | planner, lead | `/projects/:id`, `/plans/current` |
+| `/projects/:id` | **Project detail**: phase timeline, demand per phase, assigned people, risks, scope points | planner, lead | `/projects/:id`, `/projects/:id/phases`, `/plans/current` |
 | `/staffing-drafts/:id` | **Staffing draft review**: assignment grid, reasons, diff, manual edits, lock, accept | planner | `/staffing-drafts/:id` |
 | `/scenarios` | **What-if**: build scenarios (move a project, add leave), view the diff | planner | `/scenarios` |
 | `/people` | **People**: expertise and level matrix, leave calendar, capacity | planner | `/people`, `/people/:id/absences` |
@@ -74,7 +74,7 @@ Layout:
 │  table: Expertise | Budget | Planned | Forecast ✎ | Gap | Staffing % | Contr.% │
 ├───────────────────────────────────────────────────────────────────────────────┤
 │ [ PROJECTS ] [ MEMBERS ]                                                        │
-│  Projects: Squad | Project + status | Start–End + next milestone |             │
+│  Projects: Squad | Project + status | Start–End + next milestone | Phase |     │
 │            Time/Scope/Cost bars | Staffing % ⚠ unmet | [Propose squad]          │
 │  Members:  [ Member ] [ Assistant ]                                             │
 │            Member:    Person | Squad role | Expertise | Hours here (4 wks) |   │
@@ -135,7 +135,8 @@ flowchart TB
 | **Heatmap grid** | Rows are people (grouped by expertise), columns are weeks. Colour shows utilization: under 50% / 50–85% / 85–100% / over 100%. Click a cell to see that week's projects |
 | **Progress bars** | Time, Scope, Cost and Staffing with a percentage and a ⚠ flag from the Server |
 | **Staffing by expertise** | Chart and table of budget, planned, forecast and gap hours per expertise, with an inline forecast editor |
-| **Demand form** | One row per need: expertise, minimum level, headcount, budget hours, week range |
+| **Phase timeline** | Ordered phases as bars on ISO weeks. Moving a phase end later previews which later phases will shift, before saving |
+| **Demand form** | One row per need: expertise, minimum level, headcount, budget hours, phase (or "whole project") |
 | **Allocation editor** | Person × week grid for one staffing draft. Edit hours, lock or unlock, see why the engine chose each person |
 | **Diff viewer** | Baseline versus a draft or scenario: who was added or removed, how hours changed, which projects changed risk status |
 | **Assistant manager** | Internal assistant picker (people search) and external assistant form (name, email, description) |

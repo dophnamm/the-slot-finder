@@ -37,7 +37,8 @@ Details per part:
 |---|---|
 | **Program** | A customer engagement that groups several projects, with one timeline, a brief (goal, objectives) and a charter |
 | **Project** | A unit of delivery inside a program, with its own deadline and staffing demand |
-| **Demand** | Hours a project needs from one expertise, at a minimum level, within a week range. Its hours are the **budget hours** |
+| **Phase** | An ordered stage of a project (e.g. Discovery → Build → Test) with its own week range. When a phase ends later, every later phase of the project moves by the same number of weeks |
+| **Demand** | Hours a project needs from one expertise, at a minimum level, inside one phase (or across the whole project). Its hours are the **budget hours** |
 | **Staffing draft** | A plan the engine proposes (for new demand or after a change). The Planner reviews and accepts it |
 | **Baseline** | The plan currently in force |
 | **Scenario** | A what-if plan built from hypothetical changes |
@@ -146,7 +147,7 @@ flowchart TB
   iam["<b>Identity & Access</b><br/>login, roles · used by every API route"]
 
   integ -->|"import"| data
-  data -.->|"domain events: PersonLeft, SkillChanged, AbsenceAdded,<br/>ProgramSlipped, ProjectSlipped, DemandChanged"| events
+  data -.->|"domain events: PersonLeft, SkillChanged, AbsenceAdded,<br/>ProgramSlipped, ProjectSlipped, PhaseSlipped, DemandChanged"| events
   events -->|"triggers re-plan"| planning
   planning -->|"reads snapshot"| data
   insights -->|"reads plan + capacity + programs"| planning
@@ -165,11 +166,11 @@ See [`server/README.md`](server/README.md) for details.
 
 ## 5. Planning engine (the core)
 
-**Contract:** `propose(snapshot, policy) → { allocations, unmet, conflicts, score }`. The engine is a pure function: the same input always gives the same output. It knows nothing about programs, assistants or scope points. It only sees people, capacity and demand.
+**Contract:** `propose(snapshot, policy) → { allocations, unmet, conflicts, score }`. The engine is a pure function: the same input always gives the same output. It knows nothing about programs, phases, assistants or scope points. It only sees people, capacity and demand. Before calling it, the server turns each demand's phase into the demand's week window.
 
 | Kind | Rules |
 |---|---|
-| **Hard constraints** (never violated) | Matching expertise · level ≥ `min_level` · weekly hours ≤ capacity × `max_utilization` · only inside [earliest start, deadline] · never changes a **locked** allocation · only **members** get hours (assistants are never in the snapshot) |
+| **Hard constraints** (never violated) | Matching expertise · level ≥ `min_level` · weekly hours ≤ capacity × `max_utilization` · only inside the demand's week window (its phase, or the whole project) · never changes a **locked** allocation · only **members** get hours (assistants are never in the snapshot) |
 | **Soft objectives** (weighted) | Meet deadlines by priority · balance load near `target_utilization` · **change as little as possible** versus the baseline · keep people on their projects · limit how many projects one person holds per week |
 | **Required output** | Every allocation carries a **reason**. Demand that cannot be placed goes to `unmet` with a reason code. The engine never throws on an infeasible problem |
 
@@ -194,6 +195,8 @@ erDiagram
   PROGRAM ||--o{ PROGRAM_ASSISTANT : has
   PERSON |o--o{ PROGRAM_ASSISTANT : "acts as"
   PROJECT ||--|{ DEMAND : requires
+  PROJECT ||--o{ PROJECT_PHASE : "split into"
+  PROJECT_PHASE |o--o{ DEMAND : "scheduled in"
   EXPERTISE ||--o{ DEMAND : "needed in"
   PLAN ||--o{ ALLOCATION : contains
   PERSON ||--o{ ALLOCATION : "assigned in"
@@ -261,8 +264,15 @@ erDiagram
     int headcount
     decimal total_hours "budget hours for this expertise"
     decimal forecast_override_hours "null = use planned hours"
-    string from_week "ISO week"
-    string to_week "ISO week, defaults to the deadline week"
+    uuid phase_id FK "null = whole project (start to deadline)"
+  }
+  PROJECT_PHASE {
+    uuid id PK
+    uuid project_id FK
+    string name "e.g. Discovery / Build / Test"
+    int sequence "order inside the project, 1 = first"
+    string start_week "ISO week"
+    string end_week "ISO week"
   }
   MILESTONE {
     uuid id PK
@@ -304,7 +314,7 @@ erDiagram
   }
   CHANGE_EVENT {
     uuid id PK
-    string type "ProgramSlipped / ProjectSlipped / AbsenceAdded / DemandChanged / PersonLeft"
+    string type "ProgramSlipped / ProjectSlipped / PhaseSlipped / AbsenceAdded / DemandChanged / PersonLeft"
     json payload
     datetime occurred_at
     string status "pending / no_impact / draft_created"
@@ -320,6 +330,17 @@ erDiagram
 **Derived values for programs and projects** are defined in [section 7](#7-program-view).
 
 **Every plan is a versioned `PLAN`:** `baseline` is the plan in force, `draft` is a staffing draft from the engine, `scenario` is a what-if. Diff, rollback and what-if all use this one mechanism.
+
+**Phases carry the dependencies between expertises:**
+- A project is split into ordered phases, each with a week range set by the lead. A phase may overlap the previous one, e.g. testing starts in the last build week.
+- Each demand belongs to one phase and is staffed only inside that phase's weeks. A demand without a phase (typically PM) spans the project, from its start to its deadline week.
+- **Slip propagation:** when a phase's end week moves later by N weeks, the server moves every later phase of that project by N weeks in the same transaction. It then records one `PhaseSlipped` change event, which triggers a re-plan. Moving a phase earlier does not pull the later ones; the lead moves them on purpose.
+- If the last phase ends after the deadline, the project is flagged **at risk**. The deadline itself is never moved automatically.
+
+```text
+Build   W42 ──────── W47        Build ends 2 weeks later (W49)
+Test         W46 ──── W51   →   Test moves +2 weeks: W48 ──── W53 → past the deadline → at risk
+```
 
 ---
 
@@ -365,6 +386,7 @@ flowchart LR
 - Squad avatars
 - Name and status
 - Start, end and next milestone
+- Current phase (name and week range)
 - Time / Scope / Cost bars
 - **Staffing %**, with ⚠ and unmet hours when understaffed
 - A **Propose squad** button when the gap is above 0. It opens a new staffing draft.
@@ -421,8 +443,8 @@ sequenceDiagram
   participant ENG as Planning Engine
   actor P as Planner
 
-  S->>API: Report leave / move a project or program deadline
-  API->>API: Save change + record ChangeEvent
+  S->>API: Report leave / move a phase end / move a project or program deadline
+  API->>API: Save change (later phases shift by the same weeks) + record ChangeEvent
   API-)W: enqueue replan(event)
   W->>W: Assess impact (overloaded weeks, understaffed or at-risk projects)
   alt No conflict
@@ -504,8 +526,8 @@ stateDiagram-v2
 
 | Layer | Approach |
 |---|---|
-| **Engine** | Golden tests on fixed snapshots. Property tests that check it never exceeds capacity, always respects expertise and level, never schedules outside a project's window, never changes a locked allocation and never allocates to an assistant |
-| **Server** | API + DB integration tests, contract tests against OpenAPI, permission tests for each role (including internal assistants), metric tests for every formula in section 7 |
+| **Engine** | Golden tests on fixed snapshots. Property tests that check it never exceeds capacity, always respects expertise and level, never schedules outside a demand's week window, never changes a locked allocation and never allocates to an assistant |
+| **Server** | API + DB integration tests, contract tests against OpenAPI, permission tests for each role (including internal assistants), metric tests for every formula in section 7, phase slip propagation (later phases move, last phase past the deadline flags at risk) |
 | **Client** | Component tests (heatmap, program header, staffing table, demand form, diff). One end-to-end test: add project to program → propose squad → accept → program staffing and heatmap update |
 | **Sample data** | One shared seed for demos and tests: 2 programs, 6 projects, 12 people, 4 expertise areas, 3 leave periods, 2 assistants |
 
@@ -574,3 +596,4 @@ the-slot-finder/
 | ADR-12 | Engine plans are called **staffing drafts** | Avoids confusion with business proposals | |
 | ADR-13 | Server built on a **production-ready Go template** (Echo, FX, GORM, Keycloak, OTel) | Auth, errors, logging, tracing and migrations come ready-made | Layer-based layout (`handlers/services/repositories`) instead of per-module folders; Swagger is generated from code |
 | ADR-14 | Client uses **React + TanStack Query + Zustand + Axios + shadcn/ui** | Clear split between server state and UI state; accessible components out of the box | Typed API hooks are written by hand until a generator is added |
+| ADR-15 | **Phases** carry the dependencies between expertises: ordered, each with a week range; a later end shifts the later phases | Covers "QA waits for Engineering" and slip propagation while the engine stays greedy and phase-agnostic | Only whole-phase finish-to-start; no dependency graph between individual demands |
