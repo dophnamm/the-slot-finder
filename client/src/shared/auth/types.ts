@@ -8,6 +8,8 @@ export interface CurrentUser {
   email: string
   /** Empty when the account holds no application role. */
   role: Role | ''
+  /** The user's person record; null when the account has none. */
+  person_id: string | null
 }
 
 /** Router state given to the sign-in page: the page the user asked for. */

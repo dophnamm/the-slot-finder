@@ -1,3 +1,4 @@
 export { HEALTH_ENDPOINTS } from './health'
 export { IDENTITY_ENDPOINTS } from './identity'
+export { EXPERTISE_ENDPOINTS, PEOPLE_ENDPOINTS } from './people'
 export { PROGRAM_ENDPOINTS } from './programs'

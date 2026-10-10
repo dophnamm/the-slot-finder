@@ -1,11 +1,11 @@
 import { LogOut } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router'
+import { ROLE_LABELS } from '@/resources/rbac'
 import { ROUTES } from '@/resources/routes'
 import { signOut, useCurrentUser } from '@/shared/auth'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
-import { ROLE_LABELS } from './constants'
 import { navLinkClassName, visibleNavItems } from './utils'
 
 export function AppLayout() {

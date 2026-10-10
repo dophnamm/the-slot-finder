@@ -29,3 +29,13 @@ export function formatIsoWeekRange(week: string, format: string = DATE_FORMAT.sh
   const { start, end } = isoWeekRange(week)
   return `${start.format(format)} – ${end.format(format)}`
 }
+
+/** A server date (`2026-10-19`) for display: `'Oct 19, 2026'`. */
+export function formatDate(date: string, format: string = DATE_FORMAT.longDay): string {
+  return dayjs(date, DATE_FORMAT.isoDate).format(format)
+}
+
+/** An inclusive date range for display; a single day shows once. */
+export function formatDateRange(from: string, to: string): string {
+  return from === to ? formatDate(from) : `${formatDate(from)} – ${formatDate(to)}`
+}

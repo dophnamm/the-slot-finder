@@ -4,6 +4,8 @@ export const DATE_FORMAT = {
   shortDay: 'MMM D',
   /** Calendar date as the server sends it, e.g. "2026-09-28". */
   isoDate: 'YYYY-MM-DD',
+  /** Day with the year, e.g. "Sep 28, 2026". */
+  longDay: 'MMM D, YYYY',
 } as const
 
 /** ISO week label, e.g. "2026-W42". */
