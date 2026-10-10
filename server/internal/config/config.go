@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -12,6 +13,12 @@ import (
 
 // Environment represents the application environment.
 type Environment string
+
+// Keycloak URL paths, below the base URL.
+const (
+	keycloakRealmsPath = "/realms/"
+	keycloakCertsPath  = "/protocol/openid-connect/certs"
+)
 
 const (
 	EnvironmentDevelopment Environment = "development"
@@ -94,8 +101,17 @@ type Config struct {
 	KeycloakRealm       string
 	KeycloakClientID    string
 	KeycloakSecret      string
-	KeycloakKeyClaim    string
 	KeycloakRedirectURI string
+	// Keycloak base URL as the browser sees it; tokens carry it in their issuer.
+	KeycloakPublicURL string
+	// Public client of the web app; tokens it obtains carry it in azp.
+	KeycloakSPAClientID string
+
+	// Local JWT verification against the realm's JWKS.
+	AuthJWKSRefreshInterval    time.Duration
+	AuthJWKSUnknownKIDInterval time.Duration
+	AuthJWKSRefreshWaitMax     time.Duration
+	AuthClockSkew              time.Duration
 
 	// Email configuration
 	EmailProvider   string
@@ -183,8 +199,13 @@ func Load() (*Config, error) {
 		KeycloakRealm:                getEnv("KEYCLOAK_REALM", ""),
 		KeycloakClientID:             getEnv("KEYCLOAK_CLIENT_ID", ""),
 		KeycloakSecret:               getEnv("KEYCLOAK_CLIENT_SECRET", ""),
-		KeycloakKeyClaim:             getEnv("KEY_CLAIMS", ""),
 		KeycloakRedirectURI:          getEnv("KEYCLOAK_REDIRECT_URI", ""),
+		KeycloakPublicURL:            getEnv("KEYCLOAK_PUBLIC_URL", getEnv("KEYCLOAK_URL", "")),
+		KeycloakSPAClientID:          getEnv("KEYCLOAK_SPA_CLIENT_ID", ""),
+		AuthJWKSRefreshInterval:      getEnvAsDuration("AUTH_JWKS_REFRESH_INTERVAL", time.Hour),
+		AuthJWKSUnknownKIDInterval:   getEnvAsDuration("AUTH_JWKS_UNKNOWN_KID_INTERVAL", time.Minute),
+		AuthJWKSRefreshWaitMax:       getEnvAsDuration("AUTH_JWKS_REFRESH_WAIT_MAX", time.Second),
+		AuthClockSkew:                getEnvAsDuration("AUTH_CLOCK_SKEW", 30*time.Second),
 		EmailProvider:                getEnv("EMAIL_PROVIDER", "ses"),
 		AWSSESRegion:                 getEnv("AWS_SES_REGION", ""),
 		AWSSESAccessKey:              getEnv("AWS_SES_ACCESS_KEY", ""),
@@ -262,6 +283,16 @@ func (c *Config) ConnectionString() string {
 		c.DatabaseTimezone,
 		int(c.DatabaseConnectTimeout.Seconds()),
 	)
+}
+
+// KeycloakIssuer is the issuer that access tokens of the realm carry.
+func (c *Config) KeycloakIssuer() string {
+	return strings.TrimRight(c.KeycloakPublicURL, "/") + keycloakRealmsPath + c.KeycloakRealm
+}
+
+// KeycloakJWKSURL is where the server fetches the realm's signing keys.
+func (c *Config) KeycloakJWKSURL() string {
+	return strings.TrimRight(c.KeycloakURL, "/") + keycloakRealmsPath + c.KeycloakRealm + keycloakCertsPath
 }
 
 func (c *Config) IsDebugMode() bool {

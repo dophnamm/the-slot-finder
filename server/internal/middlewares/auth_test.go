@@ -8,8 +8,10 @@ import (
 	"testing"
 
 	"the-slot-finder/server/internal/config"
+	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/dtos"
 	"the-slot-finder/server/internal/integration/auth"
+	"the-slot-finder/server/internal/request"
 
 	"github.com/Nerzal/gocloak/v13"
 	"github.com/labstack/echo/v5"
@@ -56,10 +58,6 @@ func (m *mockAuthService) GetUserInfo(token string) (*auth.User, error) {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*auth.User), args.Error(1)
-}
-
-func (m *mockAuthService) GetClaimsKey() string {
-	return m.Called().String(0)
 }
 
 func (m *mockAuthService) GetRequestingPartyToken(ctx context.Context, accessToken string, opts auth.RequestingPartyTokenOptions) (*auth.JWT, error) {
@@ -126,188 +124,120 @@ func newEchoContext(method, path string, headers map[string]string) (*echo.Conte
 	return e.NewContext(req, rec), rec
 }
 
-func TestAuthMiddleware(t *testing.T) {
-	cfg := &config.Config{AppEnv: config.EnvironmentTest, KeycloakKeyClaim: "claims"}
-	nextCalled := false
-	next := func(c *echo.Context) error {
-		nextCalled = true
-		return c.JSON(http.StatusOK, map[string]string{"ok": "true"})
+// fakeVerifier accepts the tokens it knows and rejects everything else.
+type fakeVerifier struct {
+	tokens map[string]*auth.TokenClaims
+}
+
+func (f fakeVerifier) Verify(_ context.Context, rawToken string) (*auth.TokenClaims, error) {
+	if claims, ok := f.tokens[rawToken]; ok {
+		return claims, nil
 	}
+	return nil, auth.ErrTokenInvalid
+}
+
+func claimsWithRealmRoles(subject string, roles ...string) *auth.TokenClaims {
+	claims := &auth.TokenClaims{RealmAccess: auth.RoleClaim{Roles: roles}, PreferredUsername: subject}
+	claims.Subject = subject
+	return claims
+}
+
+func TestAuthMiddleware(t *testing.T) {
+	cfg := &config.Config{AppEnv: config.EnvironmentTest, KeycloakClientID: "app-client"}
+	verifier := fakeVerifier{tokens: map[string]*auth.TokenClaims{
+		"good": claimsWithRealmRoles("user-1", constants.RoleLead, "offline_access"),
+	}}
 
 	tests := []struct {
-		name       string
-		headers    map[string]string
-		setup      func(*mockAuthService)
-		wantStatus int
-		wantNext   bool
-		wantBody   string
+		name          string
+		headers       map[string]string
+		wantStatus    int
+		wantBody      string
+		wantPrincipal *request.Principal
 	}{
+		{name: "missing authorization header", wantStatus: http.StatusUnauthorized, wantBody: constants.MsgAuthHeaderRequired},
+		{name: "invalid authorization format", headers: map[string]string{"Authorization": "Basic abc"},
+			wantStatus: http.StatusUnauthorized, wantBody: constants.MsgAuthHeaderInvalid},
+		{name: "empty bearer token", headers: map[string]string{"Authorization": "Bearer "},
+			wantStatus: http.StatusUnauthorized, wantBody: constants.MsgTokenRequired},
+		{name: "rejected token", headers: map[string]string{"Authorization": "Bearer bad"},
+			wantStatus: http.StatusUnauthorized, wantBody: constants.MsgTokenInvalid},
 		{
-			name:       "missing authorization header",
-			wantStatus: http.StatusUnauthorized,
-			wantBody:   "Authorization header required",
-		},
-		{
-			name:       "invalid authorization format",
-			headers:    map[string]string{"Authorization": "Basic abc"},
-			wantStatus: http.StatusUnauthorized,
-			wantBody:   "Invalid authorization header format",
-		},
-		{
-			name:       "empty bearer token",
-			headers:    map[string]string{"Authorization": "Bearer "},
-			wantStatus: http.StatusUnauthorized,
-			wantBody:   "Token required",
-		},
-		{
-			name:    "invalid token",
-			headers: map[string]string{"Authorization": "Bearer bad"},
-			setup: func(m *mockAuthService) {
-				m.On("ValidateToken", "bad").Return(nil, errors.New("invalid"))
-			},
-			wantStatus: http.StatusUnauthorized,
-			wantBody:   "Invalid token",
-		},
-		{
-			name:    "inactive token",
-			headers: map[string]string{"Authorization": "Bearer inactive"},
-			setup: func(m *mockAuthService) {
-				m.On("ValidateToken", "inactive").Return(&gocloak.IntroSpectTokenResult{Active: boolPtr(false)}, nil)
-			},
-			wantStatus: http.StatusUnauthorized,
-			wantBody:   "Token is not active",
-		},
-		{
-			name:    "invalid claims",
-			headers: map[string]string{"Authorization": "Bearer claims-bad"},
-			setup: func(m *mockAuthService) {
-				m.On("ValidateToken", "claims-bad").Return(&gocloak.IntroSpectTokenResult{Active: boolPtr(true)}, nil)
-				m.On("GetRealm").Return("realm")
-				m.On("DecodeAccessToken", mock.Anything, "claims-bad", "realm", mock.Anything).
-					Return(nil, errors.New("decode failed"))
-			},
-			wantStatus: http.StatusUnauthorized,
-			wantBody:   "Invalid token claims",
-		},
-		{
-			name:    "success",
-			headers: map[string]string{"Authorization": "Bearer good"},
-			setup: func(m *mockAuthService) {
-				m.On("ValidateToken", "good").Return(&gocloak.IntroSpectTokenResult{Active: boolPtr(true)}, nil)
-				m.On("GetRealm").Return("realm")
-				m.On("DecodeAccessToken", mock.Anything, "good", "realm", mock.Anything).
-					Run(func(args mock.Arguments) {
-						claims := args.Get(3).(*auth.TokenClaims)
-						claims.Sub = "user-1"
-					}).
-					Return(&auth.TokenClaims{Sub: "user-1"}, nil)
-				m.On("GetClaimsKey").Return("claims")
-			},
+			name:       "verified token",
+			headers:    map[string]string{"Authorization": "Bearer good"},
 			wantStatus: http.StatusOK,
-			wantNext:   true,
+			wantPrincipal: &request.Principal{
+				Subject: "user-1", Username: "user-1", Role: constants.RoleLead,
+				Roles: []string{constants.RoleLead, "offline_access"},
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			nextCalled = false
-			authSvc := new(mockAuthService)
-			if tt.setup != nil {
-				tt.setup(authSvc)
+			var got *request.Principal
+			next := func(c *echo.Context) error {
+				principal, ok := request.PrincipalFromContext(c.Request().Context())
+				require.True(t, ok)
+				got = &principal
+				return c.NoContent(http.StatusOK)
 			}
 
 			c, rec := newEchoContext(http.MethodGet, "/secure", tt.headers)
-			err := AuthMiddleware(cfg, authSvc)(next)(c)
-			require.NoError(t, err)
+			require.NoError(t, AuthMiddleware(verifier, cfg)(next)(c))
 			assert.Equal(t, tt.wantStatus, rec.Code)
-			assert.Equal(t, tt.wantNext, nextCalled)
 			assert.Contains(t, rec.Body.String(), tt.wantBody)
-			authSvc.AssertExpectations(t)
+			assert.Equal(t, tt.wantPrincipal, got)
 		})
 	}
 }
 
 func TestRequireRole(t *testing.T) {
-	cfg := &config.Config{KeycloakKeyClaim: "claims", KeycloakClientID: "app-client"}
 	next := func(c *echo.Context) error {
 		return c.NoContent(http.StatusNoContent)
 	}
 
 	tests := []struct {
 		name       string
-		claims     any
+		principal  *request.Principal
 		roles      []string
 		wantStatus int
 	}{
-		{
-			name:       "missing claims",
-			wantStatus: http.StatusUnauthorized,
-		},
-		{
-			name: "insufficient permissions",
-			claims: &auth.TokenClaims{
-				RealmAccess: struct {
-					Roles []string `json:"roles"`
-				}{Roles: []string{"viewer"}},
-			},
-			roles:      []string{"admin"},
-			wantStatus: http.StatusForbidden,
-		},
-		{
-			name: "realm role match",
-			claims: &auth.TokenClaims{
-				RealmAccess: struct {
-					Roles []string `json:"roles"`
-				}{Roles: []string{"admin"}},
-			},
-			roles:      []string{"admin"},
-			wantStatus: http.StatusNoContent,
-		},
-		{
-			name: "client role match",
-			claims: &auth.TokenClaims{
-				ResourceAccess: map[string]struct {
-					Roles []string `json:"roles"`
-				}{
-					"app-client": {Roles: []string{"editor"}},
-				},
-			},
-			roles:      []string{"editor"},
-			wantStatus: http.StatusNoContent,
-		},
+		{name: "not signed in", roles: []string{constants.RolePlanner}, wantStatus: http.StatusUnauthorized},
+		{name: "insufficient permissions", principal: &request.Principal{Roles: []string{constants.RoleSpecialist}},
+			roles: []string{constants.RolePlanner}, wantStatus: http.StatusForbidden},
+		{name: "role match", principal: &request.Principal{Roles: []string{constants.RoleLead}},
+			roles: []string{constants.RolePlanner, constants.RoleLead}, wantStatus: http.StatusNoContent},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c, rec := newEchoContext(http.MethodGet, "/role", nil)
-			if tt.claims != nil {
-				c.Set(cfg.KeycloakKeyClaim, tt.claims)
+			if tt.principal != nil {
+				c.SetRequest(c.Request().WithContext(request.NewPrincipalContext(c.Request().Context(), *tt.principal)))
 			}
-			err := RequireRole(cfg, tt.roles...)(next)(c)
-			require.NoError(t, err)
+			require.NoError(t, RequireRole(tt.roles...)(next)(c))
 			assert.Equal(t, tt.wantStatus, rec.Code)
 		})
 	}
 }
 
-func TestExtractRolesFromClaims(t *testing.T) {
+func TestPrincipalFromClaims(t *testing.T) {
 	t.Parallel()
-	claims := &auth.TokenClaims{
-		RealmAccess: struct {
-			Roles []string `json:"roles"`
-		}{Roles: []string{"realm-admin"}},
-		ResourceAccess: map[string]struct {
-			Roles []string `json:"roles"`
-		}{
-			"client-a": {Roles: []string{"client-role"}},
-			"other":    {Roles: []string{"ignored"}},
-		},
-	}
-	roles := extractRolesFromClaims(claims, "client-a")
-	assert.Equal(t, []string{"realm-admin", "client-role"}, roles)
+	claims := claimsWithRealmRoles("user-1", constants.RoleSpecialist, constants.RolePlanner)
+	claims.ResourceAccess = map[string]auth.RoleClaim{"client-a": {Roles: []string{"client-role"}}}
+	claims.Name = "Pat"
+	claims.Email = "pat@example.test"
 
-	rolesMissingClient := extractRolesFromClaims(claims, "missing")
-	assert.Equal(t, []string{"realm-admin"}, rolesMissingClient)
+	got := principalFromClaims(claims, "client-a")
+	assert.Equal(t, request.Principal{
+		Subject: "user-1", Username: "user-1", Name: "Pat", Email: "pat@example.test",
+		Role:  constants.RolePlanner,
+		Roles: []string{constants.RoleSpecialist, constants.RolePlanner, "client-role"},
+	}, got)
+
+	assert.Equal(t, request.Principal{}, principalFromClaims(nil, "client-a"))
+	assert.Empty(t, principalFromClaims(claimsWithRealmRoles("u2", "offline_access"), "client-a").Role)
 }
 
 func TestRequirePermission(t *testing.T) {

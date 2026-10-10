@@ -2,6 +2,7 @@ package request
 
 import (
 	"context"
+	"slices"
 
 	"the-slot-finder/server/pkg/correlationid"
 )
@@ -62,4 +63,42 @@ func RequestURLFromContext(ctx context.Context) (string, bool) {
 // NewRequestURLContext creates a new context with the given request URL.
 func NewRequestURLContext(ctx context.Context, requestURL string) context.Context {
 	return context.WithValue(ctx, ctxKeyRequestURL, requestURL)
+}
+
+// Principal is the signed-in user, taken from a verified access token.
+// The zero value means "nobody", so code that reads it never needs a nil check.
+type Principal struct {
+	Subject  string
+	Username string
+	Name     string
+	Email    string
+	// Role is the most privileged of Roles that the application knows.
+	Role  string
+	Roles []string
+}
+
+// HasAnyRole reports whether the principal holds at least one of roles.
+func (p Principal) HasAnyRole(roles ...string) bool {
+	for _, role := range roles {
+		if slices.Contains(p.Roles, role) {
+			return true
+		}
+	}
+	return false
+}
+
+var ctxKeyPrincipal = ctxKey{"principal"}
+
+// PrincipalFromContext retrieves the signed-in user. ok is false when there is none.
+func PrincipalFromContext(ctx context.Context) (Principal, bool) {
+	if ctx == nil {
+		return Principal{}, false
+	}
+	val, ok := ctx.Value(ctxKeyPrincipal).(Principal)
+	return val, ok
+}
+
+// NewPrincipalContext creates a new context carrying the signed-in user.
+func NewPrincipalContext(ctx context.Context, principal Principal) context.Context {
+	return context.WithValue(ctx, ctxKeyPrincipal, principal)
 }

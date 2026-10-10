@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"the-slot-finder/server/internal/config"
-	"the-slot-finder/server/internal/integration/auth"
 	"the-slot-finder/server/internal/request"
 
 	"the-slot-finder/server/internal/logger"
@@ -40,10 +39,8 @@ func RequestLogging(cfg *config.Config) echo.MiddlewareFunc {
 			stdLogger := log.New(sentryLogger, "", log.LstdFlags)
 
 			// The signed-in user, if any. The token itself is never logged.
-			userID := ""
-			if claims, ok := c.Get(cfg.KeycloakKeyClaim).(*auth.TokenClaims); ok {
-				userID = claims.Sub
-			}
+			principal, _ := request.PrincipalFromContext(c.Request().Context())
+			userID := principal.Subject
 			organizationID := ""
 			if org, ok := c.Get("organization_id").(string); ok {
 				organizationID = org

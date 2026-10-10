@@ -139,10 +139,6 @@ func (a *KeycloakAuth) GetRealm() string {
 	return a.config.KeycloakRealm
 }
 
-func (a *KeycloakAuth) GetClaimsKey() string {
-	return a.config.KeycloakKeyClaim
-}
-
 // GetRequestingPartyToken exchanges an access token for an RPT with evaluated permissions
 func (a *KeycloakAuth) GetRequestingPartyToken(ctx context.Context, accessToken string, opts RequestingPartyTokenOptions) (*JWT, error) {
 	rpt, err := a.client.GetRequestingPartyToken(ctx, accessToken, a.config.KeycloakRealm, gocloak.RequestingPartyTokenOptions(opts))

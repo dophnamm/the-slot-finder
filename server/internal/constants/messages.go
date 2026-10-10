@@ -21,6 +21,7 @@ const (
 	MsgInsufficientPermissions    = "Insufficient permissions"
 	MsgPermissionEvaluationFailed = "Permission evaluation failed"
 	MsgRPTClaimsInvalid           = "Invalid RPT claims"
+	MsgCurrentUserRetrieved       = "Current user retrieved"
 )
 
 // Request limit messages.
