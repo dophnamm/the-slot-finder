@@ -52,13 +52,20 @@ flowchart LR
 4. `internal/engine` **imports only the standard library**. The planning service builds a snapshot and passes it in.
 5. Changes are announced as **domain events** on an in-process bus in the MVP.
 
+**Shared building blocks** (each arrives with the feature that first needs it, see [`docs/features/`](../docs/features/README.md)):
+- **`authz` service** (sign-in): named permission checks such as `CanViewPeople` or `CanEditProgram(programID)`. Handlers and services call the checks, never raw role lists. Role checks come first; per-program rules are added by later features.
+- **Request claims** (sign-in): `AuthMiddleware` verifies the JWT locally against cached JWKS and puts the claims in the request `context.Context`. Code reads them through nil-safe accessors.
+- **Clock** (sign-in): provided through FX and aware of the organization time zone (`TIMEZONE`). Code asks the Clock for "now" and the current ISO week; nothing sets `time.Local`.
+- **`TxManager`** (programs-and-demand): `TxManager.Do(ctx, fn)` runs `fn` in one transaction stored in `ctx` and commits or rolls back. Repositories get their handle with `dbFrom(ctx)`, which returns that transaction or the plain DB. Services own the boundary.
+- **`isoweek.Week`** (people-and-skills, stored from programs-and-demand): ISO weeks in Go. The API speaks `2026-W42`; the database stores the week's Monday in a `date` column named `*_week_start`.
+
 ## 2. Modules
 
 Files per module follow the pattern `handlers/<module>.go`, `services/<module>.go`, `repositories/<module>.go`, `models/<module>.go`, `dtos/<module>.go`.
 
 | Module | Responsibility | Owns data | Publishes events |
 |---|---|---|---|
-| **identity** | Keycloak token validation, roles, mapping the token to a PERSON (`keycloak_id`), permission checks (including assistant read access) | none (accounts live in Keycloak) | |
+| **identity** | Local Keycloak token verification (cached JWKS), roles, mapping the token to a PERSON (`keycloak_id`), the `authz` service with named permission checks (including assistant read access) | none (accounts live in Keycloak) | |
 | **people** | People, expertise, levels, skill tags, contracted and non-project hours, start and end dates, location | PERSON, EXPERTISE, PERSON_SKILL, TAG, PERSON_TAG | `PersonJoined`, `PersonLeft`, `SkillChanged` (also for tags) |
 | **availability** | Leave, holidays per location, effective-dated weekly hours; computes `capacity(person, week)` | ABSENCE, CAPACITY_CHANGE | `AbsenceAdded`, `AbsenceRemoved`, `CapacityChanged` |
 | **programs** | Programs, projects, phases (and their slip propagation), staffing demand (budget hours, profile, tags, preferred person), forecast overrides, scope points, confidence, milestones, assistants, program and project lifecycles (including `staffed_at`) | PROGRAM, PROJECT, PROJECT_PHASE, DEMAND, DEMAND_TAG, MILESTONE, PROGRAM_ASSISTANT | `ProgramSlipped`, `ProgramCancelled`, `ProjectCreated`, `ProjectSlipped`, `PhaseSlipped`, `DemandChanged` |
@@ -156,6 +163,7 @@ Error example (HTTP 409):
 - Write payloads contain only fields the user may edit. The Server ignores or rejects computed fields such as `status`, `utilization`, `gap_hours` and `total_*`.
 - The Server computes and returns all metrics and aggregated numbers. The Client never accumulates them itself.
 - `PATCH /staffing-drafts/{id}/assignments`, accept and reject on a **superseded** draft version return `409` with `DRAFT_SUPERSEDED`. The Client reloads the latest version.
+- **Accept is atomic** (staffing-draft): in one `TxManager.Do`, `UPDATE plan SET status = 'superseded' WHERE kind = 'baseline' AND status = 'published' AND version = :baseVersion`. 0 rows updated → `409 PLAN_VERSION_CONFLICT` and nothing is written. The draft is then published as version `baseVersion + 1`. A partial unique index (`kind = 'baseline' AND status = 'published'`) allows one published baseline, so a racing second accept also gets `409`.
 
 ## 4. Planning engine
 
@@ -264,7 +272,11 @@ The **insights** module computes these for `/programs/{id}/overview`, `/programs
 
 ## 6. Background jobs
 
-In the MVP, jobs run inside the server process: a small runner started from an FX lifecycle hook, with a goroutine pool. When load grows, they move to a separate `cmd/worker` process with a Redis-backed queue. Job code does not change, only the runner.
+Jobs are rows in Postgres, run by a runner inside the server process, started and stopped by an FX lifecycle hook (replan-on-change):
+- **`CHANGE_EVENT` is a transactional outbox.** The service that saves a change inserts its event in the same `TxManager.Do`, so there is never a change without its event, or an event without its change.
+- **The runner claims rows with `FOR UPDATE SKIP LOCKED`**, every `REPLAN_POLL_INTERVAL`, up to `REPLAN_BATCH_SIZE` at a time. Two server instances never claim the same row.
+- **Retries:** runner columns `attempts`, `available_at` and `last_error`. A failure moves `available_at` by `REPLAN_RETRY_BACKOFF × attempts`. After `REPLAN_MAX_ATTEMPTS` the status becomes `failed`.
+- **Scaling out:** when load grows, the same runner moves to a separate `cmd/worker` process on the same table. No queue service is needed, and job code does not change.
 
 | Job | Triggered by | Does |
 |---|---|---|
@@ -319,6 +331,10 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `DEFAULT_NON_PROJECT_HOURS` | `PERSON.non_project_hours` when a person is created without one | 4 |
 | `COUNT_PLANNED_ABSENCE` | Whether `planned` absence reduces capacity (`approved` always does) | true |
 | `REPLAN_DEBOUNCE` | Window in which change events are batched into one re-plan | 5m |
+| `REPLAN_POLL_INTERVAL` · `REPLAN_BATCH_SIZE` | How often the runner looks for pending events, and how many it claims at once | 10s · 50 |
+| `REPLAN_MAX_ATTEMPTS` · `REPLAN_RETRY_BACKOFF` | Retries before an event is `failed`, and the delay step between them | 5 · 30s |
+| `WORKING_WEEKDAYS` | Days that count when absence hours are computed | Mon–Fri |
+| `HEATMAP_DEFAULT_WEEKS` · `HEATMAP_MAX_WEEKS` | Weeks shown by default on the heatmap, and the largest range allowed | 12 · 52 |
 | `ALERT_HORIZON_WEEKS` | A deadline this close turns a gap into **at risk** | 4 |
 | `UTILIZATION_UNDERUSED_BELOW` · `UTILIZATION_NEAR_FULL_FROM` | Utilization band limits (overloaded is always over 100 %) | 0.5 · 0.85 |
 | `SCOPE_LAG_THRESHOLD` | Percentage points by which Scope % may trail Time % before **behind on delivery** (not scope points) | 20 |
