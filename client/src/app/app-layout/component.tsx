@@ -18,8 +18,8 @@ export function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-svh">
-      <aside className="flex w-56 shrink-0 flex-col gap-3 border-r bg-sidebar p-3 text-sidebar-foreground">
+    <div className="flex h-svh overflow-hidden">
+      <aside className="flex w-56 shrink-0 flex-col gap-3 overflow-y-auto border-r bg-sidebar p-3 text-sidebar-foreground">
         <div className="px-2 pt-1 font-heading text-base font-semibold">{t('The Slot Finder')}</div>
         <Separator />
         <nav className="flex flex-col gap-1">
@@ -44,7 +44,7 @@ export function AppLayout() {
           </Button>
         </div>
       </aside>
-      <main className="min-w-0 flex-1 p-6">
+      <main className="min-w-0 flex-1 overflow-y-auto p-6">
         <Outlet />
       </main>
     </div>
