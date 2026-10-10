@@ -23,6 +23,7 @@ func Router(
 	healthHandler *handlers.HealthHandler,
 	identityHandler *handlers.IdentityHandler,
 	personHandler *handlers.PersonHandler,
+	absenceHandler *handlers.AbsenceHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 ) *echo.Echo {
@@ -136,6 +137,13 @@ func Router(
 	v1.PATCH(constants.PathPerson, personHandler.Update, authenticated, middlewares.RequireRole(constants.PeopleManageRoles...))
 	v1.PUT(constants.PathPersonSkills, personHandler.ReplaceSkills, authenticated, middlewares.RequireRole(constants.PeopleManageRoles...))
 	v1.GET(constants.PathExpertises, personHandler.ListExpertises, authenticated, middlewares.RequireRole(constants.ExpertiseViewRoles...))
+
+	// Availability: absences (self or planner, checked in the service) and holidays
+	v1.GET(constants.PathPersonAbsences, absenceHandler.ListForPerson, authenticated, middlewares.RequireRole(constants.AbsenceRoles...))
+	v1.POST(constants.PathPersonAbsences, absenceHandler.Create, authenticated, middlewares.RequireRole(constants.AbsenceRoles...))
+	v1.DELETE(constants.PathAbsence, absenceHandler.Delete, authenticated, middlewares.RequireRole(constants.AbsenceRoles...))
+	v1.GET(constants.PathHolidays, absenceHandler.ListHolidays, authenticated, middlewares.RequireRole(constants.HolidayViewRoles...))
+	v1.POST(constants.PathHolidays, absenceHandler.CreateHoliday, authenticated, middlewares.RequireRole(constants.HolidayManageRoles...))
 
 	return r
 }

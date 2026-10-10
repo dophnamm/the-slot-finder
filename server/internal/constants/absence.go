@@ -1,0 +1,20 @@
+package constants
+
+// Absence types. Holidays are created through /holidays and have no person.
+const (
+	AbsenceTypeLeave    = "leave"
+	AbsenceTypeTraining = "training"
+	AbsenceTypeHoliday  = "holiday"
+)
+
+// Absence statuses: approved always lowers capacity, planned only with COUNT_PLANNED_ABSENCE.
+const (
+	AbsenceStatusPlanned  = "planned"
+	AbsenceStatusApproved = "approved"
+)
+
+// PersonalAbsenceTypes are the types a person's own absence may have.
+var PersonalAbsenceTypes = []string{AbsenceTypeLeave, AbsenceTypeTraining}
+
+// AbsenceStatuses lists every absence status.
+var AbsenceStatuses = []string{AbsenceStatusPlanned, AbsenceStatusApproved}
