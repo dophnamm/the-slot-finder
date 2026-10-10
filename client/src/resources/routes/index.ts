@@ -1,6 +1,7 @@
 /** Client routes. Build links to routes with params via generatePath(ROUTES.programDetail, { id }). */
 export const ROUTES = {
   login: '/login',
+  authCallback: '/auth/callback',
   dashboard: '/',
   programs: '/programs',
   programDetail: '/programs/:id',

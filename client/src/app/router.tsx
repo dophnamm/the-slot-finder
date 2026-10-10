@@ -1,6 +1,6 @@
 import { createBrowserRouter } from 'react-router'
 import { ROUTES } from '@/resources/routes'
-import { DashboardPage } from '@/pages/dashboard'
+import { AuthCallbackPage } from '@/pages/auth-callback'
 import { EventsPage } from '@/pages/events'
 import { IntakePage } from '@/pages/intake'
 import { LoginPage } from '@/pages/login'
@@ -13,24 +13,56 @@ import { ProjectDetailPage } from '@/pages/project-detail'
 import { ScenariosPage } from '@/pages/scenarios'
 import { StaffingDraftPage } from '@/pages/staffing-draft'
 import { AppLayout } from './app-layout'
+import { HomeRoute } from './home-route'
+import { RequireAuth } from './require-auth'
+import { RequirePermission } from './require-permission'
 
 export const router = createBrowserRouter([
   { path: ROUTES.login, Component: LoginPage },
+  { path: ROUTES.authCallback, Component: AuthCallbackPage },
   {
-    path: ROUTES.dashboard,
-    Component: AppLayout,
+    Component: RequireAuth,
     children: [
-      { index: true, Component: DashboardPage },
-      { path: ROUTES.programs, Component: ProgramsPage },
-      { path: ROUTES.programDetail, Component: ProgramDetailPage },
-      { path: ROUTES.intake, Component: IntakePage },
-      { path: ROUTES.projectDetail, Component: ProjectDetailPage },
-      { path: ROUTES.staffingDraft, Component: StaffingDraftPage },
-      { path: ROUTES.scenarios, Component: ScenariosPage },
-      { path: ROUTES.people, Component: PeoplePage },
-      { path: ROUTES.mySchedule, Component: MySchedulePage },
-      { path: ROUTES.events, Component: EventsPage },
-      { path: ROUTES.notFound, Component: NotFoundPage },
+      {
+        path: ROUTES.dashboard,
+        Component: AppLayout,
+        children: [
+          { index: true, Component: HomeRoute },
+          {
+            element: <RequirePermission permission="programs:view" />,
+            children: [
+              { path: ROUTES.programs, Component: ProgramsPage },
+              { path: ROUTES.programDetail, Component: ProgramDetailPage },
+              { path: ROUTES.projectDetail, Component: ProjectDetailPage },
+            ],
+          },
+          {
+            element: <RequirePermission permission="intake:view" />,
+            children: [{ path: ROUTES.intake, Component: IntakePage }],
+          },
+          {
+            element: <RequirePermission permission="staffing-drafts:review" />,
+            children: [{ path: ROUTES.staffingDraft, Component: StaffingDraftPage }],
+          },
+          {
+            element: <RequirePermission permission="scenarios:view" />,
+            children: [{ path: ROUTES.scenarios, Component: ScenariosPage }],
+          },
+          {
+            element: <RequirePermission permission="people:manage" />,
+            children: [{ path: ROUTES.people, Component: PeoplePage }],
+          },
+          {
+            element: <RequirePermission permission="events:view" />,
+            children: [{ path: ROUTES.events, Component: EventsPage }],
+          },
+          {
+            element: <RequirePermission permission="my-schedule:view" />,
+            children: [{ path: ROUTES.mySchedule, Component: MySchedulePage }],
+          },
+          { path: ROUTES.notFound, Component: NotFoundPage },
+        ],
+      },
     ],
   },
 ])

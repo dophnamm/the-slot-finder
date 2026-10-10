@@ -1,27 +1,23 @@
 import { create } from 'zustand'
-import type { Role } from '@/resources/rbac'
 
-export interface AuthUser {
-  id: string
-  name: string
-  email: string
-  role: Role
-}
+/** `loading` until the saved session has been checked at startup. */
+export type AuthStatus = 'loading' | 'signed-in' | 'signed-out'
 
 interface AuthState {
+  status: AuthStatus
+  /** Keycloak access token sent as `Authorization: Bearer`. */
   token: string | null
-  user: AuthUser | null
-  setSession: (token: string, user: AuthUser) => void
+  setToken: (token: string) => void
   clearSession: () => void
 }
 
 /**
- * Client-side session state, kept in memory only (no persistence) until the
- * Keycloak login is wired in. Server data never goes here: it lives in React Query.
+ * Session state, kept in memory and filled by `startAuthSession` from the OIDC client.
+ * The user's profile and role are server data: they come from `/me` through React Query.
  */
 export const useAuthStore = create<AuthState>()((set) => ({
+  status: 'loading',
   token: null,
-  user: null,
-  setSession: (token, user) => set({ token, user }),
-  clearSession: () => set({ token: null, user: null }),
+  setToken: (token) => set({ status: 'signed-in', token }),
+  clearSession: () => set({ status: 'signed-out', token: null }),
 }))
