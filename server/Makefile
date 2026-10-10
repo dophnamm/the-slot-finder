@@ -16,11 +16,11 @@ bootstrap: container-up migrate-up up
 ########################################################################################
 .PHONY: lint
 lint:
-	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2 run ./... --config .golangci.yml
+	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0 run ./... --config .golangci.yml
 
 .PHONY: lint-fix
 lint-fix:
-	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2 run ./... --config .golangci.yml --fix
+	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0 run ./... --config .golangci.yml --fix
 
 ########################################################################################
 # Mocks
