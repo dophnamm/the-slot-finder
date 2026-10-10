@@ -7,9 +7,8 @@ import {
   LayoutDashboard,
   Users,
 } from 'lucide-react'
-import { ROLES } from '@/resources/rbac'
 import { ROUTES } from '@/resources/routes'
-import type { NavItem, RoleLabels } from './types'
+import type { NavItem } from './types'
 
 export const NAV_ITEMS: NavItem[] = [
   { to: ROUTES.dashboard, label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard:view' },
@@ -20,9 +19,3 @@ export const NAV_ITEMS: NavItem[] = [
   { to: ROUTES.events, label: 'Events', icon: History, permission: 'events:view' },
   { to: ROUTES.mySchedule, label: 'My schedule', icon: CalendarDays, permission: 'my-schedule:view' },
 ]
-
-export const ROLE_LABELS: RoleLabels = {
-  [ROLES.PLANNER]: 'Planner',
-  [ROLES.LEAD]: 'Lead',
-  [ROLES.SPECIALIST]: 'Specialist',
-}
