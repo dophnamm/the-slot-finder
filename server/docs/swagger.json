@@ -104,9 +104,94 @@
                     }
                 }
             }
+        },
+        "/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The signed-in user, read from the verified access token: id, username, name, email and role.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Identity"
+                ],
+                "summary": "Current user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.CurrentUserResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "dtos.CurrentUserResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "planner@slot-finder.local"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "5b0c2b7e-4c1e-4a43-9b8e-0b1f2f6f8a10"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Pat Planner"
+                },
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "planner",
+                        "lead",
+                        "specialist"
+                    ],
+                    "example": "planner"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "planner"
+                }
+            }
+        },
         "dtos.HealthResponse": {
             "type": "object",
             "properties": {

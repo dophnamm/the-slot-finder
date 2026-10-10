@@ -46,20 +46,22 @@ type AuthorizationPermissions struct {
 	} `json:"permissions"`
 }
 
-// TokenClaims represents the complete structure of our JWT claims
+// RoleClaim is the shape Keycloak uses for realm and client roles.
+type RoleClaim struct {
+	Roles []string `json:"roles"`
+}
+
+// TokenClaims are the claims of a Keycloak access token.
 type TokenClaims struct {
-	jwt.MapClaims
-	RealmAccess struct {
-		Roles []string `json:"roles"`
-	} `json:"realm_access"`
-	ResourceAccess map[string]struct {
-		Roles []string `json:"roles"`
-	} `json:"resource_access"`
+	jwt.RegisteredClaims
+	// AuthorizedParty is the client the token was issued to.
+	AuthorizedParty      string                            `json:"azp"`
+	RealmAccess          RoleClaim                         `json:"realm_access"`
+	ResourceAccess       map[string]RoleClaim              `json:"resource_access"`
 	Organization         map[string]map[string]interface{} `json:"organization"`
 	OrganizationWildcard map[string]map[string]interface{} `json:"organization:*"`
 	Email                string                            `json:"email"`
 	EmailVerified        bool                              `json:"email_verified"`
-	Sub                  string                            `json:"sub"`
 	Name                 string                            `json:"name"`
 	PreferredUsername    string                            `json:"preferred_username"`
 	GivenName            string                            `json:"given_name"`
@@ -69,6 +71,18 @@ type TokenClaims struct {
 
 	// Present in RPT tokens when Authorization Services are enabled
 	Authorization AuthorizationPermissions `json:"authorization"`
+}
+
+// Roles returns the realm roles plus the roles of clientID. It is safe on a nil receiver.
+func (c *TokenClaims) Roles(clientID string) []string {
+	if c == nil {
+		return nil
+	}
+	roles := append([]string{}, c.RealmAccess.Roles...)
+	if clientRoles, ok := c.ResourceAccess[clientID]; ok {
+		roles = append(roles, clientRoles.Roles...)
+	}
+	return roles
 }
 
 type JWT struct {
@@ -118,7 +132,6 @@ type AuthService interface {
 	ValidateToken(token string) (*gocloak.IntroSpectTokenResult, error)
 	ClientLogin() (*TokenInfo, error)
 	GetUserInfo(token string) (*User, error)
-	GetClaimsKey() string
 
 	// Obtain an RPT (Requesting Party Token) using UMA to evaluate permissions
 	GetRequestingPartyToken(ctx context.Context, accessToken string, opts RequestingPartyTokenOptions) (*JWT, error)

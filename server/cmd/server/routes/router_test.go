@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -12,7 +13,9 @@ import (
 	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/dtos"
 	"the-slot-finder/server/internal/handlers"
+	"the-slot-finder/server/internal/integration/auth"
 	"the-slot-finder/server/internal/logger"
+	"the-slot-finder/server/internal/services"
 
 	"github.com/labstack/echo/v5"
 	"github.com/stretchr/testify/assert"
@@ -26,8 +29,37 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+// fakeVerifier maps raw tokens to claims, standing in for JWKS verification.
+type fakeVerifier map[string]*auth.TokenClaims
+
+func (f fakeVerifier) Verify(_ context.Context, rawToken string) (*auth.TokenClaims, error) {
+	if claims, ok := f[rawToken]; ok {
+		return claims, nil
+	}
+	return nil, auth.ErrTokenInvalid
+}
+
+func userClaims(username string, roles ...string) *auth.TokenClaims {
+	claims := &auth.TokenClaims{
+		RealmAccess:       auth.RoleClaim{Roles: roles},
+		PreferredUsername: username,
+		Name:              username,
+		Email:             username + "@example.test",
+	}
+	claims.Subject = "id-" + username
+	return claims
+}
+
 func newTestRouter(cfg *config.Config) *echo.Echo {
-	return Router(handlers.ProvideHealthHandler(cfg, nil), nil, cfg)
+	verifier := fakeVerifier{
+		"planner-token":    userClaims("planner", constants.RolePlanner, "offline_access"),
+		"lead-token":       userClaims("lead", constants.RoleLead),
+		"specialist-token": userClaims("specialist", constants.RoleSpecialist),
+		"no-role-token":    userClaims("nobody", "offline_access"),
+	}
+	identity := handlers.ProvideIdentityHandler(services.ProvideAuthzService())
+	health := handlers.ProvideHealthHandler(cfg, nil)
+	return Router(health, identity, verifier, cfg)
 }
 
 func baseConfig() *config.Config {
@@ -43,23 +75,62 @@ func baseConfig() *config.Config {
 	}
 }
 
-func get(e *echo.Echo, path string) *httptest.ResponseRecorder {
+func get(e *echo.Echo, path, token string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodGet, path, nil)
 	req.RemoteAddr = "192.0.2.10:5000"
+	if token != "" {
+		req.Header.Set(echo.HeaderAuthorization, "Bearer "+token)
+	}
 	rec := httptest.NewRecorder()
 	e.ServeHTTP(rec, req)
 	return rec
 }
 
+func TestRouter_Me_RBAC(t *testing.T) {
+	e := newTestRouter(baseConfig())
+	mePath := constants.PathAPIBase + constants.PathMe
+
+	tests := []struct {
+		name       string
+		token      string
+		wantStatus int
+		wantCode   string
+		wantRole   string
+	}{
+		{name: "planner", token: "planner-token", wantStatus: http.StatusOK, wantCode: constants.Success, wantRole: constants.RolePlanner},
+		{name: "lead", token: "lead-token", wantStatus: http.StatusOK, wantCode: constants.Success, wantRole: constants.RoleLead},
+		{name: "specialist", token: "specialist-token", wantStatus: http.StatusOK, wantCode: constants.Success, wantRole: constants.RoleSpecialist},
+		{name: "no application role", token: "no-role-token", wantStatus: http.StatusForbidden, wantCode: constants.Forbidden},
+		{name: "invalid token", token: "forged", wantStatus: http.StatusUnauthorized, wantCode: constants.Unauthorized},
+		{name: "no token", wantStatus: http.StatusUnauthorized, wantCode: constants.Unauthorized},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := get(e, mePath, tt.token)
+			require.Equal(t, tt.wantStatus, rec.Code, rec.Body.String())
+
+			var body dtos.BaseResponse[dtos.CurrentUserResponse]
+			require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+			assert.Equal(t, tt.wantCode, body.Meta.ErrorCode)
+			assert.Equal(t, tt.wantRole, body.Data.Role)
+			if tt.wantStatus == http.StatusOK {
+				assert.Equal(t, "id-"+tt.name, body.Data.ID)
+				assert.Equal(t, tt.name, body.Data.Username)
+				assert.Equal(t, tt.name+"@example.test", body.Data.Email)
+			}
+		})
+	}
+}
+
 func TestRouter_UnknownPathIsNotFound(t *testing.T) {
 	e := newTestRouter(baseConfig())
-	rec := get(e, constants.PathAPIBase+"/does-not-exist")
+	rec := get(e, constants.PathAPIBase+"/does-not-exist", "")
 	assert.Equal(t, http.StatusNotFound, rec.Code, rec.Body.String())
 }
 
 func TestRouter_MetricsNeedBasicAuth(t *testing.T) {
 	e := newTestRouter(baseConfig())
-	rec := get(e, constants.PathAPIBase+constants.PathHealthMetrics)
+	rec := get(e, constants.PathAPIBase+constants.PathHealthMetrics, "")
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 }
 
@@ -71,7 +142,7 @@ func TestRouter_RateLimit(t *testing.T) {
 
 	var last *httptest.ResponseRecorder
 	for i := 0; i < cfg.RateLimit+1; i++ {
-		last = get(e, constants.PathAPIBase+constants.PathHealth)
+		last = get(e, constants.PathAPIBase+constants.PathMe, "planner-token")
 	}
 	require.Equal(t, http.StatusTooManyRequests, last.Code)
 	var body dtos.BaseResponse[dtos.RateLimitResponse]

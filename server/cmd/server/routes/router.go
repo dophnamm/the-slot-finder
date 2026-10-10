@@ -21,7 +21,8 @@ import (
 
 func Router(
 	healthHandler *handlers.HealthHandler,
-	authService auth.AuthService,
+	identityHandler *handlers.IdentityHandler,
+	verifier auth.TokenVerifier,
 	cfg *config.Config,
 ) *echo.Echo {
 	r := echo.New()
@@ -123,7 +124,10 @@ func Router(
 	publicGroup.GET(constants.PathHealthDatabase, healthHandler.DatabaseHealthCheck)
 	publicGroup.GET(constants.PathHealthMetrics, healthHandler.DatabaseMetrics, middlewares.BasicAuthMiddleware(*cfg))
 
-	// Feature routes go here, under v1, guarded by AuthMiddleware(cfg, authService) and RequireRole.
+	// Feature routes: under v1, each with `authenticated` and a RequireRole using a role list
+	// from constants/roles.go. Middlewares are set per route so unknown paths still return 404.
+	authenticated := middlewares.AuthMiddleware(verifier, cfg)
+	v1.GET(constants.PathMe, identityHandler.Me, authenticated, middlewares.RequireRole(constants.CurrentUserViewRoles...))
 
 	return r
 }

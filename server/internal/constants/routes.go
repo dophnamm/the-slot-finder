@@ -7,4 +7,6 @@ const (
 	PathHealth         = "/"
 	PathHealthDatabase = "/health/database"
 	PathHealthMetrics  = "/health/metrics"
+
+	PathMe = "/me"
 )

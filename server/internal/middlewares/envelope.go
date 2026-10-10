@@ -6,6 +6,9 @@ import (
 	"github.com/labstack/echo/v5"
 )
 
+// bearerPrefix starts an Authorization header that carries an access token.
+const bearerPrefix = "Bearer "
+
 // respondError writes an error in the standard {meta, data} envelope, for middlewares that
 // answer before a handler runs.
 func respondError(c *echo.Context, status int, code, message string, data any) error {

@@ -13,7 +13,6 @@ import (
 	"the-slot-finder/server/internal/config"
 	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/dtos"
-	"the-slot-finder/server/internal/integration/auth"
 	"the-slot-finder/server/internal/request"
 
 	"github.com/labstack/echo/v5"
@@ -371,10 +370,9 @@ func (errReader) Read(p []byte) (int, error) {
 
 func TestRequestLogging(t *testing.T) {
 	cfg := &config.Config{
-		AppEnv:           config.EnvironmentTest,
-		AppName:          "slot-finder-test",
-		AppVersion:       "1.2.3",
-		KeycloakKeyClaim: "claims",
+		AppEnv:     config.EnvironmentTest,
+		AppName:    "slot-finder-test",
+		AppVersion: "1.2.3",
 	}
 
 	e := echo.New()
@@ -382,8 +380,8 @@ func TestRequestLogging(t *testing.T) {
 		return func(c *echo.Context) error {
 			c.Set("organization_id", "org-1")
 			c.Set(LogBodyKey, `{"hello":"world"}`)
-			c.Set(cfg.KeycloakKeyClaim, &auth.TokenClaims{Sub: "user-42"})
-			ctx := request.NewCorrelationIDContext(c.Request().Context(), "corr-1")
+			ctx := request.NewPrincipalContext(c.Request().Context(), request.Principal{Subject: "user-42"})
+			ctx = request.NewCorrelationIDContext(ctx, "corr-1")
 			ctx = request.NewLanguageCodeContext(ctx, "en")
 			c.SetRequest(c.Request().WithContext(ctx))
 			return next(c)

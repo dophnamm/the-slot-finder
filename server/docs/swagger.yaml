@@ -1,5 +1,27 @@
 basePath: /api/v1
 definitions:
+  dtos.CurrentUserResponse:
+    properties:
+      email:
+        example: planner@slot-finder.local
+        type: string
+      id:
+        example: 5b0c2b7e-4c1e-4a43-9b8e-0b1f2f6f8a10
+        type: string
+      name:
+        example: Pat Planner
+        type: string
+      role:
+        enum:
+        - planner
+        - lead
+        - specialist
+        example: planner
+        type: string
+      username:
+        example: planner
+        type: string
+    type: object
   dtos.HealthResponse:
     properties:
       service:
@@ -103,6 +125,41 @@ paths:
       summary: Database Connection Metrics
       tags:
       - Health
+  /me:
+    get:
+      description: 'The signed-in user, read from the verified access token: id, username,
+        name, email and role.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.CurrentUserResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Current user
+      tags:
+      - Identity
 schemes:
 - http
 - https

@@ -196,3 +196,32 @@ func TestContextHelpers_Compose(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, "/health", url)
 }
+
+func TestPrincipalContext(t *testing.T) {
+	t.Run("present", func(t *testing.T) {
+		want := Principal{Subject: "u1", Role: "lead", Roles: []string{"lead", "offline_access"}}
+		got, ok := PrincipalFromContext(NewPrincipalContext(context.Background(), want))
+		require.True(t, ok)
+		assert.Equal(t, want, got)
+	})
+
+	t.Run("absent", func(t *testing.T) {
+		got, ok := PrincipalFromContext(context.Background())
+		assert.False(t, ok)
+		assert.Equal(t, Principal{}, got)
+	})
+
+	t.Run("nil context", func(t *testing.T) {
+		//nolint:staticcheck // a nil context must not panic
+		got, ok := PrincipalFromContext(nil)
+		assert.False(t, ok)
+		assert.Equal(t, Principal{}, got)
+	})
+}
+
+func TestPrincipal_HasAnyRole(t *testing.T) {
+	p := Principal{Roles: []string{"lead"}}
+	assert.True(t, p.HasAnyRole("planner", "lead"))
+	assert.False(t, p.HasAnyRole("planner"))
+	assert.False(t, Principal{}.HasAnyRole("lead"))
+}
