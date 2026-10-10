@@ -52,11 +52,14 @@ services:
         condition: service_healthy
     env_file:
       - cmd/server/.env
-    command: ["start-dev"]
+    # Imports deploy/keycloak/realm.json when the realm does not exist yet (fresh data, or after
+    # `make reset-data`). ${...} placeholders in it are filled from cmd/server/.env.
+    command: ["start-dev", "--import-realm"]
     ports:
       - "8080:8080"
     volumes:
       - keycloak_data:/opt/keycloak/data
+      - ./deploy/keycloak:/opt/keycloak/data/import:ro
     networks:
       - app-network
 

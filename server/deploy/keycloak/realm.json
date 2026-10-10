@@ -1,0 +1,99 @@
+{
+  "realm": "${KEYCLOAK_REALM}",
+  "displayName": "The Slot Finder",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "bruteForceProtected": true,
+  "roles": {
+    "realm": [
+      { "name": "planner", "description": "Coordinates capacity; can do everything" },
+      { "name": "lead", "description": "Manages own programs and projects" },
+      { "name": "specialist", "description": "Views own schedule and reports leave" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "${KEYCLOAK_SPA_CLIENT_ID}",
+      "name": "The Slot Finder web app",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": true,
+      "rootUrl": "${CLIENT_APP_URL}",
+      "baseUrl": "${CLIENT_APP_URL}",
+      "redirectUris": ["${CLIENT_APP_URL}/*"],
+      "webOrigins": ["${CLIENT_APP_URL}"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "${CLIENT_APP_URL}/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "${KEYCLOAK_CLIENT_ID}",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "${KEYCLOAK_CLIENT_ID}",
+      "name": "The Slot Finder API",
+      "enabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${KEYCLOAK_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "username": "planner",
+      "email": "planner@slot-finder.local",
+      "firstName": "Pat",
+      "lastName": "Planner",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "${KEYCLOAK_DEMO_PASSWORD}", "temporary": false }],
+      "realmRoles": ["planner"]
+    },
+    {
+      "username": "lead",
+      "email": "lead@slot-finder.local",
+      "firstName": "Lee",
+      "lastName": "Lead",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "${KEYCLOAK_DEMO_PASSWORD}", "temporary": false }],
+      "realmRoles": ["lead"]
+    },
+    {
+      "username": "specialist",
+      "email": "specialist@slot-finder.local",
+      "firstName": "Sam",
+      "lastName": "Specialist",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "${KEYCLOAK_DEMO_PASSWORD}", "temporary": false }],
+      "realmRoles": ["specialist"]
+    }
+  ]
+}
