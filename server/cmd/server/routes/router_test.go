@@ -15,6 +15,8 @@ import (
 	"the-slot-finder/server/internal/handlers"
 	"the-slot-finder/server/internal/integration/auth"
 	"the-slot-finder/server/internal/logger"
+	"the-slot-finder/server/internal/models"
+	"the-slot-finder/server/internal/request"
 	"the-slot-finder/server/internal/services"
 
 	"github.com/labstack/echo/v5"
@@ -50,6 +52,21 @@ func userClaims(username string, roles ...string) *auth.TokenClaims {
 	return claims
 }
 
+// plannerPersonID is the person record of the planner test user; other users have none.
+const plannerPersonID = "0192f3a4-0000-7000-8000-0000000000ee"
+
+// plannerOnlyPeople links only the planner test user to a person record.
+type plannerOnlyPeople struct {
+	services.PeopleService
+}
+
+func (plannerOnlyPeople) LinkPrincipal(_ context.Context, principal request.Principal) (*models.Person, error) {
+	if principal.Username == constants.RolePlanner {
+		return &models.Person{BaseModel: models.BaseModel{ID: plannerPersonID}}, nil
+	}
+	return nil, nil
+}
+
 func newTestRouter(cfg *config.Config) *echo.Echo {
 	verifier := fakeVerifier{
 		"planner-token":    userClaims("planner", constants.RolePlanner, "offline_access"),
@@ -58,7 +75,7 @@ func newTestRouter(cfg *config.Config) *echo.Echo {
 		"no-role-token":    userClaims("nobody", "offline_access"),
 	}
 	authz := services.ProvideAuthzService(nil)
-	identity := handlers.ProvideIdentityHandler(authz)
+	identity := handlers.ProvideIdentityHandler(authz, plannerOnlyPeople{})
 	health := handlers.ProvideHealthHandler(cfg, nil)
 	person := handlers.ProvidePersonHandler(nil, authz, nil)
 	absence := handlers.ProvideAbsenceHandler(nil, nil)
@@ -117,6 +134,12 @@ func TestRouter_Me_RBAC(t *testing.T) {
 			assert.Equal(t, tt.wantCode, body.Meta.ErrorCode)
 			assert.Equal(t, tt.wantRole, body.Data.Role)
 			if tt.wantStatus == http.StatusOK {
+				if tt.name == constants.RolePlanner {
+					require.NotNil(t, body.Data.PersonID)
+					assert.Equal(t, plannerPersonID, *body.Data.PersonID)
+				} else {
+					assert.Nil(t, body.Data.PersonID)
+				}
 				assert.Equal(t, "id-"+tt.name, body.Data.ID)
 				assert.Equal(t, tt.name, body.Data.Username)
 				assert.Equal(t, tt.name+"@example.test", body.Data.Email)
