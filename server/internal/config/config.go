@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -146,6 +147,12 @@ type Config struct {
 	HTTPClientRetryWaitMax       time.Duration
 	HTTPClientDebug              bool
 	HTTPClientTLSInsecureSkipTLS bool
+
+	// Capacity: days that count, hours kept for non-project work, and whether planned
+	// (not yet approved) absence lowers capacity.
+	WorkingWeekdays        []time.Weekday
+	DefaultNonProjectHours float64
+	CountPlannedAbsence    bool
 }
 
 // Load loads configuration from environment variables
@@ -228,9 +235,41 @@ func Load() (*Config, error) {
 		HTTPClientRetryWaitMax:       getEnvAsDuration("HTTP_CLIENT_RETRY_WAIT_MAX", 2*time.Second),
 		HTTPClientDebug:              getEnvAsBool("HTTP_CLIENT_DEBUG", false),
 		HTTPClientTLSInsecureSkipTLS: getEnvAsBool("HTTP_CLIENT_TLS_INSECURE_SKIP_TLS", false),
+		DefaultNonProjectHours:       getEnvAsFloat("DEFAULT_NON_PROJECT_HOURS", 4),
+		CountPlannedAbsence:          getEnvAsBool("COUNT_PLANNED_ABSENCE", true),
 	}
 
+	weekdays, err := parseWeekdays(getEnv("WORKING_WEEKDAYS", defaultWorkingWeekdays))
+	if err != nil {
+		return nil, fmt.Errorf("WORKING_WEEKDAYS: %w", err)
+	}
+	cfg.WorkingWeekdays = weekdays
+
 	return cfg, nil
+}
+
+// defaultWorkingWeekdays is Monday to Friday, in the WORKING_WEEKDAYS format.
+const defaultWorkingWeekdays = "Mon,Tue,Wed,Thu,Fri"
+
+// weekdayNames maps the three-letter names used in WORKING_WEEKDAYS.
+var weekdayNames = map[string]time.Weekday{
+	"mon": time.Monday, "tue": time.Tuesday, "wed": time.Wednesday, "thu": time.Thursday,
+	"fri": time.Friday, "sat": time.Saturday, "sun": time.Sunday,
+}
+
+// parseWeekdays reads a comma-separated list such as "Mon,Tue,Wed,Thu,Fri".
+func parseWeekdays(value string) ([]time.Weekday, error) {
+	var days []time.Weekday
+	for _, name := range strings.Split(value, ",") {
+		day, ok := weekdayNames[strings.ToLower(strings.TrimSpace(name))]
+		if !ok {
+			return nil, fmt.Errorf("unknown weekday %q", name)
+		}
+		if !slices.Contains(days, day) {
+			days = append(days, day)
+		}
+	}
+	return days, nil
 }
 
 // getEnv gets an environment variable with a fallback value
@@ -252,6 +291,15 @@ func getEnvAsInt(key string, fallback int) int {
 }
 
 // getEnvAsBool gets an environment variable as boolean with a fallback value
+func getEnvAsFloat(key string, fallback float64) float64 {
+	if value := os.Getenv(key); value != "" {
+		if floatValue, err := strconv.ParseFloat(value, 64); err == nil {
+			return floatValue
+		}
+	}
+	return fallback
+}
+
 func getEnvAsBool(key string, fallback bool) bool {
 	if value := os.Getenv(key); value != "" {
 		if boolValue, err := strconv.ParseBool(value); err == nil {
