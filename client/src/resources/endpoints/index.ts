@@ -1,3 +1,4 @@
+export { ABSENCE_ENDPOINTS, HOLIDAY_ENDPOINTS } from './availability'
 export { HEALTH_ENDPOINTS } from './health'
 export { IDENTITY_ENDPOINTS } from './identity'
 export { EXPERTISE_ENDPOINTS, PEOPLE_ENDPOINTS } from './people'

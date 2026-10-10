@@ -1,0 +1,1 @@
+export { HolidayForm } from './component'
