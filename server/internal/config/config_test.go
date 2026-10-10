@@ -255,3 +255,28 @@ func TestConfig_PopulateFromJSON(t *testing.T) {
 		require.NoError(t, cfg.PopulateFromJSONBytes([]byte(`{"client_email":"a@b.com","private_key":"k","project_id":"p"}`)))
 	})
 }
+
+func TestParseWeekdays(t *testing.T) {
+	t.Parallel()
+	days, err := parseWeekdays("Mon, tue,WED,Thu,Fri,Mon")
+	require.NoError(t, err)
+	assert.Equal(t, []time.Weekday{time.Monday, time.Tuesday, time.Wednesday, time.Thursday, time.Friday}, days)
+
+	_, err = parseWeekdays("Mon,Funday")
+	require.Error(t, err)
+}
+
+func TestLoad_CapacitySettings(t *testing.T) {
+	t.Setenv("WORKING_WEEKDAYS", "")
+	t.Setenv("DEFAULT_NON_PROJECT_HOURS", "6.5")
+	t.Setenv("COUNT_PLANNED_ABSENCE", "false")
+	cfg, err := Load()
+	require.NoError(t, err)
+	assert.Len(t, cfg.WorkingWeekdays, 5)
+	assert.InDelta(t, 6.5, cfg.DefaultNonProjectHours, 1e-9)
+	assert.False(t, cfg.CountPlannedAbsence)
+
+	t.Setenv("WORKING_WEEKDAYS", "Sat,Someday")
+	_, err = Load()
+	require.Error(t, err)
+}
