@@ -130,6 +130,10 @@ migrate-create:
 migrate-reset:
 	atlas schema clean --url "$(DB_DSN)"
 
+.PHONY: seed
+seed:
+	cd cmd/server && go run ../seed
+
 .PHONY: migrate-generate
 migrate-generate:
 	atlas migrate diff --env gorm ${name}
