@@ -1,11 +1,16 @@
 package handlers
 
 import (
+	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/dtos"
 	"the-slot-finder/server/internal/errors"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 )
+
+// pathParamID is the name of the id parameter in route paths such as /people/:id.
+const pathParamID = "id"
 
 type BaseHandler struct {
 	errorHandler *errors.ErrorHandler
@@ -56,4 +61,15 @@ func (b *BaseHandler) ForbiddenErrorResponse(c *echo.Context, message string) er
 // InternalErrorResponse creates an internal error response
 func (b *BaseHandler) InternalErrorResponse(c *echo.Context, message string, cause error) error {
 	return b.errorHandler.InternalErrorResponse(c, message, cause)
+}
+
+// pathID reads the :id path parameter. When it is not a UUID it writes a 400 validation
+// error and returns false, and the handler returns nil.
+func (b *BaseHandler) pathID(c *echo.Context) (string, bool) {
+	id := c.Param(pathParamID)
+	if _, err := uuid.Parse(id); err != nil {
+		_ = b.ValidationErrorResponse(c, constants.MsgInvalidRequest, map[string]string{pathParamID: constants.MsgInvalidID})
+		return "", false
+	}
+	return id, true
 }

@@ -9,4 +9,9 @@ const (
 	PathHealthMetrics  = "/health/metrics"
 
 	PathMe = "/me"
+
+	PathPeople       = "/people"
+	PathPerson       = "/people/:id"
+	PathPersonSkills = "/people/:id/skills"
+	PathExpertises   = "/expertises"
 )

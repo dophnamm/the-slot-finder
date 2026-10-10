@@ -160,8 +160,10 @@ func ParseValidationErrors(err error) map[string]string {
 				errorMessage = fmt.Sprintf("%s must be at least %s characters long", fieldName, validationErr.Param())
 			case "max":
 				errorMessage = fmt.Sprintf("%s must be at most %s characters long", fieldName, validationErr.Param())
-			case "role":
+			case constants.ValidationTagRole:
 				errorMessage = fmt.Sprintf("%s must be one of: %s", fieldName, strings.Join(constants.Roles, ", "))
+			case constants.ValidationTagDate:
+				errorMessage = fieldName + " " + constants.MsgDateInvalid
 			case "len":
 				errorMessage = fmt.Sprintf("%s must be exactly %s characters long", fieldName, validationErr.Param())
 			case "numeric":

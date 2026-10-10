@@ -1,5 +1,37 @@
 basePath: /api/v1
 definitions:
+  dtos.CreatePersonRequest:
+    properties:
+      email:
+        maxLength: 320
+        type: string
+      end_date:
+        type: string
+      name:
+        maxLength: 200
+        type: string
+      non_project_hours:
+        maximum: 80
+        minimum: 0
+        type: number
+      role:
+        type: string
+      skills:
+        items:
+          $ref: '#/definitions/dtos.SkillRequest'
+        minItems: 1
+        type: array
+      start_date:
+        type: string
+      weekly_hours:
+        maximum: 80
+        type: number
+    required:
+    - email
+    - name
+    - role
+    - skills
+    type: object
   dtos.CurrentUserResponse:
     properties:
       email:
@@ -20,6 +52,14 @@ definitions:
         type: string
       username:
         example: planner
+        type: string
+    type: object
+  dtos.ExpertiseResponse:
+    properties:
+      id:
+        type: string
+      name:
+        example: QA
         type: string
     type: object
   dtos.HealthResponse:
@@ -59,6 +99,97 @@ definitions:
         example: 18
         type: integer
     type: object
+  dtos.PersonResponse:
+    properties:
+      active:
+        type: boolean
+      email:
+        example: alex@slot-finder.local
+        type: string
+      end_date:
+        type: string
+      id:
+        type: string
+      name:
+        example: Alex Nguyen
+        type: string
+      non_project_hours:
+        example: 4
+        type: number
+      role:
+        example: specialist
+        type: string
+      skills:
+        items:
+          $ref: '#/definitions/dtos.PersonSkillResponse'
+        type: array
+      start_date:
+        example: "2026-01-05"
+        type: string
+      weekly_hours:
+        example: 40
+        type: number
+    type: object
+  dtos.PersonSkillResponse:
+    properties:
+      expertise:
+        example: Engineer
+        type: string
+      expertise_id:
+        type: string
+      level:
+        example: 4
+        type: integer
+      primary:
+        type: boolean
+    type: object
+  dtos.ReplaceSkillsRequest:
+    properties:
+      skills:
+        items:
+          $ref: '#/definitions/dtos.SkillRequest'
+        minItems: 1
+        type: array
+    required:
+    - skills
+    type: object
+  dtos.SkillRequest:
+    properties:
+      expertise_id:
+        type: string
+      level:
+        maximum: 5
+        minimum: 1
+        type: integer
+      primary:
+        type: boolean
+    required:
+    - expertise_id
+    type: object
+  dtos.UpdatePersonRequest:
+    properties:
+      active:
+        type: boolean
+      end_date:
+        example: "2027-03-31"
+        type: string
+      name:
+        maxLength: 200
+        minLength: 1
+        type: string
+      non_project_hours:
+        maximum: 80
+        minimum: 0
+        type: number
+      role:
+        type: string
+      start_date:
+        example: "2026-10-12"
+        type: string
+      weekly_hours:
+        maximum: 80
+        type: number
+    type: object
 info:
   contact: {}
   description: Staffing and capacity planning API for The Slot Finder
@@ -85,6 +216,27 @@ paths:
       summary: Health Check
       tags:
       - Health
+  /expertises:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/dtos.ExpertiseResponse'
+                type: array
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Expertise catalogue
+      tags:
+      - People
   /health/database:
     get:
       consumes:
@@ -160,6 +312,191 @@ paths:
       summary: Current user
       tags:
       - Identity
+  /people:
+    get:
+      description: People ordered by name, each with their skills (primary first).
+      parameters:
+      - description: Page, from 1
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/dtos.PersonResponse'
+                type: array
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List people
+      tags:
+      - People
+    post:
+      consumes:
+      - application/json
+      description: Creates a person with their skills. Exactly one skill must be primary.
+      parameters:
+      - description: Person
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreatePersonRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.PersonResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a person
+      tags:
+      - People
+  /people/{id}:
+    patch:
+      consumes:
+      - application/json
+      description: Changes only the fields sent. start_date and end_date accept null
+        to clear them.
+      parameters:
+      - description: Person id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Changed fields
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdatePersonRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.PersonResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Edit a person
+      tags:
+      - People
+  /people/{id}/skills:
+    put:
+      consumes:
+      - application/json
+      description: Replaces the whole list. Exactly one skill must be primary; each
+        expertise appears once.
+      parameters:
+      - description: Person id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Skills
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.ReplaceSkillsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.PersonResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Replace a person's skills
+      tags:
+      - People
 schemes:
 - http
 - https

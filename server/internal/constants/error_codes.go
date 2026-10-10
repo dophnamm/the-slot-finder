@@ -11,6 +11,12 @@ const (
 	RateLimitExceeded = "RATE_LIMIT_EXCEEDED"
 	PayloadTooLarge   = "PAYLOAD_TOO_LARGE"
 
+	// People and skills errors
+	PersonNotFound           = "PERSON_NOT_FOUND"
+	PersonEmailAlreadyExists = "PERSON_EMAIL_ALREADY_EXISTS"
+	PersonDatesInvalid       = "PERSON_DATES_INVALID"
+	PersonSkillsInvalid      = "PERSON_SKILLS_INVALID"
+
 	// Email errors
 	EmailSendError = "EMAIL_SEND_ERROR"
 

@@ -4,22 +4,38 @@ import (
 	"reflect"
 	"slices"
 	"strings"
+	"time"
 
 	"the-slot-finder/server/internal/constants"
 
 	"github.com/go-playground/validator/v10"
 )
 
-// ValidationTagRole validates that a string is one of constants.Roles.
-const ValidationTagRole = "role"
+// Custom validation tags (names live in constants so error messages can match them).
+const (
+	ValidationTagRole = constants.ValidationTagRole
+	ValidationTagDate = constants.ValidationTagDate
+)
 
 // RegisterValidations adds the project's custom validation tags to v and makes validation
 // errors report JSON field names (weekly_hours) instead of Go names (WeeklyHours).
 func RegisterValidations(v *validator.Validate) error {
 	v.RegisterTagNameFunc(jsonFieldName)
-	return v.RegisterValidation(ValidationTagRole, func(fl validator.FieldLevel) bool {
-		return slices.Contains(constants.Roles, fl.Field().String())
-	})
+	validations := map[string]validator.Func{
+		ValidationTagRole: func(fl validator.FieldLevel) bool {
+			return slices.Contains(constants.Roles, fl.Field().String())
+		},
+		ValidationTagDate: func(fl validator.FieldLevel) bool {
+			_, err := time.Parse(constants.DateLayout, fl.Field().String())
+			return err == nil
+		},
+	}
+	for tag, fn := range validations {
+		if err := v.RegisterValidation(tag, fn); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func jsonFieldName(field reflect.StructField) string {

@@ -15,4 +15,10 @@ var Roles = []string{RolePlanner, RoleLead, RoleSpecialist}
 var (
 	// CurrentUserViewRoles may read their own profile (GET /me).
 	CurrentUserViewRoles = []string{RolePlanner, RoleLead, RoleSpecialist}
+	// PeopleViewRoles may list people and their skills.
+	PeopleViewRoles = []string{RolePlanner, RoleLead}
+	// PeopleManageRoles may create and edit people and their skills.
+	PeopleManageRoles = []string{RolePlanner}
+	// ExpertiseViewRoles may read the expertise catalogue.
+	ExpertiseViewRoles = []string{RolePlanner, RoleLead, RoleSpecialist}
 )

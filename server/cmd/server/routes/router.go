@@ -22,6 +22,7 @@ import (
 func Router(
 	healthHandler *handlers.HealthHandler,
 	identityHandler *handlers.IdentityHandler,
+	personHandler *handlers.PersonHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 ) *echo.Echo {
@@ -128,6 +129,13 @@ func Router(
 	// from constants/roles.go. Middlewares are set per route so unknown paths still return 404.
 	authenticated := middlewares.AuthMiddleware(verifier, cfg)
 	v1.GET(constants.PathMe, identityHandler.Me, authenticated, middlewares.RequireRole(constants.CurrentUserViewRoles...))
+
+	// People and skills
+	v1.GET(constants.PathPeople, personHandler.List, authenticated, middlewares.RequireRole(constants.PeopleViewRoles...))
+	v1.POST(constants.PathPeople, personHandler.Create, authenticated, middlewares.RequireRole(constants.PeopleManageRoles...))
+	v1.PATCH(constants.PathPerson, personHandler.Update, authenticated, middlewares.RequireRole(constants.PeopleManageRoles...))
+	v1.PUT(constants.PathPersonSkills, personHandler.ReplaceSkills, authenticated, middlewares.RequireRole(constants.PeopleManageRoles...))
+	v1.GET(constants.PathExpertises, personHandler.ListExpertises, authenticated, middlewares.RequireRole(constants.ExpertiseViewRoles...))
 
 	return r
 }

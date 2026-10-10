@@ -19,6 +19,7 @@ import (
 	"the-slot-finder/server/internal/integration/email"
 	"the-slot-finder/server/internal/logger"
 	"the-slot-finder/server/internal/monitoring"
+	"the-slot-finder/server/internal/repositories"
 	"the-slot-finder/server/internal/services"
 	"the-slot-finder/server/internal/utils"
 
@@ -35,11 +36,12 @@ import (
 func NewHTTPServer(lc fx.Lifecycle,
 	healthHandler *handlers.HealthHandler,
 	identityHandler *handlers.IdentityHandler,
+	personHandler *handlers.PersonHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 	db *db.PostgresDB,
 ) *http.Server {
-	handler := routes.Router(healthHandler, identityHandler, verifier, cfg)
+	handler := routes.Router(healthHandler, identityHandler, personHandler, verifier, cfg)
 
 	srv := &http.Server{
 		Addr:              cfg.AppHTTPServer,
@@ -170,8 +172,11 @@ func appOptions(cfg *config.Config) []fx.Option {
 			services.ProvideEmailService,
 			services.ProvideAuthService,
 			services.ProvideAuthzService,
+			repositories.ProvidePersonRepository,
+			services.ProvidePeopleService,
 			handlers.ProvideHealthHandler,
 			handlers.ProvideIdentityHandler,
+			handlers.ProvidePersonHandler,
 		),
 		fx.Invoke(func(*http.Server) {}),
 	}
