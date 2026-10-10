@@ -7,12 +7,18 @@
  * value type is a placeholder.
  */
 export type LanguageKey = {
+  'Absence added.': string
   Absences: string
+  'Absences of {name}': string
   Active: string
   'Actual hours arrive in phase 2.': string
+  'Add absence': string
   'Add at least one skill.': string
+  'Add holiday': string
   'Add person': string
   'Add skill': string
+  Approved: string
+  'Approved absence always lowers capacity; planned absence does when the setting is on.': string
   Assistant: string
   'Back to dashboard': string
   Budget: string
@@ -20,12 +26,14 @@ export type LanguageKey = {
   'Build scenarios (move a project, add leave) and view the diff.': string
   'Change history': string
   'Change history and re-plan status.': string
+  'Company holidays': string
   'Contribution %': string
   Cost: string
   'Cost (hours)': string
   'Could not finish signing in.': string
   'Could not reach the sign-in service.': string
   Dashboard: string
+  Dates: string
   Default: string
   'Demand, timeline, assigned people, risks and scope points.': string
   Description: string
@@ -41,29 +49,39 @@ export type LanguageKey = {
   'Expertise, levels and weekly hours of everyone who can be staffed.': string
   External: string
   Forecast: string
+  From: string
   'From {date}': string
   Gap: string
   'Go to your home page': string
   'Goal: {goal}': string
+  Holiday: string
+  'Holiday added.': string
+  'Holidays lower everyone’s capacity on those days.': string
   Hours: string
+  'Hours per day': string
   Inactive: string
   'Incoming projects across programs, with “Propose squad”.': string
   Intake: string
   'Intake queue': string
   Internal: string
   Lead: string
+  Leave: string
   Level: string
   'Level {level}': string
   'List of programs with status, timeline and the four progress bars.': string
   'Loading…': string
   Member: string
   Members: string
+  'My absences': string
   'My schedule': string
   Name: string
   Next: string
   'Next milestone: {name}, {week}': string
+  'No absences yet.': string
   'No access': string
+  'No holidays yet.': string
   'No people yet.': string
+  'No person record': string
   'Non-project hours': string
   Open: string
   'Page not found': string
@@ -84,7 +102,10 @@ export type LanguageKey = {
   Programs: string
   'Project {id}': string
   Projects: string
+  'Remove absence': string
+  'Remove holiday': string
   'Remove skill': string
+  'Report leave or training. A planner approves it.': string
   'Review the assignment grid, reasons and diff; edit, lock and accept.': string
   Role: string
   Save: string
@@ -113,16 +134,21 @@ export type LanguageKey = {
   'There is no screen at this address.': string
   Time: string
   'Timeline: {start} – {end} ({dates})': string
+  To: string
   Total: string
+  Training: string
   'Try again': string
+  Type: string
   'Unexpected error.': string
   'Until {date}': string
   'Weekly hours': string
   'What-if scenarios': string
-  'Your projects by week, and a place to report leave.': string
+  'Your account is not linked to a person yet. Ask a planner to add you with the same email.': string
+  'Your assignments by week appear here once a staffing draft that includes you is accepted.': string
   'Your role cannot open this page.': string
   'Your session has ended. Sign in again.': string
   '{expertise} · level {level}': string
   '{hours} h non-project': string
+  '{hours} h per day': string
   '{hours} h per week': string
 }

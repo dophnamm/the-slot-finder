@@ -13,6 +13,8 @@ export const PERMISSIONS = {
   'staffing-drafts:review': [ROLES.PLANNER],
   'scenarios:view': [ROLES.PLANNER],
   'people:manage': [ROLES.PLANNER],
+  'absences:approve': [ROLES.PLANNER],
+  'holidays:manage': [ROLES.PLANNER],
   'events:view': [ROLES.PLANNER],
   'my-schedule:view': [ROLES.SPECIALIST],
 } as const satisfies Record<string, readonly Role[]>
