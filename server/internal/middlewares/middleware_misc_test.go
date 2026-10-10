@@ -1,7 +1,7 @@
 package middlewares
 
 import (
-	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"the-slot-finder/server/internal/config"
+	"the-slot-finder/server/internal/constants"
+	"the-slot-finder/server/internal/dtos"
 	"the-slot-finder/server/internal/integration/auth"
 	"the-slot-finder/server/internal/request"
 
@@ -50,6 +52,20 @@ func TestBasicAuthMiddleware(t *testing.T) {
 			assert.Equal(t, tt.wantStatus, rec.Code)
 		})
 	}
+}
+
+func TestBasicAuthMiddleware_NoConfiguredCredentials(t *testing.T) {
+	e := echo.New()
+	e.Use(BasicAuthMiddleware(config.Config{}))
+	e.GET("/docs", func(c *echo.Context) error {
+		return c.String(http.StatusOK, "ok")
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/docs", nil)
+	req.SetBasicAuth("", "")
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 }
 
 func TestCORS(t *testing.T) {
@@ -161,50 +177,52 @@ func TestSecurity(t *testing.T) {
 	assert.Equal(t, "no-referrer", rec.Header().Get(echo.HeaderReferrerPolicy))
 }
 
-func TestRateLimitVariants(t *testing.T) {
-	variants := []struct {
-		name string
-		mw   echo.MiddlewareFunc
-	}{
-		{name: "default", mw: DefaultRateLimit()},
-		{name: "strict", mw: StrictRateLimit()},
-		{name: "auth", mw: AuthRateLimit()},
-		{name: "public", mw: PublicRateLimit()},
-		{name: "custom", mw: RateLimit(config.Config{RateLimit: 2, RateLimitDuration: time.Second})},
-	}
-
-	for _, tt := range variants {
-		t.Run(tt.name, func(t *testing.T) {
-			e := echo.New()
-			e.Use(tt.mw)
-			e.GET("/limited", func(c *echo.Context) error {
-				return c.NoContent(http.StatusNoContent)
-			})
-
-			req := httptest.NewRequest(http.MethodGet, "/limited", nil)
-			req.RemoteAddr = "127.0.0.1:1234"
-			rec := httptest.NewRecorder()
-			e.ServeHTTP(rec, req)
-			assert.Equal(t, http.StatusNoContent, rec.Code)
-		})
-	}
-
-	t.Run("deny when exceeded", func(t *testing.T) {
+func TestRateLimit(t *testing.T) {
+	newServer := func(cfg *config.Config) *echo.Echo {
 		e := echo.New()
-		e.Use(RateLimit(config.Config{RateLimit: 1, RateLimitDuration: time.Minute}))
+		e.IPExtractor = echo.ExtractIPDirect()
+		e.Use(RateLimit(cfg))
 		e.GET("/limited", func(c *echo.Context) error {
 			return c.NoContent(http.StatusNoContent)
 		})
+		return e
+	}
+	call := func(e *echo.Echo, ip string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, "/limited", nil)
+		req.RemoteAddr = ip + ":9999"
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		return rec
+	}
 
-		var lastCode int
-		for i := 0; i < 5; i++ {
-			req := httptest.NewRequest(http.MethodGet, "/limited", nil)
-			req.RemoteAddr = "10.0.0.1:9999"
-			rec := httptest.NewRecorder()
-			e.ServeHTTP(rec, req)
-			lastCode = rec.Code
+	t.Run("under the limit", func(t *testing.T) {
+		e := newServer(&config.Config{RateLimit: 2, RateLimitDuration: time.Second})
+		assert.Equal(t, http.StatusNoContent, call(e, "127.0.0.1").Code)
+	})
+
+	t.Run("deny when exceeded, in the envelope", func(t *testing.T) {
+		e := newServer(&config.Config{RateLimit: 1, RateLimitDuration: time.Minute})
+		var last *httptest.ResponseRecorder
+		for i := 0; i < 3; i++ {
+			last = call(e, "10.0.0.1")
 		}
-		assert.Equal(t, http.StatusTooManyRequests, lastCode)
+		require.Equal(t, http.StatusTooManyRequests, last.Code)
+
+		var body dtos.BaseResponse[dtos.RateLimitResponse]
+		require.NoError(t, json.Unmarshal(last.Body.Bytes(), &body))
+		assert.Equal(t, constants.RateLimitExceeded, body.Meta.ErrorCode)
+		assert.Equal(t, http.StatusTooManyRequests, body.Meta.Code)
+		assert.Equal(t, dtos.RateLimitResponse{Limit: 1, Window: time.Minute.String()}, body.Data)
+
+		// Another client is not affected.
+		assert.Equal(t, http.StatusNoContent, call(e, "10.0.0.2").Code)
+	})
+
+	t.Run("disabled with a zero limit", func(t *testing.T) {
+		e := newServer(&config.Config{RateLimit: 0, RateLimitDuration: time.Second})
+		for i := 0; i < 5; i++ {
+			assert.Equal(t, http.StatusNoContent, call(e, "10.0.0.3").Code)
+		}
 	})
 }
 
@@ -279,35 +297,70 @@ func TestFormatRandomSuffix(t *testing.T) {
 	assert.Equal(t, "000", formatRandomSuffix(0))
 }
 
-func TestLogBodyMiddleware(t *testing.T) {
-	t.Run("captures body", func(t *testing.T) {
+func TestLogBody(t *testing.T) {
+	cfg := &config.Config{LogBodyMaxBytes: 8, AppBodyLimitBytes: 16}
+
+	capture := func(t *testing.T, contentType, body string) (any, string, int) {
+		t.Helper()
 		e := echo.New()
-		var captured any
-		e.Use(LogBodyMiddleware)
+		var logged any
+		var seen string
+		e.Use(BodyLimit(cfg), LogBody(cfg))
 		e.POST("/body", func(c *echo.Context) error {
-			captured = c.Get("log_body")
+			logged = c.Get(LogBodyKey)
+			data, err := io.ReadAll(c.Request().Body)
+			require.NoError(t, err)
+			seen = string(data)
 			return c.NoContent(http.StatusNoContent)
 		})
-
-		req := httptest.NewRequest(http.MethodPost, "/body", strings.NewReader(`{"a":1}`))
+		req := httptest.NewRequest(http.MethodPost, "/body", strings.NewReader(body))
+		req.Header.Set(echo.HeaderContentType, contentType)
 		rec := httptest.NewRecorder()
 		e.ServeHTTP(rec, req)
+		return logged, seen, rec.Code
+	}
 
-		assert.Equal(t, http.StatusNoContent, rec.Code)
-		assert.Equal(t, `{"a":1}`, captured)
+	t.Run("short body is logged whole", func(t *testing.T) {
+		logged, seen, code := capture(t, echo.MIMEApplicationJSON, `{"a":1}`)
+		assert.Equal(t, http.StatusNoContent, code)
+		assert.Equal(t, `{"a":1}`, logged)
+		assert.Equal(t, `{"a":1}`, seen)
+	})
+
+	t.Run("long body is truncated in the log only", func(t *testing.T) {
+		logged, seen, code := capture(t, echo.MIMEApplicationJSON, `{"a":12345}`)
+		assert.Equal(t, http.StatusNoContent, code)
+		assert.Equal(t, `{"a":123`+truncatedSuffix, logged)
+		assert.Equal(t, `{"a":12345}`, seen)
+	})
+
+	t.Run("multipart body is not read", func(t *testing.T) {
+		logged, seen, code := capture(t, echo.MIMEMultipartForm+"; boundary=x", "--x--")
+		assert.Equal(t, http.StatusNoContent, code)
+		assert.Nil(t, logged)
+		assert.Equal(t, "--x--", seen)
+	})
+
+	t.Run("body over the limit gets 413", func(t *testing.T) {
+		_, _, code := capture(t, echo.MIMEApplicationJSON, strings.Repeat("x", 32))
+		assert.Equal(t, http.StatusRequestEntityTooLarge, code)
 	})
 
 	t.Run("read error", func(t *testing.T) {
-		e := echo.New()
-		handler := LogBodyMiddleware(func(c *echo.Context) error {
+		handler := LogBody(cfg)(func(c *echo.Context) error {
 			return c.NoContent(http.StatusNoContent)
 		})
 		req := httptest.NewRequest(http.MethodPost, "/body", errReader{})
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
-		err := handler(c)
-		require.Error(t, err)
+		c := echo.New().NewContext(req, httptest.NewRecorder())
+		require.Error(t, handler(c))
 	})
+}
+
+func TestTruncateBody(t *testing.T) {
+	assert.Equal(t, "abc", truncateBody([]byte("abc"), 0))
+	assert.Equal(t, "abc", truncateBody([]byte("abc"), 3))
+	// "é" is two bytes; cutting inside it drops the partial character.
+	assert.Equal(t, "a"+truncatedSuffix, truncateBody([]byte("aé"), 2))
 }
 
 type errReader struct{}
@@ -319,6 +372,7 @@ func (errReader) Read(p []byte) (int, error) {
 func TestRequestLogging(t *testing.T) {
 	cfg := &config.Config{
 		AppEnv:           config.EnvironmentTest,
+		AppName:          "slot-finder-test",
 		AppVersion:       "1.2.3",
 		KeycloakKeyClaim: "claims",
 	}
@@ -326,11 +380,9 @@ func TestRequestLogging(t *testing.T) {
 	e := echo.New()
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
-			payload := base64.RawStdEncoding.EncodeToString([]byte(`{"sub":"u1"}`))
-			c.Request().Header.Set("Authorization", "Bearer hdr."+payload+".sig")
-			c.Set(cfg.KeycloakKeyClaim, &auth.TokenClaims{Sub: "user-42"})
 			c.Set("organization_id", "org-1")
-			c.Set("log_body", `{"hello":"world"}`)
+			c.Set(LogBodyKey, `{"hello":"world"}`)
+			c.Set(cfg.KeycloakKeyClaim, &auth.TokenClaims{Sub: "user-42"})
 			ctx := request.NewCorrelationIDContext(c.Request().Context(), "corr-1")
 			ctx = request.NewLanguageCodeContext(ctx, "en")
 			c.SetRequest(c.Request().WithContext(ctx))

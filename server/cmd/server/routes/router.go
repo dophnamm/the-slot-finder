@@ -26,6 +26,13 @@ func Router(
 ) *echo.Echo {
 	r := echo.New()
 
+	// Client IP for rate limiting and logs: only trust X-Forwarded-For behind a known proxy.
+	if cfg.HTTPTrustProxy {
+		r.IPExtractor = echo.ExtractIPFromXFFHeader()
+	} else {
+		r.IPExtractor = echo.ExtractIPDirect()
+	}
+
 	if cfg.OTelExporterEndpoint != "" && cfg.OTelTracesEnabled {
 		serviceName := cfg.OTelServiceName
 		if serviceName == "" {
@@ -60,7 +67,7 @@ func Router(
 						monitoring.SetScopeData(scope, "path", c.Request().URL.Path)
 						monitoring.SetScopeData(scope, "query", c.QueryParams())
 						monitoring.SetScopeData(scope, "headers", c.Request().Header)
-						monitoring.SetScopeData(scope, "body", c.Get("log_body"))
+						monitoring.SetScopeData(scope, "body", c.Get(middlewares.LogBodyKey))
 
 						// Add environment context
 						scope.SetTag("environment", cfg.AppEnv.String())
@@ -90,16 +97,17 @@ func Router(
 		}
 	})
 
-	r.Use(middlewares.LogBodyMiddleware)
 	r.Use(middleware.RequestID())
 	r.Use(middlewares.RequestContext(cfg.AppName))
 	r.Use(errors.RecoveryMiddleware(cfg)) // Add panic recovery
-	r.Use(errors.ErrorMiddleware())       // Add centralized error handling
-	r.Use(middlewares.Security())         // Add secure headers (XSS, HSTS, etc.)
+	r.Use(errors.ErrorMiddleware())       // Add centralized error handling (413 from BodyLimit included)
+	r.Use(middlewares.BodyLimit(cfg))     // Before LogBody, so oversized bodies are never read
+	r.Use(middlewares.LogBody(cfg))
+	r.Use(middlewares.Security()) // Add secure headers (XSS, HSTS, etc.)
 	r.Use(middlewares.CORS())
 	r.Use(middlewares.CSRF(cfg))
 	r.Use(middlewares.ExposeCSRFToken())
-	r.Use(middlewares.DefaultRateLimit())
+	r.Use(middlewares.RateLimit(cfg))
 	r.Use(middlewares.RequestLogging(cfg))
 
 	if cfg.AppEnv != config.EnvironmentProduction {
@@ -113,7 +121,7 @@ func Router(
 	publicGroup := v1.Group("")
 	publicGroup.GET(constants.PathHealth, healthHandler.HealthCheck)
 	publicGroup.GET(constants.PathHealthDatabase, healthHandler.DatabaseHealthCheck)
-	publicGroup.GET(constants.PathHealthMetrics, healthHandler.DatabaseMetrics)
+	publicGroup.GET(constants.PathHealthMetrics, healthHandler.DatabaseMetrics, middlewares.BasicAuthMiddleware(*cfg))
 
 	// Feature routes go here, under v1, guarded by AuthMiddleware(cfg, authService) and RequireRole.
 

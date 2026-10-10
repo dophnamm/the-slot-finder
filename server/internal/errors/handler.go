@@ -54,25 +54,18 @@ func (h *ErrorHandler) processError(err error) *AppError {
 	// Map Echo HTTP errors (e.g., CSRF 403) to proper AppError
 	var httpErr *echo.HTTPError
 	if stderrors.As(err, &httpErr) {
-		status := httpErr.Code
 		msg := httpErr.Message
 		if msg == "" {
-			msg = http.StatusText(status)
+			msg = http.StatusText(httpErr.Code)
 		}
-		switch status {
-		case http.StatusBadRequest:
-			return ValidationError(msg, err)
-		case http.StatusUnauthorized:
-			return UnauthorizedError(msg, err)
-		case http.StatusForbidden:
-			return ForbiddenError(msg, err)
-		case http.StatusNotFound:
-			return NotFoundError("Resource", err)
-		default:
-			app := NewAppError(constants.InternalError, msg, ErrorTypeInternal, status)
-			app.Cause = err
-			return app
-		}
+		return appErrorForStatus(httpErr.Code, msg, err)
+	}
+
+	// Echo's built-in errors (ErrNotFound, ErrUnauthorized from BasicAuth, 413 from BodyLimit)
+	// only expose their status code.
+	var coder echo.HTTPStatusCoder
+	if stderrors.As(err, &coder) {
+		return appErrorForStatus(coder.StatusCode(), http.StatusText(coder.StatusCode()), err)
 	}
 
 	// Handle GORM errors
@@ -87,6 +80,26 @@ func (h *ErrorHandler) processError(err error) *AppError {
 
 	// Default to internal error
 	return InternalError("An unexpected error occurred", err)
+}
+
+// appErrorForStatus maps an HTTP status from Echo to an AppError.
+func appErrorForStatus(status int, msg string, err error) *AppError {
+	switch status {
+	case http.StatusBadRequest:
+		return ValidationError(msg, err)
+	case http.StatusUnauthorized:
+		return UnauthorizedError(msg, err)
+	case http.StatusForbidden:
+		return ForbiddenError(msg, err)
+	case http.StatusNotFound:
+		return NotFoundError("Resource", err)
+	case http.StatusRequestEntityTooLarge:
+		return WrapError(err, constants.PayloadTooLarge, constants.MsgPayloadTooLarge, ErrorTypeValidation, status)
+	default:
+		app := NewAppError(constants.InternalError, msg, ErrorTypeInternal, status)
+		app.Cause = err
+		return app
+	}
 }
 
 // handleGORMError converts GORM errors to AppError

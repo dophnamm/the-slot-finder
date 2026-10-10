@@ -146,3 +146,9 @@ func GetMetaPaging(c *echo.Context, code string, pageable *Pageable, httpStatus 
 		Total:     pageable.Total,
 	}
 }
+
+// RateLimitResponse is the data of a 429 answer: how many requests are allowed per window.
+type RateLimitResponse struct {
+	Limit  int    `json:"limit"`
+	Window string `json:"window"`
+}

@@ -2,11 +2,12 @@ package middlewares
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
+	"mime"
+	"net/http"
 	"strings"
 	"time"
 
@@ -38,33 +39,18 @@ func RequestLogging(cfg *config.Config) echo.MiddlewareFunc {
 			sentryLogger := sentry.NewLogger(c.Request().Context())
 			stdLogger := log.New(sentryLogger, "", log.LstdFlags)
 
-			// Extract user info from token if available
-			userLoginInfo := ""
+			// The signed-in user, if any. The token itself is never logged.
 			userID := ""
+			if claims, ok := c.Get(cfg.KeycloakKeyClaim).(*auth.TokenClaims); ok {
+				userID = claims.Sub
+			}
 			organizationID := ""
-			if len(c.Request().Header["Authorization"]) > 0 {
-				tmp := strings.Split(c.Request().Header["Authorization"][0], ".")
-				if len(tmp) == 3 {
-					sDesc, _ := base64.RawStdEncoding.DecodeString(tmp[1])
-					userLoginInfo = string(sDesc)
-				}
+			if org, ok := c.Get("organization_id").(string); ok {
+				organizationID = org
 			}
 
-			// Get user and organization IDs from context if available
-			if u := c.Get(cfg.KeycloakKeyClaim); u != nil {
-				if claims, ok := u.(*auth.TokenClaims); ok {
-					userID = claims.Sub
-				}
-			}
-			if org := c.Get("organization_id"); org != nil {
-				organizationID = org.(string)
-			}
-
-			// Get request body (captured by upstream middleware)
-			body := c.Get("log_body")
-			if body == nil {
-				body = ""
-			}
+			// Request body, captured and truncated by LogBody
+			body, _ := c.Get(LogBodyKey).(string)
 
 			// Get query parameters
 			query := map[string]any{}
@@ -96,7 +82,7 @@ func RequestLogging(cfg *config.Config) echo.MiddlewareFunc {
 			languageCode, _ := request.LanguageCodeFromContext(ctx)
 
 			// Format log message with all fields
-			logMsg := fmt.Sprintf("Request: %s %s (status=%d, latency=%v, request_id=%s, correlation_id=%s, language=%s, remote_ip=%s, user_agent=%s, user_id=%s, org_id=%s, payload=%s, query=%s, path_params=%s, headers=%s, environment=%s, service=fast-ai, version=%s, timestamp=%d, hostname=%s, protocol=%s)",
+			logMsg := fmt.Sprintf("Request: %s %s (status=%d, latency=%v, request_id=%s, correlation_id=%s, language=%s, remote_ip=%s, user_agent=%s, user_id=%s, org_id=%s, payload=%s, query=%s, path_params=%s, headers=%s, environment=%s, service=%s, version=%s, timestamp=%d, hostname=%s, protocol=%s)",
 				values.Method,
 				values.URI,
 				values.Status,
@@ -113,6 +99,7 @@ func RequestLogging(cfg *config.Config) echo.MiddlewareFunc {
 				string(jsonParamStr),
 				string(jsonHeadersStr),
 				cfg.AppEnv.String(),
+				cfg.AppName,
 				cfg.AppVersion,
 				time.Now().UnixMilli(),
 				c.Request().Host,
@@ -134,14 +121,13 @@ func RequestLogging(cfg *config.Config) echo.MiddlewareFunc {
 				zap.String("language_code", languageCode),
 				zap.String("user_agent", values.UserAgent),
 				zap.String("user_id", userID),
-				zap.String("user_login", userLoginInfo),
 				zap.String("org_id", organizationID),
-				zap.String("payload", fmt.Sprintf("%v", body)),
+				zap.String("payload", body),
 				zap.String("query", string(jsonQueryStr)),
 				zap.String("path_params", string(jsonParamStr)),
 				zap.String("headers", string(jsonHeadersStr)),
 				zap.String("environment", cfg.AppEnv.String()),
-				zap.String("service", "fast-ai"),
+				zap.String("service", cfg.AppName),
 				zap.String("version", cfg.AppVersion),
 				zap.Int64("timestamp", time.Now().UnixMilli()),
 				zap.String("hostname", c.Request().Host),
@@ -153,14 +139,50 @@ func RequestLogging(cfg *config.Config) echo.MiddlewareFunc {
 	})
 }
 
-func LogBodyMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c *echo.Context) error {
-		data, err := io.ReadAll(c.Request().Body)
-		if err != nil {
-			return err
+// LogBodyKey is the echo.Context key that holds the request body for logging.
+const LogBodyKey = "log_body"
+
+// truncatedSuffix marks a logged body that was cut at LOG_BODY_MAX_BYTES.
+const truncatedSuffix = "…[truncated]"
+
+// multipartMediaTypePrefix matches multipart/form-data, multipart/mixed and the like.
+const multipartMediaTypePrefix = "multipart/"
+
+// BodyLimit rejects bodies larger than APP_BODY_LIMIT_BYTES with 413. It runs before LogBody,
+// so LogBody never reads more than that into memory.
+func BodyLimit(cfg *config.Config) echo.MiddlewareFunc {
+	return middleware.BodyLimit(cfg.AppBodyLimitBytes)
+}
+
+// LogBody keeps a copy of the request body for the request log, cut to LOG_BODY_MAX_BYTES.
+// Multipart bodies (file uploads) are not read.
+func LogBody(cfg *config.Config) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c *echo.Context) error {
+			req := c.Request()
+			if req.Body == nil || req.Body == http.NoBody || isMultipart(req) {
+				return next(c)
+			}
+			data, err := io.ReadAll(req.Body)
+			if err != nil {
+				return err
+			}
+			req.Body = io.NopCloser(bytes.NewReader(data))
+			c.Set(LogBodyKey, truncateBody(data, cfg.LogBodyMaxBytes))
+			return next(c)
 		}
-		c.Request().Body = io.NopCloser(bytes.NewReader(data))
-		c.Set("log_body", string(data))
-		return next(c)
 	}
+}
+
+func isMultipart(req *http.Request) bool {
+	mediaType, _, err := mime.ParseMediaType(req.Header.Get(echo.HeaderContentType))
+	return err == nil && strings.HasPrefix(mediaType, multipartMediaTypePrefix)
+}
+
+// truncateBody cuts data to maxBytes without splitting a UTF-8 character.
+func truncateBody(data []byte, maxBytes int) string {
+	if maxBytes <= 0 || len(data) <= maxBytes {
+		return string(data)
+	}
+	return strings.ToValidUTF8(string(data[:maxBytes]), "") + truncatedSuffix
 }

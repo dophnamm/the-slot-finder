@@ -58,7 +58,7 @@ func AuthMiddleware(cfg *config.Config, authService auth.AuthService) echo.Middl
 				if hub := monitoring.GetSentryHub(c.Request().Context()); hub != nil {
 					hub.WithScope(func(scope *sentry.Scope) {
 						scope.SetTag("auth_error", "invalid_claims")
-						scope.SetTag("service", "fast-ai")
+						scope.SetTag("service", cfg.AppName)
 						scope.SetTag("environment", cfg.AppEnv.String())
 						monitoring.SetScopeData(scope, "path", c.Request().URL.Path)
 						monitoring.SetScopeData(scope, "method", c.Request().Method)

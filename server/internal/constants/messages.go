@@ -22,3 +22,10 @@ const (
 	MsgPermissionEvaluationFailed = "Permission evaluation failed"
 	MsgRPTClaimsInvalid           = "Invalid RPT claims"
 )
+
+// Request limit messages.
+const (
+	MsgRateLimitExceeded       = "Rate limit exceeded"
+	MsgClientIdentifierMissing = "Could not identify the client"
+	MsgPayloadTooLarge         = "Request body is too large"
+)
