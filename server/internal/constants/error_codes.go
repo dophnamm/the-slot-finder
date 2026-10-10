@@ -9,6 +9,7 @@ const (
 
 	// Rate Limit errors
 	RateLimitExceeded = "RATE_LIMIT_EXCEEDED"
+	PayloadTooLarge   = "PAYLOAD_TOO_LARGE"
 
 	// Email errors
 	EmailSendError = "EMAIL_SEND_ERROR"

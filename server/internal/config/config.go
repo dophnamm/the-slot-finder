@@ -42,6 +42,10 @@ type Config struct {
 	AppHTTPServer string
 	// AppRequestTimeout is the HTTP server read header timeout in seconds.
 	AppRequestTimeout int
+	// Largest request body accepted, in bytes; larger requests get 413.
+	AppBodyLimitBytes int64
+	// Trust X-Forwarded-For from private and loopback proxies when extracting the client IP.
+	HTTPTrustProxy bool
 
 	// Database configuration
 	DatabaseHost        string
@@ -81,6 +85,8 @@ type Config struct {
 
 	// Logging configuration
 	LogLevel string
+	// Longest request body written to the request log, in bytes; the rest is cut.
+	LogBodyMaxBytes int
 
 	// Authentication configuration
 	AuthProvider        string
@@ -138,6 +144,8 @@ func Load() (*Config, error) {
 		Timezone:                     getEnv("TIMEZONE", "UTC"),
 		AppHTTPServer:                getEnv("APP_HTTP_SERVER", ":3000"),
 		AppRequestTimeout:            getEnvAsInt("APP_REQUEST_TIMEOUT", 30),
+		AppBodyLimitBytes:            int64(getEnvAsInt("APP_BODY_LIMIT_BYTES", 2<<20)),
+		HTTPTrustProxy:               getEnvAsBool("HTTP_TRUST_PROXY", false),
 		DatabaseHost:                 getEnv("POSTGRES_HOST", "localhost"),
 		DatabasePort:                 getEnv("POSTGRES_PORT", "5432"),
 		DatabaseUsername:             getEnv("POSTGRES_USER", "postgres"),
@@ -169,6 +177,7 @@ func Load() (*Config, error) {
 		MinRetryBackoff:              getEnvAsDuration("REDIS_MIN_RETRY_BACKOFF", 1*time.Second),
 		MaxRetryBackoff:              getEnvAsDuration("REDIS_MAX_RETRY_BACKOFF", 5*time.Second),
 		LogLevel:                     getEnv("LOG_LEVEL", "info"),
+		LogBodyMaxBytes:              getEnvAsInt("LOG_BODY_MAX_BYTES", 2048),
 		AuthProvider:                 getEnv("AUTH_PROVIDER", "keycloak"),
 		KeycloakURL:                  getEnv("KEYCLOAK_URL", ""),
 		KeycloakRealm:                getEnv("KEYCLOAK_REALM", ""),

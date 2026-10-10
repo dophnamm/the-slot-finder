@@ -11,6 +11,7 @@ import (
 
 	"the-slot-finder/server/docs"
 	"the-slot-finder/server/internal/cache"
+	"the-slot-finder/server/internal/clock"
 	"the-slot-finder/server/internal/config"
 	"the-slot-finder/server/internal/handlers"
 	"the-slot-finder/server/internal/httpclient"
@@ -147,24 +148,19 @@ func main() {
 	// Ensure all events are flushed before the program exits
 	defer monitoring.FlushSentry()
 
-	// Set application timezone from environment variable, default to UTC if not specified
-	timezone := cfg.Timezone
-	if timezone == "" {
-		timezone = "UTC"
-	}
-	loc, err := time.LoadLocation(timezone)
-	if err != nil {
-		logger.Sugar.Warnf("Invalid timezone %s, falling back to UTC", timezone)
-		loc = time.UTC
-	}
-	time.Local = loc
+	// The organization time zone lives in the Clock (TIMEZONE); time.Local is left alone.
+	fx.New(appOptions(cfg)...).Run()
+}
 
-	fx.New(
+// appOptions lists every FX provider, so a test can validate the dependency graph.
+func appOptions(cfg *config.Config) []fx.Option {
+	return []fx.Option{
 		fx.Supply(cfg),
 		fx.Provide(
 			NewHTTPServer,
 			ProvideGormPostgres,
 			ProvideValidator,
+			clock.ProvideClock,
 			httpclient.ProvideRestClient,
 			auth.ProvideAuth,
 			cache.ProvideCache,
@@ -174,7 +170,7 @@ func main() {
 			handlers.ProvideHealthHandler,
 		),
 		fx.Invoke(func(*http.Server) {}),
-	).Run()
+	}
 }
 
 func ProvideValidator() (*validator.Validate, error) {

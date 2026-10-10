@@ -348,3 +348,25 @@ func TestErrorAndSuccessResponses(t *testing.T) {
 		}
 	})
 }
+
+func TestProcessError_EchoStatusErrors(t *testing.T) {
+	h := NewErrorHandler()
+	tests := []struct {
+		name       string
+		err        error
+		wantStatus int
+		wantCode   string
+	}{
+		{name: "not found", err: echo.ErrNotFound, wantStatus: http.StatusNotFound, wantCode: constants.UserNotFound},
+		{name: "unauthorized", err: echo.ErrUnauthorized, wantStatus: http.StatusUnauthorized, wantCode: constants.Unauthorized},
+		{name: "body too large", err: echo.ErrStatusRequestEntityTooLarge, wantStatus: http.StatusRequestEntityTooLarge, wantCode: constants.PayloadTooLarge},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			appErr := h.processError(tt.err)
+			require.NotNil(t, appErr)
+			assert.Equal(t, tt.wantStatus, appErr.HTTPStatus)
+			assert.Equal(t, tt.wantCode, appErr.Code)
+		})
+	}
+}
