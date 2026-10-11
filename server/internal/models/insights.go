@@ -38,3 +38,24 @@ type ExpertiseHours struct {
 	// Primary is true when it is the person's primary skill.
 	Primary bool
 }
+
+// ProgramMember is a person with baseline hours on a program's projects. It is computed, not
+// stored.
+type ProgramMember struct {
+	Person     Person
+	TotalHours float64
+	// FromWeek and ToWeek are the first and last weeks with hours on the program.
+	FromWeek isoweek.Week
+	ToWeek   isoweek.Week
+	// Expertises is the hours per expertise and assignment kind, most hours first.
+	Expertises []MemberExpertise
+	// Projects are the program's projects they have hours on, by name.
+	Projects []Project
+}
+
+// MemberExpertise is a member's hours in one expertise of a program, as one kind of assignment.
+type MemberExpertise struct {
+	Expertise Expertise
+	Kind      string
+	Hours     float64
+}

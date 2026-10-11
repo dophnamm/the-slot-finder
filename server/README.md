@@ -125,7 +125,7 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | PATCH | `/programs/{id}/forecast` | Set or clear `forecast_override_hours` per demand | planner, lead (own) |
 | GET | `/programs/{id}/projects` | Projects tab: rows with a `metrics` object (Time / Scope / Planned burn / Staffing and warnings); next milestone later | planner, lead, internal assistant |
 | POST | `/programs/{id}/projects` | Add a project to the program | planner, lead (own) |
-| GET | `/programs/{id}/members` | Members tab: each member with the expertises they hold here (hours and kind per expertise) and overall utilization (next 4 weeks) | planner, lead, internal assistant |
+| GET | `/programs/{id}/members` | Members tab and the Programs list preview: everyone with baseline hours on the program's projects, most hours first, with hours per expertise and kind, first and last week, and projects (overall utilization later) | planner, lead |
 | GET, POST | `/programs/{id}/assistants` | List or add assistants (`kind`: internal or external) | planner, lead (own); internal assistants may list |
 | DELETE | `/programs/{id}/assistants/{assistantId}` | Remove an assistant | planner, lead (own) |
 | GET, POST | `/programs/{id}/milestones` | List or add milestones | planner, lead (own); internal assistants may list |

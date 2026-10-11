@@ -92,6 +92,27 @@ func (h *InsightsHandler) ProgramOverview(c *echo.Context) error {
 	return h.SuccessResponse(c, constants.MsgOverviewRetrieved, dtos.NewProgramOverviewResponse(*overview), nil)
 }
 
+// ProgramMembers godoc
+// @Summary A program's members
+// @Description Everyone with baseline hours on the program's projects, most hours first: hours per expertise and assignment kind, first and last week, and the projects.
+// @Tags Programs
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Program id"
+// @Success 200 {object} object{meta=dtos.Meta,data=[]dtos.ProgramMemberResponse}
+// @Router /programs/{id}/members [get]
+func (h *InsightsHandler) ProgramMembers(c *echo.Context) error {
+	id, ok := h.pathID(c)
+	if !ok {
+		return nil
+	}
+	members, err := h.insights.ProgramMembers(c.Request().Context(), id)
+	if err != nil {
+		return h.HandleError(c, err)
+	}
+	return h.SuccessResponse(c, constants.MsgMembersRetrieved, dtos.NewProgramMemberResponses(members), nil)
+}
+
 // Risks godoc
 // @Summary Risks
 // @Description Open projects that are understaffed, at risk or behind on delivery, and people over 100 % in the next HEATMAP_DEFAULT_WEEKS weeks.

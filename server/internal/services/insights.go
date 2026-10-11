@@ -21,6 +21,7 @@ import (
 const (
 	opHeatmap         = "heatmap"
 	opProgramOverview = "program_overview"
+	opProgramMembers  = "program_members"
 	opProjectMetrics  = "project_metrics"
 	opRisks           = "risks"
 	resourceHeatmap   = "heatmap"
@@ -44,6 +45,9 @@ type InsightsService interface {
 	// ProgramOverview is a program's progress and cost figures summed over its projects that
 	// are not cancelled, with staffing by expertise.
 	ProgramOverview(ctx context.Context, programID string) (*models.ProgramOverview, error)
+	// ProgramMembers is everyone with baseline hours on the program's projects, most hours
+	// first: their hours per expertise, the weeks they work and the projects.
+	ProgramMembers(ctx context.Context, programID string) ([]models.ProgramMember, error)
 	// ProjectMetrics is the progress of each project of a program, by project id.
 	ProjectMetrics(ctx context.Context, programID string) (map[string]metrics.Progress, error)
 	// Risks lists open projects that are understaffed, at risk or behind on delivery, and
@@ -352,6 +356,99 @@ func (s *insightsService) ProgramOverview(ctx context.Context, programID string)
 		return rows[i].Expertise.Name < rows[j].Expertise.Name
 	})
 	return &models.ProgramOverview{Program: *program, Metrics: metrics.Compute(in, s.settings()), ByExpertise: rows, Projects: len(projects)}, nil
+}
+
+func (s *insightsService) ProgramMembers(ctx context.Context, programID string) ([]models.ProgramMember, error) {
+	if _, err := s.authz.Require(ctx, CanUsePrograms); err != nil {
+		return nil, err
+	}
+	if _, err := s.programs.FindWithLead(ctx, programID); err != nil {
+		return nil, notFoundOrDatabase(err, constants.ProgramNotFound, constants.MsgProgramNotFound, resourceProgram, opProgramMembers)
+	}
+	baseline, err := findBaseline(ctx, s.plans, opProgramMembers, true)
+	if err != nil {
+		return nil, err
+	}
+	return programMembers(baseline.Assignments, programID), nil
+}
+
+// programMembers sums the baseline assignments on one program's projects per person.
+func programMembers(assignments []models.Assignment, programID string) []models.ProgramMember {
+	byPerson := map[string]*models.ProgramMember{}
+	type expertiseKey struct{ expertiseID, kind string }
+	expertises := map[string]map[expertiseKey]*models.MemberExpertise{}
+	projects := map[string]map[string]models.Project{}
+	for _, a := range assignments {
+		if a.Person == nil || a.Demand == nil || a.Demand.Project == nil || a.Demand.Project.ProgramID != programID {
+			continue
+		}
+		hours, first, last := allocationSpan(a.Allocations)
+		if hours == 0 {
+			continue
+		}
+		member, ok := byPerson[a.PersonID]
+		if !ok {
+			member = &models.ProgramMember{Person: *a.Person, FromWeek: first, ToWeek: last}
+			byPerson[a.PersonID] = member
+			expertises[a.PersonID] = map[expertiseKey]*models.MemberExpertise{}
+			projects[a.PersonID] = map[string]models.Project{}
+		}
+		member.TotalHours += hours
+		if first.Before(member.FromWeek) {
+			member.FromWeek = first
+		}
+		if last.After(member.ToWeek) {
+			member.ToWeek = last
+		}
+		key := expertiseKey{a.Demand.ExpertiseID, a.Kind}
+		if row, ok := expertises[a.PersonID][key]; ok {
+			row.Hours += hours
+		} else {
+			expertises[a.PersonID][key] = &models.MemberExpertise{Expertise: a.Demand.Expertise, Kind: a.Kind, Hours: hours}
+		}
+		projects[a.PersonID][a.Demand.ProjectID] = *a.Demand.Project
+	}
+	out := make([]models.ProgramMember, 0, len(byPerson))
+	for id, member := range byPerson {
+		for _, row := range expertises[id] {
+			member.Expertises = append(member.Expertises, *row)
+		}
+		sort.Slice(member.Expertises, func(i, j int) bool {
+			if member.Expertises[i].Hours != member.Expertises[j].Hours {
+				return member.Expertises[i].Hours > member.Expertises[j].Hours
+			}
+			return member.Expertises[i].Expertise.Name < member.Expertises[j].Expertise.Name
+		})
+		for _, p := range projects[id] {
+			member.Projects = append(member.Projects, p)
+		}
+		sort.Slice(member.Projects, func(i, j int) bool { return member.Projects[i].Name < member.Projects[j].Name })
+		out = append(out, *member)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].TotalHours != out[j].TotalHours {
+			return out[i].TotalHours > out[j].TotalHours
+		}
+		return out[i].Person.Name < out[j].Person.Name
+	})
+	return out
+}
+
+// allocationSpan is the hours of an assignment and its first and last weeks with hours.
+func allocationSpan(allocations []models.Allocation) (hours float64, first, last isoweek.Week) {
+	for _, alloc := range allocations {
+		if alloc.Hours <= 0 {
+			continue
+		}
+		hours += alloc.Hours
+		if first.IsZero() || alloc.Week.Before(first) {
+			first = alloc.Week
+		}
+		if alloc.Week.After(last) {
+			last = alloc.Week
+		}
+	}
+	return hours, first, last
 }
 
 func (s *insightsService) ProjectMetrics(ctx context.Context, programID string) (map[string]metrics.Progress, error) {

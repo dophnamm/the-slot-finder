@@ -63,6 +63,48 @@ func NewProgramOverviewResponse(o models.ProgramOverview) ProgramOverviewRespons
 	return ProgramOverviewResponse{ProgramID: o.Program.ID, Projects: o.Projects, Metrics: NewProgressResponse(o.Metrics), StaffingByExpertise: rows}
 }
 
+// ProjectRef names a project.
+type ProjectRef struct {
+	ID   string `json:"id"`
+	Name string `json:"name" example:"Checkout Revamp"`
+}
+
+// MemberExpertiseResponse is a member's hours in one expertise, as one kind of assignment.
+type MemberExpertiseResponse struct {
+	ExpertiseID string  `json:"expertise_id"`
+	Expertise   string  `json:"expertise" example:"Engineer"`
+	Kind        string  `json:"kind" example:"primary" enums:"primary,cross_expertise,stretch"`
+	Hours       float64 `json:"hours" example:"120"`
+}
+
+// ProgramMemberResponse is a person with baseline hours on a program's projects.
+type ProgramMemberResponse struct {
+	Person     PersonRef                 `json:"person"`
+	TotalHours float64                   `json:"total_hours" example:"160"`
+	FromWeek   string                    `json:"from_week" example:"2026-W44"`
+	ToWeek     string                    `json:"to_week" example:"2026-W48"`
+	Expertises []MemberExpertiseResponse `json:"expertises"`
+	Projects   []ProjectRef              `json:"projects"`
+}
+
+// NewProgramMemberResponses maps program members; never nil.
+func NewProgramMemberResponses(members []models.ProgramMember) []ProgramMemberResponse {
+	out := make([]ProgramMemberResponse, 0, len(members))
+	for _, m := range members {
+		expertises := make([]MemberExpertiseResponse, 0, len(m.Expertises))
+		for _, e := range m.Expertises {
+			expertises = append(expertises, MemberExpertiseResponse{ExpertiseID: e.Expertise.ID, Expertise: e.Expertise.Name, Kind: e.Kind, Hours: e.Hours})
+		}
+		projects := make([]ProjectRef, 0, len(m.Projects))
+		for _, p := range m.Projects {
+			projects = append(projects, ProjectRef{ID: p.ID, Name: p.Name})
+		}
+		out = append(out, ProgramMemberResponse{Person: PersonRef{ID: m.Person.ID, Name: m.Person.Name}, TotalHours: m.TotalHours,
+			FromWeek: m.FromWeek.String(), ToWeek: m.ToWeek.String(), Expertises: expertises, Projects: projects})
+	}
+	return out
+}
+
 // RiskProjectResponse is a project with a warning.
 type RiskProjectResponse struct {
 	ID           string           `json:"id"`
