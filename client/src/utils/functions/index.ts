@@ -4,6 +4,7 @@ export {
   dayjs,
   formatDate,
   formatDateRange,
+  formatDateTime,
   formatIsoWeekRange,
   formatIsoWeekSpan,
   isIsoWeek,
