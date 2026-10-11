@@ -73,6 +73,11 @@ func CanViewInsights(principal request.Principal) bool {
 	return principal.HasAnyRole(constants.InsightRoles...)
 }
 
+// CanViewEvents allows planners and leads to read the change history.
+func CanViewEvents(principal request.Principal) bool {
+	return principal.HasAnyRole(constants.EventViewRoles...)
+}
+
 // AuthzService answers who is signed in and what they may do.
 type AuthzService interface {
 	// Principal returns the signed-in user, or a 401 error when there is none.

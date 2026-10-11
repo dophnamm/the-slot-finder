@@ -131,13 +131,14 @@ type projectService struct {
 	people   PeopleService
 	authz    AuthzService
 	tx       db.TxManager
+	events   EventRecorder
 }
 
 // ProvideProjectService creates the project service.
 func ProvideProjectService(projects repositories.ProjectRepository, programs repositories.ProgramRepository,
-	people PeopleService, authz AuthzService, tx db.TxManager,
+	people PeopleService, authz AuthzService, tx db.TxManager, events EventRecorder,
 ) ProjectService {
-	return &projectService{projects: projects, programs: programs, people: people, authz: authz, tx: tx}
+	return &projectService{projects: projects, programs: programs, people: people, authz: authz, tx: tx, events: events}
 }
 
 func (s *projectService) ListByProgram(ctx context.Context, programID string) ([]models.Project, error) {
@@ -221,6 +222,7 @@ func (s *projectService) Update(ctx context.Context, id string, in UpdateProject
 		return nil, err
 	}
 
+	oldDeadline := project.Deadline
 	applyProjectChanges(project, in)
 	if in.LeadID.Set {
 		if !CanManageAllPrograms(principal) {
@@ -234,8 +236,19 @@ func (s *projectService) Update(ctx context.Context, id string, in UpdateProject
 	if err := checkProjectDates(project.StartEarliest, project.Deadline, opUpdateProject); err != nil {
 		return nil, err
 	}
-	if err := s.saveProject(ctx, project, opUpdateProject); err != nil {
-		return nil, err
+	err = s.tx.Do(ctx, func(ctx context.Context) error {
+		if err := s.saveProject(ctx, project, opUpdateProject); err != nil {
+			return err
+		}
+		if project.Deadline.Equal(oldDeadline) {
+			return nil
+		}
+		return s.events.Record(ctx, ChangeInput{Type: constants.EventProjectSlipped, ProjectIDs: []string{project.ID},
+			Payload: DeadlineChange{ProjectID: project.ID, Project: project.Name, OldDeadline: oldDeadline.Format(constants.DateLayout),
+				NewDeadline: project.Deadline.Format(constants.DateLayout)}})
+	})
+	if err != nil {
+		return nil, asAppError(err, constants.MsgProjectSaveFailed, opUpdateProject, resourceProject)
 	}
 	return s.find(ctx, id, opUpdateProject)
 }
@@ -339,7 +352,8 @@ func (s *projectService) UpdatePhase(ctx context.Context, phaseID string, in Upd
 	}
 
 	changed := []models.ProjectPhase{*phase}
-	if slip := isoweek.WeeksBetween(oldEnd, phase.EndWeek); slip > 0 {
+	slip := isoweek.WeeksBetween(oldEnd, phase.EndWeek)
+	if slip > 0 {
 		for _, later := range project.Phases {
 			if later.Sequence <= phase.Sequence {
 				continue
@@ -350,7 +364,17 @@ func (s *projectService) UpdatePhase(ctx context.Context, phaseID string, in Upd
 		}
 	}
 
-	save := func(ctx context.Context) error { return s.projects.SavePhases(ctx, changed) }
+	save := func(ctx context.Context) error {
+		if err := s.projects.SavePhases(ctx, changed); err != nil {
+			return err
+		}
+		if slip <= 0 {
+			return nil
+		}
+		return s.events.Record(ctx, ChangeInput{Type: constants.EventPhaseSlipped, ProjectIDs: []string{project.ID},
+			Payload: PhaseChange{ProjectID: project.ID, Project: project.Name, PhaseID: phase.ID, Phase: phase.Name,
+				OldEndWeek: oldEnd.String(), NewEndWeek: phase.EndWeek.String(), Weeks: slip, MovedPhases: len(changed) - 1}})
+	}
 	if err := s.tx.Do(ctx, save); err != nil {
 		return nil, asAppError(err, constants.MsgProjectSaveFailed, opUpdatePhase, resourcePhase)
 	}

@@ -98,7 +98,7 @@ func asRole(subject, role string) context.Context {
 
 func newAvailability(repo *MockAbsenceRepository) AvailabilityService {
 	people := stubPeople{self: &models.Person{BaseModel: models.BaseModel{ID: selfPersonID}}}
-	return ProvideAvailabilityService(repo, people, ProvideAuthzService(people))
+	return ProvideAvailabilityService(repo, people, ProvideAuthzService(people), passthroughTx{}, &recordedEvents{})
 }
 
 func TestAvailabilityService_Create(t *testing.T) {

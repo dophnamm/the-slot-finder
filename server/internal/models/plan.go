@@ -23,6 +23,8 @@ type Plan struct {
 	CreatedBy   *string     `gorm:"column:created_by;type:uuid"`
 	PublishedAt *time.Time  `gorm:"column:published_at;type:timestamptz"`
 	PublishedBy *string     `gorm:"column:published_by;type:uuid"`
+	// SupersededBy is the newer version of a re-plan draft that replaced this one.
+	SupersededBy *string `gorm:"column:superseded_by;type:uuid"`
 
 	Assignments []Assignment `gorm:"foreignKey:PlanID;constraint:OnDelete:CASCADE"`
 }

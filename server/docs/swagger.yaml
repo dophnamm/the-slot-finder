@@ -127,6 +127,42 @@ definitions:
         example: 120
         type: number
     type: object
+  dtos.ChangeEventResponse:
+    properties:
+      attempts:
+        type: integer
+      draft:
+        $ref: '#/definitions/dtos.EventDraftResponse'
+      id:
+        type: string
+      last_error:
+        type: string
+      occurred_at:
+        type: string
+      payload:
+        additionalProperties: {}
+        description: Payload depends on the type, e.g. person_name, from_date and
+          to_date for absence.
+        type: object
+      project_ids:
+        items:
+          type: string
+        type: array
+      status:
+        enum:
+        - pending
+        - no_impact
+        - draft_created
+        - failed
+        type: string
+      type:
+        enum:
+        - AbsenceAdded
+        - AbsenceRemoved
+        - PhaseSlipped
+        - ProjectSlipped
+        type: string
+    type: object
   dtos.CreateAbsenceRequest:
     properties:
       from_date:
@@ -503,6 +539,18 @@ definitions:
           $ref: '#/definitions/dtos.SetAllocationRequest'
         maxItems: 500
         type: array
+    type: object
+  dtos.EventDraftResponse:
+    properties:
+      id:
+        type: string
+      status:
+        enum:
+        - draft
+        - published
+        - rejected
+        - superseded
+        type: string
     type: object
   dtos.ExpertiseHoursResponse:
     properties:
@@ -1143,6 +1191,44 @@ paths:
       summary: Remove an absence or a holiday
       tags:
       - Availability
+  /events:
+    get:
+      description: Changes that may break the plan (absence, slipped phases and deadlines),
+        newest first, with their processing status and re-plan draft. With program_id,
+        only changes that touch its projects; the program page uses it for the re-plan
+        banner.
+      parameters:
+      - description: Program id
+        in: query
+        name: program_id
+        type: string
+      - description: Page, from 1
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/dtos.ChangeEventResponse'
+                type: array
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Change history
+      tags:
+      - Events
   /expertises:
     get:
       produces:
