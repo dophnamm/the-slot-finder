@@ -37,6 +37,7 @@ const (
 	PhaseNotInProject      = "PHASE_NOT_IN_PROJECT"
 	DemandNotInProject     = "DEMAND_NOT_IN_PROJECT"
 	ExpertiseUnknown       = "EXPERTISE_UNKNOWN"
+	WeekRangeInvalid       = "WEEK_RANGE_INVALID"
 
 	// Email errors
 	EmailSendError = "EMAIL_SEND_ERROR"

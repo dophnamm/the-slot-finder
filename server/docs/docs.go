@@ -716,6 +716,67 @@ const docTemplate = `{
                 }
             }
         },
+        "/people/{id}/assignments": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Assignments with hours from one ISO week through another. Specialists may read only their own.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Planning"
+                ],
+                "summary": "A person's baseline assignments",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Person id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-W42",
+                        "description": "First week",
+                        "name": "from",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-W50",
+                        "description": "Last week",
+                        "name": "to",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/dtos.AssignmentResponse"
+                                    }
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/people/{id}/skills": {
             "put": {
                 "security": [
@@ -862,6 +923,39 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/plans/current": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The published plan in force, with every assignment and its weekly hours.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Planning"
+                ],
+                "summary": "The baseline",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.PlanResponse"
+                                },
                                 "meta": {
                                     "$ref": "#/definitions/dtos.Meta"
                                 }
@@ -1750,6 +1844,114 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.AllocationResponse": {
+            "type": "object",
+            "properties": {
+                "hours": {
+                    "type": "number",
+                    "example": 16
+                },
+                "locked": {
+                    "type": "boolean"
+                },
+                "week": {
+                    "type": "string",
+                    "example": "2026-W42"
+                }
+            }
+        },
+        "dtos.AssignmentDemandResponse": {
+            "type": "object",
+            "properties": {
+                "expertise": {
+                    "type": "string",
+                    "example": "QA"
+                },
+                "from_week": {
+                    "type": "string",
+                    "example": "2026-W48"
+                },
+                "headcount": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "hours": {
+                    "type": "number",
+                    "example": 120
+                },
+                "id": {
+                    "type": "string"
+                },
+                "min_level": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "phase": {
+                    "type": "string",
+                    "example": "Test"
+                },
+                "program": {
+                    "type": "string",
+                    "example": "Acme Commerce Platform"
+                },
+                "program_id": {
+                    "type": "string"
+                },
+                "project": {
+                    "type": "string",
+                    "example": "Checkout Revamp"
+                },
+                "project_id": {
+                    "type": "string"
+                },
+                "to_week": {
+                    "type": "string",
+                    "example": "2026-W50"
+                }
+            }
+        },
+        "dtos.AssignmentResponse": {
+            "type": "object",
+            "properties": {
+                "allocations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.AllocationResponse"
+                    }
+                },
+                "by_hand": {
+                    "description": "ByHand is true when a Planner added the assignment; false when the engine proposed it.",
+                    "type": "boolean"
+                },
+                "demand": {
+                    "$ref": "#/definitions/dtos.AssignmentDemandResponse"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "primary",
+                        "cross_expertise",
+                        "stretch"
+                    ]
+                },
+                "person": {
+                    "$ref": "#/definitions/dtos.PersonRef"
+                },
+                "reason": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "total_hours": {
+                    "type": "number",
+                    "example": 120
+                }
+            }
+        },
         "dtos.CreateAbsenceRequest": {
             "type": "object",
             "required": [
@@ -2243,6 +2445,43 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.PlanResponse": {
+            "type": "object",
+            "properties": {
+                "assignments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.AssignmentResponse"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "baseline",
+                        "draft"
+                    ]
+                },
+                "published_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "draft",
+                        "published",
+                        "rejected",
+                        "superseded"
+                    ]
+                },
+                "version": {
+                    "type": "integer",
+                    "example": 3
+                }
+            }
+        },
         "dtos.ProgramResponse": {
             "type": "object",
             "properties": {
@@ -2363,6 +2602,10 @@ const docTemplate = `{
                 "scope_points": {
                     "type": "number"
                 },
+                "staffed_at": {
+                    "description": "StaffedAt is when an accepted staffing draft first covered the whole project.",
+                    "type": "string"
+                },
                 "start_earliest": {
                     "type": "string",
                     "example": "2026-10-12"
@@ -2431,6 +2674,10 @@ const docTemplate = `{
                 },
                 "scope_points": {
                     "type": "number"
+                },
+                "staffed_at": {
+                    "description": "StaffedAt is when an accepted staffing draft first covered the whole project.",
+                    "type": "string"
                 },
                 "start_earliest": {
                     "type": "string",

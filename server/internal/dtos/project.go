@@ -111,22 +111,24 @@ type DemandResponse struct {
 // ProjectResponse is a project row: program, lead, ISO weeks, the current phase and at_risk
 // (the last phase ends after the deadline week).
 type ProjectResponse struct {
-	ID            string         `json:"id"`
-	ProgramID     string         `json:"program_id"`
-	ProgramName   string         `json:"program_name,omitempty" example:"Acme onboarding"`
-	Name          string         `json:"name" example:"Mobile app"`
-	Priority      int            `json:"priority" example:"2"`
-	Status        string         `json:"status" example:"incoming" enums:"incoming,planned,active,on_hold,done,cancelled"`
-	StartEarliest string         `json:"start_earliest" example:"2026-10-12"`
-	Deadline      string         `json:"deadline" example:"2026-12-18"`
-	StartWeek     string         `json:"start_week" example:"2026-W42"`
-	DeadlineWeek  string         `json:"deadline_week" example:"2026-W51"`
-	ScopePoints   float64        `json:"scope_points"`
-	DonePoints    float64        `json:"done_points"`
-	Lead          *PersonRef     `json:"lead"`
-	CreatedAt     time.Time      `json:"created_at"`
-	AtRisk        bool           `json:"at_risk"`
-	CurrentPhase  *PhaseResponse `json:"current_phase"`
+	ID            string     `json:"id"`
+	ProgramID     string     `json:"program_id"`
+	ProgramName   string     `json:"program_name,omitempty" example:"Acme onboarding"`
+	Name          string     `json:"name" example:"Mobile app"`
+	Priority      int        `json:"priority" example:"2"`
+	Status        string     `json:"status" example:"incoming" enums:"incoming,planned,active,on_hold,done,cancelled"`
+	StartEarliest string     `json:"start_earliest" example:"2026-10-12"`
+	Deadline      string     `json:"deadline" example:"2026-12-18"`
+	StartWeek     string     `json:"start_week" example:"2026-W42"`
+	DeadlineWeek  string     `json:"deadline_week" example:"2026-W51"`
+	ScopePoints   float64    `json:"scope_points"`
+	DonePoints    float64    `json:"done_points"`
+	Lead          *PersonRef `json:"lead"`
+	CreatedAt     time.Time  `json:"created_at"`
+	// StaffedAt is when an accepted staffing draft first covered the whole project.
+	StaffedAt    *time.Time     `json:"staffed_at"`
+	AtRisk       bool           `json:"at_risk"`
+	CurrentPhase *PhaseResponse `json:"current_phase"`
 }
 
 // ProjectDetailResponse is a project with its phases and demand.
@@ -167,6 +169,7 @@ func NewProjectResponse(p models.Project, now isoweek.Week) ProjectResponse {
 		DonePoints:    p.DonePoints,
 		Lead:          newPersonRef(p.Lead),
 		CreatedAt:     p.CreatedAt,
+		StaffedAt:     p.StaffedAt,
 		AtRisk:        p.AtRisk(),
 	}
 	if p.Program != nil {

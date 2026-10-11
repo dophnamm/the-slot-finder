@@ -95,6 +95,10 @@ const (
 	MsgDemandsUpdated         = "Demand updated"
 	MsgDemandNotInProject     = "The demand does not belong to this project"
 	MsgExpertiseUnknown       = "Unknown expertise"
+	MsgPlanRetrieved          = "Plan retrieved"
+	MsgPlanLoadFailed         = "Could not load the plan"
+	MsgAssignmentsListed      = "Assignments retrieved"
+	MsgWeekRangeInvalid       = "to must not be before from"
 )
 
 // Request limit messages.

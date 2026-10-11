@@ -35,4 +35,11 @@ var (
 	ProgramRoles = []string{RolePlanner, RoleLead}
 	// ProgramManageAllRoles may edit every program and project and choose their leads.
 	ProgramManageAllRoles = []string{RolePlanner}
+	// PlanViewRoles may read the baseline and staffing drafts.
+	PlanViewRoles = []string{RolePlanner, RoleLead}
+	// PlanManageRoles may generate, edit, accept and reject staffing drafts.
+	PlanManageRoles = []string{RolePlanner}
+	// PersonAssignmentRoles may reach a person's assignments; the service lets a specialist
+	// read only their own.
+	PersonAssignmentRoles = []string{RolePlanner, RoleLead, RoleSpecialist}
 )
