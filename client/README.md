@@ -22,7 +22,7 @@ Sign in with a demo user (`planner`, `lead` or `specialist`; see [`server/README
 
 | Route | Screen | Roles | Main API |
 |---|---|---|---|
-| `/login` | **Sign in**: one button that redirects to Keycloak | everyone | Keycloak (OIDC, PKCE) |
+| `/signed-out` | **Signed out**: where Keycloak returns after sign-out; "Sign in again" | everyone | — |
 | `/auth/callback` | Finishes the Keycloak round trip and returns to the page the user asked for | everyone | Keycloak token endpoint |
 | `/` | **Dashboard**: person × week heatmap, overload and deadline-risk alerts | planner, lead | `/insights/heatmap`, `/insights/risks` |
 | `/programs` | **Programs**: list with status, timeline and the four progress bars | planner, lead, internal assistant | `/programs` |
@@ -39,8 +39,8 @@ Sign in with a demo user (`planner`, `lead` or `specialist`; see [`server/README
 
 ```mermaid
 flowchart LR
-  login["/login"] --> dash["/ Dashboard"]
-  login --> me["/me My schedule"]
+  signin["Keycloak sign-in"] --> dash["/ Dashboard"]
+  signin --> me["/me My schedule"]
   dash --> programs["/programs"]
   programs --> program["/programs/:id"]
   program --> project["/projects/:id"]
@@ -178,7 +178,8 @@ flowchart TB
 9. **Sign-in** uses [`oidc-client-ts`](https://github.com/authts/oidc-client-ts): Authorization Code with PKCE (S256) against the Keycloak realm in `VITE_OIDC_AUTHORITY`. It was chosen over `keycloak-js` because it is standard OIDC (not tied to Keycloak), typed, maintained, and renews tokens silently with the refresh token instead of a hidden iframe.
    - `shared/auth/` holds the OIDC client, the session functions (`startAuthSession`, `signIn`, `completeSignIn`, `signOut`) and `useCurrentUser`
    - the session token lives in `shared/stores/auth-store.ts`; `http.ts` reads it from there
-   - `app/router.tsx` wraps the app in `RequireAuth` (signed-out users go to `/login`) and each route group in `RequirePermission` (other roles see "No access")
+   - `app/router.tsx` wraps the app in `RequireAuth` (signed-out users go straight to the Keycloak sign-in page and come back to the page they asked for) and each route group in `RequirePermission` (other roles see "No access")
+   - signing out returns to `/signed-out`, which stays until "Sign in again" is clicked
    - the home route sends planners and leads to the dashboard and specialists to their schedule
    - a `401` from the API ends the session in the shared error handler
 10. **All user-facing text goes through `t()`** from `@/shared/i18n`. The key is the English text itself and is declared in `LanguageKey`; English needs no locale file. Server data (names, emails) is shown as-is.
