@@ -3,6 +3,7 @@ import { AuthPanel } from '@/shared/components/auth-panel'
 import { useTranslation } from '@/shared/i18n'
 import { useAuthStore } from '@/shared/stores/auth-store'
 import { Button } from '@/shared/ui/button'
+import { SIGN_IN_FAILURE_MESSAGES } from './constants'
 import { useSignInRedirect } from './use-sign-in-redirect'
 import { returnPath } from './utils'
 
@@ -11,12 +12,12 @@ export function RequireAuth() {
   const { t } = useTranslation()
   const status = useAuthStore((state) => state.status)
   const location = useLocation()
-  const { failed, retry } = useSignInRedirect(status === 'signed-out', returnPath(location))
+  const { failure, retry } = useSignInRedirect(status === 'signed-out', returnPath(location))
 
   if (status === 'signed-in') return <Outlet />
-  if (!failed) return null
+  if (!failure) return null
   return (
-    <AuthPanel title={t('Sign in')} description={t('Could not reach the sign-in service.')}>
+    <AuthPanel title={t('Sign in')} description={t(SIGN_IN_FAILURE_MESSAGES[failure])}>
       <Button className="w-full" onClick={retry}>
         {t('Try again')}
       </Button>
