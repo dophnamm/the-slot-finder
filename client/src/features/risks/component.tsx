@@ -12,12 +12,12 @@ export function Risks() {
   const people = data?.people ?? []
 
   return (
-    <Card>
+    <Card className="h-full min-h-0">
       <CardHeader>
         <CardTitle>{t('Risks')}</CardTitle>
         <CardDescription>{t('Projects that are understaffed, at risk or behind on delivery, and people over 100 % in the coming weeks.')}</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-5">
+      <CardContent className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto">
         {isPending && <p className="text-sm text-muted-foreground">{t('Loading…')}</p>}
         <section className="flex flex-col gap-2">
           <h3 className="text-sm font-medium">{t('Projects ({count})', { count: projects.length })}</h3>

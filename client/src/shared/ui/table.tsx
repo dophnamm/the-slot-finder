@@ -1,11 +1,27 @@
 import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+const tableContainerVariants = cva("relative w-full", {
+  variants: {
+    scroll: {
+      x: "overflow-x-auto",
+      // Fills the rest of a flex column and scrolls both ways, so sticky headers and columns stay in view.
+      both: "min-h-0 flex-1 overflow-auto",
+    },
+  },
+  defaultVariants: { scroll: "x" },
+})
+
+function Table({
+  className,
+  scroll,
+  ...props
+}: React.ComponentProps<"table"> & VariantProps<typeof tableContainerVariants>) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      className={tableContainerVariants({ scroll })}
     >
       <table
         data-slot="table"

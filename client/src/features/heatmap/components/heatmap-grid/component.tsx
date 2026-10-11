@@ -1,10 +1,10 @@
 import { Fragment } from 'react'
 import { useTranslation } from '@/shared/i18n'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
-import { formatIsoWeekRange, shortWeekLabel } from '@/utils/functions'
+import { cn, formatIsoWeekRange, shortWeekLabel } from '@/utils/functions'
 import { groupByExpertise } from '../../utils'
 import { HeatmapRow } from './components/heatmap-row'
-import { PERSON_COLUMN_CLASS } from './constants'
+import { CORNER_CELL_CLASS, GROUP_LABEL_CLASS, GROUP_ROW_CLASS, HEADER_CELL_CLASS } from './constants'
 import type { HeatmapGridProps } from './types'
 
 /** People grouped by primary expertise, one column per ISO week. */
@@ -13,12 +13,12 @@ export function HeatmapGrid({ data, expertiseId }: HeatmapGridProps) {
   const groups = groupByExpertise(data.rows)
 
   return (
-    <Table>
+    <Table scroll="both">
       <TableHeader>
         <TableRow>
-          <TableHead className={PERSON_COLUMN_CLASS}>{t('Person')}</TableHead>
+          <TableHead className={CORNER_CELL_CLASS}>{t('Person')}</TableHead>
           {data.weeks.map((week) => (
-            <TableHead key={week} className="text-center">
+            <TableHead key={week} className={cn(HEADER_CELL_CLASS, 'text-center')}>
               <div className="flex flex-col leading-tight">
                 <span>{shortWeekLabel(week)}</span>
                 <span className="text-xs font-normal text-muted-foreground">{formatIsoWeekRange(week)}</span>
@@ -30,10 +30,11 @@ export function HeatmapGrid({ data, expertiseId }: HeatmapGridProps) {
       <TableBody>
         {groups.map((group) => (
           <Fragment key={group.expertise}>
-            <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableCell colSpan={data.weeks.length + 1} className="text-xs font-medium text-muted-foreground">
+            <TableRow className={GROUP_ROW_CLASS}>
+              <TableCell className={GROUP_LABEL_CLASS}>
                 {t('{expertise} ({count})', { expertise: group.expertise || t('No primary skill'), count: group.rows.length })}
               </TableCell>
+              <TableCell colSpan={data.weeks.length} />
             </TableRow>
             {group.rows.map((row) => (
               <HeatmapRow key={row.person.id} row={row} expertiseId={expertiseId} />

@@ -16,12 +16,12 @@ export function Heatmap() {
   const { data, isPending } = useHeatmap({ from, to: addIsoWeeks(from, weeks - 1), expertise: expertiseId })
 
   return (
-    <Card>
+    <Card className="h-full min-h-0">
       <CardHeader>
         <CardTitle>{t('Team heatmap')}</CardTitle>
         <CardDescription>{t('Baseline load against capacity per person and ISO week. Click a cell to see its assignments.')}</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex min-h-0 flex-1 flex-col gap-4">
         <HeatmapFilters />
         {data && data.rows.length > 0 && <HeatmapGrid data={data} expertiseId={expertiseId} />}
         {isPending && <p className="py-6 text-center text-sm text-muted-foreground">{t('Loading…')}</p>}
