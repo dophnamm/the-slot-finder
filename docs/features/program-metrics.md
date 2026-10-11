@@ -3,7 +3,7 @@
 **Goal:** each program shows how far along it is and whether it is understaffed, and the team sees one list of risks. This covers G1 and G2 in the [root README](../../README.md#1-problem-and-scope).
 
 **Roles:** planner, lead.
-**Target:** 16 Oct · **Depends on:** [staffing-draft](staffing-draft.md) · **Branch:** `feat/program-metrics` · **Status:** In review
+**Target:** 16 Oct · **Depends on:** [staffing-draft](staffing-draft.md) · **Branch:** `feat/program-metrics` · **Status:** Done (PR #16)
 
 ## In scope
 
