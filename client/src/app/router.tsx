@@ -13,9 +13,13 @@ import { ScenariosPage } from '@/pages/scenarios'
 import { SignedOutPage } from '@/pages/signed-out'
 import { StaffingDraftPage } from '@/pages/staffing-draft'
 import { AppLayout } from './app-layout'
+import type { BreadcrumbHandle, BreadcrumbKind } from './breadcrumbs'
 import { HomeRoute } from './home-route'
 import { RequireAuth } from './require-auth'
 import { RequirePermission } from './require-permission'
+
+/** The route's breadcrumb trail, read by Breadcrumbs in the app layout. */
+const crumb = (breadcrumb: BreadcrumbKind): BreadcrumbHandle => ({ breadcrumb })
 
 export const router = createBrowserRouter([
   { path: ROUTES.signedOut, Component: SignedOutPage },
@@ -27,38 +31,38 @@ export const router = createBrowserRouter([
         path: ROUTES.dashboard,
         Component: AppLayout,
         children: [
-          { index: true, Component: HomeRoute },
+          { index: true, Component: HomeRoute, handle: crumb('dashboard') },
           {
             element: <RequirePermission permission="programs:view" />,
             children: [
-              { path: ROUTES.programs, Component: ProgramsPage },
-              { path: ROUTES.programDetail, Component: ProgramDetailPage },
-              { path: ROUTES.projectDetail, Component: ProjectDetailPage },
+              { path: ROUTES.programs, Component: ProgramsPage, handle: crumb('programs') },
+              { path: ROUTES.programDetail, Component: ProgramDetailPage, handle: crumb('programDetail') },
+              { path: ROUTES.projectDetail, Component: ProjectDetailPage, handle: crumb('projectDetail') },
             ],
           },
           {
             element: <RequirePermission permission="intake:view" />,
-            children: [{ path: ROUTES.intake, Component: IntakePage }],
+            children: [{ path: ROUTES.intake, Component: IntakePage, handle: crumb('intake') }],
           },
           {
             element: <RequirePermission permission="staffing-drafts:view" />,
-            children: [{ path: ROUTES.staffingDraft, Component: StaffingDraftPage }],
+            children: [{ path: ROUTES.staffingDraft, Component: StaffingDraftPage, handle: crumb('staffingDraft') }],
           },
           {
             element: <RequirePermission permission="scenarios:view" />,
-            children: [{ path: ROUTES.scenarios, Component: ScenariosPage }],
+            children: [{ path: ROUTES.scenarios, Component: ScenariosPage, handle: crumb('scenarios') }],
           },
           {
             element: <RequirePermission permission="people:manage" />,
-            children: [{ path: ROUTES.people, Component: PeoplePage }],
+            children: [{ path: ROUTES.people, Component: PeoplePage, handle: crumb('people') }],
           },
           {
             element: <RequirePermission permission="events:view" />,
-            children: [{ path: ROUTES.events, Component: EventsPage }],
+            children: [{ path: ROUTES.events, Component: EventsPage, handle: crumb('events') }],
           },
           {
             element: <RequirePermission permission="my-schedule:view" />,
-            children: [{ path: ROUTES.mySchedule, Component: MySchedulePage }],
+            children: [{ path: ROUTES.mySchedule, Component: MySchedulePage, handle: crumb('mySchedule') }],
           },
           { path: ROUTES.notFound, Component: NotFoundPage },
         ],

@@ -6,6 +6,7 @@ import { signOut, useCurrentUser } from '@/shared/auth'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
+import { Breadcrumbs } from '../breadcrumbs'
 import { navLinkClassName, visibleNavItems } from './utils'
 
 export function AppLayout() {
@@ -44,8 +45,11 @@ export function AppLayout() {
           </Button>
         </div>
       </aside>
-      <main className="min-w-0 flex-1 overflow-y-auto p-6">
-        <Outlet />
+      <main className="flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-6">
+        <Breadcrumbs />
+        <div className="min-h-0 flex-1">
+          <Outlet />
+        </div>
       </main>
     </div>
   )
