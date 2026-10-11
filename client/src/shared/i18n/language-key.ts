@@ -7,6 +7,8 @@
  * value type is a placeholder.
  */
 export type LanguageKey = {
+  'A customer engagement that groups projects under one timeline.': string
+  'A new project starts as incoming until a staffing draft is accepted.': string
   'Absence added.': string
   Absences: string
   'Absences of {name}': string
@@ -16,6 +18,7 @@ export type LanguageKey = {
   'Add at least one skill.': string
   'Add holiday': string
   'Add person': string
+  'Add project': string
   'Add skill': string
   Approved: string
   'Approved absence always lowers capacity; planned absence does when the setting is on.': string
@@ -24,23 +27,37 @@ export type LanguageKey = {
   Budget: string
   'Budget, planned and forecast hours per expertise.': string
   'Build scenarios (move a project, add leave) and view the diff.': string
+  'Cancel program': string
+  'Cancel project': string
+  Cancelled: string
   'Change history': string
   'Change history and re-plan status.': string
+  'Charter link': string
+  Client: string
+  Close: string
+  Closed: string
+  Closing: string
   'Company holidays': string
   'Contribution %': string
   Cost: string
   'Cost (hours)': string
   'Could not finish signing in.': string
   'Could not reach the sign-in service.': string
+  'Customer engagements and their projects.': string
   Dashboard: string
   Dates: string
+  Deadline: string
   Default: string
   'Demand, timeline, assigned people, risks and scope points.': string
   Description: string
   Done: string
   'Done %': string
+  'Done points': string
+  'Earliest start': string
   Edit: string
   'Edit person': string
+  'Edit program': string
+  'Edit project': string
   Email: string
   'End date': string
   Events: string
@@ -53,6 +70,7 @@ export type LanguageKey = {
   'From {date}': string
   Gap: string
   'Go to your home page': string
+  Goal: string
   'Goal: {goal}': string
   Holiday: string
   'Holiday added.': string
@@ -60,6 +78,7 @@ export type LanguageKey = {
   Hours: string
   'Hours per day': string
   Inactive: string
+  Incoming: string
   'Incoming projects across programs, with “Propose squad”.': string
   Intake: string
   'Intake queue': string
@@ -68,21 +87,26 @@ export type LanguageKey = {
   Leave: string
   Level: string
   'Level {level}': string
-  'List of programs with status, timeline and the four progress bars.': string
   'Loading…': string
+  'Mark done': string
   Member: string
   Members: string
   'My absences': string
   'My schedule': string
   Name: string
+  'New program': string
   Next: string
   'Next milestone: {name}, {week}': string
   'No absences yet.': string
   'No access': string
   'No holidays yet.': string
+  'No lead': string
   'No people yet.': string
   'No person record': string
+  'No programs yet.': string
   'Non-project hours': string
+  'Objectives, one per line': string
+  'On hold': string
   Open: string
   'Page not found': string
   'Page {page} of {pages}': string
@@ -97,21 +121,29 @@ export type LanguageKey = {
   Planner: string
   Previous: string
   Primary: string
+  Priority: string
+  'Priority {priority}': string
+  Program: string
   'Program brief': string
+  'Program saved.': string
   'Program {id}': string
   Programs: string
+  'Project saved.': string
   'Project {id}': string
   Projects: string
+  'Put on hold': string
   'Remove absence': string
   'Remove holiday': string
   'Remove skill': string
   'Report leave or training. A planner approves it.': string
+  Resume: string
   'Review the assignment grid, reasons and diff; edit, lock and accept.': string
   Role: string
   Save: string
   Scenarios: string
   Scope: string
   'Scope (points)': string
+  'Scope points': string
   'Server: checking…': string
   'Server: OK': string
   'Server: unreachable': string
@@ -127,12 +159,14 @@ export type LanguageKey = {
   'Staffing %': string
   'Staffing by expertise': string
   'Staffing draft {id}': string
+  'Start closing': string
   'Start date': string
   Status: string
   'The server is unreachable.': string
   'The Slot Finder': string
   'There is no screen at this address.': string
   Time: string
+  Timeline: string
   'Timeline: {start} – {end} ({dates})': string
   To: string
   Total: string

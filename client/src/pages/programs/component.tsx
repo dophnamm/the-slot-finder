@@ -1,8 +1,12 @@
-import { PagePlaceholder } from '@/shared/components/page-placeholder'
-import { useTranslation } from '@/shared/i18n'
+import { generatePath, useNavigate } from 'react-router'
+import { ProgramsTable } from '@/features/programs'
+import { ROUTES } from '@/resources/routes'
+import type { Program } from '@/shared/programs'
 
 export function ProgramsPage() {
-  const { t } = useTranslation()
+  const navigate = useNavigate()
 
-  return <PagePlaceholder title={t('Programs')} description={t('List of programs with status, timeline and the four progress bars.')} />
+  const handleCreated = (program: Program) => navigate(generatePath(ROUTES.programDetail, { id: program.id }))
+
+  return <ProgramsTable onCreated={handleCreated} />
 }
