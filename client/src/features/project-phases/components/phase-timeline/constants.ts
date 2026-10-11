@@ -1,10 +1,11 @@
 import type { CellState, LegendItem } from './types'
 
+/** Pastel fills: planned weeks blue, weeks a change would move amber, the weeks they leave faint blue. */
 export const CELL_CLASSES: Record<CellState, string> = {
   empty: 'bg-muted',
-  planned: 'bg-primary',
-  moved: 'bg-warning',
-  vacated: 'bg-primary/25',
+  planned: 'bg-underused/55',
+  moved: 'bg-warning/60',
+  vacated: 'bg-underused/20',
 }
 
 /** Outlines every cell of the deadline week. */
