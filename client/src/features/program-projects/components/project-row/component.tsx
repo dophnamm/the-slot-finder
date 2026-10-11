@@ -1,25 +1,27 @@
 import { generatePath, Link } from 'react-router'
 import { ROUTES } from '@/resources/routes'
+import { LinkRow } from '@/shared/components/link-row'
 import { MetricBar } from '@/shared/components/metric-bar'
 import { ProposeSquadButton } from '@/shared/components/propose-squad-button'
 import { StatusBadge } from '@/shared/components/status-badge'
 import { activeWarnings } from '@/shared/programs'
 import { useTranslation } from '@/shared/i18n'
 import { Badge } from '@/shared/ui/badge'
-import { TableCell, TableRow } from '@/shared/ui/table'
+import { TableCell } from '@/shared/ui/table'
 import { formatIsoWeekSpan } from '@/utils/functions'
 import type { ProjectRowProps } from './types'
 
 export function ProjectRow({ project }: ProjectRowProps) {
   const { t } = useTranslation()
+  const detailPath = generatePath(ROUTES.projectDetail, { programId: project.program_id, id: project.id })
   const phase = project.current_phase
   const { metrics } = project
 
   return (
-    <TableRow>
+    <LinkRow to={detailPath}>
       <TableCell>
         <div className="flex flex-col">
-          <Link className="font-medium hover:underline" to={generatePath(ROUTES.projectDetail, { programId: project.program_id, id: project.id })}>
+          <Link className="font-medium hover:underline" to={detailPath}>
             {project.name}
           </Link>
           <span className="text-xs text-muted-foreground">{t('Priority {priority}', { priority: project.priority })}</span>
@@ -67,6 +69,6 @@ export function ProjectRow({ project }: ProjectRowProps) {
       <TableCell className="text-right">
         <ProposeSquadButton projectId={project.id} status={project.status} />
       </TableCell>
-    </TableRow>
+    </LinkRow>
   )
 }

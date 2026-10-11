@@ -1,22 +1,24 @@
 import { generatePath, Link } from 'react-router'
 import { ROUTES } from '@/resources/routes'
+import { LinkRow } from '@/shared/components/link-row'
 import { ProposeSquadButton } from '@/shared/components/propose-squad-button'
 import { useTranslation } from '@/shared/i18n'
 import { Badge } from '@/shared/ui/badge'
-import { TableCell, TableRow } from '@/shared/ui/table'
+import { TableCell } from '@/shared/ui/table'
 import { formatIsoWeekSpan } from '@/utils/functions'
 import type { IntakeRowProps } from './types'
 
 export function IntakeRow({ project }: IntakeRowProps) {
   const { t } = useTranslation()
+  const detailPath = generatePath(ROUTES.projectDetail, { programId: project.program_id, id: project.id })
   const phase = project.current_phase
 
   return (
-    <TableRow>
+    <LinkRow to={detailPath}>
       <TableCell>
         <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
-            <Link className="font-medium hover:underline" to={generatePath(ROUTES.projectDetail, { programId: project.program_id, id: project.id })}>
+            <Link className="font-medium hover:underline" to={detailPath}>
               {project.name}
             </Link>
             {project.at_risk && <Badge variant="red">{t('At risk')}</Badge>}
@@ -49,6 +51,6 @@ export function IntakeRow({ project }: IntakeRowProps) {
       <TableCell className="text-right">
         <ProposeSquadButton projectId={project.id} status={project.status} />
       </TableCell>
-    </TableRow>
+    </LinkRow>
   )
 }
