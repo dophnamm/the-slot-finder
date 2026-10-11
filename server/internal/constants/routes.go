@@ -38,4 +38,6 @@ const (
 	PathDraftAssignments  = "/staffing-drafts/:id/assignments"
 	PathDraftAccept       = "/staffing-drafts/:id/accept"
 	PathDraftReject       = "/staffing-drafts/:id/reject"
+
+	PathHeatmap = "/insights/heatmap"
 )

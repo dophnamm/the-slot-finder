@@ -49,6 +49,7 @@ const (
 	AssignmentExists       = "ASSIGNMENT_EXISTS"
 	DemandNotInDraft       = "DEMAND_NOT_IN_DRAFT"
 	WeekOutsideWindow      = "WEEK_OUTSIDE_WINDOW"
+	WeekRangeTooLong       = "WEEK_RANGE_TOO_LONG"
 
 	// Email errors
 	EmailSendError = "EMAIL_SEND_ERROR"

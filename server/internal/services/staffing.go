@@ -243,17 +243,10 @@ func (s *staffingService) policy() engine.Policy {
 // enginePeople gives each person their skills and capacity per week: weekly hours minus
 // non-project hours and absence (their own and company holidays), 0 outside employment.
 func (s *staffingService) enginePeople(people []models.Person, absences []models.Absence, weeks []isoweek.Week) []engine.Person {
-	policy := capacity.Policy{WorkingDays: s.cfg.WorkingWeekdays, CountPlannedAbsence: s.cfg.CountPlannedAbsence}
+	policy := capacityPolicy(s.cfg)
 	out := make([]engine.Person, 0, len(people))
 	for _, p := range people {
-		var own []capacity.Absence
-		for _, a := range absences {
-			if a.PersonID == nil || *a.PersonID == p.ID {
-				own = append(own, capacity.Absence{From: a.FromDate, To: a.ToDate, HoursPerDay: a.HoursPerDay,
-					Planned: a.Status == constants.AbsenceStatusPlanned})
-			}
-		}
-		person := capacity.Person{WeeklyHours: p.WeeklyHours, NonProjectHours: p.NonProjectHours, StartDate: p.StartDate, EndDate: p.EndDate}
+		person, own := capacityInputs(p, absences)
 		weekly := make(map[string]float64, len(weeks))
 		for _, w := range weeks {
 			weekly[w.String()] = capacity.Weekly(person, w, own, policy)

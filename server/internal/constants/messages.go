@@ -116,6 +116,8 @@ const (
 	MsgAssignmentExists       = "This person already covers this demand in the draft"
 	MsgDemandNotInDraft       = "The demand is not covered by this draft"
 	MsgWeekOutsideWindow      = "The week is outside the demand's window"
+	MsgHeatmapRetrieved       = "Heatmap retrieved"
+	MsgWeekRangeTooLongFormat = "The range may cover at most %d weeks"
 )
 
 // Request limit messages.

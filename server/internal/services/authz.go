@@ -68,6 +68,11 @@ func CanManagePlans(principal request.Principal) bool {
 	return principal.HasAnyRole(constants.PlanManageRoles...)
 }
 
+// CanViewInsights allows planners and leads to read the heatmap and other insights.
+func CanViewInsights(principal request.Principal) bool {
+	return principal.HasAnyRole(constants.InsightRoles...)
+}
+
 // AuthzService answers who is signed in and what they may do.
 type AuthzService interface {
 	// Principal returns the signed-in user, or a 401 error when there is none.

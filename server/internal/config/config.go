@@ -165,6 +165,12 @@ type Config struct {
 	PlanningWeightBalance              float64
 	PlanningWeightStability            float64
 	PlanningWeightContinuity           float64
+
+	// Heatmap range and utilization bands (server/README §8). Overloaded is always over 100 %.
+	HeatmapDefaultWeeks       int
+	HeatmapMaxWeeks           int
+	UtilizationUnderusedBelow float64
+	UtilizationNearFullFrom   float64
 }
 
 // Load loads configuration from environment variables
@@ -260,6 +266,11 @@ func Load() (*Config, error) {
 		PlanningWeightBalance:              getEnvAsFloat("PLANNING_WEIGHT_BALANCE", 0.6),
 		PlanningWeightStability:            getEnvAsFloat("PLANNING_WEIGHT_STABILITY", 0.5),
 		PlanningWeightContinuity:           getEnvAsFloat("PLANNING_WEIGHT_CONTINUITY", 0.3),
+
+		HeatmapDefaultWeeks:       getEnvAsInt("HEATMAP_DEFAULT_WEEKS", 12),
+		HeatmapMaxWeeks:           getEnvAsInt("HEATMAP_MAX_WEEKS", 52),
+		UtilizationUnderusedBelow: getEnvAsFloat("UTILIZATION_UNDERUSED_BELOW", 0.5),
+		UtilizationNearFullFrom:   getEnvAsFloat("UTILIZATION_NEAR_FULL_FROM", 0.85),
 	}
 
 	weekdays, err := parseWeekdays(getEnv("WORKING_WEEKDAYS", defaultWorkingWeekdays))
