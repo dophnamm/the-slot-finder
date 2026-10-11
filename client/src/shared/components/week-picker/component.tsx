@@ -32,7 +32,7 @@ export function WeekPicker({ id, name, value, onChange, min, className, 'aria-la
         {isIsoWeek(value) ? t('{week} · {range}', { week: value, range: formatIsoWeekRange(value) }) : t('Pick a week')}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <Calendar mode="range" ISOWeek showWeekNumber selected={selected} defaultMonth={selected?.from ?? earliest}
+        <Calendar mode="range" ISOWeek showWeekNumber highlightWeek selected={selected} defaultMonth={selected?.from ?? earliest}
           onSelect={handleSelect} disabled={earliest ? { before: earliest } : undefined} />
       </PopoverContent>
     </Popover>
