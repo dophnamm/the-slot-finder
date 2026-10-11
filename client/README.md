@@ -24,7 +24,7 @@ Sign in with a demo user (`planner`, `lead` or `specialist`; see [`server/README
 |---|---|---|---|
 | `/signed-out` | **Signed out**: where Keycloak returns after sign-out; "Sign in again" | everyone | — |
 | `/auth/callback` | Finishes the Keycloak round trip and returns to the page the user asked for | everyone | Keycloak token endpoint |
-| `/` | **Dashboard**: person × week heatmap, overload and deadline-risk alerts | planner, lead | `/insights/heatmap`, `/insights/risks` |
+| `/` | **Dashboard**: person × week heatmap (search by name or expertise), overload and deadline-risk alerts | planner, lead | `/insights/heatmap`, `/insights/risks` |
 | `/programs` | **Programs**: list with status and timeline; the arrow on a row opens a preview with its figures, projects and members | planner, lead, internal assistant | `/programs`, then `/programs/:id/overview`, `/programs/:id/projects`, `/programs/:id/members` |
 | `/programs/:id` | **Program detail** (see section 2) | planner, lead, internal assistant | `/programs/:id`, `/programs/:id/overview`, `/programs/:id/projects`, `/programs/:id/members`, `/programs/:id/assistants`, `/events?programId=` |
 | `/intake` | **Intake queue**: incoming projects across programs with their confidence, "Propose squad" | planner, lead | `/projects?status=incoming`, `/staffing-drafts` |
