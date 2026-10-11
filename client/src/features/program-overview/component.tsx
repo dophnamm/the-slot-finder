@@ -17,7 +17,7 @@ export function ProgramOverview({ programId }: ProgramOverviewProps) {
   if (!program) return <PagePlaceholder title={t('Program not found')} description={t('There is no program at this address.')} />
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-8">
       <ProgramHeader program={program} />
       {overview && <MetricsCard overview={overview} />}
       {overview && <ExpertiseStaffing rows={overview.staffing_by_expertise} />}

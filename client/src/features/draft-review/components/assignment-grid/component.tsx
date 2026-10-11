@@ -1,9 +1,9 @@
 import { Fragment } from 'react'
+import { Section } from '@/shared/components/section'
 import { useTranslation } from '@/shared/i18n'
 import { type Assignment, useEditDraft } from '@/shared/staffing'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
-import { formatIsoWeekRange, shortWeekLabel } from '@/utils/functions'
+import { cn, formatIsoWeekRange, shortWeekLabel } from '@/utils/functions'
 import { useStaffablePeople } from '../../use-staffable-people'
 import { AssignmentRow } from './components/assignment-row'
 import { GroupHeaderRow } from './components/group-header-row'
@@ -26,45 +26,40 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
     edit.mutate({ add: [{ person_id: personId, demand_id: demandId, allocations: [] }] })
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('Assignments')}</CardTitle>
-        <CardDescription>
-          {t('Hours per ISO week. Locked hours stay as they are when a draft is generated again; stretch is always locked.')}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className={PERSON_COLUMN_CLASS}>{t('Person')}</TableHead>
-              {draft.weeks.map((week) => (
-                <TableHead key={week} className={WEEK_COLUMN_CLASS}>
-                  <div className="flex flex-col leading-tight">
-                    <span>{shortWeekLabel(week)}</span>
-                    <span className="text-xs font-normal text-muted-foreground">{formatIsoWeekRange(week)}</span>
-                  </div>
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {groups.map((group) => (
-              <Fragment key={group.demand.id}>
-                <GroupHeaderRow group={group} weeks={draft.weeks} people={people} editable={editable}
-                  busy={edit.isPending} onAdd={handleAdd} />
-                {group.assignments.map((assignment) => (
-                  <AssignmentRow key={assignment.id} assignment={assignment} weeks={draft.weeks} editable={editable}
-                    busy={edit.isPending} onSetHours={handleSetHours} onToggleLock={handleToggleLock} onRemove={handleRemove} />
-                ))}
-              </Fragment>
+    <Section
+      title={t('Assignments')}
+      description={t('Hours per ISO week. Locked hours stay as they are when a draft is generated again; stretch is always locked.')}
+    >
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className={cn(PERSON_COLUMN_CLASS, 'bg-muted')}>{t('Person')}</TableHead>
+            {draft.weeks.map((week) => (
+              <TableHead key={week} className={WEEK_COLUMN_CLASS}>
+                <div className="flex flex-col leading-tight">
+                  <span>{shortWeekLabel(week)}</span>
+                  <span className="text-xs font-normal text-muted-foreground">{formatIsoWeekRange(week)}</span>
+                </div>
+              </TableHead>
             ))}
-          </TableBody>
-        </Table>
-        {draft.assignments.length === 0 && (
-          <p className="py-6 text-center text-sm text-muted-foreground">{t('Nobody is assigned yet.')}</p>
-        )}
-      </CardContent>
-    </Card>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {groups.map((group) => (
+            <Fragment key={group.demand.id}>
+              <GroupHeaderRow group={group} weeks={draft.weeks} people={people} editable={editable}
+                busy={edit.isPending} onAdd={handleAdd} />
+              {group.assignments.map((assignment) => (
+                <AssignmentRow key={assignment.id} assignment={assignment} weeks={draft.weeks} editable={editable}
+                  busy={edit.isPending} onSetHours={handleSetHours} onToggleLock={handleToggleLock} onRemove={handleRemove} />
+              ))}
+            </Fragment>
+          ))}
+        </TableBody>
+      </Table>
+      {draft.assignments.length === 0 && (
+        <p className="py-6 text-center text-sm text-muted-foreground">{t('Nobody is assigned yet.')}</p>
+      )}
+    </Section>
   )
 }

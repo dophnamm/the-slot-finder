@@ -1,5 +1,5 @@
+import { Section } from '@/shared/components/section'
 import { useTranslation } from '@/shared/i18n'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { addIsoWeeks } from '@/utils/functions'
 import { HeatmapFilters } from './components/heatmap-filters'
 import { HeatmapGrid } from './components/heatmap-grid'
@@ -16,20 +16,18 @@ export function Heatmap() {
   const { data, isPending } = useHeatmap({ from, to: addIsoWeeks(from, weeks - 1), expertise: expertiseId })
 
   return (
-    <Card className="h-full min-h-0">
-      <CardHeader>
-        <CardTitle>{t('Team heatmap')}</CardTitle>
-        <CardDescription>{t('Baseline load against capacity per person and ISO week. Click a cell to see its assignments.')}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex min-h-0 flex-1 flex-col gap-4">
-        <HeatmapFilters />
-        {data && data.rows.length > 0 && <HeatmapGrid data={data} expertiseId={expertiseId} />}
-        {isPending && <p className="py-6 text-center text-sm text-muted-foreground">{t('Loading…')}</p>}
-        {data && data.rows.length === 0 && (
-          <p className="py-6 text-center text-sm text-muted-foreground">{t('Nobody matches these filters.')}</p>
-        )}
-        <HeatmapLegend />
-      </CardContent>
-    </Card>
+    <Section
+      title={t('Team heatmap')}
+      description={t('Baseline load against capacity per person and ISO week. Click a cell to see its assignments.')}
+      className="h-full min-h-0"
+    >
+      <HeatmapFilters />
+      {data && data.rows.length > 0 && <HeatmapGrid data={data} expertiseId={expertiseId} />}
+      {isPending && <p className="py-6 text-center text-sm text-muted-foreground">{t('Loading…')}</p>}
+      {data && data.rows.length === 0 && (
+        <p className="py-6 text-center text-sm text-muted-foreground">{t('Nobody matches these filters.')}</p>
+      )}
+      <HeatmapLegend />
+    </Section>
   )
 }

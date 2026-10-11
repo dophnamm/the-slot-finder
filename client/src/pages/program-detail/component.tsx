@@ -11,7 +11,7 @@ export function ProgramDetailPage() {
   const { t } = useTranslation()
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-8">
       <ReplanBanner programId={id} />
       <ProgramOverview programId={id} />
       <Tabs defaultValue="projects">

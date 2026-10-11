@@ -7,7 +7,7 @@ export function ProjectDetailPage() {
   const { id = '' } = useParams()
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-8">
       <ProjectSummary projectId={id} />
       <ProjectPhases projectId={id} />
       <DemandForm projectId={id} />

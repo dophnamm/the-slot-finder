@@ -20,7 +20,7 @@ export function DraftReview({ draftId }: DraftReviewProps) {
   const editable = canEditDraft(user?.role, draft)
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-8">
       <DraftHeader draft={draft} editable={editable} />
       <DemandCoverage demands={draft.demands} />
       <AssignmentGrid draft={draft} editable={editable} />

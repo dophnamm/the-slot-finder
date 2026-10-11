@@ -3,9 +3,9 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { useCurrentUser } from '@/shared/auth'
 import { canEditProject, type Phase, useProject, useReplacePhases, useUpdatePhase } from '@/shared/programs'
+import { Section } from '@/shared/components/section'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 import { PhaseEditRow } from './components/phase-edit-row'
 import { PhaseRow } from './components/phase-row'
@@ -74,59 +74,57 @@ export function ProjectPhases({ projectId }: ProjectPhasesProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('Phases')}</CardTitle>
-        <CardDescription>{t('A later end week moves every later phase by the same number of weeks.')}</CardDescription>
-        {editable && (
-          <CardAction>
-            <Button variant="outline" size="sm" disabled={draft !== null || busy} onClick={handleAdd}>
-              <Plus />
-              {t('Add phase')}
-            </Button>
-          </CardAction>
-        )}
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        {rows.length > 0 && <PhaseTimeline weeks={weeks} deadlineWeek={project.deadline_week} rows={rows} />}
-        {slip.phases > 0 && (
-          <p className="text-sm">
-            {slip.weeks === 1
-              ? t('Saving moves every later phase by 1 week.')
-              : t('Saving moves every later phase by {weeks} weeks.', { weeks: slip.weeks })}
-          </p>
-        )}
-        {late && <p className="text-sm text-destructive">{t('The last phase would end after the deadline week.')}</p>}
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t('Phase')}</TableHead>
-              <TableHead>{t('Start week')}</TableHead>
-              <TableHead>{t('End week')}</TableHead>
-              <TableHead>{t('Dates')}</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {phases.map((phase) =>
-              draft?.id === phase.id ? (
-                <PhaseEditRow key={phase.id} draft={draft} canSave={isValidDraft(draft)} busy={busy} onChange={setDraft}
-                  onSave={handleSave} onCancel={handleCancel} />
-              ) : (
-                <PhaseRow key={phase.id} phase={phase} editable={editable} disabled={busy || draft !== null} onEdit={handleEdit}
-                  onRemove={handleRemove} />
-              ),
-            )}
-            {draft?.id === null && (
-              <PhaseEditRow key={NEW_PHASE_KEY} draft={draft} canSave={isValidDraft(draft)} busy={busy} onChange={setDraft}
+    <Section
+      title={t('Phases')}
+      description={t('A later end week moves every later phase by the same number of weeks.')}
+      action={
+        editable && (
+          <Button variant="outline" size="sm" disabled={draft !== null || busy} onClick={handleAdd}>
+            <Plus />
+            {t('Add phase')}
+          </Button>
+        )
+      }
+      contentClassName="flex flex-col gap-4"
+    >
+      {rows.length > 0 && <PhaseTimeline weeks={weeks} deadlineWeek={project.deadline_week} rows={rows} />}
+      {slip.phases > 0 && (
+        <p className="text-sm">
+          {slip.weeks === 1
+            ? t('Saving moves every later phase by 1 week.')
+            : t('Saving moves every later phase by {weeks} weeks.', { weeks: slip.weeks })}
+        </p>
+      )}
+      {late && <p className="text-sm text-destructive">{t('The last phase would end after the deadline week.')}</p>}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t('Phase')}</TableHead>
+            <TableHead>{t('Start week')}</TableHead>
+            <TableHead>{t('End week')}</TableHead>
+            <TableHead>{t('Dates')}</TableHead>
+            <TableHead />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {phases.map((phase) =>
+            draft?.id === phase.id ? (
+              <PhaseEditRow key={phase.id} draft={draft} canSave={isValidDraft(draft)} busy={busy} onChange={setDraft}
                 onSave={handleSave} onCancel={handleCancel} />
-            )}
-          </TableBody>
-        </Table>
-        {phases.length === 0 && draft === null && (
-          <p className="py-2 text-center text-sm text-muted-foreground">{t('No phases yet')}</p>
-        )}
-      </CardContent>
-    </Card>
+            ) : (
+              <PhaseRow key={phase.id} phase={phase} editable={editable} disabled={busy || draft !== null} onEdit={handleEdit}
+                onRemove={handleRemove} />
+            ),
+          )}
+          {draft?.id === null && (
+            <PhaseEditRow key={NEW_PHASE_KEY} draft={draft} canSave={isValidDraft(draft)} busy={busy} onChange={setDraft}
+              onSave={handleSave} onCancel={handleCancel} />
+          )}
+        </TableBody>
+      </Table>
+      {phases.length === 0 && draft === null && (
+        <p className="py-2 text-center text-sm text-muted-foreground">{t('No phases yet')}</p>
+      )}
+    </Section>
   )
 }

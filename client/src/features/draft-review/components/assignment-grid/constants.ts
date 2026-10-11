@@ -9,7 +9,7 @@ export const ASSIGNMENT_ROW_CLASS = 'group/row hover:bg-muted'
 export const ASSIGNMENT_PERSON_CELL_CLASS = 'group-hover/row:bg-muted'
 
 /** A demand's row above its people: a solid band, so it reads as a heading. */
-export const GROUP_ROW_CLASS = 'border-t-2 bg-muted hover:bg-muted'
+export const GROUP_ROW_CLASS = 'bg-muted hover:bg-muted'
 export const GROUP_LABEL_CELL_CLASS = 'bg-muted align-top whitespace-normal'
 
 /** The demand's weeks, drawn as a bar under the week columns. */
