@@ -792,6 +792,85 @@ const docTemplate = `{
                 }
             }
         },
+        "/phases/{id}": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Moving end_week later by N weeks moves every later phase of the project by N weeks in the same transaction; moving it earlier moves nothing else. Returns every phase that changed.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Edit a phase",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Phase id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Changed fields",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.UpdatePhaseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/dtos.PhaseResponse"
+                                    }
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/programs": {
             "get": {
                 "security": [
@@ -1089,6 +1168,554 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/programs/{id}/projects": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Projects by priority, then deadline, each with its current phase and at_risk.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "A program's projects",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Program id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/dtos.ProjectResponse"
+                                    }
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Planners and the program's lead. The project starts as incoming.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Add a project to a program",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Program id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Project",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateProjectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.ProjectDetailResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/projects": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Filter by status, e.g. ?status=incoming for the intake queue.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Projects across programs",
+                "parameters": [
+                    {
+                        "enum": [
+                            "incoming",
+                            "planned",
+                            "active",
+                            "on_hold",
+                            "done",
+                            "cancelled"
+                        ],
+                        "type": "string",
+                        "description": "Status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page, from 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/dtos.ProjectResponse"
+                                    }
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/projects/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The project with its phases and demand; each demand lists the weeks it may be staffed in.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Get a project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.ProjectDetailResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Only the fields sent change, including scope_points and done_points. lead_id accepts null; only planners change the lead. status is rejected: use an action.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Edit a project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Changed fields",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.UpdateProjectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.ProjectDetailResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/projects/{id}/actions/{action}": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "hold (incoming, planned or active → on_hold), resume (on_hold → incoming), complete (incoming, planned or active → done), cancel (any open status → cancelled).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Change a project's status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "hold",
+                            "resume",
+                            "complete",
+                            "cancel"
+                        ],
+                        "type": "string",
+                        "description": "Action",
+                        "name": "action",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.ProjectDetailResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/projects/{id}/demands": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The full list. Rows with an id are updated, without one added, missing ones removed. A row without phase_id spans the project's start week through its deadline week.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Replace a project's demand",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Demand",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ReplaceDemandsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.ProjectDetailResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/projects/{id}/phases": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "A project's phases",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/dtos.PhaseResponse"
+                                    }
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The full ordered list (its order is the sequence). Phases with an id are updated, without one added, missing ones removed; a phase that still has demand cannot be removed (409).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Replace a project's phases",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Phases",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ReplacePhasesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.ProjectDetailResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1272,6 +1899,45 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.CreateProjectRequest": {
+            "type": "object",
+            "required": [
+                "deadline",
+                "name",
+                "start_earliest"
+            ],
+            "properties": {
+                "deadline": {
+                    "type": "string",
+                    "example": "2026-12-18"
+                },
+                "done_points": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "lead_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "priority": {
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1,
+                    "example": 2
+                },
+                "scope_points": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "start_earliest": {
+                    "type": "string",
+                    "example": "2026-10-12"
+                }
+            }
+        },
         "dtos.CurrentUserResponse": {
             "type": "object",
             "properties": {
@@ -1304,6 +1970,88 @@ const docTemplate = `{
                 "username": {
                     "type": "string",
                     "example": "planner"
+                }
+            }
+        },
+        "dtos.DemandRequest": {
+            "type": "object",
+            "required": [
+                "expertise_id"
+            ],
+            "properties": {
+                "expertise_id": {
+                    "type": "string"
+                },
+                "headcount": {
+                    "type": "integer",
+                    "maximum": 20,
+                    "minimum": 1,
+                    "example": 1
+                },
+                "id": {
+                    "type": "string"
+                },
+                "min_level": {
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1,
+                    "example": 3
+                },
+                "phase_id": {
+                    "type": "string"
+                },
+                "profile": {
+                    "type": "string",
+                    "enum": [
+                        "flat"
+                    ]
+                },
+                "total_hours": {
+                    "type": "number",
+                    "maximum": 100000,
+                    "example": 120
+                }
+            }
+        },
+        "dtos.DemandResponse": {
+            "type": "object",
+            "properties": {
+                "expertise": {
+                    "type": "string",
+                    "example": "QA"
+                },
+                "expertise_id": {
+                    "type": "string"
+                },
+                "from_week": {
+                    "type": "string",
+                    "example": "2026-W46"
+                },
+                "headcount": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "id": {
+                    "type": "string"
+                },
+                "min_level": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "phase_id": {
+                    "type": "string"
+                },
+                "profile": {
+                    "type": "string",
+                    "example": "flat"
+                },
+                "to_week": {
+                    "type": "string",
+                    "example": "2026-W51"
+                },
+                "total_hours": {
+                    "type": "number",
+                    "example": 120
                 }
             }
         },
@@ -1445,6 +2193,56 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.PhaseRequest": {
+            "type": "object",
+            "required": [
+                "end_week",
+                "name",
+                "start_week"
+            ],
+            "properties": {
+                "end_week": {
+                    "type": "string",
+                    "example": "2026-W47"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "example": "Build"
+                },
+                "start_week": {
+                    "type": "string",
+                    "example": "2026-W42"
+                }
+            }
+        },
+        "dtos.PhaseResponse": {
+            "type": "object",
+            "properties": {
+                "end_week": {
+                    "type": "string",
+                    "example": "2026-W47"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Build"
+                },
+                "sequence": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "start_week": {
+                    "type": "string",
+                    "example": "2026-W42"
+                }
+            }
+        },
         "dtos.ProgramResponse": {
             "type": "object",
             "properties": {
@@ -1500,6 +2298,183 @@ const docTemplate = `{
                         "cancelled"
                     ],
                     "example": "open"
+                }
+            }
+        },
+        "dtos.ProjectDetailResponse": {
+            "type": "object",
+            "properties": {
+                "at_risk": {
+                    "type": "boolean"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "current_phase": {
+                    "$ref": "#/definitions/dtos.PhaseResponse"
+                },
+                "deadline": {
+                    "type": "string",
+                    "example": "2026-12-18"
+                },
+                "deadline_week": {
+                    "type": "string",
+                    "example": "2026-W51"
+                },
+                "demands": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.DemandResponse"
+                    }
+                },
+                "done_points": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lead": {
+                    "$ref": "#/definitions/dtos.PersonRef"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Mobile app"
+                },
+                "phases": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.PhaseResponse"
+                    }
+                },
+                "priority": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "program_id": {
+                    "type": "string"
+                },
+                "program_lead": {
+                    "$ref": "#/definitions/dtos.PersonRef"
+                },
+                "program_name": {
+                    "type": "string",
+                    "example": "Acme onboarding"
+                },
+                "scope_points": {
+                    "type": "number"
+                },
+                "start_earliest": {
+                    "type": "string",
+                    "example": "2026-10-12"
+                },
+                "start_week": {
+                    "type": "string",
+                    "example": "2026-W42"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "incoming",
+                        "planned",
+                        "active",
+                        "on_hold",
+                        "done",
+                        "cancelled"
+                    ],
+                    "example": "incoming"
+                }
+            }
+        },
+        "dtos.ProjectResponse": {
+            "type": "object",
+            "properties": {
+                "at_risk": {
+                    "type": "boolean"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "current_phase": {
+                    "$ref": "#/definitions/dtos.PhaseResponse"
+                },
+                "deadline": {
+                    "type": "string",
+                    "example": "2026-12-18"
+                },
+                "deadline_week": {
+                    "type": "string",
+                    "example": "2026-W51"
+                },
+                "done_points": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lead": {
+                    "$ref": "#/definitions/dtos.PersonRef"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Mobile app"
+                },
+                "priority": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "program_id": {
+                    "type": "string"
+                },
+                "program_name": {
+                    "type": "string",
+                    "example": "Acme onboarding"
+                },
+                "scope_points": {
+                    "type": "number"
+                },
+                "start_earliest": {
+                    "type": "string",
+                    "example": "2026-10-12"
+                },
+                "start_week": {
+                    "type": "string",
+                    "example": "2026-W42"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "incoming",
+                        "planned",
+                        "active",
+                        "on_hold",
+                        "done",
+                        "cancelled"
+                    ],
+                    "example": "incoming"
+                }
+            }
+        },
+        "dtos.ReplaceDemandsRequest": {
+            "type": "object",
+            "properties": {
+                "demands": {
+                    "type": "array",
+                    "maxItems": 50,
+                    "items": {
+                        "$ref": "#/definitions/dtos.DemandRequest"
+                    }
+                }
+            }
+        },
+        "dtos.ReplacePhasesRequest": {
+            "type": "object",
+            "properties": {
+                "phases": {
+                    "type": "array",
+                    "maxItems": 20,
+                    "items": {
+                        "$ref": "#/definitions/dtos.PhaseRequest"
+                    }
                 }
             }
         },
@@ -1570,6 +2545,24 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.UpdatePhaseRequest": {
+            "type": "object",
+            "properties": {
+                "end_week": {
+                    "type": "string",
+                    "example": "2026-W49"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "start_week": {
+                    "type": "string",
+                    "example": "2026-W42"
+                }
+            }
+        },
         "dtos.UpdateProgramRequest": {
             "type": "object",
             "required": [
@@ -1607,6 +2600,38 @@ const docTemplate = `{
                     }
                 },
                 "start_date": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.UpdateProjectRequest": {
+            "type": "object",
+            "properties": {
+                "deadline": {
+                    "type": "string"
+                },
+                "done_points": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "lead_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1
+                },
+                "priority": {
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
+                },
+                "scope_points": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "start_earliest": {
                     "type": "string"
                 }
             }

@@ -28,6 +28,15 @@ const (
 	UnknownAction          = "UNKNOWN_ACTION"
 	NoPersonRecord         = "NO_PERSON_RECORD"
 	LeadNotFound           = "LEAD_NOT_FOUND"
+	ProjectNotFound        = "PROJECT_NOT_FOUND"
+	ProjectDatesInvalid    = "PROJECT_DATES_INVALID"
+	ProgramNotOpen         = "PROGRAM_NOT_OPEN"
+	PhaseNotFound          = "PHASE_NOT_FOUND"
+	PhaseWeeksInvalid      = "PHASE_WEEKS_INVALID"
+	PhaseInUse             = "PHASE_IN_USE"
+	PhaseNotInProject      = "PHASE_NOT_IN_PROJECT"
+	DemandNotInProject     = "DEMAND_NOT_IN_PROJECT"
+	ExpertiseUnknown       = "EXPERTISE_UNKNOWN"
 
 	// Email errors
 	EmailSendError = "EMAIL_SEND_ERROR"

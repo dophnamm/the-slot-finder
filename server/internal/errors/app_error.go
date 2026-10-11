@@ -219,6 +219,8 @@ func customTagMessage(fieldName, tag string) (string, bool) {
 		return oneOf(constants.PersonalAbsenceTypes), true
 	case constants.ValidationTagAbsenceStatus:
 		return oneOf(constants.AbsenceStatuses), true
+	case constants.ValidationTagProjectStatus:
+		return oneOf(constants.ProjectStatuses), true
 	case constants.ValidationTagDemandProfile:
 		return oneOf(constants.SupportedDemandProfiles), true
 	case constants.ValidationTagDate:

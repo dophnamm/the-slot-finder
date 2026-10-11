@@ -20,6 +20,7 @@ const (
 	ValidationTagAbsenceStatus = constants.ValidationTagAbsenceStatus
 	ValidationTagISOWeek       = constants.ValidationTagISOWeek
 	ValidationTagDemandProfile = constants.ValidationTagDemandProfile
+	ValidationTagProjectStatus = constants.ValidationTagProjectStatus
 )
 
 // RegisterValidations adds the project's custom validation tags to v and makes validation
@@ -43,6 +44,9 @@ func RegisterValidations(v *validator.Validate) error {
 		ValidationTagISOWeek: func(fl validator.FieldLevel) bool {
 			_, err := isoweek.Parse(fl.Field().String())
 			return err == nil
+		},
+		ValidationTagProjectStatus: func(fl validator.FieldLevel) bool {
+			return slices.Contains(constants.ProjectStatuses, fl.Field().String())
 		},
 		ValidationTagDemandProfile: func(fl validator.FieldLevel) bool {
 			return slices.Contains(constants.SupportedDemandProfiles, fl.Field().String())

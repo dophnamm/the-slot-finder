@@ -88,6 +88,8 @@ type PeopleService interface {
 	Update(ctx context.Context, id string, in UpdatePersonInput) (*models.Person, error)
 	ReplaceSkills(ctx context.Context, id string, skills []SkillInput) (*models.Person, error)
 	ListExpertises(ctx context.Context) ([]models.Expertise, error)
+	// ExpertisesExist reports whether every id is a known expertise.
+	ExpertisesExist(ctx context.Context, ids []string) (bool, error)
 	// LinkPrincipal finds the signed-in user's person and stores their Keycloak id on the
 	// first match by email. It returns nil when nobody matches.
 	LinkPrincipal(ctx context.Context, principal request.Principal) (*models.Person, error)
@@ -223,6 +225,25 @@ func (s *peopleService) ListExpertises(ctx context.Context) ([]models.Expertise,
 			WithOperation(opListExpertises).WithResource(resourceExpertise)
 	}
 	return expertises, nil
+}
+
+func (s *peopleService) ExpertisesExist(ctx context.Context, ids []string) (bool, error) {
+	unique := map[string]bool{}
+	for _, id := range ids {
+		unique[id] = true
+	}
+	if len(unique) == 0 {
+		return true, nil
+	}
+	keys := make([]string, 0, len(unique))
+	for id := range unique {
+		keys = append(keys, id)
+	}
+	count, err := s.repo.CountExpertises(ctx, keys)
+	if err != nil {
+		return false, errors.DatabaseError(constants.MsgExpertiseListFailed, err).WithOperation(opListExpertises).WithResource(resourceExpertise)
+	}
+	return count == int64(len(keys)), nil
 }
 
 func (s *peopleService) FindForPrincipal(ctx context.Context, principal request.Principal) (*models.Person, error) {

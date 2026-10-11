@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"strings"
+
 	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/dtos"
 	"the-slot-finder/server/internal/errors"
@@ -72,4 +74,13 @@ func (b *BaseHandler) pathID(c *echo.Context) (string, bool) {
 		return "", false
 	}
 	return id, true
+}
+
+// trimmed returns value without surrounding spaces; nil stays nil.
+func trimmed(value *string) *string {
+	if value == nil {
+		return nil
+	}
+	t := strings.TrimSpace(*value)
+	return &t
 }
