@@ -19,6 +19,7 @@ description: Use when the Slot Finder client needs a constant, helper function, 
 | Client route path | — | `src/resources/routes/index.ts` (`ROUTES`) |
 | Role or permission | — | `src/resources/rbac/` (`ROLES`, `PERMISSIONS`, `can()`) |
 | Module-level setting of a shared module (e.g. HTTP headers) | — | `constants.ts` next to that module, e.g. `src/shared/api/constants.ts` |
+| React hook | `<component>/use-<name>.ts` | `src/shared/hooks/use-<name>.ts`, e.g. `useDebouncedValue` (search boxes wait `SEARCH_DEBOUNCE_MS` before filtering) |
 | API calls, query hooks and types of a domain | `features/<feature>/api.ts`, `use-<name>.ts`, `types.ts` | `src/shared/<domain>/` with an `index.ts`, e.g. `shared/programs`, `shared/expertises` |
 
 Each `src/utils/*` and `src/resources/*` folder has an `index.ts` that re-exports it. Import from the folder: `@/utils/constants`, `@/utils/functions`, `@/resources/endpoints`, `@/resources/routes`, `@/resources/rbac`.
