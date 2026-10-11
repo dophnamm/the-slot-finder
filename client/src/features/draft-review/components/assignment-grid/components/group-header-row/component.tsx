@@ -4,11 +4,14 @@ import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
 import { TableCell, TableRow } from '@/shared/ui/table'
+import { cn } from '@/utils/functions'
+import { inWindow } from '../../utils'
+import { GROUP_LABEL_CELL_CLASS, GROUP_ROW_CLASS, PERSON_COLUMN_CLASS, WEEK_COLUMN_CLASS, WINDOW_BAR_CLASS } from '../../constants'
 import type { GroupHeaderRowProps } from './types'
 import { personOptions } from './utils'
 
-/** The demand above its assignments, with "add person" for planners. */
-export function GroupHeaderRow({ group, span, people, editable, busy, onAdd }: GroupHeaderRowProps) {
+/** The demand above its assignments: what it needs, its weeks as a bar, and "add person" for planners. */
+export function GroupHeaderRow({ group, weeks, people, editable, busy, onAdd }: GroupHeaderRowProps) {
   const { t } = useTranslation()
   const [personId, setPersonId] = useState('')
   const { demand, assignments } = group
@@ -21,9 +24,9 @@ export function GroupHeaderRow({ group, span, people, editable, busy, onAdd }: G
   }
 
   return (
-    <TableRow className="bg-muted/50 hover:bg-muted/50">
-      <TableCell colSpan={span}>
-        <div className="flex flex-wrap items-center justify-between gap-2">
+    <TableRow className={GROUP_ROW_CLASS}>
+      <TableCell className={cn(PERSON_COLUMN_CLASS, GROUP_LABEL_CELL_CLASS)}>
+        <div className="flex flex-col gap-2">
           <div className="flex flex-col">
             <span className="font-medium">
               {t('{project} · {expertise} · {phase}', {
@@ -44,7 +47,7 @@ export function GroupHeaderRow({ group, span, people, editable, busy, onAdd }: G
           </div>
           {editable && (
             <div className="flex items-center gap-2">
-              <NativeSelect aria-label={t('Person to add')} value={personId} onChange={handleChange}>
+              <NativeSelect className="min-w-0 flex-1 bg-card" aria-label={t('Person to add')} value={personId} onChange={handleChange}>
                 <NativeSelectOption value="">{t('Choose a person')}</NativeSelectOption>
                 {options.map((option) => (
                   <NativeSelectOption key={option.id} value={option.id}>
@@ -60,6 +63,11 @@ export function GroupHeaderRow({ group, span, people, editable, busy, onAdd }: G
           )}
         </div>
       </TableCell>
+      {weeks.map((week) => (
+        <TableCell key={week} className={cn(WEEK_COLUMN_CLASS, 'px-0')}>
+          {inWindow(week, demand.from_week, demand.to_week) && <div className={WINDOW_BAR_CLASS} />}
+        </TableCell>
+      ))}
     </TableRow>
   )
 }

@@ -4,6 +4,7 @@ import { useTranslation } from '@/shared/i18n'
 import { Input } from '@/shared/ui/input'
 import { TableCell } from '@/shared/ui/table'
 import { cn } from '@/utils/functions'
+import { WEEK_COLUMN_CLASS } from '../../constants'
 import { MAX_WEEK_HOURS } from './constants'
 import type { HoursCellProps } from './types'
 
@@ -25,11 +26,11 @@ export function HoursCell({ week, hours, locked, inWindow, editable, onCommit }:
     if (event.key === 'Enter') event.currentTarget.blur()
   }
 
-  if (!inWindow) return <TableCell className="bg-muted/40" />
+  if (!inWindow) return <TableCell className={cn(WEEK_COLUMN_CLASS, 'bg-muted/40')} />
 
   if (!editable) {
     return (
-      <TableCell className={cn('text-center text-sm', locked && 'font-medium text-primary')}>
+      <TableCell className={cn(WEEK_COLUMN_CLASS, 'text-sm', locked && 'font-medium text-primary')}>
         <span className="inline-flex items-center gap-1">
           {hours > 0 && hours}
           {locked && <Lock className="size-3" />}
@@ -39,9 +40,9 @@ export function HoursCell({ week, hours, locked, inWindow, editable, onCommit }:
   }
 
   return (
-    <TableCell className="p-1">
+    <TableCell className={cn(WEEK_COLUMN_CLASS, 'p-1')}>
       <Input type="number" inputMode="decimal" min={0} max={MAX_WEEK_HOURS} step="any" value={value}
-        aria-label={t('Hours in {week}', { week })} className={cn('h-8 w-16 text-center', locked && 'border-primary')}
+        aria-label={t('Hours in {week}', { week })} className={cn('mx-auto h-8 w-14 bg-card text-center', locked && 'border-primary')}
         onChange={handleChange} onBlur={handleBlur} onKeyDown={handleKeyDown} />
     </TableCell>
   )

@@ -4,7 +4,7 @@ import type { DemandGroup } from '../../types'
 export interface GroupHeaderRowProps {
   group: DemandGroup
   /** Columns the header spans: the person column and every week. */
-  span: number
+  weeks: string[]
   people: StaffablePerson[]
   editable: boolean
   busy: boolean
