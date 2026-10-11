@@ -252,10 +252,10 @@ export type LanguageKey = {
   'Scope points': string
   'Short {hours} h': string
   'Sign in': string
-  'Sign in to reach the dashboard or your own schedule.': string
-  'Sign in with Keycloak': string
+  'Sign in again': string
   'Sign out': string
   'Signed in as {name}': string
+  'Signed out': string
   'Signing you in…': string
   Skills: string
   Specialist: string
@@ -306,6 +306,7 @@ export type LanguageKey = {
   When: string
   'Who gains or loses hours if this draft is accepted.': string
   'Whole project': string
+  'You have signed out.': string
   'Your account is not linked to a person yet. Ask a planner to add you with the same email.': string
   'Your assignments by week appear here once a staffing draft that includes you is accepted.': string
   'Your role cannot open this page.': string

@@ -3,7 +3,6 @@ import { ROUTES } from '@/resources/routes'
 import { AuthCallbackPage } from '@/pages/auth-callback'
 import { EventsPage } from '@/pages/events'
 import { IntakePage } from '@/pages/intake'
-import { LoginPage } from '@/pages/login'
 import { MySchedulePage } from '@/pages/my-schedule'
 import { NotFoundPage } from '@/pages/not-found'
 import { PeoplePage } from '@/pages/people'
@@ -11,6 +10,7 @@ import { ProgramDetailPage } from '@/pages/program-detail'
 import { ProgramsPage } from '@/pages/programs'
 import { ProjectDetailPage } from '@/pages/project-detail'
 import { ScenariosPage } from '@/pages/scenarios'
+import { SignedOutPage } from '@/pages/signed-out'
 import { StaffingDraftPage } from '@/pages/staffing-draft'
 import { AppLayout } from './app-layout'
 import { HomeRoute } from './home-route'
@@ -18,7 +18,7 @@ import { RequireAuth } from './require-auth'
 import { RequirePermission } from './require-permission'
 
 export const router = createBrowserRouter([
-  { path: ROUTES.login, Component: LoginPage },
+  { path: ROUTES.signedOut, Component: SignedOutPage },
   { path: ROUTES.authCallback, Component: AuthCallbackPage },
   {
     Component: RequireAuth,

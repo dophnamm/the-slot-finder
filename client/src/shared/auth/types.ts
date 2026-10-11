@@ -12,11 +12,6 @@ export interface CurrentUser {
   person_id: string | null
 }
 
-/** Router state given to the sign-in page: the page the user asked for. */
-export interface LoginRedirectState {
-  from: string
-}
-
 /** Carried through the Keycloak round trip so the user lands where they started. */
 export interface SignInState {
   returnTo: string
