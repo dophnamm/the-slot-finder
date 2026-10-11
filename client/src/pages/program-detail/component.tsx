@@ -1,8 +1,8 @@
 import { useParams } from 'react-router'
-import { ProgramMembers } from '@/features/program-members'
 import { ProgramOverview } from '@/features/program-overview'
 import { ProgramProjects } from '@/features/program-projects'
 import { useTranslation } from '@/shared/i18n'
+import { Card, CardContent } from '@/shared/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
 
 export function ProgramDetailPage() {
@@ -18,10 +18,14 @@ export function ProgramDetailPage() {
           <TabsTrigger value="members">{t('Members')}</TabsTrigger>
         </TabsList>
         <TabsContent value="projects">
-          <ProgramProjects />
+          <ProgramProjects programId={id} />
         </TabsContent>
         <TabsContent value="members">
-          <ProgramMembers />
+          <Card>
+            <CardContent className="text-sm text-muted-foreground">
+              {t('Members appear here once a staffing draft for this program is accepted.')}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
