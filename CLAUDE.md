@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The Slot Finder assigns incoming customer projects to cross-functional squads (PM, Analyst, Engineer, QA), forecasts who is overloaded or idle per ISO week, and re-plans when projects slip or people take leave. `README.md` is the architecture source of truth: goals, data model, metrics formulas, flows and ADRs. `docs/architecture.drawio` mirrors its diagrams. `server/README.md` and `client/README.md` hold the per-side details, API table and screens. `docs/features/` holds one spec per feature in build order (scope, acceptance criteria, tasks); read the feature's spec before building it.
 
-Status: all seven features in `docs/features/README.md` are built (sign-in through program metrics). Next: a sign-in that looks native through a Keycloak login theme.
+Status: all eight features in `docs/features/README.md` are built (sign-in through the sign-in theme).
 
 ## Repo-wide rules
 
@@ -26,6 +26,7 @@ Run `make` at the repo root to list the shortcuts:
 | Lint, test and build both sides (CI runs it on every pull request: `.github/workflows/check.yml`) | `make check` |
 | Load demo data (expertises, 12 people with skills, leave, holidays, 2 programs with 6 projects; safe to run again) | `make seed` |
 | Wipe local data (DB and Keycloak volumes) | `make reset-data` |
+| Apply the sign-in theme to existing Keycloak data (a fresh realm import already has it) | `make keycloak-theme` |
 
 Compose lives in `server/docker-compose.yml` and reads `server/cmd/server/.env`. The `server` service overrides the hosts so they point at containers. The `migrate` service runs `atlas migrate apply` before the API starts.
 
