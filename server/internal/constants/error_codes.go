@@ -41,6 +41,14 @@ const (
 	PlanNotFound           = "PLAN_NOT_FOUND"
 	ProjectNotPlannable    = "PROJECT_NOT_PLANNABLE"
 	NoDemandToStaff        = "NO_DEMAND_TO_STAFF"
+	DraftNotEditable       = "DRAFT_NOT_EDITABLE"
+	PlanVersionConflict    = "PLAN_VERSION_CONFLICT"
+	StretchNotConfirmed    = "STRETCH_NOT_CONFIRMED"
+	StretchStaysLocked     = "STRETCH_STAYS_LOCKED"
+	AssignmentNotFound     = "ASSIGNMENT_NOT_FOUND"
+	AssignmentExists       = "ASSIGNMENT_EXISTS"
+	DemandNotInDraft       = "DEMAND_NOT_IN_DRAFT"
+	WeekOutsideWindow      = "WEEK_OUTSIDE_WINDOW"
 
 	// Email errors
 	EmailSendError = "EMAIL_SEND_ERROR"

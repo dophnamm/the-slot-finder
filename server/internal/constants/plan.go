@@ -32,6 +32,13 @@ const (
 // PlannableProjectStatuses are the project statuses a staffing draft may cover.
 var PlannableProjectStatuses = []string{ProjectStatusIncoming, ProjectStatusPlanned, ProjectStatusActive}
 
+// Reasons the server records on assignments a Planner adds by hand.
+const (
+	ReasonAddedByHand          = "added by a Planner"
+	ReasonStretchLevelFormat   = "stretch: %s level %d is below %d"
+	ReasonStretchNoSkillFormat = "stretch: no %s skill"
+)
+
 // Audit actions and resources.
 const (
 	AuditActionPlanAccepted = "plan.accepted"

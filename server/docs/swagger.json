@@ -1907,6 +1907,188 @@
                     }
                 }
             }
+        },
+        "/staffing-drafts/{id}/accept": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Publishes the draft as the new baseline, only while the baseline is still base_version (else 409 PLAN_VERSION_CONFLICT). Stretch assignments need confirm_stretch. Fully staffed incoming projects become planned.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Staffing drafts"
+                ],
+                "summary": "Accept a staffing draft",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Draft id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Base version",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.AcceptDraftRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.DraftResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/staffing-drafts/{id}/assignments": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Add or remove assignments and change weekly hours or locks, all in one transaction. The server sets each added assignment's kind; a stretch assignment is locked.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Staffing drafts"
+                ],
+                "summary": "Change a staffing draft",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Draft id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Changes",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.EditDraftRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.DraftResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/staffing-drafts/{id}/reject": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Staffing drafts"
+                ],
+                "summary": "Reject a staffing draft",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Draft id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.DraftResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1938,6 +2120,45 @@
                 "type": {
                     "type": "string",
                     "example": "leave"
+                }
+            }
+        },
+        "dtos.AcceptDraftRequest": {
+            "type": "object",
+            "required": [
+                "base_version"
+            ],
+            "properties": {
+                "base_version": {
+                    "description": "BaseVersion is the draft's base_version; a different baseline in force gives 409.",
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "confirm_stretch": {
+                    "description": "ConfirmStretch must be true when the draft has stretch assignments.",
+                    "type": "boolean"
+                }
+            }
+        },
+        "dtos.AddAssignmentRequest": {
+            "type": "object",
+            "required": [
+                "demand_id",
+                "person_id"
+            ],
+            "properties": {
+                "allocations": {
+                    "type": "array",
+                    "maxItems": 104,
+                    "items": {
+                        "$ref": "#/definitions/dtos.DraftWeekHours"
+                    }
+                },
+                "demand_id": {
+                    "type": "string"
+                },
+                "person_id": {
+                    "type": "string"
                 }
             }
         },
@@ -2519,6 +2740,50 @@
                 }
             }
         },
+        "dtos.DraftWeekHours": {
+            "type": "object",
+            "required": [
+                "week"
+            ],
+            "properties": {
+                "hours": {
+                    "type": "number",
+                    "maximum": 80,
+                    "minimum": 0,
+                    "example": 16
+                },
+                "week": {
+                    "type": "string",
+                    "example": "2026-W42"
+                }
+            }
+        },
+        "dtos.EditDraftRequest": {
+            "type": "object",
+            "properties": {
+                "add": {
+                    "type": "array",
+                    "maxItems": 50,
+                    "items": {
+                        "$ref": "#/definitions/dtos.AddAssignmentRequest"
+                    }
+                },
+                "remove": {
+                    "type": "array",
+                    "maxItems": 200,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "set": {
+                    "type": "array",
+                    "maxItems": 500,
+                    "items": {
+                        "$ref": "#/definitions/dtos.SetAllocationRequest"
+                    }
+                }
+            }
+        },
         "dtos.ExpertiseResponse": {
             "type": "object",
             "properties": {
@@ -3050,6 +3315,32 @@
                     "items": {
                         "$ref": "#/definitions/dtos.SkillRequest"
                     }
+                }
+            }
+        },
+        "dtos.SetAllocationRequest": {
+            "type": "object",
+            "required": [
+                "assignment_id",
+                "week"
+            ],
+            "properties": {
+                "assignment_id": {
+                    "type": "string"
+                },
+                "hours": {
+                    "type": "number",
+                    "maximum": 80,
+                    "minimum": 0,
+                    "example": 16
+                },
+                "locked": {
+                    "description": "Locked pins the week; leave it out to keep the current lock.",
+                    "type": "boolean"
+                },
+                "week": {
+                    "type": "string",
+                    "example": "2026-W42"
                 }
             }
         },

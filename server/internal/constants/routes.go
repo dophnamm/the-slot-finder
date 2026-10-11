@@ -35,4 +35,7 @@ const (
 	PathPersonAssignments = "/people/:id/assignments"
 	PathStaffingDrafts    = "/staffing-drafts"
 	PathStaffingDraft     = "/staffing-drafts/:id"
+	PathDraftAssignments  = "/staffing-drafts/:id/assignments"
+	PathDraftAccept       = "/staffing-drafts/:id/accept"
+	PathDraftReject       = "/staffing-drafts/:id/reject"
 )
