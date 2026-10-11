@@ -27,7 +27,7 @@ export type {
   ProjectInput,
   ProjectStatus,
 } from './types'
-export { availableActions, canEdit, isOpenStatus, weekSpan } from './utils'
+export { availableActions, canEdit, canEditProject, isOpenStatus, weekSpan } from './utils'
 export { useLeadOptions, useProgram, useProgramAction, usePrograms, useSaveProgram } from './use-programs'
 export {
   useProgramProjects,

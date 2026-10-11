@@ -15,6 +15,17 @@ export function toIsoWeek(date: dayjs.ConfigType): string {
   return `${day.isoWeekYear()}-W${String(day.isoWeek()).padStart(2, '0')}`
 }
 
+/** Whether a value is an ISO week label such as `'2026-W42'`. */
+export function isIsoWeek(value: string): boolean {
+  return ISO_WEEK_PATTERN.test(value)
+}
+
+/** The week part of a label for narrow columns: `'2026-W42'` → `'W42'`. */
+export function shortWeekLabel(week: string): string {
+  const match = ISO_WEEK_PATTERN.exec(week)
+  return match ? `W${match[2]}` : week
+}
+
 /** Monday and Sunday of an ISO week label such as `'2026-W42'`. */
 export function isoWeekRange(week: string): IsoWeekRange {
   const match = ISO_WEEK_PATTERN.exec(week)
@@ -43,4 +54,20 @@ export function formatDateRange(from: string, to: string): string {
 /** Dates from the Monday of `from` to the Sunday of `to`: `'Oct 12 – Nov 22'`. */
 export function formatIsoWeekSpan(from: string, to: string, format: string = DATE_FORMAT.shortDay): string {
   return `${isoWeekRange(from).start.format(format)} – ${isoWeekRange(to).end.format(format)}`
+}
+
+/** The ISO week `n` weeks after `week` (before it when `n` is negative). */
+export function addIsoWeeks(week: string, n: number): string {
+  return toIsoWeek(isoWeekRange(week).start.add(n, 'week'))
+}
+
+/** Weeks from `from` to `to`; negative when `to` is earlier. */
+export function isoWeeksBetween(from: string, to: string): number {
+  return isoWeekRange(to).start.diff(isoWeekRange(from).start, 'week')
+}
+
+/** Every ISO week from `from` through `to`, in order. */
+export function isoWeekList(from: string, to: string): string[] {
+  const count = isoWeeksBetween(from, to)
+  return Array.from({ length: Math.max(0, count) + 1 }, (_, i) => addIsoWeeks(from, i))
 }

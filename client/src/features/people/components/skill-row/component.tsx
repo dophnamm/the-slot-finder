@@ -3,7 +3,8 @@ import type { ChangeEvent } from 'react'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
-import { PRIMARY_RADIO_NAME, SKILL_LEVELS } from './constants'
+import { SKILL_LEVELS } from '@/utils/constants'
+import { PRIMARY_RADIO_NAME } from './constants'
 import type { SkillRowProps } from './types'
 
 export function SkillRow({ index, skill, expertises, onChange, onRemove }: SkillRowProps) {
