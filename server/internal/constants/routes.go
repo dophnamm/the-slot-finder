@@ -22,4 +22,12 @@ const (
 	PathPrograms      = "/programs"
 	PathProgram       = "/programs/:id"
 	PathProgramAction = "/programs/:id/actions/:action"
+
+	PathProgramProjects = "/programs/:id/projects"
+	PathProjects        = "/projects"
+	PathProject         = "/projects/:id"
+	PathProjectAction   = "/projects/:id/actions/:action"
+	PathProjectPhases   = "/projects/:id/phases"
+	PathProjectDemands  = "/projects/:id/demands"
+	PathPhase           = "/phases/:id"
 )

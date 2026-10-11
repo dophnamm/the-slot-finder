@@ -14,6 +14,8 @@ const (
 	ValidationTagISOWeek = "isoweek"
 	// ValidationTagDemandProfile accepts only the values in SupportedDemandProfiles.
 	ValidationTagDemandProfile = "demand_profile"
+	// ValidationTagProjectStatus accepts only the values in ProjectStatuses.
+	ValidationTagProjectStatus = "project_status"
 	// ValidationTagMustBeEmpty is the validator's built-in isdefault: the field must not be sent.
 	ValidationTagMustBeEmpty = "isdefault"
 )

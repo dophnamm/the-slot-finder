@@ -25,6 +25,7 @@ func Router(
 	personHandler *handlers.PersonHandler,
 	absenceHandler *handlers.AbsenceHandler,
 	programHandler *handlers.ProgramHandler,
+	projectHandler *handlers.ProjectHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 ) *echo.Echo {
@@ -132,6 +133,16 @@ func Router(
 	authenticated := middlewares.AuthMiddleware(verifier, cfg)
 	v1.GET(constants.PathMe, identityHandler.Me, authenticated, middlewares.RequireRole(constants.CurrentUserViewRoles...))
 
+	registerPeopleRoutes(v1, authenticated, personHandler, absenceHandler)
+	registerProgramRoutes(v1, authenticated, programHandler, projectHandler)
+
+	return r
+}
+
+// registerPeopleRoutes adds people, skills, absences and holidays.
+func registerPeopleRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc,
+	personHandler *handlers.PersonHandler, absenceHandler *handlers.AbsenceHandler,
+) {
 	// People and skills
 	v1.GET(constants.PathPeople, personHandler.List, authenticated, middlewares.RequireRole(constants.PeopleViewRoles...))
 	v1.POST(constants.PathPeople, personHandler.Create, authenticated, middlewares.RequireRole(constants.PeopleManageRoles...))
@@ -145,7 +156,12 @@ func Router(
 	v1.DELETE(constants.PathAbsence, absenceHandler.Delete, authenticated, middlewares.RequireRole(constants.AbsenceRoles...))
 	v1.GET(constants.PathHolidays, absenceHandler.ListHolidays, authenticated, middlewares.RequireRole(constants.HolidayViewRoles...))
 	v1.POST(constants.PathHolidays, absenceHandler.CreateHoliday, authenticated, middlewares.RequireRole(constants.HolidayManageRoles...))
+}
 
+// registerProgramRoutes adds programs, projects, phases and demand.
+func registerProgramRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc,
+	programHandler *handlers.ProgramHandler, projectHandler *handlers.ProjectHandler,
+) {
 	// Programs (leads edit only their own; checked in the service)
 	programRoles := middlewares.RequireRole(constants.ProgramRoles...)
 	v1.GET(constants.PathPrograms, programHandler.List, authenticated, programRoles)
@@ -154,5 +170,15 @@ func Router(
 	v1.PATCH(constants.PathProgram, programHandler.Update, authenticated, programRoles)
 	v1.POST(constants.PathProgramAction, programHandler.Action, authenticated, programRoles)
 
-	return r
+	// Projects, phases and demand (leads edit only projects they or their program lead)
+	v1.GET(constants.PathProgramProjects, projectHandler.ListByProgram, authenticated, programRoles)
+	v1.POST(constants.PathProgramProjects, projectHandler.Create, authenticated, programRoles)
+	v1.GET(constants.PathProjects, projectHandler.List, authenticated, programRoles)
+	v1.GET(constants.PathProject, projectHandler.Get, authenticated, programRoles)
+	v1.PATCH(constants.PathProject, projectHandler.Update, authenticated, programRoles)
+	v1.POST(constants.PathProjectAction, projectHandler.Action, authenticated, programRoles)
+	v1.GET(constants.PathProjectPhases, projectHandler.ListPhases, authenticated, programRoles)
+	v1.PUT(constants.PathProjectPhases, projectHandler.ReplacePhases, authenticated, programRoles)
+	v1.PATCH(constants.PathPhase, projectHandler.UpdatePhase, authenticated, programRoles)
+	v1.PUT(constants.PathProjectDemands, projectHandler.ReplaceDemands, authenticated, programRoles)
 }

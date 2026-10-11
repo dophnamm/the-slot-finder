@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"the-slot-finder/server/internal/constants"
+	"the-slot-finder/server/internal/db"
 	"the-slot-finder/server/internal/dtos"
 	"the-slot-finder/server/internal/errors"
 	"the-slot-finder/server/internal/models"
@@ -91,13 +92,17 @@ type ProgramService interface {
 
 type programService struct {
 	programs repositories.ProgramRepository
+	projects repositories.ProjectRepository
 	people   PeopleService
 	authz    AuthzService
+	tx       db.TxManager
 }
 
 // ProvideProgramService creates the program service.
-func ProvideProgramService(programs repositories.ProgramRepository, people PeopleService, authz AuthzService) ProgramService {
-	return &programService{programs: programs, people: people, authz: authz}
+func ProvideProgramService(programs repositories.ProgramRepository, projects repositories.ProjectRepository,
+	people PeopleService, authz AuthzService, tx db.TxManager,
+) ProgramService {
+	return &programService{programs: programs, projects: projects, people: people, authz: authz, tx: tx}
 }
 
 func (s *programService) List(ctx context.Context, in ListProgramsInput) (*dtos.DataResponse[models.Program], error) {
@@ -195,7 +200,17 @@ func (s *programService) ApplyAction(ctx context.Context, id, action string) (*m
 
 	program.Status = next
 	program.Lead = nil
-	if err := s.programs.Save(ctx, program); err != nil {
+	// Cancelling a program cancels its open projects in the same transaction.
+	err = s.tx.Do(ctx, func(ctx context.Context) error {
+		if err := s.programs.Save(ctx, program); err != nil {
+			return err
+		}
+		if next == constants.ProgramStatusCancelled {
+			return s.projects.CancelOpen(ctx, program.ID)
+		}
+		return nil
+	})
+	if err != nil {
 		return nil, errors.DatabaseError(constants.MsgProgramSaveFailed, err).WithOperation(opProgramAction).WithResource(resourceProgram)
 	}
 	return s.find(ctx, id, opProgramAction)

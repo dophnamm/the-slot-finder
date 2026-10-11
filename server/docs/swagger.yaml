@@ -131,6 +131,35 @@ definitions:
     - objectives
     - start_date
     type: object
+  dtos.CreateProjectRequest:
+    properties:
+      deadline:
+        example: "2026-12-18"
+        type: string
+      done_points:
+        minimum: 0
+        type: number
+      lead_id:
+        type: string
+      name:
+        maxLength: 200
+        type: string
+      priority:
+        example: 2
+        maximum: 5
+        minimum: 1
+        type: integer
+      scope_points:
+        minimum: 0
+        type: number
+      start_earliest:
+        example: "2026-10-12"
+        type: string
+    required:
+    - deadline
+    - name
+    - start_earliest
+    type: object
   dtos.CurrentUserResponse:
     properties:
       email:
@@ -157,6 +186,65 @@ definitions:
       username:
         example: planner
         type: string
+    type: object
+  dtos.DemandRequest:
+    properties:
+      expertise_id:
+        type: string
+      headcount:
+        example: 1
+        maximum: 20
+        minimum: 1
+        type: integer
+      id:
+        type: string
+      min_level:
+        example: 3
+        maximum: 5
+        minimum: 1
+        type: integer
+      phase_id:
+        type: string
+      profile:
+        enum:
+        - flat
+        type: string
+      total_hours:
+        example: 120
+        maximum: 100000
+        type: number
+    required:
+    - expertise_id
+    type: object
+  dtos.DemandResponse:
+    properties:
+      expertise:
+        example: QA
+        type: string
+      expertise_id:
+        type: string
+      from_week:
+        example: 2026-W46
+        type: string
+      headcount:
+        example: 1
+        type: integer
+      id:
+        type: string
+      min_level:
+        example: 3
+        type: integer
+      phase_id:
+        type: string
+      profile:
+        example: flat
+        type: string
+      to_week:
+        example: 2026-W51
+        type: string
+      total_hours:
+        example: 120
+        type: number
     type: object
   dtos.ExpertiseResponse:
     properties:
@@ -255,6 +343,42 @@ definitions:
       primary:
         type: boolean
     type: object
+  dtos.PhaseRequest:
+    properties:
+      end_week:
+        example: 2026-W47
+        type: string
+      id:
+        type: string
+      name:
+        example: Build
+        maxLength: 100
+        type: string
+      start_week:
+        example: 2026-W42
+        type: string
+    required:
+    - end_week
+    - name
+    - start_week
+    type: object
+  dtos.PhaseResponse:
+    properties:
+      end_week:
+        example: 2026-W47
+        type: string
+      id:
+        type: string
+      name:
+        example: Build
+        type: string
+      sequence:
+        example: 1
+        type: integer
+      start_week:
+        example: 2026-W42
+        type: string
+    type: object
   dtos.ProgramResponse:
     properties:
       charter_url:
@@ -296,6 +420,132 @@ definitions:
         - cancelled
         example: open
         type: string
+    type: object
+  dtos.ProjectDetailResponse:
+    properties:
+      at_risk:
+        type: boolean
+      created_at:
+        type: string
+      current_phase:
+        $ref: '#/definitions/dtos.PhaseResponse'
+      deadline:
+        example: "2026-12-18"
+        type: string
+      deadline_week:
+        example: 2026-W51
+        type: string
+      demands:
+        items:
+          $ref: '#/definitions/dtos.DemandResponse'
+        type: array
+      done_points:
+        type: number
+      id:
+        type: string
+      lead:
+        $ref: '#/definitions/dtos.PersonRef'
+      name:
+        example: Mobile app
+        type: string
+      phases:
+        items:
+          $ref: '#/definitions/dtos.PhaseResponse'
+        type: array
+      priority:
+        example: 2
+        type: integer
+      program_id:
+        type: string
+      program_lead:
+        $ref: '#/definitions/dtos.PersonRef'
+      program_name:
+        example: Acme onboarding
+        type: string
+      scope_points:
+        type: number
+      start_earliest:
+        example: "2026-10-12"
+        type: string
+      start_week:
+        example: 2026-W42
+        type: string
+      status:
+        enum:
+        - incoming
+        - planned
+        - active
+        - on_hold
+        - done
+        - cancelled
+        example: incoming
+        type: string
+    type: object
+  dtos.ProjectResponse:
+    properties:
+      at_risk:
+        type: boolean
+      created_at:
+        type: string
+      current_phase:
+        $ref: '#/definitions/dtos.PhaseResponse'
+      deadline:
+        example: "2026-12-18"
+        type: string
+      deadline_week:
+        example: 2026-W51
+        type: string
+      done_points:
+        type: number
+      id:
+        type: string
+      lead:
+        $ref: '#/definitions/dtos.PersonRef'
+      name:
+        example: Mobile app
+        type: string
+      priority:
+        example: 2
+        type: integer
+      program_id:
+        type: string
+      program_name:
+        example: Acme onboarding
+        type: string
+      scope_points:
+        type: number
+      start_earliest:
+        example: "2026-10-12"
+        type: string
+      start_week:
+        example: 2026-W42
+        type: string
+      status:
+        enum:
+        - incoming
+        - planned
+        - active
+        - on_hold
+        - done
+        - cancelled
+        example: incoming
+        type: string
+    type: object
+  dtos.ReplaceDemandsRequest:
+    properties:
+      demands:
+        items:
+          $ref: '#/definitions/dtos.DemandRequest'
+        maxItems: 50
+        type: array
+    type: object
+  dtos.ReplacePhasesRequest:
+    properties:
+      phases:
+        items:
+          $ref: '#/definitions/dtos.PhaseRequest'
+        maxItems: 20
+        type: array
     type: object
   dtos.ReplaceSkillsRequest:
     properties:
@@ -344,6 +594,19 @@ definitions:
         maximum: 80
         type: number
     type: object
+  dtos.UpdatePhaseRequest:
+    properties:
+      end_week:
+        example: 2026-W49
+        type: string
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      start_week:
+        example: 2026-W42
+        type: string
+    type: object
   dtos.UpdateProgramRequest:
     properties:
       charter_url:
@@ -372,6 +635,29 @@ definitions:
         type: string
     required:
     - objectives
+    type: object
+  dtos.UpdateProjectRequest:
+    properties:
+      deadline:
+        type: string
+      done_points:
+        minimum: 0
+        type: number
+      lead_id:
+        type: string
+      name:
+        maxLength: 200
+        minLength: 1
+        type: string
+      priority:
+        maximum: 5
+        minimum: 1
+        type: integer
+      scope_points:
+        minimum: 0
+        type: number
+      start_earliest:
+        type: string
     type: object
 info:
   contact: {}
@@ -873,6 +1159,58 @@ paths:
       summary: Replace a person's skills
       tags:
       - People
+  /phases/{id}:
+    patch:
+      consumes:
+      - application/json
+      description: Moving end_week later by N weeks moves every later phase of the
+        project by N weeks in the same transaction; moving it earlier moves nothing
+        else. Returns every phase that changed.
+      parameters:
+      - description: Phase id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Changed fields
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdatePhaseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/dtos.PhaseResponse'
+                type: array
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Edit a phase
+      tags:
+      - Projects
   /programs:
     get:
       parameters:
@@ -1065,6 +1403,364 @@ paths:
       summary: Change a program's status
       tags:
       - Programs
+  /programs/{id}/projects:
+    get:
+      description: Projects by priority, then deadline, each with its current phase
+        and at_risk.
+      parameters:
+      - description: Program id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/dtos.ProjectResponse'
+                type: array
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: A program's projects
+      tags:
+      - Projects
+    post:
+      consumes:
+      - application/json
+      description: Planners and the program's lead. The project starts as incoming.
+      parameters:
+      - description: Program id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateProjectRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.ProjectDetailResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add a project to a program
+      tags:
+      - Projects
+  /projects:
+    get:
+      description: Filter by status, e.g. ?status=incoming for the intake queue.
+      parameters:
+      - description: Status
+        enum:
+        - incoming
+        - planned
+        - active
+        - on_hold
+        - done
+        - cancelled
+        in: query
+        name: status
+        type: string
+      - description: Page, from 1
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/dtos.ProjectResponse'
+                type: array
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Projects across programs
+      tags:
+      - Projects
+  /projects/{id}:
+    get:
+      description: The project with its phases and demand; each demand lists the weeks
+        it may be staffed in.
+      parameters:
+      - description: Project id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.ProjectDetailResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a project
+      tags:
+      - Projects
+    patch:
+      consumes:
+      - application/json
+      description: 'Only the fields sent change, including scope_points and done_points.
+        lead_id accepts null; only planners change the lead. status is rejected: use
+        an action.'
+      parameters:
+      - description: Project id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Changed fields
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateProjectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.ProjectDetailResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Edit a project
+      tags:
+      - Projects
+  /projects/{id}/actions/{action}:
+    post:
+      description: hold (incoming, planned or active → on_hold), resume (on_hold →
+        incoming), complete (incoming, planned or active → done), cancel (any open
+        status → cancelled).
+      parameters:
+      - description: Project id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Action
+        enum:
+        - hold
+        - resume
+        - complete
+        - cancel
+        in: path
+        name: action
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.ProjectDetailResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Change a project's status
+      tags:
+      - Projects
+  /projects/{id}/demands:
+    put:
+      consumes:
+      - application/json
+      description: The full list. Rows with an id are updated, without one added,
+        missing ones removed. A row without phase_id spans the project's start week
+        through its deadline week.
+      parameters:
+      - description: Project id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Demand
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.ReplaceDemandsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.ProjectDetailResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Replace a project's demand
+      tags:
+      - Projects
+  /projects/{id}/phases:
+    get:
+      parameters:
+      - description: Project id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/dtos.PhaseResponse'
+                type: array
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: A project's phases
+      tags:
+      - Projects
+    put:
+      consumes:
+      - application/json
+      description: The full ordered list (its order is the sequence). Phases with
+        an id are updated, without one added, missing ones removed; a phase that still
+        has demand cannot be removed (409).
+      parameters:
+      - description: Project id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Phases
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.ReplacePhasesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.ProjectDetailResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Replace a project's phases
+      tags:
+      - Projects
 schemes:
 - http
 - https
