@@ -78,6 +78,8 @@ services:
     volumes:
       - keycloak_data:/opt/keycloak/data
       - ./deploy/keycloak:/opt/keycloak/data/import:ro
+      # The sign-in pages' look; start-dev does not cache themes, so edits show on reload.
+      - ./deploy/keycloak/themes/slot-finder:/opt/keycloak/themes/slot-finder:ro
     networks:
       - app-network
 

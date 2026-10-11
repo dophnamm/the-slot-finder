@@ -1,6 +1,7 @@
 {
   "realm": "${KEYCLOAK_REALM}",
   "displayName": "The Slot Finder",
+  "loginTheme": "${KEYCLOAK_LOGIN_THEME}",
   "enabled": true,
   "sslRequired": "external",
   "registrationAllowed": false,
