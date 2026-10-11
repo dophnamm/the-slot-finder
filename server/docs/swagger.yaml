@@ -586,6 +586,28 @@ definitions:
         example: QA
         type: string
     type: object
+  dtos.ExpertiseStaffingResponse:
+    properties:
+      budget_hours:
+        example: 160
+        type: number
+      expertise:
+        example: QA
+        type: string
+      expertise_id:
+        type: string
+      gap_hours:
+        example: 40
+        type: number
+      planned_hours:
+        example: 120
+        type: number
+      staffing_percent:
+        example: 75
+        type: number
+      understaffed:
+        type: boolean
+    type: object
   dtos.GenerateDraftRequest:
     properties:
       project_ids:
@@ -692,6 +714,30 @@ definitions:
       total:
         example: 18
         type: integer
+    type: object
+  dtos.OverloadedPersonResponse:
+    properties:
+      person:
+        $ref: '#/definitions/dtos.PersonRef'
+      weeks:
+        items:
+          $ref: '#/definitions/dtos.OverloadedWeekResponse'
+        type: array
+    type: object
+  dtos.OverloadedWeekResponse:
+    properties:
+      capacity:
+        example: 36
+        type: number
+      load:
+        example: 44
+        type: number
+      utilization:
+        example: 1.22
+        type: number
+      week:
+        example: 2026-W44
+        type: string
     type: object
   dtos.PersonRef:
     properties:
@@ -832,6 +878,22 @@ definitions:
         example: 3
         type: integer
     type: object
+  dtos.ProgramOverviewResponse:
+    properties:
+      metrics:
+        $ref: '#/definitions/dtos.ProgressResponse'
+      program_id:
+        type: string
+      projects:
+        description: Projects is how many projects (not cancelled) the figures sum
+          over.
+        example: 3
+        type: integer
+      staffing_by_expertise:
+        items:
+          $ref: '#/definitions/dtos.ExpertiseStaffingResponse'
+        type: array
+    type: object
   dtos.ProgramResponse:
     properties:
       charter_url:
@@ -874,6 +936,46 @@ definitions:
         example: open
         type: string
     type: object
+  dtos.ProgressResponse:
+    properties:
+      at_risk:
+        type: boolean
+      behind_on_delivery:
+        type: boolean
+      budget_hours:
+        example: 400
+        type: number
+      forecast_hours:
+        example: 320
+        type: number
+      gap_hours:
+        example: 80
+        type: number
+      over_planned:
+        type: boolean
+      past_end:
+        type: boolean
+      planned_burn_percent:
+        example: 30
+        type: number
+      planned_hours:
+        example: 320
+        type: number
+      planned_to_date_hours:
+        example: 120
+        type: number
+      scope_percent:
+        example: 30
+        type: number
+      staffing_percent:
+        example: 80
+        type: number
+      time_percent:
+        example: 49.5
+        type: number
+      understaffed:
+        type: boolean
+    type: object
   dtos.ProjectDetailResponse:
     properties:
       at_risk:
@@ -898,6 +1000,11 @@ definitions:
         type: string
       lead:
         $ref: '#/definitions/dtos.PersonRef'
+      metrics:
+        allOf:
+        - $ref: '#/definitions/dtos.ProgressResponse'
+        description: 'Metrics is set on a program''s project list: Time, Scope, Planned
+          burn and Staffing.'
       name:
         example: Mobile app
         type: string
@@ -958,6 +1065,11 @@ definitions:
         type: string
       lead:
         $ref: '#/definitions/dtos.PersonRef'
+      metrics:
+        allOf:
+        - $ref: '#/definitions/dtos.ProgressResponse'
+        description: 'Metrics is set on a program''s project list: Time, Scope, Planned
+          burn and Staffing.'
       name:
         example: Mobile app
         type: string
@@ -1017,6 +1129,38 @@ definitions:
         type: array
     required:
     - skills
+    type: object
+  dtos.RiskProjectResponse:
+    properties:
+      deadline_week:
+        example: 2027-W08
+        type: string
+      id:
+        type: string
+      metrics:
+        $ref: '#/definitions/dtos.ProgressResponse'
+      name:
+        example: Records Integration
+        type: string
+      program:
+        example: Beta Health Portal
+        type: string
+      program_id:
+        type: string
+      status:
+        example: incoming
+        type: string
+    type: object
+  dtos.RisksResponse:
+    properties:
+      people:
+        items:
+          $ref: '#/definitions/dtos.OverloadedPersonResponse'
+        type: array
+      projects:
+        items:
+          $ref: '#/definitions/dtos.RiskProjectResponse'
+        type: array
     type: object
   dtos.SetAllocationRequest:
     properties:
@@ -1407,6 +1551,27 @@ paths:
       security:
       - BearerAuth: []
       summary: Team heatmap
+      tags:
+      - Insights
+  /insights/risks:
+    get:
+      description: Open projects that are understaffed, at risk or behind on delivery,
+        and people over 100 % in the next HEATMAP_DEFAULT_WEEKS weeks.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.RisksResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Risks
       tags:
       - Insights
   /me:
@@ -2028,10 +2193,38 @@ paths:
       summary: Change a program's status
       tags:
       - Programs
+  /programs/{id}/overview:
+    get:
+      description: Time, Scope, Planned burn and Staffing with their warnings, cost
+        figures (budget, planned, forecast, gap, planned to date) and staffing by
+        expertise, summed over projects that are not cancelled.
+      parameters:
+      - description: Program id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.ProgramOverviewResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: A program's overview
+      tags:
+      - Programs
   /programs/{id}/projects:
     get:
-      description: Projects by priority, then deadline, each with its current phase
-        and at_risk.
+      description: Projects by priority, then deadline, each with its current phase,
+        at_risk and metrics (Time, Scope, Planned burn, Staffing).
       parameters:
       - description: Program id
         in: path

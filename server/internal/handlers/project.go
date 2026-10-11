@@ -16,20 +16,23 @@ import (
 type ProjectHandler struct {
 	BaseHandler
 	projects services.ProjectService
+	insights services.InsightsService
 	clock    clock.Clock
 	validate *validator.Validate
 }
 
 // ProvideProjectHandler creates the project handler.
-func ProvideProjectHandler(projects services.ProjectService, clk clock.Clock, validate *validator.Validate) *ProjectHandler {
-	return &ProjectHandler{BaseHandler: *NewBaseHandler(), projects: projects, clock: clk, validate: validate}
+func ProvideProjectHandler(projects services.ProjectService, insights services.InsightsService, clk clock.Clock,
+	validate *validator.Validate,
+) *ProjectHandler {
+	return &ProjectHandler{BaseHandler: *NewBaseHandler(), projects: projects, insights: insights, clock: clk, validate: validate}
 }
 
 func (h *ProjectHandler) thisWeek() isoweek.Week { return isoweek.Of(h.clock.Now()) }
 
 // ListByProgram godoc
 // @Summary A program's projects
-// @Description Projects by priority, then deadline, each with its current phase and at_risk.
+// @Description Projects by priority, then deadline, each with its current phase, at_risk and metrics (Time, Scope, Planned burn, Staffing).
 // @Tags Projects
 // @Produce json
 // @Security BearerAuth
@@ -45,7 +48,11 @@ func (h *ProjectHandler) ListByProgram(c *echo.Context) error {
 	if err != nil {
 		return h.HandleError(c, err)
 	}
-	return h.SuccessResponse(c, constants.MsgProjectsListed, dtos.NewProjectResponses(projects, h.thisWeek()), nil)
+	progress, err := h.insights.ProjectMetrics(c.Request().Context(), programID)
+	if err != nil {
+		return h.HandleError(c, err)
+	}
+	return h.SuccessResponse(c, constants.MsgProjectsListed, dtos.WithMetrics(dtos.NewProjectResponses(projects, h.thisWeek()), progress), nil)
 }
 
 // List godoc

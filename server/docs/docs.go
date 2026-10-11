@@ -427,6 +427,39 @@ const docTemplate = `{
                 }
             }
         },
+        "/insights/risks": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Open projects that are understaffed, at risk or behind on delivery, and people over 100 % in the next HEATMAP_DEFAULT_WEEKS weeks.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Insights"
+                ],
+                "summary": "Risks",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.RisksResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/me": {
             "get": {
                 "security": [
@@ -1385,6 +1418,48 @@ const docTemplate = `{
                 }
             }
         },
+        "/programs/{id}/overview": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Time, Scope, Planned burn and Staffing with their warnings, cost figures (budget, planned, forecast, gap, planned to date) and staffing by expertise, summed over projects that are not cancelled.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Programs"
+                ],
+                "summary": "A program's overview",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Program id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.ProgramOverviewResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/programs/{id}/projects": {
             "get": {
                 "security": [
@@ -1392,7 +1467,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Projects by priority, then deadline, each with its current phase and at_risk.",
+                "description": "Projects by priority, then deadline, each with its current phase, at_risk and metrics (Time, Scope, Planned burn, Staffing).",
                 "produces": [
                     "application/json"
                 ],
@@ -3021,6 +3096,37 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.ExpertiseStaffingResponse": {
+            "type": "object",
+            "properties": {
+                "budget_hours": {
+                    "type": "number",
+                    "example": 160
+                },
+                "expertise": {
+                    "type": "string",
+                    "example": "QA"
+                },
+                "expertise_id": {
+                    "type": "string"
+                },
+                "gap_hours": {
+                    "type": "number",
+                    "example": 40
+                },
+                "planned_hours": {
+                    "type": "number",
+                    "example": 120
+                },
+                "staffing_percent": {
+                    "type": "number",
+                    "example": 75
+                },
+                "understaffed": {
+                    "type": "boolean"
+                }
+            }
+        },
         "dtos.GenerateDraftRequest": {
             "type": "object",
             "required": [
@@ -3169,6 +3275,41 @@ const docTemplate = `{
                 "total": {
                     "type": "integer",
                     "example": 18
+                }
+            }
+        },
+        "dtos.OverloadedPersonResponse": {
+            "type": "object",
+            "properties": {
+                "person": {
+                    "$ref": "#/definitions/dtos.PersonRef"
+                },
+                "weeks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.OverloadedWeekResponse"
+                    }
+                }
+            }
+        },
+        "dtos.OverloadedWeekResponse": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "type": "number",
+                    "example": 36
+                },
+                "load": {
+                    "type": "number",
+                    "example": 44
+                },
+                "utilization": {
+                    "type": "number",
+                    "example": 1.22
+                },
+                "week": {
+                    "type": "string",
+                    "example": "2026-W44"
                 }
             }
         },
@@ -3369,6 +3510,28 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.ProgramOverviewResponse": {
+            "type": "object",
+            "properties": {
+                "metrics": {
+                    "$ref": "#/definitions/dtos.ProgressResponse"
+                },
+                "program_id": {
+                    "type": "string"
+                },
+                "projects": {
+                    "description": "Projects is how many projects (not cancelled) the figures sum over.",
+                    "type": "integer",
+                    "example": 3
+                },
+                "staffing_by_expertise": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ExpertiseStaffingResponse"
+                    }
+                }
+            }
+        },
         "dtos.ProgramResponse": {
             "type": "object",
             "properties": {
@@ -3427,6 +3590,62 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.ProgressResponse": {
+            "type": "object",
+            "properties": {
+                "at_risk": {
+                    "type": "boolean"
+                },
+                "behind_on_delivery": {
+                    "type": "boolean"
+                },
+                "budget_hours": {
+                    "type": "number",
+                    "example": 400
+                },
+                "forecast_hours": {
+                    "type": "number",
+                    "example": 320
+                },
+                "gap_hours": {
+                    "type": "number",
+                    "example": 80
+                },
+                "over_planned": {
+                    "type": "boolean"
+                },
+                "past_end": {
+                    "type": "boolean"
+                },
+                "planned_burn_percent": {
+                    "type": "number",
+                    "example": 30
+                },
+                "planned_hours": {
+                    "type": "number",
+                    "example": 320
+                },
+                "planned_to_date_hours": {
+                    "type": "number",
+                    "example": 120
+                },
+                "scope_percent": {
+                    "type": "number",
+                    "example": 30
+                },
+                "staffing_percent": {
+                    "type": "number",
+                    "example": 80
+                },
+                "time_percent": {
+                    "type": "number",
+                    "example": 49.5
+                },
+                "understaffed": {
+                    "type": "boolean"
+                }
+            }
+        },
         "dtos.ProjectDetailResponse": {
             "type": "object",
             "properties": {
@@ -3461,6 +3680,14 @@ const docTemplate = `{
                 },
                 "lead": {
                     "$ref": "#/definitions/dtos.PersonRef"
+                },
+                "metrics": {
+                    "description": "Metrics is set on a program's project list: Time, Scope, Planned burn and Staffing.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dtos.ProgressResponse"
+                        }
+                    ]
                 },
                 "name": {
                     "type": "string",
@@ -3544,6 +3771,14 @@ const docTemplate = `{
                 "lead": {
                     "$ref": "#/definitions/dtos.PersonRef"
                 },
+                "metrics": {
+                    "description": "Metrics is set on a program's project list: Time, Scope, Planned burn and Staffing.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dtos.ProgressResponse"
+                        }
+                    ]
+                },
                 "name": {
                     "type": "string",
                     "example": "Mobile app"
@@ -3623,6 +3858,53 @@ const docTemplate = `{
                     "minItems": 1,
                     "items": {
                         "$ref": "#/definitions/dtos.SkillRequest"
+                    }
+                }
+            }
+        },
+        "dtos.RiskProjectResponse": {
+            "type": "object",
+            "properties": {
+                "deadline_week": {
+                    "type": "string",
+                    "example": "2027-W08"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "metrics": {
+                    "$ref": "#/definitions/dtos.ProgressResponse"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Records Integration"
+                },
+                "program": {
+                    "type": "string",
+                    "example": "Beta Health Portal"
+                },
+                "program_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "incoming"
+                }
+            }
+        },
+        "dtos.RisksResponse": {
+            "type": "object",
+            "properties": {
+                "people": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.OverloadedPersonResponse"
+                    }
+                },
+                "projects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.RiskProjectResponse"
                     }
                 }
             }
