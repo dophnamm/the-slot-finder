@@ -39,6 +39,7 @@ export function ProgramProjects({ programId }: ProgramProjectsProps) {
               <TableHead>{t('Status')}</TableHead>
               <TableHead>{t('Start – deadline')}</TableHead>
               <TableHead>{t('Current phase')}</TableHead>
+              <TableHead>{t('Progress')}</TableHead>
               <TableHead>{t('Lead')}</TableHead>
               <TableHead />
             </TableRow>

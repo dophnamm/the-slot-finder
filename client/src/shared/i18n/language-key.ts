@@ -41,8 +41,11 @@ export type LanguageKey = {
   'Baseline load against capacity per person and ISO week. Click a cell to see its assignments.': string
   Before: string
   'Before the change': string
+  'Behind on delivery': string
+  Budget: string
   'Budget hours': string
   'Budget hours each demand needs and the hours this draft assigns.': string
+  'Budget hours from the demand against hours planned in the baseline.': string
   'Budget hours per expertise and minimum level. Without a phase, a demand spans the whole project.': string
   'Build scenarios (move a project, add leave) and view the diff.': string
   'Built on baseline version {version}.': string
@@ -75,6 +78,7 @@ export type LanguageKey = {
   Dates: string
   Deadline: string
   'Deadline week': string
+  'Deadline {week}': string
   Default: string
   Demand: string
   'Demand saved.': string
@@ -98,9 +102,11 @@ export type LanguageKey = {
   Expertise: string
   'Expertise, levels and weekly hours of everyone who can be staffed.': string
   Failed: string
+  Forecast: string
   From: string
   'From week': string
   'From {date}': string
+  Gap: string
   'Generate a new draft': string
   'Go to your home page': string
   Goal: string
@@ -172,9 +178,11 @@ export type LanguageKey = {
   'Open the charter': string
   'Open the latest version': string
   'Ordered by priority, then deadline.': string
+  'Over-planned': string
   Overloaded: string
   'Page not found': string
   'Page {page} of {pages}': string
+  'Past the end date': string
   People: string
   Person: string
   'Person saved.': string
@@ -187,8 +195,10 @@ export type LanguageKey = {
   Phases: string
   'Phases saved.': string
   Planned: string
+  'Planned burn': string
   'Planned leave this week, not approved yet.': string
   'Planned leave, not approved yet': string
+  'Planned to date': string
   Planner: string
   Previous: string
   Primary: string
@@ -201,6 +211,7 @@ export type LanguageKey = {
   'Program updated.': string
   'Program {id}': string
   Programs: string
+  Progress: string
   Project: string
   'Project not found': string
   'Project saved.': string
@@ -242,6 +253,8 @@ export type LanguageKey = {
   'Signing you in…': string
   Skills: string
   Specialist: string
+  Staffing: string
+  'Staffing by expertise': string
   'Staffing draft': string
   'Staffing draft not found': string
   'Start closing': string
@@ -250,6 +263,8 @@ export type LanguageKey = {
   'Start – deadline': string
   Status: string
   Stretch: string
+  'Summed over {count} project that is not cancelled.': string
+  'Summed over {count} projects that are not cancelled.': string
   Superseded: string
   'Team heatmap': string
   'The baseline changed to version {version} since this draft was made, so it can no longer be accepted.': string
@@ -265,6 +280,7 @@ export type LanguageKey = {
   'This cannot be undone. Continue?': string
   'This cannot be undone. Open projects of a cancelled program are cancelled too. Continue?': string
   'This draft has stretch assignments: people below the minimum level or without the skill. Accept them anyway?': string
+  Time: string
   Timeline: string
   To: string
   Training: string
@@ -272,6 +288,7 @@ export type LanguageKey = {
   'Try again': string
   Type: string
   Unavailable: string
+  Understaffed: string
   Underused: string
   'Unexpected error.': string
   'Unlock hours': string
@@ -316,4 +333,5 @@ export type LanguageKey = {
   '{start} – {end}': string
   '{start} – {end} · level {level}+ · {assigned} of {hours} h': string
   '{week} ({dates})': string
+  '—': string
 }

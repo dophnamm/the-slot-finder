@@ -1,7 +1,7 @@
 import { can, type Role } from '@/resources/rbac'
 import { formatIsoWeekSpan } from '@/utils/functions'
-import { FINAL_STATUSES } from './constants'
-import type { EditorUser, PersonRef, ProjectDetail } from './types'
+import { FINAL_STATUSES, PROGRESS_WARNINGS } from './constants'
+import type { EditorUser, PersonRef, ProgressMetrics, ProjectDetail } from './types'
 
 /** Planners edit everything; a lead edits what one of `leads` names them as lead of. */
 export function canEdit(user: EditorUser | undefined, leads: (PersonRef | null | undefined)[]): boolean {
@@ -31,4 +31,9 @@ export function availableActions<A extends string, S extends string>(
   status: S,
 ): A[] {
   return (Object.keys(actions) as A[]).filter((action) => actions[action].from.includes(status))
+}
+
+/** The warnings the server raised on these metrics, in display order. */
+export function activeWarnings(metrics: ProgressMetrics) {
+  return PROGRESS_WARNINGS.filter((warning) => metrics[warning.flag])
 }

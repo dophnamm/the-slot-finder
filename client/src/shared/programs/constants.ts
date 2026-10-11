@@ -1,10 +1,11 @@
 import type { PlainKey } from '@/shared/i18n'
 import { MAX_PAGE_SIZE } from '@/utils/constants'
-import type { ProgramAction, ProgramStatus, ProjectAction, ProjectStatus } from './types'
+import type { ProgramAction, ProgramStatus, ProgressMetrics, ProjectAction, ProjectStatus } from './types'
 
 export const PROGRAMS_QUERY_KEY = ['programs'] as const
 export const programQueryKey = (id: string) => ['programs', id] as const
 export const programProjectsQueryKey = (id: string) => ['programs', id, 'projects'] as const
+export const programOverviewQueryKey = (id: string) => ['programs', id, 'overview'] as const
 export const PROJECTS_QUERY_KEY = ['projects'] as const
 export const projectsQueryKey = (status: ProjectStatus | 'all') => ['projects', 'list', status] as const
 export const projectQueryKey = (id: string) => ['projects', id] as const
@@ -58,3 +59,12 @@ export const PROJECT_ACTIONS: Record<ProjectAction, { label: PlainKey; from: rea
 
 /** Statuses that end a program or project: no more edits. */
 export const FINAL_STATUSES: readonly string[] = ['closed', 'cancelled', 'done']
+
+/** A warning flag of the metrics and its label, in the order they are shown. */
+export const PROGRESS_WARNINGS: readonly { flag: keyof Pick<ProgressMetrics, 'at_risk' | 'understaffed' | 'behind_on_delivery' | 'over_planned' | 'past_end'>; label: PlainKey }[] = [
+  { flag: 'at_risk', label: 'At risk' },
+  { flag: 'understaffed', label: 'Understaffed' },
+  { flag: 'behind_on_delivery', label: 'Behind on delivery' },
+  { flag: 'over_planned', label: 'Over-planned' },
+  { flag: 'past_end', label: 'Past the end date' },
+]
