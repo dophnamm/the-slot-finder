@@ -24,6 +24,9 @@ services:
         condition: service_started
       migrate:
         condition: service_completed_successfully
+      # The API fetches the realm's signing keys at startup; without them tokens get 401.
+      keycloak:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -55,6 +58,21 @@ services:
     # Imports deploy/keycloak/realm.json when the realm does not exist yet (fresh data, or after
     # `make reset-data`). ${...} placeholders in it are filled from cmd/server/.env.
     command: ["start-dev", "--import-realm"]
+    environment:
+      # Serves /health/ready on the management port (9000) for the healthcheck below.
+      KC_HEALTH_ENABLED: "true"
+    healthcheck:
+      # The image has no curl: bash opens the management port and checks for 200 on readiness.
+      test:
+        - CMD-SHELL
+        - >-
+          exec 3<>/dev/tcp/localhost/9000 &&
+          printf 'GET %s/health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' "$${KC_HTTP_RELATIVE_PATH}" >&3 &&
+          grep -q ' 200 ' <&3
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
     ports:
       - "8080:8080"
     volumes:
