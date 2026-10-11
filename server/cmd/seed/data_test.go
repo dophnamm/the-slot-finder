@@ -3,7 +3,10 @@ package main
 import (
 	"testing"
 
+	"the-slot-finder/server/internal/isoweek"
+
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // The seed data must obey the same rules as the API.
@@ -38,4 +41,40 @@ func TestSeedData(t *testing.T) {
 		assert.True(t, emails[a.email], "absence for unknown person %s", a.email)
 		assert.False(t, a.to.Before(a.from))
 	}
+}
+
+func TestSeedPrograms(t *testing.T) {
+	known := map[string]bool{}
+	for _, e := range expertises {
+		known[e.name] = true
+	}
+	emails := map[string]bool{}
+	for _, p := range people {
+		emails[p.email] = true
+	}
+	projects := 0
+	for _, program := range programs {
+		assert.True(t, emails[program.leadEmail], "%s: unknown lead", program.name)
+		assert.False(t, program.end.Before(program.start), program.name)
+		for _, p := range program.projects {
+			projects++
+			assert.True(t, emails[p.leadEmail], "%s: unknown lead", p.name)
+			assert.False(t, p.deadline.Before(p.start), p.name)
+			phases := map[string]bool{}
+			for _, ph := range p.phases {
+				start, err := isoweek.Parse(ph.start)
+				require.NoError(t, err)
+				end, err := isoweek.Parse(ph.end)
+				require.NoError(t, err)
+				assert.False(t, end.Before(start), "%s %s", p.name, ph.name)
+				phases[ph.name] = true
+			}
+			for _, d := range p.demands {
+				assert.True(t, known[d.expertise], "%s: unknown expertise %s", p.name, d.expertise)
+				assert.True(t, d.phase == "" || phases[d.phase], "%s: unknown phase %s", p.name, d.phase)
+			}
+		}
+	}
+	assert.Len(t, programs, 2)
+	assert.Equal(t, 6, projects)
 }

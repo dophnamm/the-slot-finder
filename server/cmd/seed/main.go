@@ -12,6 +12,7 @@ import (
 	"the-slot-finder/server/internal/config"
 	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/db"
+	"the-slot-finder/server/internal/isoweek"
 	"the-slot-finder/server/internal/logger"
 	"the-slot-finder/server/internal/models"
 
@@ -35,8 +36,8 @@ func main() {
 	if err := database.Transaction(seed); err != nil {
 		logger.Sugar.Fatalf("seed: %v", err)
 	}
-	logger.Sugar.Infof("Seed data loaded: %d expertises, %d people, %d absences, %d holidays",
-		len(expertises), len(people), len(absences), len(holidays))
+	logger.Sugar.Infof("Seed data loaded: %d expertises, %d people, %d absences, %d holidays, %d programs",
+		len(expertises), len(people), len(absences), len(holidays), len(programs))
 }
 
 func seed(tx *gorm.DB) error {
@@ -51,7 +52,10 @@ func seed(tx *gorm.DB) error {
 	if err := seedAbsences(tx, personIDs); err != nil {
 		return err
 	}
-	return seedHolidays(tx)
+	if err := seedHolidays(tx); err != nil {
+		return err
+	}
+	return seedPrograms(tx, personIDs, expertiseIDs)
 }
 
 func seedExpertises(tx *gorm.DB) (map[string]string, error) {
@@ -122,6 +126,72 @@ func seedHolidays(tx *gorm.DB) error {
 			Attrs(row).FirstOrCreate(&row).Error
 		if err != nil {
 			return fmt.Errorf("holiday %s: %w", h.from.Format(constants.DateLayout), err)
+		}
+	}
+	return nil
+}
+
+func seedPrograms(tx *gorm.DB, personIDs, expertiseIDs map[string]string) error {
+	for _, p := range programs {
+		lead := personIDs[p.leadEmail]
+		row := models.Program{
+			Name: p.name, Client: p.client, Status: constants.ProgramStatusOpen, StartDate: p.start, EndDate: p.end,
+			Goal: p.goal, Objectives: p.objectives, LeadID: &lead,
+		}
+		if err := tx.Where(models.Program{Name: p.name}).Attrs(row).FirstOrCreate(&row).Error; err != nil {
+			return fmt.Errorf("program %s: %w", p.name, err)
+		}
+		for _, project := range p.projects {
+			if err := seedOneProject(tx, row.ID, project, personIDs, expertiseIDs); err != nil {
+				return fmt.Errorf("project %s: %w", project.name, err)
+			}
+		}
+	}
+	return nil
+}
+
+func seedOneProject(tx *gorm.DB, programID string, p seedProject, personIDs, expertiseIDs map[string]string) error {
+	lead := personIDs[p.leadEmail]
+	row := models.Project{
+		ProgramID: programID, Name: p.name, Priority: p.priority, Status: constants.ProjectStatusIncoming,
+		StartEarliest: p.start, Deadline: p.deadline, ScopePoints: p.scopePoints, DonePoints: p.donePts, LeadID: &lead,
+	}
+	if err := tx.Where(models.Project{ProgramID: programID, Name: p.name}).Attrs(row).FirstOrCreate(&row).Error; err != nil {
+		return err
+	}
+
+	phaseIDs := make(map[string]string, len(p.phases))
+	for i, ph := range p.phases {
+		start, err := isoweek.Parse(ph.start)
+		if err != nil {
+			return err
+		}
+		end, err := isoweek.Parse(ph.end)
+		if err != nil {
+			return err
+		}
+		phase := models.ProjectPhase{ProjectID: row.ID, Name: ph.name, Sequence: i + 1, StartWeek: start, EndWeek: end}
+		if err := tx.Where(models.ProjectPhase{ProjectID: row.ID, Name: ph.name}).Attrs(phase).FirstOrCreate(&phase).Error; err != nil {
+			return err
+		}
+		phaseIDs[ph.name] = phase.ID
+	}
+
+	for _, d := range p.demands {
+		demand := models.Demand{
+			ProjectID: row.ID, ExpertiseID: expertiseIDs[d.expertise], MinLevel: d.minLevel, Headcount: d.headcount,
+			TotalHours: d.hours, Profile: constants.DemandProfileFlat,
+		}
+		query := tx.Where("project_id = ? AND expertise_id = ?", row.ID, demand.ExpertiseID)
+		if d.phase == "" {
+			query = query.Where("phase_id IS NULL")
+		} else {
+			phaseID := phaseIDs[d.phase]
+			demand.PhaseID = &phaseID
+			query = query.Where("phase_id = ?", phaseID)
+		}
+		if err := query.Attrs(demand).FirstOrCreate(&demand).Error; err != nil {
+			return err
 		}
 	}
 	return nil
