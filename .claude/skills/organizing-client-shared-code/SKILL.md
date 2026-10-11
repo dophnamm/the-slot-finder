@@ -56,6 +56,8 @@ Use the helpers in `@/utils/functions`. They load dayjs with the `isoWeek` and `
 | Range text | `formatIsoWeekRange('2026-W42')` → `'Oct 12 – Oct 18'` |
 | Anything else | `dayjs` from `@/utils/functions`, formats from `DATE_FORMAT` in `@/utils/constants` |
 
+Date and week fields are `DatePicker` and `WeekPicker` from `@/shared/components` (values `YYYY-MM-DD` and `2026-W42`), never `<Input type="date|week">`: the browser's own pickers do not match the app, and lint rejects them. Convert to and from a calendar's `Date` with `parseDateValue` / `toDateValue`.
+
 Never use `new Date()` arithmetic, `toLocaleDateString` or hand-written week math. A new date helper goes in `src/utils/functions/date.ts`, and its format strings go in `src/utils/constants/date.ts`.
 
 ## Common mistakes

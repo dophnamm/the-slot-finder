@@ -197,6 +197,8 @@ export type LanguageKey = {
   'Phase saved. {count} later phases moved.': string
   Phases: string
   'Phases saved.': string
+  'Pick a date': string
+  'Pick a week': string
   Planned: string
   'Planned burn': string
   'Planned leave this week, not approved yet.': string
@@ -343,6 +345,7 @@ export type LanguageKey = {
   '{start} – {end}': string
   '{start} – {end} · level {level}+ · {assigned} of {hours} h': string
   '{week} ({dates})': string
+  '{week} · {range}': string
   '{week}: {load}/{capacity} h': string
   '—': string
 }

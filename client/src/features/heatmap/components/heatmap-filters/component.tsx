@@ -1,10 +1,9 @@
 import type { ChangeEvent } from 'react'
+import { WeekPicker } from '@/shared/components/week-picker'
 import { useExpertises } from '@/shared/expertises'
 import { useTranslation } from '@/shared/i18n'
-import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
-import { isIsoWeek } from '@/utils/functions'
 import { WEEK_COUNT_OPTIONS } from '../../constants'
 import { useHeatmapFilters } from '../../use-heatmap-filters'
 
@@ -14,9 +13,6 @@ export function HeatmapFilters() {
   const { data: expertises = [] } = useExpertises()
   const { from, weeks, expertiseId, setFrom, setWeeks, setExpertiseId } = useHeatmapFilters()
 
-  const handleFromChange = (event: ChangeEvent<HTMLInputElement>) => {
-    if (isIsoWeek(event.target.value)) setFrom(event.target.value)
-  }
   const handleWeeksChange = (event: ChangeEvent<HTMLSelectElement>) => setWeeks(Number(event.target.value))
   const handleExpertiseChange = (event: ChangeEvent<HTMLSelectElement>) => setExpertiseId(event.target.value)
 
@@ -24,7 +20,7 @@ export function HeatmapFilters() {
     <div className="flex flex-wrap items-end gap-4">
       <div className="flex flex-col gap-2">
         <Label htmlFor="heatmap-from">{t('From week')}</Label>
-        <Input id="heatmap-from" type="week" className="w-44" value={from} onChange={handleFromChange} />
+        <WeekPicker id="heatmap-from" name="from" value={from} onChange={setFrom} />
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="heatmap-weeks">{t('Weeks')}</Label>

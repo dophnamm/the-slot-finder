@@ -1,5 +1,6 @@
 import { type ChangeEvent, type FormEvent, useState } from 'react'
 import { toast } from 'sonner'
+import { DatePicker } from '@/shared/components/date-picker'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -20,6 +21,8 @@ export function HolidayForm() {
     const { value } = event.target
     setValues((current) => ({ ...current, [field]: value }))
   }
+  const handleDateChange = (value: string, name: string) =>
+    setValues((current) => ({ ...current, [name as keyof HolidayFormValues]: value }))
   const handleCreated = () => {
     toast.success(t('Holiday added.'))
     setValues(EMPTY_HOLIDAY)
@@ -33,11 +36,11 @@ export function HolidayForm() {
     <form className="grid items-end gap-3 sm:grid-cols-4" onSubmit={handleSubmit}>
       <div className="flex flex-col gap-2">
         <Label htmlFor="holiday-from">{t('From')}</Label>
-        <Input id="holiday-from" name="from_date" type="date" value={values.from_date} onChange={handleChange} required />
+        <DatePicker id="holiday-from" name="from_date" value={values.from_date} onChange={handleDateChange} />
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="holiday-to">{t('To')}</Label>
-        <Input id="holiday-to" name="to_date" type="date" min={values.from_date} value={values.to_date} onChange={handleChange} required />
+        <DatePicker id="holiday-to" name="to_date" min={values.from_date} value={values.to_date} onChange={handleDateChange} />
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="holiday-hours">{t('Hours per day')}</Label>

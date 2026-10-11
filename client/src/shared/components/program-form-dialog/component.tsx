@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { can } from '@/resources/rbac'
 import { useCurrentUser } from '@/shared/auth'
 import { LeadSelect } from '@/shared/components/lead-select'
+import { DatePicker } from '@/shared/components/date-picker'
 import { type Program, useSaveProgram } from '@/shared/programs'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
@@ -26,6 +27,7 @@ export function ProgramFormDialog({ open, program, onOpenChange, onSaved }: Prog
     const { value } = event.target
     setValues((current) => ({ ...current, [field]: value }))
   }
+  const handleDateChange = (value: string, name: string) => setValues((current) => ({ ...current, [name as ProgramTextField]: value }))
   const handleLeadChange = (leadId: string) => setValues((current) => ({ ...current, lead_id: leadId }))
   const handleSaved = (saved: Program) => {
     toast.success(t('Program saved.'))
@@ -57,12 +59,11 @@ export function ProgramFormDialog({ open, program, onOpenChange, onSaved }: Prog
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="program-start">{t('Start date')}</Label>
-              <Input id="program-start" name="start_date" type="date" value={values.start_date} onChange={handleChange} required />
+              <DatePicker id="program-start" name="start_date" value={values.start_date} onChange={handleDateChange} />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="program-end">{t('End date')}</Label>
-              <Input id="program-end" name="end_date" type="date" min={values.start_date} value={values.end_date}
-                onChange={handleChange} required />
+              <DatePicker id="program-end" name="end_date" min={values.start_date} value={values.end_date} onChange={handleDateChange} />
             </div>
             {canChooseLead && (
               <div className="flex flex-col gap-2">

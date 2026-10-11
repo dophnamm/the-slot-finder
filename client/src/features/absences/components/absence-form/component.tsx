@@ -1,5 +1,6 @@
 import { type ChangeEvent, type FormEvent, useState } from 'react'
 import { toast } from 'sonner'
+import { DatePicker } from '@/shared/components/date-picker'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -23,6 +24,7 @@ export function AbsenceForm({ personId, canApprove }: AbsenceFormProps) {
     const { value } = event.target
     setValues((current) => ({ ...current, [field]: value }))
   }
+  const handleDateChange = (value: string, name: string) => setValues((current) => ({ ...current, [name as AbsenceTextField]: value }))
   const handleTypeChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const { value } = event.target
     if (isAbsenceType(value)) setValues((current) => ({ ...current, type: value }))
@@ -44,12 +46,11 @@ export function AbsenceForm({ personId, canApprove }: AbsenceFormProps) {
     <form className="grid items-end gap-3 sm:grid-cols-6" onSubmit={handleSubmit}>
       <div className="flex flex-col gap-2 sm:col-span-2">
         <Label htmlFor={`absence-from-${personId}`}>{t('From')}</Label>
-        <Input id={`absence-from-${personId}`} name="from_date" type="date" value={values.from_date} onChange={handleTextChange} required />
+        <DatePicker id={`absence-from-${personId}`} name="from_date" value={values.from_date} onChange={handleDateChange} />
       </div>
       <div className="flex flex-col gap-2 sm:col-span-2">
         <Label htmlFor={`absence-to-${personId}`}>{t('To')}</Label>
-        <Input id={`absence-to-${personId}`} name="to_date" type="date" min={values.from_date} value={values.to_date}
-          onChange={handleTextChange} required />
+        <DatePicker id={`absence-to-${personId}`} name="to_date" min={values.from_date} value={values.to_date} onChange={handleDateChange} />
       </div>
       <div className="flex flex-col gap-2 sm:col-span-2">
         <Label htmlFor={`absence-hours-${personId}`}>{t('Hours per day')}</Label>

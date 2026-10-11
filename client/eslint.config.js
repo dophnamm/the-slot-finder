@@ -26,6 +26,13 @@ const NO_INLINE_FUNCTION_PROPS = [
   },
 ]
 
+const NO_NATIVE_DATE_INPUTS = [
+  {
+    selector: 'JSXAttribute[name.name="type"] > Literal[value=/^(date|week|month|datetime-local)$/]',
+    message: "The browser's date pickers do not match the app. Use DatePicker or WeekPicker from '@/shared/components'.",
+  },
+]
+
 const NO_INLINE_STYLE = [
   {
     selector: 'JSXAttribute[name.name="style"]',
@@ -112,7 +119,7 @@ export default defineConfig([
   {
     files: APP_CODE,
     rules: {
-      'no-restricted-syntax': ['error', ...NO_RAW_TEXT, ...NO_INLINE_STYLE, ...NO_INLINE_FUNCTION_PROPS],
+      'no-restricted-syntax': ['error', ...NO_RAW_TEXT, ...NO_INLINE_STYLE, ...NO_NATIVE_DATE_INPUTS, ...NO_INLINE_FUNCTION_PROPS],
     },
   },
   {
@@ -123,7 +130,7 @@ export default defineConfig([
       'no-restricted-syntax': [
         'error',
         ...NO_RAW_TEXT,
-        ...NO_INLINE_STYLE,
+        ...NO_INLINE_STYLE, ...NO_NATIVE_DATE_INPUTS,
         ...NO_INLINE_FUNCTION_PROPS,
         ...NO_TYPES_IN_COMPONENT,
         ...ONE_COMPONENT_PER_FILE,
