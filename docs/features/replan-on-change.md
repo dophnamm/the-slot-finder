@@ -3,7 +3,7 @@
 **Goal:** when an absence or a phase slip breaks the plan, the Planner gets a re-plan draft with a diff, without recalculating anything by hand. This covers G3 in the [root README](../../README.md#1-problem-and-scope).
 
 **Roles:** specialist and lead cause changes (leave, phase slips), planner reviews the draft, lead sees the banner on their program.
-**Target:** 15 Oct · **Depends on:** [staffing-draft](staffing-draft.md) · **Branch:** `feat/replan-on-change` · **Status:** In review
+**Target:** 15 Oct · **Depends on:** [staffing-draft](staffing-draft.md) · **Branch:** `feat/replan-on-change` · **Status:** Done (PR #14)
 
 ## In scope
 
