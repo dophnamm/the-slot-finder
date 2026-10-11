@@ -1,3 +1,4 @@
+import type { ChangeEvent } from '@/shared/events'
 import type { PersonRef, ProjectStatus } from '@/shared/programs'
 
 /** They match the server's constants/plan.go and the engine's codes. */
@@ -95,6 +96,11 @@ export interface Draft {
   assignments: Assignment[]
   changes: PlanChange[]
   has_stretch: boolean
+  /** A re-plan draft that changes created; triggered_by lists them. */
+  auto: boolean
+  triggered_by: ChangeEvent[]
+  /** The newer version of a re-plan draft that replaced this one. */
+  superseded_by: string | null
 }
 
 export interface WeekHours {
