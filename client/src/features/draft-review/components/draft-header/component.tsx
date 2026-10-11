@@ -81,7 +81,7 @@ export function DraftHeader({ draft, editable }: DraftHeaderProps) {
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
         <span className="text-muted-foreground">{t('Covers')}</span>
         {draft.projects.map((project) => (
-          <Link key={project.id} className="font-medium hover:underline" to={generatePath(ROUTES.projectDetail, { id: project.id })}>
+          <Link key={project.id} className="font-medium hover:underline" to={generatePath(ROUTES.projectDetail, { programId: project.program_id, id: project.id })}>
             {t('{project} ({program})', { project: project.name, program: project.program })}
           </Link>
         ))}
