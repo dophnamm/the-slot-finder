@@ -5,8 +5,9 @@ import { cn } from "cn"
 const progressIndicatorVariants = cva("h-full transition-all", {
   variants: {
     variant: {
-      default: "bg-primary",
-      destructive: "bg-destructive",
+      // Pastel fills, like the rest of the app's data.
+      default: "bg-underused/70",
+      destructive: "bg-destructive/70",
     },
   },
   defaultVariants: {
