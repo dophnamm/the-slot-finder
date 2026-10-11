@@ -29,6 +29,7 @@ export function IntakeQueue() {
               <TableHead>{t('Start – deadline')}</TableHead>
               <TableHead>{t('Current phase')}</TableHead>
               <TableHead>{t('Lead')}</TableHead>
+              <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>

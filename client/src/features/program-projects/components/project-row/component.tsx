@@ -1,5 +1,6 @@
 import { generatePath, Link } from 'react-router'
 import { ROUTES } from '@/resources/routes'
+import { ProposeSquadButton } from '@/shared/components/propose-squad-button'
 import { StatusBadge } from '@/shared/components/status-badge'
 import { useTranslation } from '@/shared/i18n'
 import { Badge } from '@/shared/ui/badge'
@@ -44,6 +45,9 @@ export function ProjectRow({ project }: ProjectRowProps) {
         )}
       </TableCell>
       <TableCell>{project.lead?.name ?? t('No lead')}</TableCell>
+      <TableCell className="text-right">
+        <ProposeSquadButton projectId={project.id} status={project.status} />
+      </TableCell>
     </TableRow>
   )
 }

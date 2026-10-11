@@ -13,6 +13,7 @@ export type LanguageKey = {
   'Absence added.': string
   Absences: string
   'Absences of {name}': string
+  Accepted: string
   Active: string
   'Add absence': string
   'Add at least one skill.': string
@@ -22,6 +23,7 @@ export type LanguageKey = {
   'Add phase': string
   'Add project': string
   'Add skill': string
+  Added: string
   Approved: string
   'Approved absence always lowers capacity; planned absence does when the setting is on.': string
   'At risk': string
@@ -36,6 +38,7 @@ export type LanguageKey = {
   Cancelled: string
   'Change history': string
   'Change history and re-plan status.': string
+  Changed: string
   'Charter link': string
   Client: string
   Close: string
@@ -44,6 +47,7 @@ export type LanguageKey = {
   'Company holidays': string
   'Could not finish signing in.': string
   'Could not reach the sign-in service.': string
+  'Cross-expertise': string
   'Current phase': string
   'Customer engagements and their projects.': string
   Dashboard: string
@@ -55,6 +59,7 @@ export type LanguageKey = {
   'Demand saved.': string
   Done: string
   'Done points': string
+  Draft: string
   'Earliest start': string
   Edit: string
   'Edit person': string
@@ -103,6 +108,7 @@ export type LanguageKey = {
   'No absences yet.': string
   'No access': string
   'No demand yet.': string
+  'No free capacity in the window': string
   'No goal yet.': string
   'No holidays yet.': string
   'No incoming projects.': string
@@ -112,6 +118,8 @@ export type LanguageKey = {
   'No phases yet': string
   'No programs yet.': string
   'No projects yet.': string
+  'Nobody has the minimum level': string
+  'Nobody has this expertise': string
   'Non-project hours': string
   'None this week': string
   'Objectives, one per line': string
@@ -150,13 +158,17 @@ export type LanguageKey = {
   'Project saved.': string
   'Project updated.': string
   Projects: string
+  'Propose squad': string
+  'Proposing…': string
   'Put on hold': string
+  Rejected: string
   'Remove absence': string
   'Remove demand': string
   'Remove holiday': string
   'Remove phase': string
   'Remove skill': string
   'Remove the phase {name}?': string
+  Removed: string
   'Report leave or training. A planner approves it.': string
   Reset: string
   Resume: string
@@ -186,6 +198,9 @@ export type LanguageKey = {
   'Start week': string
   'Start – deadline': string
   Status: string
+  Stretch: string
+  Superseded: string
+  'The free hours are held by locked allocations': string
   'The last phase ends after the deadline week. Move the deadline or shorten a phase.': string
   'The last phase would end after the deadline week.': string
   'The server is unreachable.': string
