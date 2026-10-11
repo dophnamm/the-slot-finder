@@ -7,7 +7,7 @@ import { formatIsoWeekRange, shortWeekLabel } from '@/utils/functions'
 import { useStaffablePeople } from '../../use-staffable-people'
 import { AssignmentRow } from './components/assignment-row'
 import { GroupHeaderRow } from './components/group-header-row'
-import { PERSON_COLUMN_CLASS } from './constants'
+import { PERSON_COLUMN_CLASS, WEEK_COLUMN_CLASS } from './constants'
 import type { AssignmentGridProps } from './types'
 import { groupByDemand, lockChanges } from './utils'
 
@@ -39,8 +39,11 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
             <TableRow>
               <TableHead className={PERSON_COLUMN_CLASS}>{t('Person')}</TableHead>
               {draft.weeks.map((week) => (
-                <TableHead key={week} title={formatIsoWeekRange(week)} className="text-center text-xs">
-                  {shortWeekLabel(week)}
+                <TableHead key={week} className={WEEK_COLUMN_CLASS}>
+                  <div className="flex flex-col leading-tight">
+                    <span>{shortWeekLabel(week)}</span>
+                    <span className="text-xs font-normal text-muted-foreground">{formatIsoWeekRange(week)}</span>
+                  </div>
                 </TableHead>
               ))}
             </TableRow>
@@ -48,7 +51,7 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
           <TableBody>
             {groups.map((group) => (
               <Fragment key={group.demand.id}>
-                <GroupHeaderRow group={group} span={draft.weeks.length + 1} people={people} editable={editable}
+                <GroupHeaderRow group={group} weeks={draft.weeks} people={people} editable={editable}
                   busy={edit.isPending} onAdd={handleAdd} />
                 {group.assignments.map((assignment) => (
                   <AssignmentRow key={assignment.id} assignment={assignment} weeks={draft.weeks} editable={editable}
