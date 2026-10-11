@@ -1,18 +1,15 @@
-import type { badgeVariants } from '@/shared/ui/badge'
-import type { VariantProps } from 'class-variance-authority'
+import type { BadgeVariant } from '@/shared/ui/badge'
 
-type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>['variant']>
-
-/** Badge look per status: running work stands out, finished work fades. */
+/** Badge colour per status: new work is violet, planned blue, running green, paused amber, finished gray. */
 export const STATUS_VARIANT: Record<string, BadgeVariant> = {
-  open: 'default',
-  incoming: 'secondary',
-  planned: 'secondary',
-  active: 'default',
-  pending: 'outline',
-  on_hold: 'outline',
-  closing: 'secondary',
-  closed: 'outline',
-  done: 'outline',
-  cancelled: 'destructive',
+  open: 'blue',
+  incoming: 'violet',
+  planned: 'blue',
+  active: 'green',
+  pending: 'amber',
+  on_hold: 'amber',
+  closing: 'teal',
+  closed: 'gray',
+  done: 'gray',
+  cancelled: 'red',
 }

@@ -8,7 +8,7 @@ import { EventSummary } from '@/shared/components/event-summary'
 import { useTranslation } from '@/shared/i18n'
 import {
   type Draft,
-  PLAN_STATUS_LABELS,
+  PLAN_STATUS_BADGE, PLAN_STATUS_LABELS,
   PUBLISHED_PLAN_STATUS,
   useAcceptDraft,
   useGenerateDraft,
@@ -51,9 +51,9 @@ export function DraftHeader({ draft, editable }: DraftHeaderProps) {
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
           {t('Staffing draft')}
-          <Badge variant="secondary">{t(PLAN_STATUS_LABELS[draft.status])}</Badge>
-          {draft.auto && <Badge variant="outline">{t('Re-plan')}</Badge>}
-          {draft.has_stretch && <Badge variant="destructive">{t('Has stretch')}</Badge>}
+          <Badge variant={PLAN_STATUS_BADGE[draft.status]}>{t(PLAN_STATUS_LABELS[draft.status])}</Badge>
+          {draft.auto && <Badge variant="violet">{t('Re-plan')}</Badge>}
+          {draft.has_stretch && <Badge variant="red">{t('Has stretch')}</Badge>}
         </CardTitle>
         <CardDescription>
           {draft.status === PUBLISHED_PLAN_STATUS

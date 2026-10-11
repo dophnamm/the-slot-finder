@@ -20,7 +20,7 @@ export function RiskProject({ project }: RiskProjectProps) {
       <span className="text-xs text-muted-foreground">{project.program}</span>
       <div className="flex flex-wrap items-center gap-1">
         {activeWarnings(metrics).map((warning) => (
-          <Badge key={warning.flag} variant="destructive">
+          <Badge key={warning.flag} variant={warning.badge}>
             {t(warning.label)}
           </Badge>
         ))}

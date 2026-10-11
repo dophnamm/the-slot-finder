@@ -1,7 +1,8 @@
 import type { PlanChangeKind } from '@/shared/staffing'
+import type { BadgeVariant } from '@/shared/ui/badge'
 
-export const CHANGE_BADGE_VARIANT: Record<PlanChangeKind, 'secondary' | 'outline' | 'destructive'> = {
-  added: 'secondary',
-  changed: 'outline',
-  removed: 'destructive',
+export const CHANGE_BADGE_VARIANT: Record<PlanChangeKind, BadgeVariant> = {
+  added: 'green',
+  changed: 'amber',
+  removed: 'red',
 }

@@ -1,4 +1,5 @@
 import type { PlainKey } from '@/shared/i18n'
+import type { BadgeVariant } from '@/shared/ui/badge'
 import type { ChangeEventStatus } from './types'
 
 export const EVENTS_QUERY_KEY = ['events'] as const
@@ -16,9 +17,9 @@ export const EVENT_STATUS_LABELS: Record<ChangeEventStatus, PlainKey> = {
   failed: 'Failed',
 }
 
-export const EVENT_STATUS_BADGE: Record<ChangeEventStatus, 'secondary' | 'outline' | 'destructive'> = {
-  pending: 'outline',
-  no_impact: 'secondary',
-  draft_created: 'secondary',
-  failed: 'destructive',
+export const EVENT_STATUS_BADGE: Record<ChangeEventStatus, BadgeVariant> = {
+  pending: 'amber',
+  no_impact: 'gray',
+  draft_created: 'blue',
+  failed: 'red',
 }

@@ -15,7 +15,7 @@ export function HeatmapRow({ row, expertiseId }: HeatmapRowProps) {
       <TableCell className={PERSON_COLUMN_CLASS}>
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-medium">{row.person.name}</span>
-          {notPrimary && <Badge variant="outline">{t('Not primary')}</Badge>}
+          {notPrimary && <Badge variant="amber">{t('Not primary')}</Badge>}
         </div>
       </TableCell>
       {row.cells.map((cell) => (

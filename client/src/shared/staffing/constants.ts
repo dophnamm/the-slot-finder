@@ -1,5 +1,6 @@
 import type { PlainKey } from '@/shared/i18n'
 import type { ProjectStatus } from '@/shared/programs'
+import type { BadgeVariant } from '@/shared/ui/badge'
 import type { AssignmentKind, PlanChangeKind, PlanStatus, UnmetReason } from './types'
 
 export const draftQueryKey = (id: string) => ['staffing-drafts', id] as const
@@ -29,10 +30,25 @@ export const PLAN_STATUS_LABELS: Record<PlanStatus, PlainKey> = {
   superseded: 'Superseded',
 }
 
+/** Badge colour per plan status: an open draft is blue, an accepted plan green, the rest gray. */
+export const PLAN_STATUS_BADGE: Record<PlanStatus, BadgeVariant> = {
+  draft: 'blue',
+  published: 'green',
+  rejected: 'gray',
+  superseded: 'gray',
+}
+
 export const ASSIGNMENT_KIND_LABELS: Record<AssignmentKind, PlainKey> = {
   primary: 'Primary',
   cross_expertise: 'Cross-expertise',
   stretch: 'Stretch',
+}
+
+/** Badge colour per assignment kind: primary blue, cross-expertise violet, stretch red. */
+export const ASSIGNMENT_KIND_BADGE: Record<AssignmentKind, BadgeVariant> = {
+  primary: 'blue',
+  cross_expertise: 'violet',
+  stretch: 'red',
 }
 
 export const UNMET_REASON_LABELS: Record<UnmetReason, PlainKey> = {

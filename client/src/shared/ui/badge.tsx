@@ -18,6 +18,15 @@ const badgeVariants = cva(
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // Pastel colours for statuses and categories (tokens in index.css).
+        blue: "bg-badge-blue text-badge-blue-foreground [a]:hover:bg-badge-blue/80",
+        green: "bg-badge-green text-badge-green-foreground [a]:hover:bg-badge-green/80",
+        amber: "bg-badge-amber text-badge-amber-foreground [a]:hover:bg-badge-amber/80",
+        red: "bg-badge-red text-badge-red-foreground [a]:hover:bg-badge-red/80",
+        violet: "bg-badge-violet text-badge-violet-foreground [a]:hover:bg-badge-violet/80",
+        teal: "bg-badge-teal text-badge-teal-foreground [a]:hover:bg-badge-teal/80",
+        pink: "bg-badge-pink text-badge-pink-foreground [a]:hover:bg-badge-pink/80",
+        gray: "bg-badge-gray text-badge-gray-foreground [a]:hover:bg-badge-gray/80",
       },
     },
     defaultVariants: {
@@ -48,4 +57,6 @@ function Badge({
   })
 }
 
-export { Badge, badgeVariants }
+type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>["variant"]>
+
+export { Badge, badgeVariants, type BadgeVariant }

@@ -1,5 +1,5 @@
 import { useTranslation } from '@/shared/i18n'
-import { ASSIGNMENT_KIND_LABELS } from '@/shared/staffing'
+import { ASSIGNMENT_KIND_BADGE, ASSIGNMENT_KIND_LABELS } from '@/shared/staffing'
 import { Badge } from '@/shared/ui/badge'
 import { formatIsoWeekRange } from '@/utils/functions'
 import { BAND_LABELS } from '../../../../constants'
@@ -37,7 +37,7 @@ export function CellDetail({ cell, person }: CellDetailProps) {
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1">
               <span>{t('{hours} h', { hours: weekHours(assignment, cell.week) })}</span>
-              <Badge variant="outline">{t(ASSIGNMENT_KIND_LABELS[assignment.kind])}</Badge>
+              <Badge variant={ASSIGNMENT_KIND_BADGE[assignment.kind]}>{t(ASSIGNMENT_KIND_LABELS[assignment.kind])}</Badge>
             </div>
           </li>
         ))}

@@ -18,10 +18,10 @@ export function CoverageRow({ demand }: CoverageRowProps) {
       <TableCell className="text-right">{demand.assigned_hours}</TableCell>
       <TableCell>
         {missing === 0 ? (
-          <Badge variant="secondary">{t('Covered')}</Badge>
+          <Badge variant="green">{t('Covered')}</Badge>
         ) : (
           <div className="flex flex-col gap-1">
-            <Badge variant="destructive">{t('Short {hours} h', { hours: missing })}</Badge>
+            <Badge variant="red">{t('Short {hours} h', { hours: missing })}</Badge>
             {demand.unmet_reason && <span className="text-xs text-muted-foreground">{t(UNMET_REASON_LABELS[demand.unmet_reason])}</span>}
           </div>
         )}

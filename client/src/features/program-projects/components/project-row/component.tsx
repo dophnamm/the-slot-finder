@@ -30,11 +30,11 @@ export function ProjectRow({ project }: ProjectRowProps) {
           <StatusBadge status={project.status} kind="project" />
           {metrics
             ? activeWarnings(metrics).map((warning) => (
-                <Badge key={warning.flag} variant="destructive">
+                <Badge key={warning.flag} variant={warning.badge}>
                   {t(warning.label)}
                 </Badge>
               ))
-            : project.at_risk && <Badge variant="destructive">{t('At risk')}</Badge>}
+            : project.at_risk && <Badge variant="red">{t('At risk')}</Badge>}
         </div>
       </TableCell>
       <TableCell className="text-sm">
