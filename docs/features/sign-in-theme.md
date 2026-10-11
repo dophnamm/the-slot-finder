@@ -41,6 +41,7 @@ A **Keycloak login theme** named `slot-finder`: FreeMarker templates that extend
 - `make keycloak-theme` recreates the Keycloak container if the compose file changed, waits until it is healthy, then sets `loginTheme` with `kcadm.sh`.
 - Client: `RequireAuth` calls `signIn(returnTo)` once per mount (`use-sign-in-redirect.ts`) and shows "Try again" if it fails. `AuthPanel` (shared) is the centred card for the callback, the Signed out page and that error.
 - `signOut()` stops listening for "user unloaded" before `signoutRedirect()`. Otherwise the cleared session made `RequireAuth` start a sign-in that raced the sign-out.
+- Loop guard: automatic sign-ins are counted per tab (`shared/auth/sign-in-attempts.ts`). After `AUTO_SIGN_IN_LIMIT` (3) within `AUTO_SIGN_IN_WINDOW_MS` (60 s) with no successful `/me`, the app stops and says the server keeps rejecting the sign-in. A successful `/me` or a click on "Try again" clears the count.
 
 ## Not now
 
