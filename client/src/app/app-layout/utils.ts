@@ -5,8 +5,9 @@ import { NAV_ITEMS } from './constants'
 
 export function navLinkClassName({ isActive }: NavLinkRenderProps) {
   return cn(
-    'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-    isActive && 'bg-sidebar-accent font-medium text-sidebar-accent-foreground',
+    'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+    // The current page stands out: pastel blue, darker text, bold.
+    isActive && 'bg-badge-blue font-semibold text-badge-blue-foreground hover:bg-badge-blue hover:text-badge-blue-foreground',
   )
 }
 
