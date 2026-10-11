@@ -1,4 +1,5 @@
 import type { ChangeEvent } from 'react'
+import { WeekPicker } from '@/shared/components/week-picker'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -15,6 +16,7 @@ export function PhaseEditRow({ draft, canSave, busy, onChange, onSave, onCancel 
     const field = event.target.name as PhaseDraftField
     onChange({ ...draft, [field]: event.target.value })
   }
+  const handleWeekChange = (value: string, name: string) => onChange({ ...draft, [name as PhaseDraftField]: value })
 
   return (
     <TableRow>
@@ -22,11 +24,10 @@ export function PhaseEditRow({ draft, canSave, busy, onChange, onSave, onCancel 
         <Input name="name" aria-label={t('Phase name')} value={draft.name} onChange={handleChange} autoFocus />
       </TableCell>
       <TableCell>
-        <Input name="start_week" type="week" aria-label={t('Start week')} value={draft.start_week} onChange={handleChange} />
+        <WeekPicker name="start_week" aria-label={t('Start week')} value={draft.start_week} onChange={handleWeekChange} />
       </TableCell>
       <TableCell>
-        <Input name="end_week" type="week" min={draft.start_week} aria-label={t('End week')} value={draft.end_week}
-          onChange={handleChange} />
+        <WeekPicker name="end_week" min={draft.start_week} aria-label={t('End week')} value={draft.end_week} onChange={handleWeekChange} />
       </TableCell>
       <TableCell className="text-muted-foreground">{canSave && formatIsoWeekSpan(draft.start_week, draft.end_week)}</TableCell>
       <TableCell>

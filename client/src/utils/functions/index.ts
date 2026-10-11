@@ -12,7 +12,9 @@ export {
   isoWeekList,
   isoWeekRange,
   isoWeeksBetween,
+  parseDateValue,
   shortWeekLabel,
+  toDateValue,
   toIsoWeek,
 } from './date'
 export { pageCount } from './paging'

@@ -1,5 +1,6 @@
 import { type ChangeEvent, type FormEvent, useState } from 'react'
 import { toast } from 'sonner'
+import { DatePicker } from '@/shared/components/date-picker'
 import { ROLE_LABELS, ROLES } from '@/resources/rbac'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
@@ -28,6 +29,7 @@ export function PersonFormDialog({ open, person, onOpenChange }: PersonFormDialo
     const { value } = event.target
     setValues((current) => ({ ...current, [field]: value }))
   }
+  const handleDateChange = (value: string, name: string) => setValues((current) => ({ ...current, [name as PersonTextField]: value }))
   const handleRoleChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const { value } = event.target
     if (isRole(value, roles)) setValues((current) => ({ ...current, role: value }))
@@ -100,11 +102,11 @@ export function PersonFormDialog({ open, person, onOpenChange }: PersonFormDialo
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="person-start-date">{t('Start date')}</Label>
-              <Input id="person-start-date" name="start_date" type="date" value={values.start_date} onChange={handleTextChange} />
+              <DatePicker id="person-start-date" name="start_date" value={values.start_date} onChange={handleDateChange} />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="person-end-date">{t('End date')}</Label>
-              <Input id="person-end-date" name="end_date" type="date" value={values.end_date} onChange={handleTextChange} />
+              <DatePicker id="person-end-date" name="end_date" min={values.start_date} value={values.end_date} onChange={handleDateChange} />
             </div>
           </div>
           <SkillsEditor skills={skills} expertises={expertises} onChange={setSkills} />

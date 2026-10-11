@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { can } from '@/resources/rbac'
 import { useCurrentUser } from '@/shared/auth'
 import { LeadSelect } from '@/shared/components/lead-select'
+import { DatePicker } from '@/shared/components/date-picker'
 import { PRIORITIES, useSaveProject } from '@/shared/programs'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
@@ -26,6 +27,7 @@ export function ProjectFormDialog({ open, programId, project, onOpenChange }: Pr
     const { value } = event.target
     setValues((current) => ({ ...current, [field]: value }))
   }
+  const handleDateChange = (value: string, name: string) => setValues((current) => ({ ...current, [name as ProjectTextField]: value }))
   const handleLeadChange = (leadId: string) => setValues((current) => ({ ...current, lead_id: leadId }))
   const handleSaved = () => {
     toast.success(t('Project saved.'))
@@ -68,12 +70,11 @@ export function ProjectFormDialog({ open, programId, project, onOpenChange }: Pr
             )}
             <div className="flex flex-col gap-2">
               <Label htmlFor="project-start">{t('Earliest start')}</Label>
-              <Input id="project-start" name="start_earliest" type="date" value={values.start_earliest} onChange={handleChange} required />
+              <DatePicker id="project-start" name="start_earliest" value={values.start_earliest} onChange={handleDateChange} />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="project-deadline">{t('Deadline')}</Label>
-              <Input id="project-deadline" name="deadline" type="date" min={values.start_earliest} value={values.deadline}
-                onChange={handleChange} required />
+              <DatePicker id="project-deadline" name="deadline" min={values.start_earliest} value={values.deadline} onChange={handleDateChange} />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="project-scope">{t('Scope points')}</Label>

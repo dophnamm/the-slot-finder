@@ -15,6 +15,16 @@ export function toIsoWeek(date: dayjs.ConfigType): string {
   return `${day.isoWeekYear()}-W${String(day.isoWeek()).padStart(2, '0')}`
 }
 
+/** A date value (`YYYY-MM-DD`) as a Date at local midnight, e.g. for a calendar; undefined when empty. */
+export function parseDateValue(value: string): Date | undefined {
+  return value ? dayjs(value).toDate() : undefined
+}
+
+/** A Date as a date value (`YYYY-MM-DD`), the format the server and the forms use. */
+export function toDateValue(date: Date): string {
+  return dayjs(date).format(DATE_FORMAT.isoDate)
+}
+
 /** The ISO week of today, in the browser's time zone. */
 export function currentIsoWeek(): string {
   return toIsoWeek(dayjs())
