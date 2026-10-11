@@ -149,7 +149,7 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | POST | `/staffing-drafts/{id}/reject` | Discard a draft | planner |
 | POST | `/scenarios` | Create a what-if from a list of hypothetical changes | planner |
 | GET | `/scenarios/{id}/diff` | Compare a scenario with the baseline | planner |
-| GET | `/insights/heatmap?from=&to=&expertise=` | Person × week matrix. Each cell holds total hours plus hours per expertise; `expertise=` keeps people who hold that expertise in the range | planner, lead |
+| GET | `/insights/heatmap?from=&to=&expertise=` | Person × week matrix. Each cell holds total hours plus hours per expertise; `expertise=` (an expertise id) keeps people who hold that expertise or work on it in the range. Each cell also has capacity, utilization, its band and a tentative flag for planned leave | planner, lead |
 | GET | `/insights/risks` | Understaffed and at-risk projects, delivery behind time, likely over budget, overloaded people (sustained overload first), overdue milestones | planner, lead |
 | GET | `/insights/capacity-forecast?from=&to=&expertise=` | Per expertise × week: free capacity, unmet confirmed demand, expected pipeline demand (× confidence), and shortfall signals | planner, lead |
 | GET | `/insights/bench` | People below the underused band for each of the next `bench_weeks`, with suggested actions | planner |

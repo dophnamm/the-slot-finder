@@ -23,7 +23,7 @@ program-header/
 
 - **Name:** PascalCase of the folder. Inside `pages/`, add `Page`: `pages/program-detail/` exports `ProgramDetailPage`. Everywhere else there is no suffix: `program-header/` exports `ProgramHeader`.
 - **`types.ts`** exists whenever the component has props or any type. Export public types from `index.ts` too, e.g. `export type { ProgramHeaderProps } from './types'`.
-- **Other allowed files:** `mock-data.ts` (placeholder data until the API is wired), `api.ts`, `use-<name>.ts`. Nothing else.
+- **Other allowed files:** `mock-data.ts` (placeholder data until the API is wired), `api.ts`, `use-<name>.ts`, and tests next to what they test: `component.test.tsx`, `utils.test.ts`, `use-<name>.test.ts` (Vitest + Testing Library, `npm test`). Nothing else.
 - Constants or helpers used by **more than one** component go to `src/utils/`. Endpoints, routes and RBAC go to `src/resources/`. **REQUIRED:** use organizing-client-shared-code for those.
 
 ## What component.tsx contains

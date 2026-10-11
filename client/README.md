@@ -205,7 +205,8 @@ client/
     │   ├── programs/ · program-overview/ · program-projects/   ← component.tsx · types.ts · index.ts · components/<child>/
     │   ├── project-summary/ · project-phases/ · demand-form/
     │   ├── intake/
-    │   └── draft-review/
+    │   ├── draft-review/
+    │   └── heatmap/              ← the dashboard; filters in use-heatmap-filters.ts (Zustand)
     ├── resources/
     │   ├── endpoints/            ← server API paths per domain (HEALTH_ENDPOINTS, PROGRAM_ENDPOINTS)
     │   ├── routes/               ← client route paths (ROUTES)
@@ -223,7 +224,7 @@ client/
         └── stores/               ← auth-store.ts (Zustand)
 ```
 
-Tests (component and end-to-end) are added with the first real feature.
+Component and unit tests use Vitest with Testing Library in jsdom (`npm test`). They sit next to the code: `component.test.tsx`, `utils.test.ts`, `use-<name>.test.ts`. End-to-end tests come later.
 
 ## 7. Conventions
 

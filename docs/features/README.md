@@ -10,7 +10,7 @@ One spec per feature, in build order. Each spec holds the goal, scope, server an
 | 2 | [People and skills](people-and-skills.md) | People, expertise, levels, absences (company-wide holidays only), `capacity(person, week)`, seed data | 11 Oct | sign-in | Done |
 | 3 | [Programs and demand](programs-and-demand.md) | Programs, projects, phases with slip propagation, demand (profile `flat` only) | 12 Oct | people-and-skills | Done |
 | 4 | [Staffing draft](staffing-draft.md) | Greedy engine, draft generation, review, edit and lock, atomic accept into the baseline | 12–13 Oct | programs-and-demand | Done |
-| 5 | [Team heatmap](team-heatmap.md) | Person × week heatmap, utilization bands | 14 Oct | staffing-draft | Not started |
+| 5 | [Team heatmap](team-heatmap.md) | Person × week heatmap, utilization bands | 14 Oct | staffing-draft | In review |
 | 6 | [Re-plan on change](replan-on-change.md) | Absence or phase slip → ChangeEvent → outbox runner → re-plan draft with diff, banner on the program page | 15 Oct | staffing-draft | Not started |
 | 7 | [Program metrics](program-metrics.md) | Time, Scope, Planned burn, Staffing with gap, risks list | 16 Oct | staffing-draft | Not started |
 
