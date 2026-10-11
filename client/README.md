@@ -206,7 +206,8 @@ client/
     │   ├── project-summary/ · project-phases/ · demand-form/
     │   ├── intake/
     │   ├── draft-review/
-    │   └── heatmap/              ← the dashboard; filters in use-heatmap-filters.ts (Zustand)
+    │   ├── heatmap/              ← the dashboard; filters in use-heatmap-filters.ts (Zustand)
+    │   └── replan-banner/ · change-history/
     ├── resources/
     │   ├── endpoints/            ← server API paths per domain (HEALTH_ENDPOINTS, PROGRAM_ENDPOINTS)
     │   ├── routes/               ← client route paths (ROUTES)
@@ -220,7 +221,7 @@ client/
         ├── i18n/                 ← language-key.ts (LanguageKey), translate.ts (t, translate), locales/, language-store.ts
         ├── ui/                   ← shadcn components, managed by the shadcn CLI
         ├── components/           ← components used by several features, e.g. page-placeholder/, pager/, status-badge/
-        ├── programs/ · expertises/ · staffing/   ← API calls, query hooks and types shared by several features
+        ├── programs/ · expertises/ · staffing/ · events/   ← API calls, query hooks and types shared by several features
         └── stores/               ← auth-store.ts (Zustand)
 ```
 

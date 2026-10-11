@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The Slot Finder assigns incoming customer projects to cross-functional squads (PM, Analyst, Engineer, QA), forecasts who is overloaded or idle per ISO week, and re-plans when projects slip or people take leave. `README.md` is the architecture source of truth: goals, data model, metrics formulas, flows and ADRs. `docs/architecture.drawio` mirrors its diagrams. `server/README.md` and `client/README.md` hold the per-side details, API table and screens. `docs/features/` holds one spec per feature in build order (scope, acceptance criteria, tasks); read the feature's spec before building it.
 
-Status: sign-in, people-and-skills, programs-and-demand, staffing-draft and team-heatmap are built; `docs/features/README.md` tracks the rest (re-plan, metrics).
+Status: sign-in, people-and-skills, programs-and-demand, staffing-draft, team-heatmap and replan-on-change are built; `docs/features/README.md` tracks the rest (program metrics).
 
 ## Repo-wide rules
 
@@ -82,8 +82,8 @@ A Program contains Projects. A Project is split into ordered **Phases** (week ra
 - `docs/` is generated Swagger (code-first, Swagger 2.0). Do not edit it by hand.
 - Migrations are Atlas files in `cmd/migrations/sql`, generated from GORM models.
 - `internal/engine` imports the stdlib only: `engine.Propose(request)` with the greedy strategy. The staffing service builds the snapshot (capacity, demand windows, the baseline) and saves the result as a draft.
-- Planned, not built yet:
-  - in-process background jobs (re-plan, import, notify)
+- Change events are an outbox: services that save leave or a slipped phase or deadline call `events.Record` inside the same `TxManager.Do`. The re-plan runner (started and stopped by an FX hook) claims them with `FOR UPDATE SKIP LOCKED` after `REPLAN_DEBOUNCE` and builds or merges one open auto draft per baseline.
+- Planned, not built yet: background jobs for import and notify.
 - `cmd/server/.env` is read by the app, the Makefile and docker compose. `deploy/postgres/init` creates the `keycloak` database only when the volume is first created.
 
 ### Client (React + TS, Vite, Tailwind v4, shadcn/ui on Base UI)
