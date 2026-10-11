@@ -1,11 +1,12 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { applyProgramAction, createProgram, getProgram, listLeadCandidates, listPrograms, updateProgram } from './api'
+import { applyProgramAction, createProgram, getProgram, getProgramOverview, listLeadCandidates, listPrograms, updateProgram } from './api'
 import {
   LEAD_OPTIONS_QUERY_KEY,
   LEAD_ROLES,
   PROGRAMS_PAGE_SIZE,
   PROGRAMS_QUERY_KEY,
   PROJECTS_QUERY_KEY,
+  programOverviewQueryKey,
   programQueryKey,
 } from './constants'
 import type { LeadOption, ProgramAction, ProgramInput } from './types'
@@ -45,6 +46,11 @@ export function useProgramAction(id: string) {
 }
 
 /** People with a lead role; only fetched when `enabled` (planners). */
+/** Progress, cost figures and staffing by expertise; refetched with the program's other data. */
+export function useProgramOverview(id: string) {
+  return useQuery({ queryKey: programOverviewQueryKey(id), queryFn: () => getProgramOverview(id) })
+}
+
 export function useLeadOptions(enabled: boolean) {
   return useQuery({
     queryKey: LEAD_OPTIONS_QUERY_KEY,

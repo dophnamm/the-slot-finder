@@ -47,6 +47,46 @@ export interface Demand {
   to_week: string
 }
 
+/**
+ * Time, Scope, Planned burn and Staffing with their warnings, computed by the server.
+ * Percentages are 0–100 and null when their denominator is 0; Time % may pass 100.
+ */
+export interface ProgressMetrics {
+  time_percent: number | null
+  scope_percent: number | null
+  staffing_percent: number | null
+  planned_burn_percent: number | null
+  budget_hours: number
+  planned_hours: number
+  forecast_hours: number
+  gap_hours: number
+  planned_to_date_hours: number
+  behind_on_delivery: boolean
+  understaffed: boolean
+  at_risk: boolean
+  over_planned: boolean
+  past_end: boolean
+}
+
+/** Budget against planned hours for one expertise of a program. */
+export interface ExpertiseStaffing {
+  expertise_id: string
+  expertise: string
+  budget_hours: number
+  planned_hours: number
+  gap_hours: number
+  staffing_percent: number | null
+  understaffed: boolean
+}
+
+export interface ProgramOverview {
+  program_id: string
+  /** How many projects (not cancelled) the figures sum over. */
+  projects: number
+  metrics: ProgressMetrics
+  staffing_by_expertise: ExpertiseStaffing[]
+}
+
 export interface Project {
   id: string
   program_id: string
@@ -65,6 +105,8 @@ export interface Project {
   /** The last phase ends after the deadline week. */
   at_risk: boolean
   current_phase: Phase | null
+  /** Set on a program's project list. */
+  metrics?: ProgressMetrics
 }
 
 export interface ProjectDetail extends Project {

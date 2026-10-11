@@ -9,6 +9,7 @@ import type {
   Program,
   ProgramAction,
   ProgramInput,
+  ProgramOverview,
   Project,
   ProjectAction,
   ProjectDetail,
@@ -34,6 +35,10 @@ export function updateProgram(id: string, changes: Partial<ProgramInput>) {
 
 export function applyProgramAction(id: string, action: ProgramAction) {
   return request<Program>({ url: PROGRAM_ENDPOINTS.action(id, action), method: 'POST' })
+}
+
+export function getProgramOverview(id: string) {
+  return request<ProgramOverview>({ url: PROGRAM_ENDPOINTS.overview(id) })
 }
 
 export function listProgramProjects(programId: string) {

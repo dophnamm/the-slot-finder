@@ -8,10 +8,12 @@ export {
   PROGRAMS_QUERY_KEY,
   PROJECT_ACTIONS,
   PROJECT_STATUS_LABELS,
+  PROGRESS_WARNINGS,
   PROJECTS_QUERY_KEY,
 } from './constants'
 export type {
   Demand,
+  ExpertiseStaffing,
   DemandInput,
   EditorUser,
   LeadOption,
@@ -22,15 +24,17 @@ export type {
   Program,
   ProgramAction,
   ProgramInput,
+  ProgramOverview,
   ProgramStatus,
+  ProgressMetrics,
   Project,
   ProjectAction,
   ProjectDetail,
   ProjectInput,
   ProjectStatus,
 } from './types'
-export { availableActions, canEdit, canEditProject, isOpenStatus, weekSpan } from './utils'
-export { useLeadOptions, useProgram, useProgramAction, usePrograms, useSaveProgram } from './use-programs'
+export { activeWarnings, availableActions, canEdit, canEditProject, isOpenStatus, weekSpan } from './utils'
+export { useLeadOptions, useProgram, useProgramAction, useProgramOverview, usePrograms, useSaveProgram } from './use-programs'
 export {
   useProgramProjects,
   useProject,
