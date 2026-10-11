@@ -42,7 +42,7 @@ if (load > FULL_LOAD_PERCENT) ...   // FULL_LOAD_PERCENT in constants.ts
 ## Endpoints, routes and RBAC
 
 - **Endpoints** are relative to the API base (`/api/v1`). Use a builder function for ids, with `encodeURIComponent`: `overview: (id: string) => \`${program(id)}/overview\``.
-- **Routes:** `ROUTES` holds every path for the router, nav and links. For params, link with `generatePath(ROUTES.programDetail, { id })`.
+- **Routes:** `ROUTES` holds every path for the router, nav and links. A page route in `app/router.tsx` also sets `handle: crumb('<kind>')`; add the kind and its trail in `app/breadcrumbs` (fixed texts in `STATIC_TRAILS`, a child trail component when it needs server data). For params, link with `generatePath(ROUTES.programDetail, { id })`.
 - **RBAC:** `ROLES` must match the server's `internal/constants/roles.go`. Add a permission to `PERMISSIONS` and check it with `can(role, permission)`. This only shows or hides UI; the server enforces the real rule.
 
 ## Dates and ISO weeks: always dayjs
