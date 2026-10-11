@@ -163,10 +163,12 @@ export type LanguageKey = {
   'No phases yet': string
   'No primary skill': string
   'No programs yet.': string
+  'No project needs attention.': string
   'No projects yet.': string
   'Nobody has the minimum level': string
   'Nobody has this expertise': string
   'Nobody is assigned yet.': string
+  'Nobody is over 100 % in the coming weeks.': string
   'Nobody matches these filters.': string
   'Non-project hours': string
   'None this week': string
@@ -180,6 +182,7 @@ export type LanguageKey = {
   'Ordered by priority, then deadline.': string
   'Over-planned': string
   Overloaded: string
+  'Overloaded people ({count})': string
   'Page not found': string
   'Page {page} of {pages}': string
   'Past the end date': string
@@ -217,6 +220,8 @@ export type LanguageKey = {
   'Project saved.': string
   'Project updated.': string
   Projects: string
+  'Projects ({count})': string
+  'Projects that are understaffed, at risk or behind on delivery, and people over 100 % in the coming weeks.': string
   'Propose squad': string
   'Proposing…': string
   'Put on hold': string
@@ -236,6 +241,7 @@ export type LanguageKey = {
   Reset: string
   Resume: string
   'Review draft': string
+  Risks: string
   Role: string
   Save: string
   'Save demand': string
@@ -315,6 +321,7 @@ export type LanguageKey = {
   '{expertise} ({count})': string
   '{expertise} · level {level}': string
   '{expertise} · {program}': string
+  '{gap} h short of {budget} h': string
   '{hours} h': string
   '{hours} h non-project': string
   '{hours} h per day': string
@@ -333,5 +340,6 @@ export type LanguageKey = {
   '{start} – {end}': string
   '{start} – {end} · level {level}+ · {assigned} of {hours} h': string
   '{week} ({dates})': string
+  '{week}: {load}/{capacity} h': string
   '—': string
 }

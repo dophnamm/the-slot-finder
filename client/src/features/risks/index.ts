@@ -1,0 +1,1 @@
+export { Risks } from './component'
