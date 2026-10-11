@@ -41,6 +41,7 @@ if err := s.repo.Create(ctx, person); err != nil {
 - Use parameters, never string concatenation: `Where("email = ?", email)`. Escape `%`, `_` and `\` in `ILIKE` search terms.
 - Unique rules belong in the model (`uniqueIndex`) and are enforced by the DB. A pre-check is only a friendlier message; still handle `gorm.ErrDuplicatedKey`.
 - A multi-step write is one transaction, owned by the service: `s.tx.Do(ctx, func(ctx context.Context) error { ... })` with the injected `db.TxManager`. Repositories keep their normal signatures and never begin a transaction; a nested `Do` reuses the open one.
+- A change that can break the plan (leave, holidays, a later phase end, a moved deadline) records its change event with `events.Record` inside that same `Do` (outbox): no change without its event, no event without its change.
 - List order is always deterministic: `Order("name ASC").Order("id ASC")`.
 
 ## Validation and input

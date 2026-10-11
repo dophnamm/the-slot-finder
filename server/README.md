@@ -154,7 +154,7 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | GET | `/insights/capacity-forecast?from=&to=&expertise=` | Per expertise × week: free capacity, unmet confirmed demand, expected pipeline demand (× confidence), and shortfall signals | planner, lead |
 | GET | `/insights/bench` | People below the underused band for each of the next `bench_weeks`, with suggested actions | planner |
 | GET | `/insights/churn?from=&to=` | Plan churn per accepted draft: people changed, hours moved | planner |
-| GET | `/events?programId=` | Change history and processing status; the program page uses it for the re-plan banner | planner, lead |
+| GET | `/events?program_id=` | Change history and processing status; the program page uses it for the re-plan banner | planner, lead |
 | POST | `/imports/{csv\|hr}` | Import data (runs in the background) | planner |
 
 **AI assistant** (later). While `AI_ENABLED` is false, these return `503` with `AI_DISABLED`.
@@ -308,6 +308,8 @@ Jobs are rows in Postgres, run by a runner inside the server process, started an
 
 Every job must be **idempotent** (re-running it creates no duplicates) and must record its processing status.
 
+**As built (replan-on-change):** the runner takes a Postgres advisory lock per batch, so one batch builds drafts at a time across servers. The engine keeps unlocked baseline hours that still fit and plans only the gap, so a re-plan moves as few hours as possible.
+
 ## 7. Folder layout
 
 ```text
@@ -351,7 +353,7 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `PLANNING_REPLAN_STABILITY_WEIGHT` | The raised `stability` weight used for re-plans | 2.0 |
 | `DEFAULT_NON_PROJECT_HOURS` | `PERSON.non_project_hours` when a person is created without one | 4 |
 | `COUNT_PLANNED_ABSENCE` | Whether `planned` absence reduces capacity (`approved` always does) | true |
-| `REPLAN_DEBOUNCE` | Window in which change events are batched into one re-plan | 5m |
+| `REPLAN_DEBOUNCE` | Window in which change events are batched into one re-plan (30s in `.env.example` for local demos) | 5m |
 | `REPLAN_POLL_INTERVAL` · `REPLAN_BATCH_SIZE` | How often the runner looks for pending events, and how many it claims at once | 10s · 50 |
 | `REPLAN_MAX_ATTEMPTS` · `REPLAN_RETRY_BACKOFF` | Retries before an event is `failed`, and the delay step between them | 5 · 30s |
 | `WORKING_WEEKDAYS` | Days that count when absence hours are computed | Mon–Fri |
