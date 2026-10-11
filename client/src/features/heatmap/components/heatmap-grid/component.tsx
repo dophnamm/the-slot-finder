@@ -4,8 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { cn, currentIsoWeek, formatIsoWeekRange, shortWeekLabel } from '@/utils/functions'
 import { groupByExpertise } from '../../utils'
 import { HeatmapRow } from './components/heatmap-row'
-import { Badge } from '@/shared/ui/badge'
-import { CORNER_CELL_CLASS, CURRENT_WEEK_CLASS, CURRENT_WEEK_HEADER_CLASS, GROUP_LABEL_CLASS, GROUP_ROW_CLASS, HEADER_CELL_CLASS, WEEK_COLUMN_CLASS } from './constants'
+import { CORNER_CELL_CLASS, CURRENT_WEEK_CLASS, GROUP_LABEL_CLASS, GROUP_ROW_CLASS, HEADER_CELL_CLASS, WEEK_COLUMN_CLASS } from './constants'
 import type { HeatmapGridProps } from './types'
 
 /** People grouped by primary expertise, one column per ISO week. */
@@ -20,11 +19,10 @@ export function HeatmapGrid({ data, expertiseId }: HeatmapGridProps) {
         <TableRow>
           <TableHead className={CORNER_CELL_CLASS}>{t('Person')}</TableHead>
           {data.weeks.map((week) => (
-            <TableHead key={week} className={cn(HEADER_CELL_CLASS, WEEK_COLUMN_CLASS, week === thisWeek && CURRENT_WEEK_HEADER_CLASS)}>
-              <div className="flex flex-col items-center gap-0.5 leading-tight">
+            <TableHead key={week} className={cn(HEADER_CELL_CLASS, WEEK_COLUMN_CLASS)}>
+              <div className="flex flex-col items-center leading-tight">
                 <span>{shortWeekLabel(week)}</span>
                 <span className="text-xs font-normal text-muted-foreground">{formatIsoWeekRange(week)}</span>
-                {week === thisWeek && <Badge variant="blue">{t('This week')}</Badge>}
               </div>
             </TableHead>
           ))}
