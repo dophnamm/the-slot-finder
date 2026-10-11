@@ -8,6 +8,7 @@
  */
 export type LanguageKey = {
   '+{expertise} {hours}': string
+  'A change produced a newer version of this draft.': string
   'A change produced a staffing draft for this program.': string
   'A customer engagement that groups projects under one timeline.': string
   'A later end week moves every later phase by the same number of weeks.': string
@@ -169,6 +170,7 @@ export type LanguageKey = {
   Open: string
   'Open draft ({status})': string
   'Open the charter': string
+  'Open the latest version': string
   'Ordered by priority, then deadline.': string
   Overloaded: string
   'Page not found': string
@@ -207,6 +209,7 @@ export type LanguageKey = {
   'Propose squad': string
   'Proposing…': string
   'Put on hold': string
+  'Re-plan': string
   Reject: string
   'Reject this staffing draft?': string
   Rejected: string
@@ -265,6 +268,7 @@ export type LanguageKey = {
   Timeline: string
   To: string
   Training: string
+  'Triggered by': string
   'Try again': string
   Type: string
   Unavailable: string

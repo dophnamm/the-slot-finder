@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { can } from '@/resources/rbac'
 import { ROUTES } from '@/resources/routes'
 import { useCurrentUser } from '@/shared/auth'
+import { EventSummary } from '@/shared/components/event-summary'
 import { useTranslation } from '@/shared/i18n'
 import {
   type Draft,
@@ -16,6 +17,7 @@ import {
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
+import { formatDateTime } from '@/utils/functions'
 import type { DraftHeaderProps } from './types'
 
 /** Draft status, the baseline it was built on, the projects it covers, and accept or reject. */
@@ -50,6 +52,7 @@ export function DraftHeader({ draft, editable }: DraftHeaderProps) {
         <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
           {t('Staffing draft')}
           <Badge variant="secondary">{t(PLAN_STATUS_LABELS[draft.status])}</Badge>
+          {draft.auto && <Badge variant="outline">{t('Re-plan')}</Badge>}
           {draft.has_stretch && <Badge variant="destructive">{t('Has stretch')}</Badge>}
         </CardTitle>
         <CardDescription>
@@ -77,6 +80,27 @@ export function DraftHeader({ draft, editable }: DraftHeaderProps) {
             </Link>
           ))}
         </div>
+        {draft.superseded_by && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-warning p-3">
+            <p className="text-sm">{t('A change produced a newer version of this draft.')}</p>
+            <Button variant="outline" size="sm" nativeButton={false} render={<Link to={generatePath(ROUTES.staffingDraft, { id: draft.superseded_by })} />}>
+              {t('Open the latest version')}
+            </Button>
+          </div>
+        )}
+        {draft.auto && (
+          <div className="flex flex-col gap-1 text-sm">
+            <span className="text-muted-foreground">{t('Triggered by')}</span>
+            <ul className="flex flex-col gap-1">
+              {draft.triggered_by.map((event) => (
+                <li key={event.id} className="flex flex-wrap gap-x-2">
+                  <span className="whitespace-nowrap text-muted-foreground">{formatDateTime(event.occurred_at)}</span>
+                  <EventSummary event={event} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {draft.stale && (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-destructive/40 p-3">
             <p className="text-sm text-destructive">

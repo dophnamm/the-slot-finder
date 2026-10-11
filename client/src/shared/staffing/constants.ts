@@ -7,6 +7,9 @@ export const draftQueryKey = (id: string) => ['staffing-drafts', id] as const
 /** The server's code when the baseline moved on since the draft was made. */
 export const PLAN_VERSION_CONFLICT = 'PLAN_VERSION_CONFLICT'
 
+/** The server's code when a change produced a newer version of a re-plan draft. */
+export const DRAFT_SUPERSEDED = 'DRAFT_SUPERSEDED'
+
 /** The status of a draft that can still be changed, accepted or rejected. */
 export const OPEN_DRAFT_STATUS: PlanStatus = 'draft'
 
