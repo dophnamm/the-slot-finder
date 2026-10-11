@@ -8,6 +8,7 @@
  */
 export type LanguageKey = {
   '+{expertise} {hours}': string
+  'A change produced a staffing draft for this program.': string
   'A customer engagement that groups projects under one timeline.': string
   'A later end week moves every later phase by the same number of weeks.': string
   'A new project starts as incoming until a staffing draft is accepted.': string
@@ -50,7 +51,6 @@ export type LanguageKey = {
   Cancelled: string
   Change: string
   'Change history': string
-  'Change history and re-plan status.': string
   Changed: string
   'Changes against the baseline': string
   'Charter link': string
@@ -59,6 +59,8 @@ export type LanguageKey = {
   Close: string
   Closed: string
   Closing: string
+  'Company holiday {dates}': string
+  'Company holiday {dates} removed': string
   'Company holidays': string
   'Could not finish signing in.': string
   'Could not reach the sign-in service.': string
@@ -79,6 +81,7 @@ export type LanguageKey = {
   'Done points': string
   Draft: string
   'Draft accepted. It is now the baseline.': string
+  'Draft created': string
   'Draft rejected.': string
   'Earliest start': string
   Edit: string
@@ -93,6 +96,7 @@ export type LanguageKey = {
   'Exactly one skill is primary: the expertise this person is staffed for first.': string
   Expertise: string
   'Expertise, levels and weekly hours of everyone who can be staffed.': string
+  Failed: string
   From: string
   'From week': string
   'From {date}': string
@@ -117,6 +121,7 @@ export type LanguageKey = {
   'Intake queue': string
   Lead: string
   Leave: string
+  'Leave, holidays and slipped phases or deadlines. Each change is checked against the baseline; a conflict produces a staffing draft.': string
   Level: string
   'Level {level}': string
   'Loading…': string
@@ -138,10 +143,12 @@ export type LanguageKey = {
   'No access': string
   'No assignments this week.': string
   'No changes against the baseline.': string
+  'No changes yet.': string
   'No demand yet.': string
   'No free capacity in the window': string
   'No goal yet.': string
   'No holidays yet.': string
+  'No impact': string
   'No incoming projects.': string
   'No lead': string
   'No people yet.': string
@@ -160,6 +167,7 @@ export type LanguageKey = {
   'Objectives, one per line': string
   'On hold': string
   Open: string
+  'Open draft ({status})': string
   'Open the charter': string
   'Ordered by priority, then deadline.': string
   Overloaded: string
@@ -213,6 +221,7 @@ export type LanguageKey = {
   'Report leave or training. A planner approves it.': string
   Reset: string
   Resume: string
+  'Review draft': string
   Role: string
   Save: string
   'Save demand': string
@@ -263,9 +272,11 @@ export type LanguageKey = {
   'Unexpected error.': string
   'Unlock hours': string
   'Until {date}': string
+  Waiting: string
   'Weekly hours': string
   Weeks: string
   'What-if scenarios': string
+  When: string
   'Who gains or loses hours if this draft is accepted.': string
   'Whole project': string
   'Your account is not linked to a person yet. Ask a planner to add you with the same email.': string
@@ -273,6 +284,9 @@ export type LanguageKey = {
   'Your role cannot open this page.': string
   'Your session has ended. Sign in again.': string
   '{client} · lead: {lead} · {timeline}': string
+  '{count} attempts: {error}': string
+  '{count} change is waiting for review.': string
+  '{count} changes are waiting for review.': string
   '{count} weeks': string
   '{date} ({week})': string
   '{done} of {scope} points done': string
@@ -289,8 +303,12 @@ export type LanguageKey = {
   '{name} (stretch)': string
   '{percent}%': string
   '{person} in {week}': string
+  '{person} is away {dates}': string
+  '{person} is no longer away {dates}': string
   '{project} ({program})': string
   '{project} · {expertise} · {phase}': string
+  '{project}: deadline moved from {from} to {to}': string
+  '{project}: {phase} now ends {week}, {weeks} weeks later': string
   '{start} – {end}': string
   '{start} – {end} · level {level}+ · {assigned} of {hours} h': string
   '{week} ({dates})': string

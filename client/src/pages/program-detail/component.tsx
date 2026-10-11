@@ -1,6 +1,7 @@
 import { useParams } from 'react-router'
 import { ProgramOverview } from '@/features/program-overview'
 import { ProgramProjects } from '@/features/program-projects'
+import { ReplanBanner } from '@/features/replan-banner'
 import { useTranslation } from '@/shared/i18n'
 import { Card, CardContent } from '@/shared/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
@@ -11,6 +12,7 @@ export function ProgramDetailPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      <ReplanBanner programId={id} />
       <ProgramOverview programId={id} />
       <Tabs defaultValue="projects">
         <TabsList>

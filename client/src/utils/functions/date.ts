@@ -46,6 +46,11 @@ export function formatDate(date: string, format: string = DATE_FORMAT.longDay): 
   return dayjs(date, DATE_FORMAT.isoDate).format(format)
 }
 
+/** A server timestamp in local time for display: `'Oct 11, 14:05'`. */
+export function formatDateTime(timestamp: string, format: string = DATE_FORMAT.dateTime): string {
+  return dayjs(timestamp).format(format)
+}
+
 /** An inclusive date range for display; a single day shows once. */
 export function formatDateRange(from: string, to: string): string {
   return from === to ? formatDate(from) : `${formatDate(from)} – ${formatDate(to)}`

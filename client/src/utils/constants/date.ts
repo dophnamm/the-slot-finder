@@ -6,6 +6,8 @@ export const DATE_FORMAT = {
   isoDate: 'YYYY-MM-DD',
   /** Day with the year, e.g. "Sep 28, 2026". */
   longDay: 'MMM D, YYYY',
+  /** Day and local time of a timestamp, e.g. "Sep 28, 14:05". */
+  dateTime: 'MMM D, HH:mm',
 } as const
 
 /** ISO week label, e.g. "2026-W42". */
