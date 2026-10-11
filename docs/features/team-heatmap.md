@@ -3,7 +3,7 @@
 **Goal:** see weeks ahead who is overloaded or underused, and which weeks will crunch. This covers G2 in the [root README](../../README.md#1-problem-and-scope).
 
 **Roles:** planner, lead.
-**Target:** 14 Oct (checkpoint) · **Depends on:** [staffing-draft](staffing-draft.md) · **Branch:** `feat/team-heatmap`
+**Target:** 14 Oct (checkpoint) · **Depends on:** [staffing-draft](staffing-draft.md) · **Branch:** `feat/team-heatmap` · **Status:** In review
 
 ## In scope
 
@@ -39,6 +39,13 @@
 - `from` and `to` default to the current ISO week (from the Clock) and the next `HEATMAP_DEFAULT_WEEKS` weeks. The range is capped at `HEATMAP_MAX_WEEKS`.
 - Rows are ordered by primary expertise, then name.
 
+**As built**
+- Bands: below `UTILIZATION_UNDERUSED_BELOW` underused, below `UTILIZATION_NEAR_FULL_FROM` healthy, up to and including 100 % near full, above it overloaded. No capacity and no load is `unavailable`.
+- A week is tentative when the person has planned leave on a working day they are employed, whether or not `COUNT_PLANNED_ABSENCE` lets it lower capacity.
+- `expertise=` takes the expertise id. It keeps people who hold the skill or have hours on it in the range.
+- Rows follow the expertise catalogue order (`sequence`), then name.
+- Capacity uses the same inputs as staffing drafts: the person's own absence plus company holidays.
+
 ## Client
 
 - `/`: a heatmap grid with rows of people grouped by primary expertise and columns of ISO weeks with their date ranges.
@@ -47,6 +54,8 @@
   - Clicking a cell opens a popover with that week's assignments.
 - Filters for week range and expertise are UI state (Zustand), not server data.
 - Feature folder: `features/heatmap`.
+- As built: a cell shows utilization, load of capacity and any cross-expertise hours as text (`+QA 8`), since sized bars would need inline styles. The filters default to the current week and 12 weeks; the server still caps the range.
+- The client gets its test runner here: Vitest with Testing Library in jsdom (`npm test`, part of `make check`).
 
 ## Acceptance criteria
 
@@ -60,13 +69,13 @@
 ## Tasks
 
 **Server**
-- [ ] Heatmap query in insights (baseline allocations + capacity), bands, expertise filter
-- [ ] Settings `HEATMAP_DEFAULT_WEEKS`, `HEATMAP_MAX_WEEKS`; constants; Swagger
+- [x] Heatmap query in insights (baseline allocations + capacity), bands, expertise filter
+- [x] Settings `HEATMAP_DEFAULT_WEEKS`, `HEATMAP_MAX_WEEKS`; constants; Swagger
 
 **Client**
-- [ ] Heatmap grid, cell split, tentative marking, popover
-- [ ] Filters in a Zustand store; query invalidated after a draft is accepted
+- [x] Heatmap grid, cell split, tentative marking, popover
+- [x] Filters in a Zustand store; query invalidated after a draft is accepted
 
 **Tests**
-- [ ] Band boundaries, zero capacity, expertise filter (service tests)
-- [ ] Heatmap grid component test
+- [x] Band boundaries, zero capacity, expertise filter (service tests)
+- [x] Heatmap grid component test

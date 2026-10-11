@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The Slot Finder assigns incoming customer projects to cross-functional squads (PM, Analyst, Engineer, QA), forecasts who is overloaded or idle per ISO week, and re-plans when projects slip or people take leave. `README.md` is the architecture source of truth: goals, data model, metrics formulas, flows and ADRs. `docs/architecture.drawio` mirrors its diagrams. `server/README.md` and `client/README.md` hold the per-side details, API table and screens. `docs/features/` holds one spec per feature in build order (scope, acceptance criteria, tasks); read the feature's spec before building it.
 
-Status: sign-in, people-and-skills, programs-and-demand and staffing-draft are built; `docs/features/README.md` tracks the rest (heatmap, re-plan, metrics).
+Status: sign-in, people-and-skills, programs-and-demand, staffing-draft and team-heatmap are built; `docs/features/README.md` tracks the rest (re-plan, metrics).
 
 ## Repo-wide rules
 
@@ -51,10 +51,10 @@ Compose lives in `server/docker-compose.yml` and reads `server/cmd/server/.env`.
 | Dev server on `:5173` (proxies `/api` to `:3000`) | `npm run dev` |
 | Type-check | `npx tsc -b` |
 | Lint (ESLint, then `scripts/check-structure.mjs`) | `npm run lint` |
+| Tests (Vitest + Testing Library, jsdom) | `npm test` · one file: `npx vitest run src/features/heatmap/utils.test.ts` |
 | Production build | `npm run build` |
 | Add a shadcn component (lands in `src/shared/ui`) | `npx shadcn@latest add <name>` |
 
-There is no client test runner yet.
 
 ## Architecture
 
