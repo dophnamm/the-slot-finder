@@ -13,6 +13,7 @@ One spec per feature, in build order. Each spec holds the goal, scope, server an
 | 5 | [Team heatmap](team-heatmap.md) | Person × week heatmap, utilization bands | 14 Oct | staffing-draft | Done |
 | 6 | [Re-plan on change](replan-on-change.md) | Absence or phase slip → ChangeEvent → outbox runner → re-plan draft with diff, banner on the program page | 15 Oct | staffing-draft | Done |
 | 7 | [Program metrics](program-metrics.md) | Time, Scope, Planned burn, Staffing with gap, risks list | 16 Oct | staffing-draft | Done |
+| 8 | [Sign-in theme](sign-in-theme.md) | Keycloak login theme in the app's look, no extra sign-in click, a Signed out page | before 17 Oct | sign-in | Not started |
 
 ## Schedule
 
