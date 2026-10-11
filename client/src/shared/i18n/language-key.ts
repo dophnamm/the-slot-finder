@@ -114,6 +114,7 @@ export type LanguageKey = {
   'Has stretch': string
   Headcount: string
   Healthy: string
+  'Hide details': string
   Holiday: string
   'Holiday added.': string
   'Holidays lower everyone’s capacity on those days.': string
@@ -136,7 +137,7 @@ export type LanguageKey = {
   'Lock hours': string
   'Mark done': string
   Members: string
-  'Members appear here once a staffing draft for this program is accepted.': string
+  'Members ({count})': string
   'Minimum level': string
   'Moved, not saved yet': string
   'My absences': string
@@ -166,6 +167,7 @@ export type LanguageKey = {
   'No programs yet.': string
   'No project needs attention.': string
   'No projects yet.': string
+  'Nobody has hours on this program yet.': string
   'Nobody has the minimum level': string
   'Nobody has this expertise': string
   'Nobody is assigned yet.': string
@@ -188,6 +190,7 @@ export type LanguageKey = {
   'Page {page} of {pages}': string
   'Past the end date': string
   People: string
+  'People with hours in the baseline on this program’s projects, most hours first.': string
   Person: string
   'Person saved.': string
   'Person to add': string
@@ -255,6 +258,7 @@ export type LanguageKey = {
   Scope: string
   'Scope points': string
   'Short {hours} h': string
+  'Show details': string
   'Sign in': string
   'Sign in again': string
   'Sign out': string
@@ -326,6 +330,7 @@ export type LanguageKey = {
   '{expertise} (level {level}+)': string
   '{expertise} ({count})': string
   '{expertise} · level {level}': string
+  '{expertise} · {hours} h': string
   '{expertise} · {program}': string
   '{gap} h short of {budget} h': string
   '{hours} h': string

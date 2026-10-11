@@ -17,6 +17,7 @@ export type {
   DemandInput,
   EditorUser,
   LeadOption,
+  MemberExpertise,
   Phase,
   PhaseChanges,
   PhaseInput,
@@ -24,6 +25,7 @@ export type {
   Program,
   ProgramAction,
   ProgramInput,
+  ProgramMember,
   ProgramOverview,
   ProgramStatus,
   ProgressMetrics,
@@ -31,10 +33,11 @@ export type {
   ProjectAction,
   ProjectDetail,
   ProjectInput,
+  ProjectRef,
   ProjectStatus,
 } from './types'
 export { activeWarnings, availableActions, canEdit, canEditProject, isOpenStatus, weekSpan } from './utils'
-export { useLeadOptions, useProgram, useProgramAction, useProgramOverview, usePrograms, useSaveProgram } from './use-programs'
+export { useLeadOptions, useProgram, useProgramAction, useProgramMembers, useProgramOverview, usePrograms, useSaveProgram } from './use-programs'
 export {
   useProgramProjects,
   useProject,

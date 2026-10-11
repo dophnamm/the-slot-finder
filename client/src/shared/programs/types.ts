@@ -1,3 +1,5 @@
+import type { AssignmentKind } from '@/shared/staffing'
+
 /** Statuses and actions; they match the server's constants/program.go. */
 export type ProgramStatus = 'open' | 'pending' | 'closing' | 'closed' | 'cancelled'
 export type ProgramAction = 'hold' | 'resume' | 'start-closing' | 'close' | 'cancel'
@@ -168,4 +170,28 @@ export interface LeadOption {
 export interface EditorUser {
   role: string
   person_id: string | null
+}
+
+/** Names a project, e.g. in a member's list. */
+export interface ProjectRef {
+  id: string
+  name: string
+}
+
+/** A member's hours in one expertise of the program, as one kind of assignment. */
+export interface MemberExpertise {
+  expertise_id: string
+  expertise: string
+  kind: AssignmentKind
+  hours: number
+}
+
+/** A person with baseline hours on a program's projects (`GET /programs/:id/members`). */
+export interface ProgramMember {
+  person: PersonRef
+  total_hours: number
+  from_week: string
+  to_week: string
+  expertises: MemberExpertise[]
+  projects: ProjectRef[]
 }

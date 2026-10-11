@@ -7,6 +7,7 @@ export const PROGRAMS_QUERY_KEY = ['programs'] as const
 export const programQueryKey = (id: string) => ['programs', id] as const
 export const programProjectsQueryKey = (id: string) => ['programs', id, 'projects'] as const
 export const programOverviewQueryKey = (id: string) => ['programs', id, 'overview'] as const
+export const programMembersQueryKey = (id: string) => ['programs', id, 'members'] as const
 export const PROJECTS_QUERY_KEY = ['projects'] as const
 export const projectsQueryKey = (status: ProjectStatus | 'all') => ['projects', 'list', status] as const
 export const projectQueryKey = (id: string) => ['projects', id] as const

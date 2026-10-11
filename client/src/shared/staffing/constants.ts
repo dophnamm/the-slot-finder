@@ -17,6 +17,9 @@ export const OPEN_DRAFT_STATUS: PlanStatus = 'draft'
 /** The status of an accepted draft: it is (or was) the baseline. */
 export const PUBLISHED_PLAN_STATUS: PlanStatus = 'published'
 
+/** The kind of an assignment on the person's primary expertise. */
+export const PRIMARY_KIND: AssignmentKind = 'primary'
+
 /** The kind of a below-level or skill-less assignment a Planner added; it stays locked. */
 export const STRETCH_KIND: AssignmentKind = 'stretch'
 
