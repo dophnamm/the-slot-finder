@@ -29,8 +29,8 @@ Sign in with a demo user (`planner`, `lead` or `specialist`; see [`server/README
 | `/programs/:id` | **Program detail** (see section 2) | planner, lead, internal assistant | `/programs/:id`, `/programs/:id/overview`, `/programs/:id/projects`, `/programs/:id/members`, `/programs/:id/assistants`, `/events?programId=` |
 | `/intake` | **Intake queue**: incoming projects across programs with their confidence, "Propose squad" | planner, lead | `/projects?status=incoming`, `/staffing-drafts` |
 | `/intake/from-document` | **Intake from a document** (later, AI): paste or upload a brief, review the suggested project with a source quote per field, edit, confirm | planner, lead | `/ai/intake-extractions`, then `/programs/:id/projects`, `/projects/:id/phases`, `/projects/:id/demands` |
-| `/projects/:id` | **Project detail**: project form (with confidence), phase timeline, demand per phase with hours suggestion, assigned people, risks, scope points | planner, lead | `/projects/:id`, `/projects/:id/phases`, `/projects/:id/demands`, `/projects/:id/hours-suggestion`, `/plans/current` |
-| `/staffing-drafts/:id` | **Staffing draft review**: assignment grid, reasons, alternatives with one-click swap, diff with plan churn, manual edits, lock, accept, AI summary (later) | planner | `/staffing-drafts/:id`, `/staffing-drafts/:id/assignments`, `/staffing-drafts/:id/summary` |
+| `/programs/:programId/projects/:id` | **Project detail**: project form (with confidence), phase timeline, demand per phase with hours suggestion, assigned people, risks, scope points | planner, lead | `/projects/:id`, `/projects/:id/phases`, `/projects/:id/demands`, `/projects/:id/hours-suggestion`, `/plans/current` |
+| `/intake/staffing-drafts/:id` | **Staffing draft review**: assignment grid, reasons, alternatives with one-click swap, diff with plan churn, manual edits, lock, accept, AI summary (later) | planner | `/staffing-drafts/:id`, `/staffing-drafts/:id/assignments`, `/staffing-drafts/:id/summary` |
 | `/scenarios` | **What-if**: build scenarios (move a project, add leave), view the diff | planner | `/scenarios` |
 | `/people` | **People**: expertise and level matrix, skill tags, start and end dates, location, leave and holidays, capacity changes | planner | `/people`, `/people/:id/absences`, `/people/:id/tags`, `/people/:id/capacity-changes`, `/tags`, `/holidays` |
 | `/insights` | **Insights**: capacity forecast by expertise (with pipeline × confidence and shortfall signals), bench list, plan churn over time | planner, lead (forecast only) | `/insights/capacity-forecast`, `/insights/bench`, `/insights/churn` |
@@ -43,8 +43,8 @@ flowchart LR
   signin --> me["/me My schedule"]
   dash --> programs["/programs"]
   programs --> program["/programs/:id"]
-  program --> project["/projects/:id"]
-  program -->|"Propose squad"| draft["/staffing-drafts/:id"]
+  program --> project["/programs/:programId/projects/:id"]
+  program -->|"Propose squad"| draft["/intake/staffing-drafts/:id"]
   program -->|"Re-plan banner"| draft
   dash --> intake["/intake"]
   dash --> scenarios["/scenarios"]
@@ -181,6 +181,7 @@ flowchart TB
    - `app/router.tsx` wraps the app in `RequireAuth` (signed-out users go straight to the Keycloak sign-in page and come back to the page they asked for) and each route group in `RequirePermission` (other roles see "No access")
    - signing out returns to `/signed-out`, which stays until "Sign in again" is clicked
    - the home route sends planners and leads to the dashboard and specialists to their schedule
+   - URLs nest like the breadcrumbs (a project under its program, a staffing draft under Intake), so the sidebar marks the right section; each page route sets `handle: crumb(...)` for the breadcrumbs in `app/breadcrumbs`
    - a `401` from the API ends the session in the shared error handler
 10. **All user-facing text goes through `t()`** from `@/shared/i18n`. The key is the English text itself and is declared in `LanguageKey`; English needs no locale file. Server data (names, emails) is shown as-is.
 
