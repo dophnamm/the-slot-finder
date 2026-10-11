@@ -19,7 +19,7 @@ Tests sit next to the code (`person.go` → `person_test.go`, same package). The
 | Repository | Query-shape tests with a GORM dry-run session (`DryRun: true, SkipDefaultTransaction: true`), or a real DB in an integration test. In dry-run the count is always 0, so the shared list query returns early. Test the filter/order builder on its own |
 | FX wiring | Keep the provider list in a function (e.g. `appOptions()`), and let a test call `fx.ValidateApp(appOptions()...)` so a missing provider fails in CI, not at startup |
 | Pure code (engine, metrics, utils) | Plain table tests. Engine invariants also get property tests: never over capacity, never below `min_level`, never outside the week range, never changes a locked allocation |
-| Real DB | `//go:build integration` + testcontainers, run with `go test -tags=integration ./...` |
+| Real DB | `//go:build integration`. `dbtest.NewPostgres(t)` starts a throwaway Postgres and `dbtest.ApplyMigrations(t, pdb)` loads the real schema. Wrap a repository to fail halfway when a test must prove a rollback. Run with `go test -tags=integration ./...` |
 
 ## Shape
 

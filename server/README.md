@@ -71,7 +71,7 @@ flowchart LR
 - **`authz` service** (sign-in): named permission checks such as `CanViewPeople` or `CanEditProgram(programID)`. Handlers and services call the checks, never raw role lists. Role checks come first; per-program rules are added by later features.
 - **Request claims** (sign-in): `AuthMiddleware` verifies the JWT locally against cached JWKS and puts the claims in the request `context.Context`. Code reads them through nil-safe accessors.
 - **Clock** (sign-in): provided through FX and aware of the organization time zone (`TIMEZONE`). Code asks the Clock for "now" and the current ISO week; nothing sets `time.Local`.
-- **`TxManager`** (programs-and-demand): `TxManager.Do(ctx, fn)` runs `fn` in one transaction stored in `ctx` and commits or rolls back. Repositories get their handle with `dbFrom(ctx)`, which returns that transaction or the plain DB. Services own the boundary.
+- **`TxManager`** (programs-and-demand): `TxManager.Do(ctx, fn)` runs `fn` in one transaction stored in `ctx` and commits or rolls back. Repositories get their handle with `r.db.From(ctx)`, which returns that transaction or the plain DB. Services own the boundary.
 - **`isoweek.Week`** (people-and-skills, stored from programs-and-demand): ISO weeks in Go. The API speaks `2026-W42`; the database stores the week's Monday in a `date` column named `*_week_start`.
 
 ## 2. Modules
@@ -118,7 +118,7 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | GET, POST | `/programs` | List or create programs | planner, lead |
 | GET | `/programs/{id}` | Program record: brief, timeline, status | planner, lead, internal assistant |
 | PATCH | `/programs/{id}` | Edit a program. Moving the end date emits `ProgramSlipped` | planner, lead (own) |
-| POST | `/programs/{id}/actions/{hold\|resume\|start-closing\|close\|cancel}` | Change program state through an action | planner, lead (own) |
+| POST | `/programs/{id}/actions/{hold\|resume\|start-closing\|close\|cancel}` | Change program state through an action. `cancel` also cancels the program's open projects | planner, lead (own) |
 | GET | `/programs/{id}/overview` | Header metrics, scope and cost cards (including EAC hours when shown), staffing by expertise | planner, lead, internal assistant |
 | PATCH | `/programs/{id}/forecast` | Set or clear `forecast_override_hours` per demand | planner, lead (own) |
 | GET | `/programs/{id}/projects` | Projects tab: rows with Time / Scope / Planned burn / Staffing and next milestone | planner, lead, internal assistant |
@@ -129,10 +129,11 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | GET, POST | `/programs/{id}/milestones` | List or add milestones | planner, lead (own); internal assistants may list |
 | PATCH | `/milestones/{id}` | Edit a milestone or mark it delivered | planner, lead (own) |
 | GET | `/projects` | Projects across programs (filter by `status`) | planner, lead |
+| GET | `/projects/{id}` | Project record with its phases, its demand (each row with the weeks it may be staffed in) and the program's lead | planner, lead |
 | PATCH | `/projects/{id}` | Edit a project, including `scope_points`, `done_points` and `confidence`. Moving the deadline emits `ProjectSlipped` | planner, lead (own) |
 | POST | `/projects/{id}/actions/{hold\|resume\|complete\|cancel}` | Change project state through an action | planner, lead (own) |
-| GET, PUT | `/projects/{id}/phases` | Ordered phases of a project (PUT replaces the whole list) | planner, lead (own); GET also internal assistant |
-| PATCH | `/phases/{id}` | Edit a phase. Moving its end week later shifts every later phase by the same weeks and emits `PhaseSlipped` | planner, lead (own) |
+| GET, PUT | `/projects/{id}/phases` | Ordered phases of a project (PUT replaces the whole list; removing a phase that still has demand gets `409 PHASE_IN_USE`) | planner, lead (own); GET also internal assistant |
+| PATCH | `/phases/{id}` | Edit a phase. Moving its end week later shifts every later phase by the same weeks and emits `PhaseSlipped`. Returns every phase it changed | planner, lead (own) |
 | PUT | `/projects/{id}/demands` | Staffing demand: budget hours per expertise and level, each with an optional `phase_id`, a `profile`, required and preferred tags, and an optional preferred person | planner, lead (own) |
 | GET | `/projects/{id}/hours-suggestion` | Suggested budget hours per expertise: `scope_points × hours_per_point(expertise)` from done projects, with the ratio used | planner, lead (own) |
 

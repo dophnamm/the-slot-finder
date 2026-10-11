@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The Slot Finder assigns incoming customer projects to cross-functional squads (PM, Analyst, Engineer, QA), forecasts who is overloaded or idle per ISO week, and re-plans when projects slip or people take leave. `README.md` is the architecture source of truth: goals, data model, metrics formulas, flows and ADRs. `docs/architecture.drawio` mirrors its diagrams. `server/README.md` and `client/README.md` hold the per-side details, API table and screens. `docs/features/` holds one spec per feature in build order (scope, acceptance criteria, tasks); read the feature's spec before building it.
 
-Status: both skeletons build and pass their checks. No feature code yet. The program detail page renders static `mock-data.ts`.
+Status: sign-in, people-and-skills and programs-and-demand are built; `docs/features/README.md` tracks the rest (staffing drafts, heatmap, re-plan, metrics).
 
 ## Repo-wide rules
 
@@ -39,7 +39,7 @@ Compose lives in `server/docker-compose.yml` and reads `server/cmd/server/.env`.
 | Build / vet | `go build ./...` · `go vet ./...` |
 | Unit tests | `go test ./...` · CI-like: `make tests` (race, coverage, count=1) |
 | Single test | `go test ./internal/services -run TestName -v` |
-| Integration tests (testcontainers, needs Docker) | `go test -tags=integration ./internal/db/...` |
+| Integration tests (testcontainers, needs Docker) | `go test -tags=integration ./...` |
 | Lint | `make lint` (golangci-lint v2 via `go run`) |
 | Regenerate Swagger after changing handler annotations | `make swagger-load` (needs `swag`), or `go run github.com/swaggo/swag/cmd/swag@v1.16.6 init` with the same flags as the Makefile |
 | New migration from GORM models (needs Atlas CLI + Docker) | `make migrate-generate name=<name>`, then `make migrate-up` |
@@ -80,7 +80,7 @@ A Program contains Projects. A Project is split into ordered **Phases** (week ra
 - "Now" comes from `clock.Clock` (FX, organization time zone from `TIMEZONE`). Nothing sets `time.Local`.
 - Every response is the envelope `{ meta: { error_code, message, code, page, page_size, total }, data }`, built by `internal/errors` (`AppError`, `ErrorHandler`) and `BaseHandler`.
 - `docs/` is generated Swagger (code-first, Swagger 2.0). Do not edit it by hand.
-- Migrations are Atlas files in `cmd/migrations/sql`, generated from GORM models. The directory is currently empty.
+- Migrations are Atlas files in `cmd/migrations/sql`, generated from GORM models.
 - Planned, not built yet:
   - `internal/engine`, which may import the stdlib only
   - in-process background jobs (re-plan, import, notify)
@@ -91,7 +91,7 @@ A Program contains Projects. A Project is split into ordered **Phases** (week ra
 - Layers:
   - `pages/` composes `features/`
   - features never import each other
-  - shared code lives in `shared/` (api, i18n, ui, components, stores), `utils/` (shared constants and functions, including the dayjs ISO-week helpers) and `resources/` (endpoints, routes, RBAC)
+  - shared code lives in `shared/` (api, i18n, ui, components, stores, and domain modules such as `programs` and `expertises`), `utils/` (shared constants and functions, including the dayjs ISO-week helpers) and `resources/` (endpoints, routes, RBAC)
 - HTTP goes only through `shared/api/http.ts`:
   - `request<T>()` returns the unwrapped `data`; `requestWithMeta<T>()` returns `{ data, meta }`.
   - Every failure becomes an `ApiError`.
@@ -111,7 +111,7 @@ Server:
   - DTO mapping lives in `dtos`.
   - Paths, roles, messages and error codes are constants in `internal/constants`.
   - Swagger and migrations are regenerated, not edited.
-- `writing-go-server-code`: error flow (repo raw → service `AppError` → handler `HandleError`), GORM with `WithContext`, validation via custom tags, UTC and ISO weeks, FX DI, no package state.
+- `writing-go-server-code`: error flow (repo raw → service `AppError` → handler `HandleError`), GORM through `r.db.From(ctx)` with `TxManager.Do` for multi-step writes, validation via custom tags, UTC and ISO weeks, FX DI, no package state.
 - `testing-go-server-code`: table-driven tests with testify mocks, handler tests through `httptest`, RBAC tests through the real middleware, `-tags=integration` for a real DB.
 
 Client:

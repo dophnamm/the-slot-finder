@@ -8,7 +8,7 @@ One spec per feature, in build order. Each spec holds the goal, scope, server an
 |---|---|---|---|---|---|
 | 1 | [Sign-in](sign-in.md) | Keycloak realm import, PKCE login in the client, local JWT verification, roles, `/me` | 10–11 Oct | | Done |
 | 2 | [People and skills](people-and-skills.md) | People, expertise, levels, absences (company-wide holidays only), `capacity(person, week)`, seed data | 11 Oct | sign-in | Done |
-| 3 | [Programs and demand](programs-and-demand.md) | Programs, projects, phases with slip propagation, demand (profile `flat` only) | 12 Oct | people-and-skills | Not started |
+| 3 | [Programs and demand](programs-and-demand.md) | Programs, projects, phases with slip propagation, demand (profile `flat` only) | 12 Oct | people-and-skills | In review |
 | 4 | [Staffing draft](staffing-draft.md) | Greedy engine, draft generation, review, edit and lock, atomic accept into the baseline | 12–13 Oct | programs-and-demand | Not started |
 | 5 | [Team heatmap](team-heatmap.md) | Person × week heatmap, utilization bands | 14 Oct | staffing-draft | Not started |
 | 6 | [Re-plan on change](replan-on-change.md) | Absence or phase slip → ChangeEvent → outbox runner → re-plan draft with diff, banner on the program page | 15 Oct | staffing-draft | Not started |
