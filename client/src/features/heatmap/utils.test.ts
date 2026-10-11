@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { HeatmapRow } from './types'
-import { groupByExpertise, percent } from './utils'
+import { filterRows, groupByExpertise, percent } from './utils'
 
 const row = (name: string, expertise: string): HeatmapRow => ({
   person: { id: name, name },
@@ -24,5 +24,22 @@ describe('percent', () => {
   it('rounds a ratio to a whole percentage', () => {
     expect(percent(0.875)).toBe(88)
     expect(percent(1.1)).toBe(110)
+  })
+})
+
+describe('filterRows', () => {
+  const rows = [row('Nguyễn An', 'Engineer'), row('Đỗ Bình', 'QA'), row('Chi Le', 'Analyst')]
+
+  it('keeps every row without a search', () => {
+    expect(filterRows(rows, '  ')).toHaveLength(3)
+  })
+
+  it('finds names without accents or case', () => {
+    expect(filterRows(rows, 'nguyen').map((r) => r.person.name)).toEqual(['Nguyễn An'])
+    expect(filterRows(rows, 'DO B').map((r) => r.person.name)).toEqual(['Đỗ Bình'])
+  })
+
+  it('finds people by their primary expertise', () => {
+    expect(filterRows(rows, 'qa').map((r) => r.person.name)).toEqual(['Đỗ Bình'])
   })
 })

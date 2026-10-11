@@ -18,4 +18,5 @@ export {
   toIsoWeek,
 } from './date'
 export { pageCount } from './paging'
+export { toSearchText } from './text'
 export type { IsoWeekRange } from './types'

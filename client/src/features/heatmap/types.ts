@@ -54,7 +54,10 @@ export interface HeatmapFiltersState {
   from: string
   weeks: number
   expertiseId: string
+  /** Name or expertise text; rows are filtered in the browser. */
+  search: string
   setFrom: (from: string) => void
   setWeeks: (weeks: number) => void
   setExpertiseId: (expertiseId: string) => void
+  setSearch: (search: string) => void
 }

@@ -1,7 +1,9 @@
+import { Search } from 'lucide-react'
 import type { ChangeEvent } from 'react'
 import { WeekPicker } from '@/shared/components/week-picker'
 import { useExpertises } from '@/shared/expertises'
 import { useTranslation } from '@/shared/i18n'
+import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
 import { WEEK_COUNT_OPTIONS } from '../../constants'
@@ -11,13 +13,22 @@ import { useHeatmapFilters } from '../../use-heatmap-filters'
 export function HeatmapFilters() {
   const { t } = useTranslation()
   const { data: expertises = [] } = useExpertises()
-  const { from, weeks, expertiseId, setFrom, setWeeks, setExpertiseId } = useHeatmapFilters()
+  const { from, weeks, expertiseId, search, setFrom, setWeeks, setExpertiseId, setSearch } = useHeatmapFilters()
 
   const handleWeeksChange = (event: ChangeEvent<HTMLSelectElement>) => setWeeks(Number(event.target.value))
   const handleExpertiseChange = (event: ChangeEvent<HTMLSelectElement>) => setExpertiseId(event.target.value)
+  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)
 
   return (
     <div className="flex flex-wrap items-end gap-4">
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="heatmap-search">{t('Search')}</Label>
+        <div className="relative">
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input id="heatmap-search" type="search" className="w-56 pl-8" placeholder={t('Name or expertise')} value={search}
+            onChange={handleSearchChange} />
+        </div>
+      </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="heatmap-from">{t('From week')}</Label>
         <WeekPicker id="heatmap-from" name="from" value={from} onChange={setFrom} />

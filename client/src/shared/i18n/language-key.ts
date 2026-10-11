@@ -143,6 +143,7 @@ export type LanguageKey = {
   'My absences': string
   'My schedule': string
   Name: string
+  'Name or expertise': string
   'Near full': string
   Needed: string
   'New phase': string
@@ -257,6 +258,7 @@ export type LanguageKey = {
   Scenarios: string
   Scope: string
   'Scope points': string
+  Search: string
   'Short {hours} h': string
   'Show details': string
   'Sign in': string
