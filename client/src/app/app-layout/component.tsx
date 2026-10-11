@@ -7,6 +7,7 @@ import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
 import { Breadcrumbs } from '../breadcrumbs'
+import { PAGE_AREA_CLASS } from './constants'
 import { navLinkClassName, visibleNavItems } from './utils'
 
 export function AppLayout() {
@@ -47,7 +48,7 @@ export function AppLayout() {
       </aside>
       <main className="flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-6">
         <Breadcrumbs />
-        <div className="min-h-0 flex-1">
+        <div className={PAGE_AREA_CLASS}>
           <Outlet />
         </div>
       </main>
