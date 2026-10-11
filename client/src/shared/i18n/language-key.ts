@@ -13,7 +13,10 @@ export type LanguageKey = {
   'Absence added.': string
   Absences: string
   'Absences of {name}': string
+  'Accept draft': string
+  'Accept this staffing draft? It becomes the baseline everyone plans against.': string
   Accepted: string
+  'Accepted as baseline version {version}.': string
   Active: string
   'Add absence': string
   'Add at least one skill.': string
@@ -24,22 +27,31 @@ export type LanguageKey = {
   'Add project': string
   'Add skill': string
   Added: string
+  After: string
   Approved: string
   'Approved absence always lowers capacity; planned absence does when the setting is on.': string
+  Assigned: string
+  Assignments: string
   'At risk': string
   'Back to dashboard': string
+  Before: string
   'Before the change': string
   'Budget hours': string
+  'Budget hours each demand needs and the hours this draft assigns.': string
   'Budget hours per expertise and minimum level. Without a phase, a demand spans the whole project.': string
   'Build scenarios (move a project, add leave) and view the diff.': string
+  'Built on baseline version {version}.': string
   Cancel: string
   'Cancel program': string
   'Cancel project': string
   Cancelled: string
+  Change: string
   'Change history': string
   'Change history and re-plan status.': string
   Changed: string
+  'Changes against the baseline': string
   'Charter link': string
+  'Choose a person': string
   Client: string
   Close: string
   Closed: string
@@ -47,6 +59,9 @@ export type LanguageKey = {
   'Company holidays': string
   'Could not finish signing in.': string
   'Could not reach the sign-in service.': string
+  Coverage: string
+  Covered: string
+  Covers: string
   'Cross-expertise': string
   'Current phase': string
   'Customer engagements and their projects.': string
@@ -60,6 +75,8 @@ export type LanguageKey = {
   Done: string
   'Done points': string
   Draft: string
+  'Draft accepted. It is now the baseline.': string
+  'Draft rejected.': string
   'Earliest start': string
   Edit: string
   'Edit person': string
@@ -75,15 +92,19 @@ export type LanguageKey = {
   'Expertise, levels and weekly hours of everyone who can be staffed.': string
   From: string
   'From {date}': string
+  'Generate a new draft': string
   'Go to your home page': string
   Goal: string
   'Goal: {goal}': string
+  'Has stretch': string
   Headcount: string
   Holiday: string
   'Holiday added.': string
   'Holidays lower everyone’s capacity on those days.': string
   Hours: string
+  'Hours in {week}': string
   'Hours per day': string
+  'Hours per ISO week. Locked hours stay as they are when a draft is generated again; stretch is always locked.': string
   Inactive: string
   Incoming: string
   'Incoming projects across programs, highest priority and earliest deadline first.': string
@@ -94,6 +115,7 @@ export type LanguageKey = {
   Level: string
   'Level {level}': string
   'Loading…': string
+  'Lock hours': string
   'Mark done': string
   Members: string
   'Members appear here once a staffing draft for this program is accepted.': string
@@ -102,11 +124,13 @@ export type LanguageKey = {
   'My absences': string
   'My schedule': string
   Name: string
+  Needed: string
   'New phase': string
   'New program': string
   Next: string
   'No absences yet.': string
   'No access': string
+  'No changes against the baseline.': string
   'No demand yet.': string
   'No free capacity in the window': string
   'No goal yet.': string
@@ -120,6 +144,7 @@ export type LanguageKey = {
   'No projects yet.': string
   'Nobody has the minimum level': string
   'Nobody has this expertise': string
+  'Nobody is assigned yet.': string
   'Non-project hours': string
   'None this week': string
   'Objectives, one per line': string
@@ -132,6 +157,7 @@ export type LanguageKey = {
   People: string
   Person: string
   'Person saved.': string
+  'Person to add': string
   'Person × week heatmap, with overload and deadline-risk alerts.': string
   Phase: string
   'Phase name': string
@@ -161,9 +187,12 @@ export type LanguageKey = {
   'Propose squad': string
   'Proposing…': string
   'Put on hold': string
+  Reject: string
+  'Reject this staffing draft?': string
   Rejected: string
   'Remove absence': string
   'Remove demand': string
+  'Remove from the draft': string
   'Remove holiday': string
   'Remove phase': string
   'Remove skill': string
@@ -172,7 +201,6 @@ export type LanguageKey = {
   'Report leave or training. A planner approves it.': string
   Reset: string
   Resume: string
-  'Review the assignment grid, reasons and diff; edit, lock and accept.': string
   Role: string
   Save: string
   'Save demand': string
@@ -184,6 +212,7 @@ export type LanguageKey = {
   'Server: checking…': string
   'Server: OK': string
   'Server: unreachable': string
+  'Short {hours} h': string
   'Sign in': string
   'Sign in to reach the dashboard or your own schedule.': string
   'Sign in with Keycloak': string
@@ -192,7 +221,8 @@ export type LanguageKey = {
   'Signing you in…': string
   Skills: string
   Specialist: string
-  'Staffing draft {id}': string
+  'Staffing draft': string
+  'Staffing draft not found': string
   'Start closing': string
   'Start date': string
   'Start week': string
@@ -200,6 +230,7 @@ export type LanguageKey = {
   Status: string
   Stretch: string
   Superseded: string
+  'The baseline changed to version {version} since this draft was made, so it can no longer be accepted.': string
   'The free hours are held by locked allocations': string
   'The last phase ends after the deadline week. Move the deadline or shorten a phase.': string
   'The last phase would end after the deadline week.': string
@@ -208,18 +239,22 @@ export type LanguageKey = {
   'There is no program at this address.': string
   'There is no project at this address.': string
   'There is no screen at this address.': string
+  'There is no staffing draft at this address.': string
   'This cannot be undone. Continue?': string
   'This cannot be undone. Open projects of a cancelled program are cancelled too. Continue?': string
+  'This draft has stretch assignments: people below the minimum level or without the skill. Accept them anyway?': string
   Timeline: string
   To: string
   Training: string
   'Try again': string
   Type: string
   'Unexpected error.': string
+  'Unlock hours': string
   'Until {date}': string
   'Weekly hours': string
   Weeks: string
   'What-if scenarios': string
+  'Who gains or loses hours if this draft is accepted.': string
   'Whole project': string
   'Your account is not linked to a person yet. Ask a planner to add you with the same email.': string
   'Your assignments by week appear here once a staffing draft that includes you is accepted.': string
@@ -228,9 +263,15 @@ export type LanguageKey = {
   '{client} · lead: {lead} · {timeline}': string
   '{date} ({week})': string
   '{done} of {scope} points done': string
+  '{expertise} (level {level}+)': string
   '{expertise} · level {level}': string
+  '{hours} h': string
   '{hours} h non-project': string
   '{hours} h per day': string
   '{hours} h per week': string
+  '{name} (stretch)': string
+  '{project} ({program})': string
+  '{project} · {expertise} · {phase}': string
   '{start} – {end}': string
+  '{start} – {end} · level {level}+ · {assigned} of {hours} h': string
 }

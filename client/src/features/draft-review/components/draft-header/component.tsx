@@ -1,0 +1,98 @@
+import { RefreshCw } from 'lucide-react'
+import { generatePath, Link, useNavigate } from 'react-router'
+import { toast } from 'sonner'
+import { can } from '@/resources/rbac'
+import { ROUTES } from '@/resources/routes'
+import { useCurrentUser } from '@/shared/auth'
+import { useTranslation } from '@/shared/i18n'
+import {
+  type Draft,
+  PLAN_STATUS_LABELS,
+  PUBLISHED_PLAN_STATUS,
+  useAcceptDraft,
+  useGenerateDraft,
+  useRejectDraft,
+} from '@/shared/staffing'
+import { Badge } from '@/shared/ui/badge'
+import { Button } from '@/shared/ui/button'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
+import type { DraftHeaderProps } from './types'
+
+/** Draft status, the baseline it was built on, the projects it covers, and accept or reject. */
+export function DraftHeader({ draft, editable }: DraftHeaderProps) {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { data: user } = useCurrentUser()
+  const accept = useAcceptDraft(draft.id)
+  const reject = useRejectDraft(draft.id)
+  const generate = useGenerateDraft()
+  const busy = accept.isPending || reject.isPending || generate.isPending
+  const canRegenerate = draft.stale && can(user?.role, 'staffing-drafts:manage')
+
+  const handleAccepted = () => toast.success(t('Draft accepted. It is now the baseline.'))
+  const handleRejected = () => toast.success(t('Draft rejected.'))
+  const handleOpen = (next: Draft) => navigate(generatePath(ROUTES.staffingDraft, { id: next.id }))
+  const handleAccept = () => {
+    if (!window.confirm(t('Accept this staffing draft? It becomes the baseline everyone plans against.'))) return
+    const confirmStretch = draft.has_stretch
+    if (confirmStretch && !window.confirm(t('This draft has stretch assignments: people below the minimum level or without the skill. Accept them anyway?'))) return
+    accept.mutate({ base_version: draft.base_version, confirm_stretch: confirmStretch }, { onSuccess: handleAccepted })
+  }
+  const handleReject = () => {
+    if (!window.confirm(t('Reject this staffing draft?'))) return
+    reject.mutate(undefined, { onSuccess: handleRejected })
+  }
+  const handleRegenerate = () => generate.mutate(draft.projects.map((project) => project.id), { onSuccess: handleOpen })
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
+          {t('Staffing draft')}
+          <Badge variant="secondary">{t(PLAN_STATUS_LABELS[draft.status])}</Badge>
+          {draft.has_stretch && <Badge variant="destructive">{t('Has stretch')}</Badge>}
+        </CardTitle>
+        <CardDescription>
+          {draft.status === PUBLISHED_PLAN_STATUS
+            ? t('Accepted as baseline version {version}.', { version: draft.base_version })
+            : t('Built on baseline version {version}.', { version: draft.base_version })}
+        </CardDescription>
+        {editable && !draft.stale && (
+          <CardAction className="flex flex-wrap justify-end gap-2">
+            <Button variant="outline" size="sm" disabled={busy} onClick={handleReject}>
+              {t('Reject')}
+            </Button>
+            <Button size="sm" disabled={busy} onClick={handleAccept}>
+              {t('Accept draft')}
+            </Button>
+          </CardAction>
+        )}
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+          <span className="text-muted-foreground">{t('Covers')}</span>
+          {draft.projects.map((project) => (
+            <Link key={project.id} className="font-medium hover:underline" to={generatePath(ROUTES.projectDetail, { id: project.id })}>
+              {t('{project} ({program})', { project: project.name, program: project.program })}
+            </Link>
+          ))}
+        </div>
+        {draft.stale && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-destructive/40 p-3">
+            <p className="text-sm text-destructive">
+              {t('The baseline changed to version {version} since this draft was made, so it can no longer be accepted.', {
+                version: draft.current_version,
+              })}
+            </p>
+            {canRegenerate && (
+              <Button variant="outline" size="sm" disabled={busy} onClick={handleRegenerate}>
+                <RefreshCw />
+                {t('Generate a new draft')}
+              </Button>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
