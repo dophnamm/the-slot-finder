@@ -1,19 +1,18 @@
 //go:build integration
 
-package db
+package db_test
 
 import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
-	"the-slot-finder/server/internal/config"
+	"the-slot-finder/server/internal/db"
+	"the-slot-finder/server/internal/db/dbtest"
 	"the-slot-finder/server/internal/isoweek"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 )
 
 type txProbe struct {
@@ -26,34 +25,14 @@ type weekProbe struct {
 	WeekStart isoweek.Week `gorm:"column:week_start"`
 }
 
-func newTestPostgres(t *testing.T) *PostgresDB {
+func newTestPostgres(t *testing.T) *db.PostgresDB {
 	t.Helper()
-	ctx := context.Background()
-	container, err := tcpostgres.RunContainer(ctx,
-		tcpostgres.WithDatabase("testdb"), tcpostgres.WithUsername("testuser"), tcpostgres.WithPassword("testpassword"),
-		tcpostgres.BasicWaitStrategies())
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = container.Terminate(ctx) })
-
-	host, err := container.Host(ctx)
-	require.NoError(t, err)
-	port, err := container.MappedPort(ctx, "5432/tcp")
-	require.NoError(t, err)
-
-	cfg := &config.Config{
-		DatabaseHost: host, DatabasePort: port.Port(), DatabaseUsername: "testuser", DatabasePassword: "testpassword",
-		DatabaseName: "testdb", DatabaseMaxOpenConns: 5, DatabaseMaxIdleConns: 5,
-		DatabaseConnMaxLifetime: 5 * time.Minute, DatabaseConnMaxIdleTime: time.Minute, DatabaseConnectTimeout: 10 * time.Second,
-		DatabaseQueryTimeout: 5 * time.Second, DatabaseHealthTimeout: 3 * time.Second, DatabaseRetryAttempts: 3,
-		DatabaseRetryDelay: time.Second, DatabaseSSLMode: "disable", DatabaseTimezone: "UTC",
-	}
-	pdb := &PostgresDB{}
-	require.NoError(t, pdb.NewPostgresDB(cfg))
+	pdb := dbtest.NewPostgres(t)
 	require.NoError(t, pdb.AutoMigrate(&txProbe{}, &weekProbe{}))
 	return pdb
 }
 
-func countProbes(t *testing.T, pdb *PostgresDB) int64 {
+func countProbes(t *testing.T, pdb *db.PostgresDB) int64 {
 	t.Helper()
 	var n int64
 	require.NoError(t, pdb.Model(&txProbe{}).Count(&n).Error)
@@ -62,7 +41,7 @@ func countProbes(t *testing.T, pdb *PostgresDB) int64 {
 
 func TestTxManager(t *testing.T) {
 	pdb := newTestPostgres(t)
-	tx := ProvideTxManager(pdb)
+	tx := db.ProvideTxManager(pdb)
 	ctx := context.Background()
 	insert := func(ctx context.Context, name string) error {
 		return pdb.From(ctx).Create(&txProbe{Name: name}).Error
