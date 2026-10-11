@@ -15,6 +15,11 @@ export function toIsoWeek(date: dayjs.ConfigType): string {
   return `${day.isoWeekYear()}-W${String(day.isoWeek()).padStart(2, '0')}`
 }
 
+/** The ISO week of today, in the browser's time zone. */
+export function currentIsoWeek(): string {
+  return toIsoWeek(dayjs())
+}
+
 /** Whether a value is an ISO week label such as `'2026-W42'`. */
 export function isIsoWeek(value: string): boolean {
   return ISO_WEEK_PATTERN.test(value)

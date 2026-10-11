@@ -1,8 +1,9 @@
 import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BAND_CLASSES } from '../../constants'
 import type { HeatmapCell, HeatmapData } from '../../types'
 import { HeatmapGrid } from './component'
+import { CURRENT_WEEK_CLASS } from './constants'
 
 const cell = (week: string, overrides: Partial<HeatmapCell>): HeatmapCell => ({
   week,
@@ -44,9 +45,22 @@ const data: HeatmapData = {
   ],
 }
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+})
 
 describe('HeatmapGrid', () => {
+  it('outlines the current week\'s column', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-21T09:00:00'))
+    render(<HeatmapGrid data={data} expertiseId="" />)
+
+    expect(screen.getAllByText('This week')).toHaveLength(1)
+    expect(screen.getByRole('button', { name: 'Erin in 2026-W43' }).closest('td')?.className).toContain(CURRENT_WEEK_CLASS)
+    expect(screen.getByRole('button', { name: 'Erin in 2026-W42' }).closest('td')?.className).not.toContain(CURRENT_WEEK_CLASS)
+  })
+
   it('groups people by primary expertise and colours each cell by its band', () => {
     render(<HeatmapGrid data={data} expertiseId="" />)
 

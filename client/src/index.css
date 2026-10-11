@@ -28,6 +28,7 @@
     --color-warning: var(--warning);
     --color-healthy: var(--healthy);
     --color-underused: var(--underused);
+    --color-current-week: var(--current-week);
     /* Pastel badge colours: a soft background with a darker text of the same hue. */
     --color-badge-blue: var(--badge-blue);
     --color-badge-blue-foreground: var(--badge-blue-foreground);
@@ -87,6 +88,8 @@
     --warning: oklch(0.769 0.188 70.08);
     --healthy: oklch(0.723 0.219 149.579);
     --underused: oklch(0.685 0.169 237.323);
+    /* Opaque tint behind this week's column, so it also works under sticky headers. */
+    --current-week: oklch(0.965 0.02 237);
     --badge-blue: oklch(0.95 0.045 250);
     --badge-blue-foreground: oklch(0.47 0.16 250);
     --badge-green: oklch(0.95 0.05 155);
@@ -141,6 +144,7 @@
     --warning: oklch(0.828 0.189 84.429);
     --healthy: oklch(0.792 0.209 151.711);
     --underused: oklch(0.746 0.16 232.661);
+    --current-week: oklch(0.26 0.03 237);
     --badge-blue: oklch(0.32 0.06 250);
     --badge-blue-foreground: oklch(0.86 0.09 250);
     --badge-green: oklch(0.32 0.06 155);

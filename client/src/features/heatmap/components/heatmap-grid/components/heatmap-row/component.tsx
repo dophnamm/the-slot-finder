@@ -6,7 +6,7 @@ import { HeatmapCell } from '../heatmap-cell'
 import type { HeatmapRowProps } from './types'
 
 /** One person across the weeks; with an expertise filter, a non-primary match is marked. */
-export function HeatmapRow({ row, expertiseId }: HeatmapRowProps) {
+export function HeatmapRow({ row, expertiseId, currentWeek }: HeatmapRowProps) {
   const { t } = useTranslation()
   const notPrimary = expertiseId !== '' && row.primary_expertise_id !== expertiseId
 
@@ -19,7 +19,7 @@ export function HeatmapRow({ row, expertiseId }: HeatmapRowProps) {
         </div>
       </TableCell>
       {row.cells.map((cell) => (
-        <HeatmapCell key={cell.week} cell={cell} person={row.person} />
+        <HeatmapCell key={cell.week} cell={cell} person={row.person} current={cell.week === currentWeek} />
       ))}
     </TableRow>
   )

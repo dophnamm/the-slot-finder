@@ -1,6 +1,7 @@
 export { cn } from './cn'
 export {
   addIsoWeeks,
+  currentIsoWeek,
   dayjs,
   formatDate,
   formatDateRange,
