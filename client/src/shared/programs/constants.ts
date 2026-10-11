@@ -1,4 +1,5 @@
 import type { PlainKey } from '@/shared/i18n'
+import type { BadgeVariant } from '@/shared/ui/badge'
 import { MAX_PAGE_SIZE } from '@/utils/constants'
 import type { ProgramAction, ProgramStatus, ProgressMetrics, ProjectAction, ProjectStatus } from './types'
 
@@ -61,10 +62,14 @@ export const PROJECT_ACTIONS: Record<ProjectAction, { label: PlainKey; from: rea
 export const FINAL_STATUSES: readonly string[] = ['closed', 'cancelled', 'done']
 
 /** A warning flag of the metrics and its label, in the order they are shown. */
-export const PROGRESS_WARNINGS: readonly { flag: keyof Pick<ProgressMetrics, 'at_risk' | 'understaffed' | 'behind_on_delivery' | 'over_planned' | 'past_end'>; label: PlainKey }[] = [
-  { flag: 'at_risk', label: 'At risk' },
-  { flag: 'understaffed', label: 'Understaffed' },
-  { flag: 'behind_on_delivery', label: 'Behind on delivery' },
-  { flag: 'over_planned', label: 'Over-planned' },
-  { flag: 'past_end', label: 'Past the end date' },
+export const PROGRESS_WARNINGS: readonly {
+  flag: keyof Pick<ProgressMetrics, 'at_risk' | 'understaffed' | 'behind_on_delivery' | 'over_planned' | 'past_end'>
+  label: PlainKey
+  badge: BadgeVariant
+}[] = [
+  { flag: 'at_risk', label: 'At risk', badge: 'red' },
+  { flag: 'understaffed', label: 'Understaffed', badge: 'amber' },
+  { flag: 'behind_on_delivery', label: 'Behind on delivery', badge: 'pink' },
+  { flag: 'over_planned', label: 'Over-planned', badge: 'violet' },
+  { flag: 'past_end', label: 'Past the end date', badge: 'red' },
 ]

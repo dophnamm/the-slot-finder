@@ -32,7 +32,7 @@ export function MetricsCard({ overview }: MetricsCardProps) {
         {warnings.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {warnings.map((warning) => (
-              <Badge key={warning.flag} variant="destructive">
+              <Badge key={warning.flag} variant={warning.badge}>
                 {t(warning.label)}
               </Badge>
             ))}

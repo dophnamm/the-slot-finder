@@ -205,6 +205,7 @@ export type LanguageKey = {
   Planner: string
   Previous: string
   Primary: string
+  'Primary expertise': string
   Priority: string
   'Priority {priority}': string
   Program: string

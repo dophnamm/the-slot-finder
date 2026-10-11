@@ -18,7 +18,7 @@ export function AbsenceRow({ absence, onDelete }: AbsenceRowProps) {
       <TableCell>{t(ABSENCE_TYPE_LABELS[absence.type])}</TableCell>
       <TableCell>{t('{hours} h per day', { hours: absence.hours_per_day })}</TableCell>
       <TableCell>
-        <Badge variant={absence.status === 'approved' ? 'secondary' : 'outline'}>
+        <Badge variant={absence.status === 'approved' ? 'green' : 'amber'}>
           {t(ABSENCE_STATUS_LABELS[absence.status])}
         </Badge>
       </TableCell>

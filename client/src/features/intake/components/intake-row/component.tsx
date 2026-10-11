@@ -19,7 +19,7 @@ export function IntakeRow({ project }: IntakeRowProps) {
             <Link className="font-medium hover:underline" to={generatePath(ROUTES.projectDetail, { id: project.id })}>
               {project.name}
             </Link>
-            {project.at_risk && <Badge variant="destructive">{t('At risk')}</Badge>}
+            {project.at_risk && <Badge variant="red">{t('At risk')}</Badge>}
           </div>
           <span className="text-xs text-muted-foreground">{t('Priority {priority}', { priority: project.priority })}</span>
         </div>

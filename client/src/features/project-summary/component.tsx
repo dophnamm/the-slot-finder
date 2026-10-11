@@ -49,7 +49,7 @@ export function ProjectSummary({ projectId }: ProjectSummaryProps) {
         <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
           {project.name}
           <StatusBadge status={project.status} kind="project" />
-          {project.at_risk && <Badge variant="destructive">{t('At risk')}</Badge>}
+          {project.at_risk && <Badge variant="red">{t('At risk')}</Badge>}
         </CardTitle>
         <CardDescription>{t('Priority {priority}', { priority: project.priority })}</CardDescription>
         {editable && (

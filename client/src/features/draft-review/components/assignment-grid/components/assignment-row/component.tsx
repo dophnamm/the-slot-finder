@@ -1,6 +1,6 @@
 import { Lock, LockOpen, Trash2 } from 'lucide-react'
 import { useTranslation } from '@/shared/i18n'
-import { ASSIGNMENT_KIND_LABELS, STRETCH_KIND } from '@/shared/staffing'
+import { ASSIGNMENT_KIND_BADGE, ASSIGNMENT_KIND_LABELS, STRETCH_KIND } from '@/shared/staffing'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { TableCell, TableRow } from '@/shared/ui/table'
@@ -8,7 +8,6 @@ import { cn } from '@/utils/functions'
 import { ASSIGNMENT_PERSON_CELL_CLASS, ASSIGNMENT_ROW_CLASS, PERSON_COLUMN_CLASS } from '../../constants'
 import { inWindow } from '../../utils'
 import { HoursCell } from '../hours-cell'
-import { KIND_BADGE_VARIANT } from './constants'
 import type { AssignmentRowProps } from './types'
 import { allocationsByWeek } from './utils'
 
@@ -32,7 +31,7 @@ export function AssignmentRow({ assignment, weeks, editable, busy, onSetHours, o
           <div className="flex min-w-0 flex-col gap-0.5">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-medium">{assignment.person.name}</span>
-              <Badge variant={KIND_BADGE_VARIANT[assignment.kind]}>{t(ASSIGNMENT_KIND_LABELS[assignment.kind])}</Badge>
+              <Badge variant={ASSIGNMENT_KIND_BADGE[assignment.kind]}>{t(ASSIGNMENT_KIND_LABELS[assignment.kind])}</Badge>
               <span className="text-xs text-muted-foreground">{t('{hours} h', { hours: assignment.total_hours })}</span>
             </div>
             <span className="truncate text-xs text-muted-foreground" title={reason}>{reason}</span>
