@@ -163,6 +163,7 @@ func appOptions(cfg *config.Config) []fx.Option {
 		fx.Provide(
 			NewHTTPServer,
 			ProvideGormPostgres,
+			db.ProvideTxManager,
 			ProvideValidator,
 			clock.ProvideClock,
 			httpclient.ProvideRestClient,

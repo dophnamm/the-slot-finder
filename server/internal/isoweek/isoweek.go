@@ -1,8 +1,10 @@
 // Package isoweek is the ISO-8601 week used for planning, e.g. 2026-W42.
-// The API speaks the string form; dates belong to the week of their Monday.
+// The API speaks the string form. The database stores a week as its Monday in a date
+// column (named *_week_start), so range queries and ordering are plain date comparisons.
 package isoweek
 
 import (
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"regexp"
@@ -108,4 +110,49 @@ func (w *Week) UnmarshalText(text []byte) error {
 	}
 	*w = parsed
 	return nil
+}
+
+// dateLayout reads a date column that a driver returns as text.
+const dateLayout = "2006-01-02"
+
+// GormDataType makes GORM and Atlas map a Week field to a date column.
+func (Week) GormDataType() string { return "date" }
+
+// Value stores the week as its Monday; the zero week is NULL.
+func (w Week) Value() (driver.Value, error) {
+	if w.IsZero() {
+		return nil, nil
+	}
+	return w.Monday(), nil
+}
+
+// Scan reads a date column: the week that contains the date.
+func (w *Week) Scan(src any) error {
+	switch v := src.(type) {
+	case nil:
+		*w = Week{}
+	case time.Time:
+		*w = Of(v)
+	case string:
+		return w.scanText(v)
+	case []byte:
+		return w.scanText(string(v))
+	default:
+		return fmt.Errorf("%w: cannot scan %T", ErrInvalid, src)
+	}
+	return nil
+}
+
+func (w *Week) scanText(text string) error {
+	date, err := time.Parse(dateLayout, text)
+	if err != nil {
+		return fmt.Errorf("%w: %q", ErrInvalid, text)
+	}
+	*w = Of(date)
+	return nil
+}
+
+// WeeksBetween is the number of weeks from a to b (negative when b is earlier).
+func WeeksBetween(a, b Week) int {
+	return int(b.Monday().Sub(a.Monday()).Hours() / (24 * daysPerWeek))
 }
