@@ -42,7 +42,7 @@ func (r *UpdateProjectRequest) Normalize() { r.Name = trimPtr(r.Name) }
 // ListProjectsRequest filters and pages GET /projects, e.g. ?status=incoming.
 type ListProjectsRequest struct {
 	PageableRequest
-	Status string `query:"status" validate:"omitempty,project_status"`
+	Status string `json:"status" query:"status" validate:"omitempty,project_status"`
 }
 
 // Normalize applies the paging defaults and limits.
