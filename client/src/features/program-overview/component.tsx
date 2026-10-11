@@ -1,21 +1,22 @@
+import { PagePlaceholder } from '@/shared/components/page-placeholder'
+import { useProgram } from '@/shared/programs'
+import { useTranslation } from '@/shared/i18n'
 import { BriefCard } from './components/brief-card'
-import { CostCard } from './components/cost-card'
 import { ProgramHeader } from './components/program-header'
-import { ScopeCard } from './components/scope-card'
-import { StaffingByExpertise } from './components/staffing-by-expertise'
 import type { ProgramOverviewProps } from './types'
 
-/** Header, brief, scope and cost cards, and staffing by expertise for one program. */
+/** Header (status, timeline, lead, actions) and brief of one program. */
 export function ProgramOverview({ programId }: ProgramOverviewProps) {
+  const { t } = useTranslation()
+  const { data: program, isPending } = useProgram(programId)
+
+  if (isPending) return null
+  if (!program) return <PagePlaceholder title={t('Program not found')} description={t('There is no program at this address.')} />
+
   return (
     <div className="flex flex-col gap-4">
-      <ProgramHeader programId={programId} />
-      <BriefCard />
-      <div className="grid gap-4 md:grid-cols-2">
-        <ScopeCard />
-        <CostCard />
-      </div>
-      <StaffingByExpertise />
+      <ProgramHeader program={program} />
+      <BriefCard program={program} />
     </div>
   )
 }

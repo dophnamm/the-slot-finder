@@ -1,61 +1,63 @@
-import { useTranslation } from '@/shared/i18n'
-import { Badge } from '@/shared/ui/badge'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { useCurrentUser } from '@/shared/auth'
+import { ProgramFormDialog } from '@/shared/components/program-form-dialog'
+import { StatusBadge } from '@/shared/components/status-badge'
 import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/shared/ui/card'
-import { Progress, ProgressLabel, ProgressValue } from '@/shared/ui/progress'
-import { MEMBER_INITIALS, PROGRESS, TIMELINE } from '../../mock-data'
+  availableActions,
+  canEdit,
+  isOpenStatus,
+  PROGRAM_ACTIONS,
+  type ProgramAction,
+  useProgramAction,
+  weekSpan,
+} from '@/shared/programs'
+import { useTranslation } from '@/shared/i18n'
+import { Button } from '@/shared/ui/button'
+import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
+import { ProgramActionButton } from '../program-action-button'
 import type { ProgramHeaderProps } from './types'
 
-export function ProgramHeader({ programId }: ProgramHeaderProps) {
+export function ProgramHeader({ program }: ProgramHeaderProps) {
   const { t } = useTranslation()
+  const { data: user } = useCurrentUser()
+  const [editing, setEditing] = useState(false)
+  const action = useProgramAction(program.id)
+  const editable = canEdit(user, [program.lead])
+  const actions = editable ? availableActions(PROGRAM_ACTIONS, program.status) : []
+
+  const handleEdit = () => setEditing(true)
+  const handleDone = () => toast.success(t('Program updated.'))
+  const handleAction = (next: ProgramAction) => action.mutate(next, { onSuccess: handleDone })
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
-          {t('Program {id}', { id: programId })}
-          <Badge variant="secondary">{t('Open')}</Badge>
+          {program.name}
+          <StatusBadge status={program.status} kind="program" />
         </CardTitle>
         <CardDescription>
-          {t('Timeline: {start} – {end} ({dates})', {
-            start: TIMELINE.start,
-            end: TIMELINE.end,
-            dates: TIMELINE.dates,
-          })}
-          {' · '}
-          {t('Next milestone: {name}, {week}', {
-            name: TIMELINE.milestone,
-            week: TIMELINE.milestoneWeek,
+          {t('{client} · lead: {lead} · {timeline}', {
+            client: program.client,
+            lead: program.lead?.name ?? t('No lead'),
+            timeline: weekSpan(program.start_week, program.end_week),
           })}
         </CardDescription>
-        <CardAction className="flex items-center gap-2 text-sm text-muted-foreground">
-          {t('Members')}
-          <div className="flex -space-x-1.5">
-            {MEMBER_INITIALS.map((initials) => (
-              <span
-                key={initials}
-                className="flex size-8 items-center justify-center rounded-full bg-secondary text-xs font-medium text-secondary-foreground ring-2 ring-card"
-              >
-                {initials}
-              </span>
+        {editable && (
+          <CardAction className="flex flex-wrap justify-end gap-2">
+            {isOpenStatus(program.status) && (
+              <Button variant="outline" size="sm" onClick={handleEdit}>
+                {t('Edit')}
+              </Button>
+            )}
+            {actions.map((name) => (
+              <ProgramActionButton key={name} action={name} disabled={action.isPending} onAction={handleAction} />
             ))}
-          </div>
-        </CardAction>
+          </CardAction>
+        )}
       </CardHeader>
-      <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {PROGRESS.map(({ label, value }) => (
-          <Progress key={label} value={value}>
-            <ProgressLabel>{t(label)}</ProgressLabel>
-            <ProgressValue />
-          </Progress>
-        ))}
-      </CardContent>
+      {editing && <ProgramFormDialog open={editing} program={program} onOpenChange={setEditing} />}
     </Card>
   )
 }

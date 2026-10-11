@@ -1,1 +1,0 @@
-export { CostCard } from './component'

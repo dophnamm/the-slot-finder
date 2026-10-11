@@ -13,7 +13,6 @@ export type LanguageKey = {
   Absences: string
   'Absences of {name}': string
   Active: string
-  'Actual hours arrive in phase 2.': string
   'Add absence': string
   'Add at least one skill.': string
   'Add holiday': string
@@ -22,10 +21,8 @@ export type LanguageKey = {
   'Add skill': string
   Approved: string
   'Approved absence always lowers capacity; planned absence does when the setting is on.': string
-  Assistant: string
+  'At risk': string
   'Back to dashboard': string
-  Budget: string
-  'Budget, planned and forecast hours per expertise.': string
   'Build scenarios (move a project, add leave) and view the diff.': string
   'Cancel program': string
   'Cancel project': string
@@ -38,20 +35,16 @@ export type LanguageKey = {
   Closed: string
   Closing: string
   'Company holidays': string
-  'Contribution %': string
-  Cost: string
-  'Cost (hours)': string
   'Could not finish signing in.': string
   'Could not reach the sign-in service.': string
+  'Current phase': string
   'Customer engagements and their projects.': string
   Dashboard: string
   Dates: string
   Deadline: string
   Default: string
   'Demand, timeline, assigned people, risks and scope points.': string
-  Description: string
   Done: string
-  'Done %': string
   'Done points': string
   'Earliest start': string
   Edit: string
@@ -64,11 +57,8 @@ export type LanguageKey = {
   'Exactly one skill is primary: the expertise this person is staffed for first.': string
   Expertise: string
   'Expertise, levels and weekly hours of everyone who can be staffed.': string
-  External: string
-  Forecast: string
   From: string
   'From {date}': string
-  Gap: string
   'Go to your home page': string
   Goal: string
   'Goal: {goal}': string
@@ -82,42 +72,42 @@ export type LanguageKey = {
   'Incoming projects across programs, with “Propose squad”.': string
   Intake: string
   'Intake queue': string
-  Internal: string
   Lead: string
   Leave: string
   Level: string
   'Level {level}': string
   'Loading…': string
   'Mark done': string
-  Member: string
   Members: string
+  'Members appear here once a staffing draft for this program is accepted.': string
   'My absences': string
   'My schedule': string
   Name: string
   'New program': string
   Next: string
-  'Next milestone: {name}, {week}': string
   'No absences yet.': string
   'No access': string
+  'No goal yet.': string
   'No holidays yet.': string
   'No lead': string
   'No people yet.': string
   'No person record': string
+  'No phases yet': string
   'No programs yet.': string
+  'No projects yet.': string
   'Non-project hours': string
   'Objectives, one per line': string
   'On hold': string
   Open: string
+  'Open the charter': string
+  'Ordered by priority, then deadline.': string
   'Page not found': string
   'Page {page} of {pages}': string
   People: string
-  'Per person: squad role, expertise, hours here and overall utilization over the next 4 weeks.': string
-  'Per project: squad, status, start–end and next milestone, Time / Scope / Cost bars, staffing % and “Propose squad”.': string
   Person: string
   'Person saved.': string
   'Person × week heatmap, with overload and deadline-risk alerts.': string
   Planned: string
-  'Planned to date': string
   Planner: string
   Previous: string
   Primary: string
@@ -125,9 +115,12 @@ export type LanguageKey = {
   'Priority {priority}': string
   Program: string
   'Program brief': string
+  'Program not found': string
   'Program saved.': string
+  'Program updated.': string
   'Program {id}': string
   Programs: string
+  Project: string
   'Project saved.': string
   'Project {id}': string
   Projects: string
@@ -141,8 +134,6 @@ export type LanguageKey = {
   Role: string
   Save: string
   Scenarios: string
-  Scope: string
-  'Scope (points)': string
   'Scope points': string
   'Server: checking…': string
   'Server: OK': string
@@ -155,21 +146,18 @@ export type LanguageKey = {
   'Signing you in…': string
   Skills: string
   Specialist: string
-  Staffing: string
-  'Staffing %': string
-  'Staffing by expertise': string
   'Staffing draft {id}': string
   'Start closing': string
   'Start date': string
+  'Start – deadline': string
   Status: string
   'The server is unreachable.': string
   'The Slot Finder': string
+  'There is no program at this address.': string
   'There is no screen at this address.': string
-  Time: string
+  'This cannot be undone. Open projects of a cancelled program are cancelled too. Continue?': string
   Timeline: string
-  'Timeline: {start} – {end} ({dates})': string
   To: string
-  Total: string
   Training: string
   'Try again': string
   Type: string
@@ -181,8 +169,10 @@ export type LanguageKey = {
   'Your assignments by week appear here once a staffing draft that includes you is accepted.': string
   'Your role cannot open this page.': string
   'Your session has ended. Sign in again.': string
+  '{client} · lead: {lead} · {timeline}': string
   '{expertise} · level {level}': string
   '{hours} h non-project': string
   '{hours} h per day': string
   '{hours} h per week': string
+  '{start} – {end}': string
 }

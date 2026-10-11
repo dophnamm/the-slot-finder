@@ -1,22 +1,29 @@
 import { useTranslation } from '@/shared/i18n'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
-import { GOAL, OBJECTIVES } from '../../mock-data'
+import type { BriefCardProps } from './types'
 
-export function BriefCard() {
+export function BriefCard({ program }: BriefCardProps) {
   const { t } = useTranslation()
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>{t('Program brief')}</CardTitle>
-        <CardDescription>{t('Goal: {goal}', { goal: GOAL })}</CardDescription>
+        <CardDescription>{program.goal ? t('Goal: {goal}', { goal: program.goal }) : t('No goal yet.')}</CardDescription>
       </CardHeader>
-      <CardContent>
-        <ol className="list-decimal space-y-1 pl-5">
-          {OBJECTIVES.map((objective) => (
-            <li key={objective}>{objective}</li>
-          ))}
-        </ol>
+      <CardContent className="flex flex-col gap-3">
+        {program.objectives.length > 0 && (
+          <ol className="list-decimal space-y-1 pl-5">
+            {program.objectives.map((objective) => (
+              <li key={objective}>{objective}</li>
+            ))}
+          </ol>
+        )}
+        {program.charter_url && (
+          <a className="text-sm text-primary hover:underline" href={program.charter_url} target="_blank" rel="noreferrer">
+            {t('Open the charter')}
+          </a>
+        )}
       </CardContent>
     </Card>
   )

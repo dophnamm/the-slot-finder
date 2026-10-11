@@ -1,3 +1,5 @@
+import type { Program } from '@/shared/programs'
+
 export interface ProgramHeaderProps {
-  programId: string
+  program: Program
 }

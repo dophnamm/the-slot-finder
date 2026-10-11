@@ -1,1 +1,0 @@
-export { ProgramMembers } from './component'
