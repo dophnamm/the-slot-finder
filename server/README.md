@@ -119,9 +119,9 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | GET | `/programs/{id}` | Program record: brief, timeline, status | planner, lead, internal assistant |
 | PATCH | `/programs/{id}` | Edit a program. Moving the end date emits `ProgramSlipped` | planner, lead (own) |
 | POST | `/programs/{id}/actions/{hold\|resume\|start-closing\|close\|cancel}` | Change program state through an action. `cancel` also cancels the program's open projects | planner, lead (own) |
-| GET | `/programs/{id}/overview` | Header metrics, scope and cost cards (including EAC hours when shown), staffing by expertise | planner, lead, internal assistant |
+| GET | `/programs/{id}/overview` | Header metrics (Time, Scope, Planned burn, Staffing with warnings), cost figures (budget, planned, planned to date, forecast, gap; EAC hours later), staffing by expertise | planner, lead, internal assistant |
 | PATCH | `/programs/{id}/forecast` | Set or clear `forecast_override_hours` per demand | planner, lead (own) |
-| GET | `/programs/{id}/projects` | Projects tab: rows with Time / Scope / Planned burn / Staffing and next milestone | planner, lead, internal assistant |
+| GET | `/programs/{id}/projects` | Projects tab: rows with a `metrics` object (Time / Scope / Planned burn / Staffing and warnings); next milestone later | planner, lead, internal assistant |
 | POST | `/programs/{id}/projects` | Add a project to the program | planner, lead (own) |
 | GET | `/programs/{id}/members` | Members tab: each member with the expertises they hold here (hours and kind per expertise) and overall utilization (next 4 weeks) | planner, lead, internal assistant |
 | GET, POST | `/programs/{id}/assistants` | List or add assistants (`kind`: internal or external) | planner, lead (own); internal assistants may list |
@@ -150,7 +150,7 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | POST | `/scenarios` | Create a what-if from a list of hypothetical changes | planner |
 | GET | `/scenarios/{id}/diff` | Compare a scenario with the baseline | planner |
 | GET | `/insights/heatmap?from=&to=&expertise=` | Person × week matrix. Each cell holds total hours plus hours per expertise; `expertise=` (an expertise id) keeps people who hold that expertise or work on it in the range. Each cell also has capacity, utilization, its band and a tentative flag for planned leave | planner, lead |
-| GET | `/insights/risks` | Understaffed and at-risk projects, delivery behind time, likely over budget, overloaded people (sustained overload first), overdue milestones | planner, lead |
+| GET | `/insights/risks` | Understaffed and at-risk projects, delivery behind time, overloaded people in the next `HEATMAP_DEFAULT_WEEKS` weeks; likely over budget, sustained overload and overdue milestones later | planner, lead |
 | GET | `/insights/capacity-forecast?from=&to=&expertise=` | Per expertise × week: free capacity, unmet confirmed demand, expected pipeline demand (× confidence), and shortfall signals | planner, lead |
 | GET | `/insights/bench` | People below the underused band for each of the next `bench_weeks`, with suggested actions | planner |
 | GET | `/insights/churn?from=&to=` | Plan churn per accepted draft: people changed, hours moved | planner |

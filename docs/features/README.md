@@ -12,7 +12,7 @@ One spec per feature, in build order. Each spec holds the goal, scope, server an
 | 4 | [Staffing draft](staffing-draft.md) | Greedy engine, draft generation, review, edit and lock, atomic accept into the baseline | 12–13 Oct | programs-and-demand | Done |
 | 5 | [Team heatmap](team-heatmap.md) | Person × week heatmap, utilization bands | 14 Oct | staffing-draft | Done |
 | 6 | [Re-plan on change](replan-on-change.md) | Absence or phase slip → ChangeEvent → outbox runner → re-plan draft with diff, banner on the program page | 15 Oct | staffing-draft | Done |
-| 7 | [Program metrics](program-metrics.md) | Time, Scope, Planned burn, Staffing with gap, risks list | 16 Oct | staffing-draft | Not started |
+| 7 | [Program metrics](program-metrics.md) | Time, Scope, Planned burn, Staffing with gap, risks list | 16 Oct | staffing-draft | In review |
 
 ## Schedule
 
