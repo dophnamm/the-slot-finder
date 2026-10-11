@@ -3,7 +3,7 @@
 **Goal:** leads describe what each program needs: its projects, their ordered phases, and demand per expertise. This is the demand side for staffing (G1) in the [root README](../../README.md#1-problem-and-scope). A phase that ends later moves the phases after it.
 
 **Roles:** lead (own programs and projects), planner (all), specialist (none).
-**Target:** 12 Oct · **Depends on:** [people-and-skills](people-and-skills.md) · **Branch:** `feat/programs-and-demand`
+**Target:** 12 Oct · **Depends on:** [people-and-skills](people-and-skills.md) · **Branch:** `feat/programs-and-demand` · **Status:** In review
 
 ## In scope
 
@@ -17,7 +17,8 @@
 - DEMAND: expertise, minimum level, headcount, budget hours, optional phase, profile **`flat` only**.
 - **Transaction manager**, first needed here: slip propagation writes several phases at once.
 - **`week_start date` columns**, first needed here: phases are the first stored weeks.
-- `authz` gains per-program checks: `CanEditProgram(programID)` and `CanEditProject(projectID)` (planner, or the lead of that program or project).
+- `authz` gains per-program checks through `RequireLeadOf(ctx, CanManageAllPrograms, leadIDs...)`: a planner, or the lead of that program; for a project, the lead of the project or of its program.
+- Seed data: 2 programs and 6 projects with phases and demand. Records Integration is at risk on purpose.
 
 ## Not now
 
@@ -44,11 +45,11 @@
 | PATCH | `/phases/{id}` | Edit one phase; a later end week shifts later phases | planner, lead (own) |
 | PUT | `/projects/{id}/demands` | Replace the project's demand | planner, lead (own) |
 
-**Tables and migration:** `program`, `project`, `project_phase`, `demand`. One Atlas migration (`make migrate-generate name=programs_and_demand`).
+**Tables and migrations:** `programs`, `projects`, `project_phases`, `demands`, in two Atlas migrations: `programs` and `projects_phases_demand`.
 
 **Transactions (`TxManager`)**
 - `TxManager.Do(ctx, fn)` begins a transaction, stores it in `ctx`, runs `fn(ctx)`, and commits, or rolls back on error or panic. A nested `Do` reuses the open transaction.
-- Repositories get their handle with `dbFrom(ctx)`. It returns the transaction in `ctx`, or the plain DB. So repository methods keep the same signature inside and outside a transaction.
+- Repositories get their handle with `r.db.From(ctx)`. It returns the transaction in `ctx`, or the plain DB. So repository methods keep the same signature inside and outside a transaction.
 - Services own the transaction boundary. Handlers and repositories never begin one.
 
 **Weeks (`isoweek.Week`)**
@@ -57,7 +58,8 @@
 - A GORM `Scanner` / `Valuer` on `isoweek.Week` maps the type to and from that column.
 
 **Rules**
-- Phases have a unique `sequence` per project. `end_week ≥ start_week`. A phase may overlap the previous one.
+- Phases are ordered by `sequence`, taken from the list order on PUT. The index on it is not unique, because PUT renumbers every phase in one statement. `end_week ≥ start_week`. A phase may overlap the previous one.
+- PUT keeps phases by id, adds the ones without an id and removes the missing ones. Removing a phase that still has demand gets `409 PHASE_IN_USE`.
 - **Slip propagation:**
   - moving a phase's end later by N weeks moves every later phase of the project by N weeks, in one `TxManager.Do`
   - moving an end earlier moves nothing else
@@ -66,6 +68,8 @@
 - A demand without a phase spans the project's start week through its deadline week.
 - A demand with a profile other than `flat` gets a validation error.
 - Program and project status change only through actions. Payloads that carry `status` are rejected.
+- Cancelling a program cancels its open projects in the same transaction.
+- A project's `resume` returns it to `incoming` until staffing-draft brings `planned` and `active`.
 
 ## Client
 
@@ -79,7 +83,11 @@
   - phase timeline editor, which previews the shift of later phases before saving
   - demand form (expertise, minimum level, headcount, budget hours, phase or "whole project")
 - `/intake`: incoming projects across programs.
-- Feature folders: `features/programs`, `features/program-overview` and `features/program-projects` (replace `mock-data.ts` with API data), `features/project-phases`, `features/demand-form`, `features/intake`.
+- Feature folders: `features/programs`, `features/program-overview`, `features/program-projects`, `features/project-summary`, `features/project-phases`, `features/demand-form`, `features/intake`. API calls and hooks they share live in `shared/programs` and `shared/expertises`.
+- As built:
+  - the program page's mock scope, cost and staffing cards and its mock Members tab are gone; program-metrics and staffing-draft bring them back with real data
+  - the phase editor edits one phase at a time and previews the shift; adding or removing a phase saves the whole list
+  - the demand form saves the whole list at once and is read-only for people who cannot edit the project
 
 ## Acceptance criteria
 
@@ -96,20 +104,20 @@
 ## Tasks
 
 **Server**
-- [ ] `TxManager` (`Do`, `dbFrom`) in `internal/db`, provided through FX; update the writing-go-server-code skill (multi-step writes use `TxManager.Do`)
-- [ ] `isoweek.Week` GORM `Scanner` / `Valuer` for `date` columns
-- [ ] Models, repositories, services, handlers, DTOs for programs, projects, phases and demand
-- [ ] Slip propagation in the programs service
-- [ ] Actions and lifecycle rules; `authz` per-program checks
-- [ ] Migration, constants, Swagger
+- [x] `TxManager` (`Do`, `r.db.From`) in `internal/db`, provided through FX; update the writing-go-server-code skill (multi-step writes use `TxManager.Do`)
+- [x] `isoweek.Week` GORM `Scanner` / `Valuer` for `date` columns
+- [x] Models, repositories, services, handlers, DTOs for programs, projects, phases and demand
+- [x] Slip propagation in the programs service
+- [x] Actions and lifecycle rules; `authz` per-program checks
+- [x] Migration, constants, Swagger
 
 **Client**
-- [ ] Programs list, program page with Projects tab, add project
-- [ ] Project page: form, phase timeline editor with shift preview, demand form
-- [ ] Intake queue
+- [x] Programs list, program page with Projects tab, add project
+- [x] Project page: form, phase timeline editor with shift preview, demand form
+- [x] Intake queue
 
 **Tests**
-- [ ] Slip propagation: later shift, earlier no shift, rollback on failure (integration test against Postgres)
-- [ ] `TxManager`: commit, rollback on error, rollback on panic, nested reuse
-- [ ] RBAC: lead own vs other program
-- [ ] Week round-trip through the database
+- [x] Slip propagation: later shift, earlier no shift, rollback on failure (integration test against Postgres)
+- [x] `TxManager`: commit, rollback on error, rollback on panic, nested reuse
+- [x] RBAC: lead own vs other program
+- [x] Week round-trip through the database

@@ -149,7 +149,7 @@ flowchart TB
 | **Heatmap grid** | Rows are people (grouped by primary expertise), columns are weeks. Colour shows utilization: under 50% / 50–85% / 85–100% / over 100%. A cell shows a small split of its hours by expertise, so someone covering QA as an Engineer is visible. Click a cell to see that week's assignments. Filtering by an expertise keeps everyone who holds it that week, with non-primary people marked. Planned (not yet approved) absence is drawn as **tentative** (hatched) |
 | **Progress bars** | Time, Scope, Planned burn and Staffing with a percentage and a ⚠ flag from the Server |
 | **Staffing by expertise** | Chart and table of budget, planned, forecast and gap hours per expertise, with an inline forecast editor |
-| **Phase timeline** | Ordered phases as bars on ISO weeks. Moving a phase end later previews which later phases will shift, before saving |
+| **Phase timeline** | Ordered phases as bars on ISO weeks, with the deadline week outlined. One phase is edited at a time; moving its end later previews, in the warning colour, which later phases will shift, before saving |
 | **Project form** | Name, priority, earliest start, deadline, scope points and, for an incoming project, **confidence** (0–100 %) |
 | **Demand form** | One row per need: expertise, minimum level, headcount, budget hours, phase (or "whole project"), profile (flat / front / back), required and preferred tags, preferred person. Budget hours show a suggestion from `/projects/:id/hours-suggestion` (scope points × hours per point); the lead accepts it or types their own |
 | **Assignment editor** | Person × week grid for one staffing draft, grouped by assignment (person × demand). Add a person to any demand, edit weekly hours, lock or unlock, and see the reason and kind of each assignment. Each assignment lists its **alternatives** (score and why they lost); **Swap** replaces the person in one click. A person below the demand's level becomes a **stretch** assignment: shown with ⚠, locked, and confirmed again on accept. If a re-plan merge has superseded the draft, a save, accept or reject gets `409 DRAFT_SUPERSEDED`; the editor reloads the latest version and tells the Planner to check it again |
@@ -201,9 +201,10 @@ client/
     ├── pages/                    ← one folder per route, e.g. program-detail/ → ProgramDetailPage
     ├── features/                 ← one folder per feature
     │   ├── health/               ← api.ts · use-health.ts · types.ts · index.ts
-    │   ├── program-overview/     ← component.tsx · types.ts · mock-data.ts · index.ts · components/<child>/
-    │   ├── program-projects/
-    │   └── program-members/
+    │   ├── people/ · absences/ · holidays/
+    │   ├── programs/ · program-overview/ · program-projects/   ← component.tsx · types.ts · index.ts · components/<child>/
+    │   ├── project-summary/ · project-phases/ · demand-form/
+    │   └── intake/
     ├── resources/
     │   ├── endpoints/            ← server API paths per domain (HEALTH_ENDPOINTS, PROGRAM_ENDPOINTS)
     │   ├── routes/               ← client route paths (ROUTES)
@@ -216,7 +217,8 @@ client/
         ├── auth/                 ← OIDC client (oidc-client-ts), session functions, useCurrentUser
         ├── i18n/                 ← language-key.ts (LanguageKey), translate.ts (t, translate), locales/, language-store.ts
         ├── ui/                   ← shadcn components, managed by the shadcn CLI
-        ├── components/           ← app-level shared components, e.g. page-placeholder/
+        ├── components/           ← components used by several features, e.g. page-placeholder/, pager/, status-badge/
+        ├── programs/ · expertises/   ← API calls, query hooks and types shared by several features
         └── stores/               ← auth-store.ts (Zustand)
 ```
 

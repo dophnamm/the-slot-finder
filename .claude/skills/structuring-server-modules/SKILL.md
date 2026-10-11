@@ -15,7 +15,7 @@ The server is Echo v5 + Uber FX + GORM, layered `handlers → services → repos
 |---|---|---|
 | `internal/models/person.go` | GORM model embedding `BaseModel` | DB tags only, no `json` tags |
 | `internal/dtos/person.go` | Request DTOs (`json`, `query`, `validate` tags, `Normalize()`), response DTOs, and `NewPersonResponse(*models.Person)` mapping | The only place a model becomes JSON |
-| `internal/repositories/person.go` | `PersonRepository` interface embedding `AbstractRepository[models.Person]`, impl embedding `abstractRepository`, `ProvidePersonRepository` | `ctx` first on every method, `r.db.WithContext(ctx)` |
+| `internal/repositories/person.go` | `PersonRepository` interface embedding `AbstractRepository[models.Person]`, impl embedding `abstractRepository`, `ProvidePersonRepository` | `ctx` first on every method, `r.db.From(ctx)` |
 | `internal/services/person.go` | `PersonService` interface, unexported impl, `ProvidePersonService`, input structs (`CreatePersonInput`) | Takes `context.Context` and input structs, never DTOs or `echo.Context`. Returns models, plus an `error` that holds an `*errors.AppError` (declare the return type as `error` to avoid the typed-nil trap) |
 | `internal/handlers/person.go` | `PersonHandler` embedding `BaseHandler`, `ProvidePersonHandler`, one method per route with swag annotations | Bind → `Normalize()` → validate → map DTO to input → call service → respond. Read `:id` with `h.pathID(c)` (400 when not a UUID). In PATCH DTOs, a field that can be cleared is `dtos.Optional[T]` (tells "not sent" from null) |
 | `*_test.go` next to each | See testing-go-server-code | |
