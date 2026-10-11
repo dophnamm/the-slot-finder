@@ -302,6 +302,72 @@
                 }
             }
         },
+        "/insights/heatmap": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Person × week load, capacity, utilization band and hours per expertise from the baseline. Weeks default to the current week and HEATMAP_DEFAULT_WEEKS; a range over HEATMAP_MAX_WEEKS gets WEEK_RANGE_TOO_LONG. With expertise, keeps people who hold it or work on it in the range.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Insights"
+                ],
+                "summary": "Team heatmap",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "2026-W42",
+                        "description": "First week",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-W53",
+                        "description": "Last week",
+                        "name": "to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Expertise id",
+                        "name": "expertise",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.HeatmapResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/me": {
             "get": {
                 "security": [
@@ -2784,6 +2850,26 @@
                 }
             }
         },
+        "dtos.ExpertiseHoursResponse": {
+            "type": "object",
+            "properties": {
+                "expertise": {
+                    "type": "string",
+                    "example": "QA"
+                },
+                "expertise_id": {
+                    "type": "string"
+                },
+                "hours": {
+                    "type": "number",
+                    "example": 8
+                },
+                "primary": {
+                    "description": "Primary is true when it is the person's primary skill.",
+                    "type": "boolean"
+                }
+            }
+        },
         "dtos.ExpertiseResponse": {
             "type": "object",
             "properties": {
@@ -2830,6 +2916,90 @@
                 "version": {
                     "type": "string",
                     "example": "1.0.0"
+                }
+            }
+        },
+        "dtos.HeatmapCellResponse": {
+            "type": "object",
+            "properties": {
+                "band": {
+                    "type": "string",
+                    "enum": [
+                        "unavailable",
+                        "underused",
+                        "healthy",
+                        "near_full",
+                        "overloaded"
+                    ]
+                },
+                "by_expertise": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ExpertiseHoursResponse"
+                    }
+                },
+                "capacity": {
+                    "type": "number",
+                    "example": 36
+                },
+                "load": {
+                    "type": "number",
+                    "example": 32
+                },
+                "tentative": {
+                    "description": "Tentative marks planned (not yet approved) absence in the week.",
+                    "type": "boolean"
+                },
+                "utilization": {
+                    "description": "Utilization is load ÷ capacity; null when capacity is 0.",
+                    "type": "number",
+                    "example": 0.89
+                },
+                "week": {
+                    "type": "string",
+                    "example": "2026-W42"
+                }
+            }
+        },
+        "dtos.HeatmapResponse": {
+            "type": "object",
+            "properties": {
+                "rows": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.HeatmapRowResponse"
+                    }
+                },
+                "weeks": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "2026-W42",
+                        "2026-W43"
+                    ]
+                }
+            }
+        },
+        "dtos.HeatmapRowResponse": {
+            "type": "object",
+            "properties": {
+                "cells": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.HeatmapCellResponse"
+                    }
+                },
+                "person": {
+                    "$ref": "#/definitions/dtos.PersonRef"
+                },
+                "primary_expertise": {
+                    "type": "string",
+                    "example": "Engineer"
+                },
+                "primary_expertise_id": {
+                    "type": "string"
                 }
             }
         },

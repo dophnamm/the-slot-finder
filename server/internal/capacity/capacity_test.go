@@ -71,3 +71,20 @@ func TestWeekly_DateWithTimeOfDay(t *testing.T) {
 		Policy{WorkingDays: weekdays})
 	assert.InDelta(t, 32, got, 1e-9)
 }
+
+func TestTentative(t *testing.T) {
+	week, err := isoweek.Parse("2026-W42")
+	require.NoError(t, err)
+	policy := Policy{WorkingDays: weekdays, CountPlannedAbsence: false}
+	person := Person{WeeklyHours: 40}
+
+	planned := []Absence{{From: day(time.October, 14), To: day(time.October, 14), HoursPerDay: 8, Planned: true}}
+	approved := []Absence{{From: day(time.October, 14), To: day(time.October, 14), HoursPerDay: 8}}
+	weekend := []Absence{{From: day(time.October, 17), To: day(time.October, 18), HoursPerDay: 8, Planned: true}}
+
+	assert.True(t, Tentative(person, week, planned, policy), "planned leave on a weekday, even when it does not count")
+	assert.False(t, Tentative(person, week, approved, policy), "approved leave is not tentative")
+	assert.False(t, Tentative(person, week, weekend, policy), "weekend days do not count")
+	left := Person{WeeklyHours: 40, EndDate: new(day(time.October, 13))}
+	assert.False(t, Tentative(left, week, planned, policy), "after the end date")
+}

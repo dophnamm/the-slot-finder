@@ -86,3 +86,19 @@ func absenceHours(day time.Time, absences []Absence, policy Policy) float64 {
 func dateOnly(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 }
+
+// Tentative reports planned (not yet approved) absence on a working day the person is
+// employed in the week. The heatmap marks such weeks, whether or not they lower capacity.
+func Tentative(person Person, week isoweek.Week, absences []Absence, policy Policy) bool {
+	for _, day := range week.Days() {
+		if !slices.Contains(policy.WorkingDays, day.Weekday()) || !employed(person, day) {
+			continue
+		}
+		for _, a := range absences {
+			if a.Planned && !day.Before(dateOnly(a.From)) && !day.After(dateOnly(a.To)) {
+				return true
+			}
+		}
+	}
+	return false
+}

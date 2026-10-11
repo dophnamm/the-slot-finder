@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"the-slot-finder/server/internal/capacity"
+	"the-slot-finder/server/internal/config"
 	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/errors"
 	"the-slot-finder/server/internal/models"
@@ -173,4 +175,22 @@ func checkAbsenceDates(from, to time.Time, op string) error {
 			errors.ErrorTypeValidation, http.StatusBadRequest).WithOperation(op).WithResource(resourceAbsence)
 	}
 	return nil
+}
+
+// capacityPolicy is the capacity settings from config.
+func capacityPolicy(cfg *config.Config) capacity.Policy {
+	return capacity.Policy{WorkingDays: cfg.WorkingWeekdays, CountPlannedAbsence: cfg.CountPlannedAbsence}
+}
+
+// capacityInputs is a person's capacity record and the absences that touch them: their
+// own and the company-wide holidays.
+func capacityInputs(p models.Person, absences []models.Absence) (capacity.Person, []capacity.Absence) {
+	var own []capacity.Absence
+	for _, a := range absences {
+		if a.PersonID == nil || *a.PersonID == p.ID {
+			own = append(own, capacity.Absence{From: a.FromDate, To: a.ToDate, HoursPerDay: a.HoursPerDay,
+				Planned: a.Status == constants.AbsenceStatusPlanned})
+		}
+	}
+	return capacity.Person{WeeklyHours: p.WeeklyHours, NonProjectHours: p.NonProjectHours, StartDate: p.StartDate, EndDate: p.EndDate}, own
 }

@@ -42,4 +42,6 @@ var (
 	// PersonAssignmentRoles may reach a person's assignments; the service lets a specialist
 	// read only their own.
 	PersonAssignmentRoles = []string{RolePlanner, RoleLead, RoleSpecialist}
+	// InsightRoles may read the heatmap and other insights.
+	InsightRoles = []string{RolePlanner, RoleLead}
 )

@@ -28,6 +28,7 @@ func Router(
 	projectHandler *handlers.ProjectHandler,
 	planHandler *handlers.PlanHandler,
 	staffingHandler *handlers.StaffingHandler,
+	insightsHandler *handlers.InsightsHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 ) *echo.Echo {
@@ -138,6 +139,7 @@ func Router(
 	registerPeopleRoutes(v1, authenticated, personHandler, absenceHandler)
 	registerProgramRoutes(v1, authenticated, programHandler, projectHandler)
 	registerPlanRoutes(v1, authenticated, planHandler, staffingHandler)
+	v1.GET(constants.PathHeatmap, insightsHandler.Heatmap, authenticated, middlewares.RequireRole(constants.InsightRoles...))
 
 	return r
 }
