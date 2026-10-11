@@ -141,10 +141,10 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
-| GET | `/plans/current` | The baseline | everyone (specialists see only their own part) |
+| GET | `/plans/current` | The baseline | planner, lead |
 | POST | `/staffing-drafts` | Generate a draft: `{ projectIds }` or `{ changeEventId }` | planner |
 | GET | `/staffing-drafts/{id}` | Draft with diff against the baseline, plan churn, reasons and alternatives | planner, lead |
-| PATCH | `/staffing-drafts/{id}/assignments` | Add or remove an assignment (any person to any demand; the server sets `kind`), swap to an alternative in one call, change weekly hours, lock or unlock | planner |
+| PATCH | `/staffing-drafts/{id}/assignments` | One batch `{ add, remove, set }`: add or remove an assignment (any person to a covered demand; the server sets `kind`), change weekly hours (0 removes the week), lock or unlock. Swap to an alternative comes later | planner |
 | POST | `/staffing-drafts/{id}/accept` | Publish (`{ baseVersion }`; `409 PLAN_VERSION_CONFLICT` if the baseline changed) | planner |
 | POST | `/staffing-drafts/{id}/reject` | Discard a draft | planner |
 | POST | `/scenarios` | Create a what-if from a list of hypothetical changes | planner |
@@ -264,6 +264,8 @@ Error example (HTTP 409):
 
 **Demand windows:** the engine never sees phases. When building the snapshot, the planning service sets each demand's `fromWeek`–`toWeek` to its phase's weeks, or to the project's start week through its deadline week when the demand has no phase.
 
+**As built:** the Go request takes each demand's window as its list of weeks (the planning service expands `fromWeek`–`toWeek`), and `hourStep` rounds allocations. Tags, the preferred person, alternatives, `conflicts` and `score` come later.
+
 **Kinds:** the engine returns `primary` or `cross_expertise` and never `stretch`. Stretch assignments only come in through `existing`: they are locked by a Planner and are left untouched.
 
 **Re-planning** uses the same function. The difference: `existing` holds the whole baseline, the `stability` weight is raised so that the result changes as little as possible, and `locked` allocations are kept as they are.
@@ -343,6 +345,7 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `PLANNING_MAX_PROJECTS_PER_PERSON_WEEK` | `maxProjectsPerPersonWeek` | 3 |
 | `PLANNING_MAX_EXPERTISES_PER_PERSON_WEEK` | `maxExpertisesPerPersonWeek` | 2 |
 | `PLANNING_MIN_HOURS_PER_WEEK` | `minHoursPerWeek`: smallest weekly allocation, except a demand's last remainder | 8 |
+| `PLANNING_HOUR_STEP` | `hourStep`: rounds weekly allocations (1 = whole hours, 0 = exact) | 1 |
 | `PLANNING_MAX_ALTERNATIVES` | `maxAlternatives`: runner-ups kept per assignment | 3 |
 | `PLANNING_WEIGHT_<NAME>` | One per weight: `DEADLINE`, `PRIMARY_FIT`, `TAG_FIT`, `PREFERENCE`, `BALANCE`, `STABILITY`, `CONTINUITY` | as in the sample request |
 | `PLANNING_REPLAN_STABILITY_WEIGHT` | The raised `stability` weight used for re-plans | 2.0 |

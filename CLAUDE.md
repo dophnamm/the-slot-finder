@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The Slot Finder assigns incoming customer projects to cross-functional squads (PM, Analyst, Engineer, QA), forecasts who is overloaded or idle per ISO week, and re-plans when projects slip or people take leave. `README.md` is the architecture source of truth: goals, data model, metrics formulas, flows and ADRs. `docs/architecture.drawio` mirrors its diagrams. `server/README.md` and `client/README.md` hold the per-side details, API table and screens. `docs/features/` holds one spec per feature in build order (scope, acceptance criteria, tasks); read the feature's spec before building it.
 
-Status: sign-in, people-and-skills and programs-and-demand are built; `docs/features/README.md` tracks the rest (staffing drafts, heatmap, re-plan, metrics).
+Status: sign-in, people-and-skills, programs-and-demand and staffing-draft are built; `docs/features/README.md` tracks the rest (heatmap, re-plan, metrics).
 
 ## Repo-wide rules
 
@@ -81,8 +81,8 @@ A Program contains Projects. A Project is split into ordered **Phases** (week ra
 - Every response is the envelope `{ meta: { error_code, message, code, page, page_size, total }, data }`, built by `internal/errors` (`AppError`, `ErrorHandler`) and `BaseHandler`.
 - `docs/` is generated Swagger (code-first, Swagger 2.0). Do not edit it by hand.
 - Migrations are Atlas files in `cmd/migrations/sql`, generated from GORM models.
+- `internal/engine` imports the stdlib only: `engine.Propose(request)` with the greedy strategy. The staffing service builds the snapshot (capacity, demand windows, the baseline) and saves the result as a draft.
 - Planned, not built yet:
-  - `internal/engine`, which may import the stdlib only
   - in-process background jobs (re-plan, import, notify)
 - `cmd/server/.env` is read by the app, the Makefile and docker compose. `deploy/postgres/init` creates the `keycloak` database only when the volume is first created.
 
@@ -96,7 +96,7 @@ A Program contains Projects. A Project is split into ordered **Phases** (week ra
   - `request<T>()` returns the unwrapped `data`; `requestWithMeta<T>()` returns `{ data, meta }`.
   - Every failure becomes an `ApiError`.
   - JWT and CSRF headers are added automatically.
-- Server state lives in TanStack Query: invalidate after mutations, and `shared/api/query-client.ts` shows one shared toast on error (a `401` ends the session). Zustand holds UI and session state only.
+- Server state lives in TanStack Query: invalidate after mutations, and `shared/api/query-client.ts` shows one shared toast on error (a `401` ends the session; a mutation lists codes it shows itself in `meta.quietErrorCodes`). Zustand holds UI and session state only.
 - Sign-in: `oidc-client-ts` (PKCE) in `shared/auth/`. The session token is in `shared/stores/auth-store.ts`; the role comes from `/me` via `useCurrentUser`. `app/router.tsx` guards routes with `RequireAuth` and `RequirePermission` (permissions in `resources/rbac`).
 - shadcn here uses **Base UI**: components take a `render` prop, not `asChild`. Files in `src/shared/ui` are project code; add variants there rather than overriding them from outside.
 

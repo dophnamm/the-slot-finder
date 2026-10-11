@@ -3,7 +3,7 @@
 **Goal:** the Planner gets a squad for incoming projects in seconds, with a reason for every choice, edits it, and accepts it into the baseline. This covers G1 in the [root README](../../README.md#1-problem-and-scope).
 
 **Roles:** planner (generate, edit, accept, reject), lead (view drafts that touch their programs).
-**Target:** 12–13 Oct · **Depends on:** [programs-and-demand](programs-and-demand.md) · **Branch:** `feat/staffing-draft`
+**Target:** 12–13 Oct · **Depends on:** [programs-and-demand](programs-and-demand.md) · **Branch:** `feat/staffing-draft` · **Status:** In review
 
 ## In scope
 
@@ -65,6 +65,20 @@ At startup the server creates an empty published baseline (version 0) if none ex
 - Record anything left in `unmet` with `NO_SKILL`, `LEVEL_TOO_LOW`, `NO_CAPACITY_BEFORE_DEADLINE` or `BLOCKED_BY_LOCKED`. Never panic.
 - The same input always gives the same output: ties break by person id.
 
+**As built**
+- Candidates rank by: holds the whole seat, then primary-expertise match, then the weighted score (deadline coverage, primary fit, balance, stability, continuity), then person id. So a primary person wins whenever one can hold the seat, and a cross-expertise person wins when no primary person can.
+- The planning service passes each demand's window as its list of ISO weeks, so the engine does no week arithmetic. `PLANNING_HOUR_STEP` (default 1) rounds allocations to whole hours.
+- Headcount is lowered when a seat would be smaller than one minimum week. Per demand, at most one allocation is below `minHoursPerWeek`: the last remainder.
+- `BLOCKED_BY_LOCKED` when the locked hours of qualified people inside the window are at least the missing hours; otherwise `NO_CAPACITY_BEFORE_DEADLINE`.
+- Existing assignments: for demand outside the request they are fixed load; for requested demand, locked allocations are kept and unlocked ones are planned again, preferring the same person (stability).
+- A draft is a full copy of the baseline with the covered demand planned again. Accept publishes that plan as the baseline, `version = baseVersion + 1`, and also rejects a draft whose own base version differs from `baseVersion`.
+- "Covered projects move to `planned`" means incoming projects whose every demand gets all its hours. Partly staffed projects stay `incoming`.
+- Stretch confirmation covers stretch on the draft's own demand only; stretch copied from the baseline was confirmed when it was accepted.
+- Draft edits are one batch: `{ add, remove, set }`; `set` with 0 hours removes the week. Adding a person creates an assignment without hours; the Planner then types hours in the grid.
+- The audit record is an `audit_events` row (actor, action `plan.accepted`, versions before and after, planned projects).
+- `GET /staffing-drafts/{id}` lists changes against the baseline in force (added, removed, changed hours per person and demand). Conflicts and the score are not returned yet.
+- Client: `shared/staffing` (types, API, hooks), `shared/components/propose-squad-button`, `features/draft-review`. A `409 PLAN_VERSION_CONFLICT` on accept is shown on the page, not as a toast.
+
 ## Client
 
 - `/intake` and `/programs/:id`: **Propose squad** calls `POST /staffing-drafts` and opens the draft.
@@ -91,18 +105,18 @@ At startup the server creates an empty published baseline (version 0) if none ex
 ## Tasks
 
 **Server**
-- [ ] `internal/engine`: types, greedy strategy, reasons, unmet codes
-- [ ] Snapshot builder in the planning service
-- [ ] Plans, assignments, allocations: models, repositories, services, handlers, DTOs
-- [ ] Atomic accept with the conditional UPDATE and the partial unique index; audit record
-- [ ] Draft edits, kind rules, stretch confirmation, reject
-- [ ] Migration, constants, Swagger
+- [x] `internal/engine`: types, greedy strategy, reasons, unmet codes
+- [x] Snapshot builder in the planning service
+- [x] Plans, assignments, allocations: models, repositories, services, handlers, DTOs
+- [x] Atomic accept with the conditional UPDATE and the partial unique index; audit record
+- [x] Draft edits, kind rules, stretch confirmation, reject
+- [x] Migration, constants, Swagger
 
 **Client**
-- [ ] Propose squad on intake and the program page
-- [ ] Draft review: grid, reasons, unmet, diff, edit, lock, accept, reject, 409 handling
+- [x] Propose squad on intake and the program page
+- [x] Draft review: grid, reasons, unmet, diff, edit, lock, accept, reject, 409 handling
 
 **Tests**
-- [ ] Engine golden tests on fixed snapshots, and property tests for every hard constraint
-- [ ] Accept: stale version, concurrent accepts (integration), unique index
-- [ ] Service tests for kind and stretch rules
+- [x] Engine golden tests on fixed snapshots, and property tests for every hard constraint
+- [x] Accept: stale version, concurrent accepts (integration), unique index
+- [x] Service tests for kind and stretch rules
