@@ -8,7 +8,7 @@ COMPOSE    := docker compose -f $(SERVER_DIR)/docker-compose.yml --env-file $(SE
 INFRA      := postgres redis keycloak otel-collector jaeger
 
 .DEFAULT_GOAL := help
-.PHONY: help setup env up down logs ps infra dev server client migrate seed lint test build check reset-data
+.PHONY: help setup env up down logs ps infra dev server client migrate seed keycloak-theme lint test build check reset-data
 
 help: ## List the commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -60,6 +60,13 @@ migrate: env ## Apply database migrations
 
 seed: env ## Load the demo data (people, skills, leave, holidays); safe to run again
 	cd $(SERVER_DIR) && $(MAKE) seed
+
+keycloak-theme: env ## Apply the sign-in theme to the running Keycloak (a new realm gets it on import)
+	$(COMPOSE) up -d --wait keycloak
+	$(COMPOSE) exec keycloak bash -c '\
+		/opt/keycloak/bin/kcadm.sh config credentials --server "http://localhost:8080$$KC_HTTP_RELATIVE_PATH" \
+			--realm master --user "$$KC_BOOTSTRAP_ADMIN_USERNAME" --password "$$KC_BOOTSTRAP_ADMIN_PASSWORD" && \
+		/opt/keycloak/bin/kcadm.sh update "realms/$$KEYCLOAK_REALM" -s "loginTheme=$$KEYCLOAK_LOGIN_THEME"'
 
 lint: ## Lint the server and the client
 	cd $(SERVER_DIR) && $(MAKE) lint
