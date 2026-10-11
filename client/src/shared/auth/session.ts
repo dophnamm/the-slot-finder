@@ -9,13 +9,15 @@ function applyUser(user: User | null) {
   else clearSession()
 }
 
+const handleUserUnloaded = () => applyUser(null)
+
 /**
  * Restores a saved session and keeps the auth store in step with the OIDC client: a silent
  * renewal swaps the token, and an expired or ended session clears it. Call it once at startup.
  */
 export async function startAuthSession() {
   userManager.events.addUserLoaded(applyUser)
-  userManager.events.addUserUnloaded(() => applyUser(null))
+  userManager.events.addUserUnloaded(handleUserUnloaded)
   userManager.events.addAccessTokenExpired(() => applyUser(null))
   userManager.events.addSilentRenewError(() => void signOutLocally())
   applyUser(await userManager.getUser())
@@ -41,9 +43,19 @@ export function completeSignIn() {
   return signInCompletion
 }
 
-/** Ends the Keycloak session and comes back to the sign-in page. */
-export function signOut() {
-  return userManager.signoutRedirect()
+/**
+ * Ends the Keycloak session and comes back to the Signed out page. The app stays as it is while
+ * the browser leaves: clearing the session first would make RequireAuth start a sign-in that
+ * races the sign-out. If Keycloak cannot be reached, the session ends in this tab only.
+ */
+export async function signOut() {
+  userManager.events.removeUserUnloaded(handleUserUnloaded)
+  try {
+    await userManager.signoutRedirect()
+  } catch {
+    userManager.events.addUserUnloaded(handleUserUnloaded)
+    await signOutLocally()
+  }
 }
 
 /** Forgets the session in this tab only, e.g. after the server rejected the token. */
