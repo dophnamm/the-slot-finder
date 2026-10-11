@@ -46,6 +46,7 @@ Styles are Tailwind classes, never `style={...}`. Colors come from theme tokens.
 - **A table is never inside a card.** Put it straight in the `Section`; the bordered table is its own frame. Pass `card` only for other content (figures, lists, text).
 - **Tables are bordered** by `shared/ui/table`: frame, cell lines, grey header. Do not add your own borders or header colours. To scroll a table in place (fixed header, fixed first column), use `<Table scroll="both">` in a flex column, and give sticky cells an opaque background (`bg-card`, `bg-muted`) so rows do not show through.
 - **Badges are pastel and pick their colour by meaning**: `blue`, `green`, `amber`, `red`, `violet`, `teal`, `pink`, `gray` (tokens `--badge-*` in `index.css`). Map a status or kind to a colour in a `Record<…, BadgeVariant>` constant next to its labels; do not use `secondary`, `outline` or `default` for statuses.
+- **A row that opens a detail page is a `LinkRow`** (`@/shared/components/link-row`) when its other cells only show data: the whole row is clickable, its buttons keep their own action. Keep the name as a `<Link>` for keyboard users.
 - Group rows and other bands use `bg-muted`. A highlighted column (e.g. this week) is an inset `shadow-[inset_2px_0_0_…]` on its body cells, which moves with sticky cells, not a background.
 
 ## Checks
