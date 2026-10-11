@@ -9,6 +9,7 @@ export const PERMISSIONS = {
   'dashboard:view': [ROLES.PLANNER, ROLES.LEAD],
   'programs:view': [ROLES.PLANNER, ROLES.LEAD],
   'programs:manage': [ROLES.PLANNER, ROLES.LEAD],
+  'programs:manage-all': [ROLES.PLANNER],
   'intake:view': [ROLES.PLANNER, ROLES.LEAD],
   'staffing-drafts:review': [ROLES.PLANNER],
   'scenarios:view': [ROLES.PLANNER],

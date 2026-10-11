@@ -39,3 +39,8 @@ export function formatDate(date: string, format: string = DATE_FORMAT.longDay): 
 export function formatDateRange(from: string, to: string): string {
   return from === to ? formatDate(from) : `${formatDate(from)} – ${formatDate(to)}`
 }
+
+/** Dates from the Monday of `from` to the Sunday of `to`: `'Oct 12 – Nov 22'`. */
+export function formatIsoWeekSpan(from: string, to: string, format: string = DATE_FORMAT.shortDay): string {
+  return `${isoWeekRange(from).start.format(format)} – ${isoWeekRange(to).end.format(format)}`
+}

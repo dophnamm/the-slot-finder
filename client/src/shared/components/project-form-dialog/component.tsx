@@ -1,0 +1,96 @@
+import { type ChangeEvent, type FormEvent, useState } from 'react'
+import { toast } from 'sonner'
+import { can } from '@/resources/rbac'
+import { useCurrentUser } from '@/shared/auth'
+import { LeadSelect } from '@/shared/components/lead-select'
+import { PRIORITIES, useSaveProject } from '@/shared/programs'
+import { useTranslation } from '@/shared/i18n'
+import { Button } from '@/shared/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
+import { Input } from '@/shared/ui/input'
+import { Label } from '@/shared/ui/label'
+import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
+import type { ProjectFormDialogProps, ProjectFormValues, ProjectTextField } from './types'
+import { canSave, initialValues, toChanges, toInput } from './utils'
+
+/** Adds a project to a program, or edits one, including its scope points. */
+export function ProjectFormDialog({ open, programId, project, onOpenChange }: ProjectFormDialogProps) {
+  const { t } = useTranslation()
+  const { data: user } = useCurrentUser()
+  const [values, setValues] = useState<ProjectFormValues>(() => initialValues(project))
+  const save = useSaveProject(programId, project?.id)
+  const canChooseLead = can(user?.role, 'programs:manage-all')
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const field = event.target.name as ProjectTextField
+    const { value } = event.target
+    setValues((current) => ({ ...current, [field]: value }))
+  }
+  const handleLeadChange = (leadId: string) => setValues((current) => ({ ...current, lead_id: leadId }))
+  const handleSaved = () => {
+    toast.success(t('Project saved.'))
+    onOpenChange(false)
+  }
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const input = project ? toChanges(project, values, canChooseLead) : toInput(values, canChooseLead)
+    save.mutate(input, { onSuccess: handleSaved })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-xl">
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>{project ? t('Edit project') : t('Add project')}</DialogTitle>
+            <DialogDescription>{t('A new project starts as incoming until a staffing draft is accepted.')}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2 sm:col-span-2">
+              <Label htmlFor="project-name">{t('Name')}</Label>
+              <Input id="project-name" name="name" value={values.name} onChange={handleChange} required />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="project-priority">{t('Priority')}</Label>
+              <NativeSelect id="project-priority" name="priority" className="w-full" value={values.priority} onChange={handleChange}>
+                {PRIORITIES.map((priority) => (
+                  <NativeSelectOption key={priority} value={String(priority)}>
+                    {t('Priority {priority}', { priority })}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </div>
+            {canChooseLead && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="project-lead">{t('Lead')}</Label>
+                <LeadSelect id="project-lead" value={values.lead_id} onChange={handleLeadChange} />
+              </div>
+            )}
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="project-start">{t('Earliest start')}</Label>
+              <Input id="project-start" name="start_earliest" type="date" value={values.start_earliest} onChange={handleChange} required />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="project-deadline">{t('Deadline')}</Label>
+              <Input id="project-deadline" name="deadline" type="date" min={values.start_earliest} value={values.deadline}
+                onChange={handleChange} required />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="project-scope">{t('Scope points')}</Label>
+              <Input id="project-scope" name="scope_points" type="number" min={0} step="1" value={values.scope_points} onChange={handleChange} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="project-done">{t('Done points')}</Label>
+              <Input id="project-done" name="done_points" type="number" min={0} step="1" value={values.done_points} onChange={handleChange} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={!canSave(values) || save.isPending}>
+              {t('Save')}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}

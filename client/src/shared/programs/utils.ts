@@ -1,0 +1,29 @@
+import { can, type Role } from '@/resources/rbac'
+import { formatIsoWeekSpan } from '@/utils/functions'
+import { FINAL_STATUSES } from './constants'
+import type { EditorUser, PersonRef } from './types'
+
+/** Planners edit everything; a lead edits what one of `leads` names them as lead of. */
+export function canEdit(user: EditorUser | undefined, leads: (PersonRef | null | undefined)[]): boolean {
+  if (!user) return false
+  if (can(user.role as Role, 'programs:manage-all')) return true
+  return user.person_id !== null && leads.some((lead) => lead?.id === user.person_id)
+}
+
+/** Whether a status still allows edits. */
+export function isOpenStatus(status: string): boolean {
+  return !FINAL_STATUSES.includes(status)
+}
+
+/** "2026-W42 – 2026-W47" with the dates of those weeks. */
+export function weekSpan(from: string, to: string): string {
+  return `${from} – ${to} (${formatIsoWeekSpan(from, to)})`
+}
+
+/** Actions from a table whose `from` statuses include the current one. */
+export function availableActions<A extends string, S extends string>(
+  actions: Record<A, { from: readonly S[] }>,
+  status: S,
+): A[] {
+  return (Object.keys(actions) as A[]).filter((action) => actions[action].from.includes(status))
+}
