@@ -105,6 +105,17 @@ const (
 	MsgPlanNotFound           = "Staffing draft not found"
 	MsgProjectNotPlannable    = "Only incoming, planned or active projects can be staffed"
 	MsgNoDemandToStaff        = "The chosen projects have no demand to staff; add demand first"
+	MsgDraftUpdated           = "Staffing draft updated"
+	MsgDraftAccepted          = "Staffing draft accepted; it is now the baseline"
+	MsgDraftRejected          = "Staffing draft rejected"
+	MsgDraftNotEditable       = "Only a staffing draft that is still a draft can be changed"
+	MsgPlanVersionConflict    = "The baseline changed since this draft was made; generate a new draft"
+	MsgStretchNotConfirmed    = "The draft has stretch assignments; confirm them to accept"
+	MsgStretchStaysLocked     = "A stretch assignment stays locked"
+	MsgAssignmentNotFound     = "The assignment is not in this draft"
+	MsgAssignmentExists       = "This person already covers this demand in the draft"
+	MsgDemandNotInDraft       = "The demand is not covered by this draft"
+	MsgWeekOutsideWindow      = "The week is outside the demand's window"
 )
 
 // Request limit messages.

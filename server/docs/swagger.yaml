@@ -22,6 +22,34 @@ definitions:
         example: leave
         type: string
     type: object
+  dtos.AcceptDraftRequest:
+    properties:
+      base_version:
+        description: BaseVersion is the draft's base_version; a different baseline
+          in force gives 409.
+        minimum: 0
+        type: integer
+      confirm_stretch:
+        description: ConfirmStretch must be true when the draft has stretch assignments.
+        type: boolean
+    required:
+    - base_version
+    type: object
+  dtos.AddAssignmentRequest:
+    properties:
+      allocations:
+        items:
+          $ref: '#/definitions/dtos.DraftWeekHours'
+        maxItems: 104
+        type: array
+      demand_id:
+        type: string
+      person_id:
+        type: string
+    required:
+    - demand_id
+    - person_id
+    type: object
   dtos.AllocationResponse:
     properties:
       hours:
@@ -445,6 +473,37 @@ definitions:
           type: string
         type: array
     type: object
+  dtos.DraftWeekHours:
+    properties:
+      hours:
+        example: 16
+        maximum: 80
+        minimum: 0
+        type: number
+      week:
+        example: 2026-W42
+        type: string
+    required:
+    - week
+    type: object
+  dtos.EditDraftRequest:
+    properties:
+      add:
+        items:
+          $ref: '#/definitions/dtos.AddAssignmentRequest'
+        maxItems: 50
+        type: array
+      remove:
+        items:
+          type: string
+        maxItems: 200
+        type: array
+      set:
+        items:
+          $ref: '#/definitions/dtos.SetAllocationRequest'
+        maxItems: 500
+        type: array
+    type: object
   dtos.ExpertiseResponse:
     properties:
       id:
@@ -825,6 +884,25 @@ definitions:
         type: array
     required:
     - skills
+    type: object
+  dtos.SetAllocationRequest:
+    properties:
+      assignment_id:
+        type: string
+      hours:
+        example: 16
+        maximum: 80
+        minimum: 0
+        type: number
+      locked:
+        description: Locked pins the week; leave it out to keep the current lock.
+        type: boolean
+      week:
+        example: 2026-W42
+        type: string
+    required:
+    - assignment_id
+    - week
     type: object
   dtos.SkillRequest:
     properties:
@@ -2154,6 +2232,124 @@ paths:
       security:
       - BearerAuth: []
       summary: A staffing draft
+      tags:
+      - Staffing drafts
+  /staffing-drafts/{id}/accept:
+    post:
+      consumes:
+      - application/json
+      description: Publishes the draft as the new baseline, only while the baseline
+        is still base_version (else 409 PLAN_VERSION_CONFLICT). Stretch assignments
+        need confirm_stretch. Fully staffed incoming projects become planned.
+      parameters:
+      - description: Draft id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Base version
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.AcceptDraftRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.DraftResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Accept a staffing draft
+      tags:
+      - Staffing drafts
+  /staffing-drafts/{id}/assignments:
+    patch:
+      consumes:
+      - application/json
+      description: Add or remove assignments and change weekly hours or locks, all
+        in one transaction. The server sets each added assignment's kind; a stretch
+        assignment is locked.
+      parameters:
+      - description: Draft id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Changes
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.EditDraftRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.DraftResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Change a staffing draft
+      tags:
+      - Staffing drafts
+  /staffing-drafts/{id}/reject:
+    post:
+      parameters:
+      - description: Draft id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.DraftResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Reject a staffing draft
       tags:
       - Staffing drafts
 schemes:

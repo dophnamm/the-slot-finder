@@ -1,18 +1,22 @@
 package services
 
 import (
+	"context"
 	"net/http"
 	"testing"
 	"time"
 
+	"the-slot-finder/server/internal/clock"
 	"the-slot-finder/server/internal/config"
 	"the-slot-finder/server/internal/constants"
+	"the-slot-finder/server/internal/dtos"
 	"the-slot-finder/server/internal/engine"
 	"the-slot-finder/server/internal/models"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 )
 
 const (
@@ -46,22 +50,60 @@ func qaPerson() models.Person {
 		Skills: []models.PersonSkill{{PersonID: qaPersonID, Level: 3, IsPrimary: true, Expertise: models.Expertise{Name: "QA"}}}}
 }
 
+// MockAuditRepository records audit events.
+type MockAuditRepository struct {
+	mock.Mock
+}
+
+func (m *MockAuditRepository) FindAll(ctx context.Context, pr *dtos.PageableRequest, preloads ...string) (*dtos.DataResponse[models.AuditEvent], error) {
+	args := m.Called(ctx, pr, preloads)
+	return args.Get(0).(*dtos.DataResponse[models.AuditEvent]), args.Error(1)
+}
+
+func (m *MockAuditRepository) FindOneByID(ctx context.Context, id string) (*models.AuditEvent, error) {
+	args := m.Called(ctx, id)
+	return args.Get(0).(*models.AuditEvent), args.Error(1)
+}
+
+func (m *MockAuditRepository) Create(ctx context.Context, entity *models.AuditEvent) error {
+	return m.Called(ctx, entity).Error(0)
+}
+
+func (m *MockAuditRepository) Save(ctx context.Context, entity *models.AuditEvent) error {
+	return m.Called(ctx, entity).Error(0)
+}
+
+func (m *MockAuditRepository) SaveAll(ctx context.Context, entities []models.AuditEvent) error {
+	return m.Called(ctx, entities).Error(0)
+}
+
+func (m *MockAuditRepository) Delete(ctx context.Context, entity *models.AuditEvent) error {
+	return m.Called(ctx, entity).Error(0)
+}
+
+func (m *MockAuditRepository) Updates(ctx context.Context, entity *models.AuditEvent) error {
+	return m.Called(ctx, entity).Error(0)
+}
+
+var acceptedAt = time.Date(2026, time.October, 12, 9, 0, 0, 0, time.UTC)
+
 type staffingMocks struct {
 	plans    *MockPlanRepository
 	projects *MockProjectRepository
 	people   *MockPersonRepository
 	absences *MockAbsenceRepository
+	audit    *MockAuditRepository
 }
 
 func newStaffingMocks() staffingMocks {
 	return staffingMocks{plans: new(MockPlanRepository), projects: new(MockProjectRepository),
-		people: new(MockPersonRepository), absences: new(MockAbsenceRepository)}
+		people: new(MockPersonRepository), absences: new(MockAbsenceRepository), audit: new(MockAuditRepository)}
 }
 
 func (m staffingMocks) service() StaffingService {
 	finder := leadPeople{}
-	return ProvideStaffingService(m.plans, m.projects, m.people, m.absences, finder, ProvideAuthzService(finder),
-		passthroughTx{}, testPlanningConfig())
+	return ProvideStaffingService(m.plans, m.projects, m.people, m.absences, m.audit, finder, ProvideAuthzService(finder),
+		passthroughTx{}, clock.NewFixed(acceptedAt), testPlanningConfig())
 }
 
 func TestStaffingService_Generate(t *testing.T) {
@@ -194,4 +236,202 @@ func TestAssignmentKindsMatchTheEngine(t *testing.T) {
 	assert.Equal(t, string(engine.KindPrimary), constants.AssignmentKindPrimary)
 	assert.Equal(t, string(engine.KindCrossExpertise), constants.AssignmentKindCrossExpertise)
 	assert.Equal(t, string(engine.KindStretch), constants.AssignmentKindStretch)
+}
+
+const (
+	draftAssignmentID = "0192f3a4-0000-7000-8000-0000000000f4"
+	stretchID         = "0192f3a4-0000-7000-8000-0000000000f5"
+	expQAID           = "0192f3a4-0000-7000-8000-0000000000f6"
+)
+
+// openDraftWith is a draft on baseline version 2 covering the QA project.
+func openDraftWith(assignments ...models.Assignment) *models.Plan {
+	return &models.Plan{BaseModel: models.BaseModel{ID: staffingDraftID}, Kind: constants.PlanKindDraft,
+		Status: constants.PlanStatusDraft, Version: 2, ProjectIDs: []string{projectID}, Assignments: assignments}
+}
+
+func qaAssignment(t *testing.T, hours float64) models.Assignment {
+	return models.Assignment{BaseModel: models.BaseModel{ID: draftAssignmentID}, PersonID: qaPersonID, DemandID: demandID,
+		Kind: constants.AssignmentKindPrimary, Allocations: []models.Allocation{{Week: mustWeek(t, "2026-W46"), Hours: hours}}}
+}
+
+func TestStaffingService_Edit(t *testing.T) {
+	planner := asRole("kc-planner", constants.RolePlanner)
+	projectWithExpertise := func(t *testing.T) *models.Project {
+		project := qaProject(t)
+		project.Demands[0].ExpertiseID = expQAID
+		return project
+	}
+	juniorQA := &models.Person{BaseModel: models.BaseModel{ID: otherPersonID2},
+		Skills: []models.PersonSkill{{ExpertiseID: expQAID, Level: 1, IsPrimary: true}}}
+
+	t.Run("a below-level person becomes a locked stretch assignment", func(t *testing.T) {
+		m := newStaffingMocks()
+		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(), nil)
+		m.projects.On("FindDetail", mock.Anything, projectID).Return(projectWithExpertise(t), nil)
+		m.people.On("FindWithSkills", mock.Anything, otherPersonID2).Return(juniorQA, nil)
+		var added *models.Assignment
+		m.plans.On("CreateAssignment", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+			added = args.Get(1).(*models.Assignment)
+		}).Return(nil)
+		m.plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(2), nil)
+
+		_, err := m.service().Edit(planner, staffingDraftID, EditDraftInput{Add: []AddAssignmentInput{{
+			PersonID: otherPersonID2, DemandID: demandID, Allocations: []WeekHours{{Week: mustWeek(t, "2026-W47"), Hours: 10}}}}})
+		require.NoError(t, err)
+		require.NotNil(t, added)
+		assert.Equal(t, constants.AssignmentKindStretch, added.Kind)
+		assert.Equal(t, []string{constants.ReasonAddedByHand, "stretch: QA level 1 is below 2"}, added.Reason)
+		require.Len(t, added.Allocations, 1)
+		assert.True(t, added.Allocations[0].Locked)
+	})
+
+	t.Run("refusals", func(t *testing.T) {
+		stretch := models.Assignment{BaseModel: models.BaseModel{ID: stretchID}, PersonID: otherPersonID2, DemandID: demandID,
+			Kind: constants.AssignmentKindStretch}
+		tests := []struct {
+			name     string
+			draft    *models.Plan
+			in       EditDraftInput
+			wantCode string
+			status   int
+		}{
+			{name: "the person already covers the demand", draft: openDraftWith(qaAssignment(t, 10)),
+				in:       EditDraftInput{Add: []AddAssignmentInput{{PersonID: qaPersonID, DemandID: demandID}}},
+				wantCode: constants.AssignmentExists, status: http.StatusConflict},
+			{name: "a demand the draft does not cover", draft: openDraftWith(),
+				in:       EditDraftInput{Add: []AddAssignmentInput{{PersonID: qaPersonID, DemandID: otherDemandID}}},
+				wantCode: constants.DemandNotInDraft, status: http.StatusBadRequest},
+			{name: "a week outside the window", draft: openDraftWith(qaAssignment(t, 10)),
+				in:       EditDraftInput{Set: []SetAllocationInput{{AssignmentID: draftAssignmentID, Week: mustWeek(t, "2026-W42"), Hours: 8}}},
+				wantCode: constants.WeekOutsideWindow, status: http.StatusBadRequest},
+			{name: "unlocking a stretch assignment", draft: openDraftWith(stretch),
+				in:       EditDraftInput{Set: []SetAllocationInput{{AssignmentID: stretchID, Week: mustWeek(t, "2026-W47"), Hours: 8, Locked: new(false)}}},
+				wantCode: constants.StretchStaysLocked, status: http.StatusBadRequest},
+			{name: "an assignment of another plan", draft: openDraftWith(),
+				in: EditDraftInput{Remove: []string{draftAssignmentID}}, wantCode: constants.AssignmentNotFound, status: http.StatusNotFound},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				m := newStaffingMocks()
+				m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(tt.draft, nil)
+				m.projects.On("FindDetail", mock.Anything, projectID).Return(projectWithExpertise(t), nil)
+				m.people.On("FindWithSkills", mock.Anything, mock.Anything).Return(juniorQA, nil)
+				_, err := m.service().Edit(planner, staffingDraftID, tt.in)
+				requireAppError(t, err, tt.wantCode, tt.status)
+				m.plans.AssertNotCalled(t, "CreateAssignment", mock.Anything, mock.Anything)
+			})
+		}
+	})
+
+	t.Run("a published plan cannot change", func(t *testing.T) {
+		m := newStaffingMocks()
+		published := openDraftWith()
+		published.Kind, published.Status = constants.PlanKindBaseline, constants.PlanStatusPublished
+		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(published, nil)
+		_, err := m.service().Edit(planner, staffingDraftID, EditDraftInput{})
+		requireAppError(t, err, constants.DraftNotEditable, http.StatusConflict)
+	})
+}
+
+func TestStaffingService_Accept(t *testing.T) {
+	planner := asRole("kc-planner", constants.RolePlanner)
+
+	t.Run("publishes the draft and plans the fully staffed project", func(t *testing.T) {
+		m := newStaffingMocks()
+		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(qaAssignment(t, 60)), nil)
+		m.projects.On("FindDetail", mock.Anything, projectID).Return(qaProject(t), nil)
+		m.plans.On("SupersedeBaseline", mock.Anything, 2).Return(int64(1), nil)
+		m.plans.On("Publish", mock.Anything, staffingDraftID, 3, acceptedAt, (*string)(nil)).Return(nil)
+		m.projects.On("Updates", mock.Anything, mock.MatchedBy(func(p *models.Project) bool {
+			return p.ID == projectID && p.Status == constants.ProjectStatusPlanned && p.StaffedAt != nil && p.StaffedAt.Equal(acceptedAt)
+		})).Return(nil)
+		m.audit.On("Create", mock.Anything, mock.MatchedBy(func(e *models.AuditEvent) bool {
+			return e.Action == constants.AuditActionPlanAccepted && e.ResourceID == staffingDraftID
+		})).Return(nil)
+		m.plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(3), nil)
+
+		_, err := m.service().Accept(planner, staffingDraftID, AcceptDraftInput{BaseVersion: 2})
+		require.NoError(t, err)
+		m.plans.AssertExpectations(t)
+		m.projects.AssertExpectations(t)
+		m.audit.AssertExpectations(t)
+	})
+
+	t.Run("a partly staffed project stays incoming", func(t *testing.T) {
+		m := newStaffingMocks()
+		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(qaAssignment(t, 20)), nil)
+		m.projects.On("FindDetail", mock.Anything, projectID).Return(qaProject(t), nil)
+		m.plans.On("SupersedeBaseline", mock.Anything, 2).Return(int64(1), nil)
+		m.plans.On("Publish", mock.Anything, staffingDraftID, 3, acceptedAt, (*string)(nil)).Return(nil)
+		m.audit.On("Create", mock.Anything, mock.Anything).Return(nil)
+		m.plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(3), nil)
+
+		_, err := m.service().Accept(planner, staffingDraftID, AcceptDraftInput{BaseVersion: 2})
+		require.NoError(t, err)
+		m.projects.AssertNotCalled(t, "Updates", mock.Anything, mock.Anything)
+	})
+
+	t.Run("a draft built on another version", func(t *testing.T) {
+		m := newStaffingMocks()
+		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(), nil)
+		_, err := m.service().Accept(planner, staffingDraftID, AcceptDraftInput{BaseVersion: 1})
+		requireAppError(t, err, constants.PlanVersionConflict, http.StatusConflict)
+		m.plans.AssertNotCalled(t, "SupersedeBaseline", mock.Anything, mock.Anything)
+	})
+
+	t.Run("the baseline moved on", func(t *testing.T) {
+		m := newStaffingMocks()
+		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(), nil)
+		m.projects.On("FindDetail", mock.Anything, projectID).Return(qaProject(t), nil)
+		m.plans.On("SupersedeBaseline", mock.Anything, 2).Return(int64(0), nil)
+		_, err := m.service().Accept(planner, staffingDraftID, AcceptDraftInput{BaseVersion: 2})
+		requireAppError(t, err, constants.PlanVersionConflict, http.StatusConflict)
+		m.plans.AssertNotCalled(t, "Publish", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+	})
+
+	t.Run("a second published baseline is refused by the index", func(t *testing.T) {
+		m := newStaffingMocks()
+		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(), nil)
+		m.projects.On("FindDetail", mock.Anything, projectID).Return(qaProject(t), nil)
+		m.plans.On("SupersedeBaseline", mock.Anything, 2).Return(int64(1), nil)
+		m.plans.On("Publish", mock.Anything, staffingDraftID, 3, acceptedAt, (*string)(nil)).Return(gorm.ErrDuplicatedKey)
+		_, err := m.service().Accept(planner, staffingDraftID, AcceptDraftInput{BaseVersion: 2})
+		requireAppError(t, err, constants.PlanVersionConflict, http.StatusConflict)
+	})
+
+	t.Run("stretch on the draft's demand needs confirmation", func(t *testing.T) {
+		m := newStaffingMocks()
+		stretch := qaAssignment(t, 8)
+		stretch.Kind = constants.AssignmentKindStretch
+		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(stretch), nil)
+		m.projects.On("FindDetail", mock.Anything, projectID).Return(qaProject(t), nil)
+		_, err := m.service().Accept(planner, staffingDraftID, AcceptDraftInput{BaseVersion: 2})
+		requireAppError(t, err, constants.StretchNotConfirmed, http.StatusConflict)
+	})
+
+	t.Run("stretch copied from the baseline needs no confirmation", func(t *testing.T) {
+		m := newStaffingMocks()
+		copied := qaAssignment(t, 8)
+		copied.DemandID, copied.Kind = otherDemandID, constants.AssignmentKindStretch
+		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(copied), nil)
+		m.projects.On("FindDetail", mock.Anything, projectID).Return(qaProject(t), nil)
+		m.plans.On("SupersedeBaseline", mock.Anything, 2).Return(int64(1), nil)
+		m.plans.On("Publish", mock.Anything, staffingDraftID, 3, acceptedAt, (*string)(nil)).Return(nil)
+		m.audit.On("Create", mock.Anything, mock.Anything).Return(nil)
+		m.plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(3), nil)
+		_, err := m.service().Accept(planner, staffingDraftID, AcceptDraftInput{BaseVersion: 2})
+		require.NoError(t, err)
+	})
+}
+
+func TestStaffingService_Reject(t *testing.T) {
+	m := newStaffingMocks()
+	m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(), nil)
+	m.plans.On("SetStatus", mock.Anything, staffingDraftID, constants.PlanStatusRejected).Return(nil)
+	m.projects.On("FindDetail", mock.Anything, projectID).Return(qaProject(t), nil)
+	m.plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(2), nil)
+	_, err := m.service().Reject(asRole("kc-planner", constants.RolePlanner), staffingDraftID)
+	require.NoError(t, err)
+	m.plans.AssertExpectations(t)
 }

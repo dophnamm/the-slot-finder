@@ -156,6 +156,9 @@ func registerPlanRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc, planH
 	// Staffing drafts: planners generate and change them; leads read those of their projects.
 	v1.POST(constants.PathStaffingDrafts, staffingHandler.Generate, authenticated, manageRoles)
 	v1.GET(constants.PathStaffingDraft, staffingHandler.Get, authenticated, viewRoles)
+	v1.PATCH(constants.PathDraftAssignments, staffingHandler.Edit, authenticated, manageRoles)
+	v1.POST(constants.PathDraftAccept, staffingHandler.Accept, authenticated, manageRoles)
+	v1.POST(constants.PathDraftReject, staffingHandler.Reject, authenticated, manageRoles)
 }
 
 // registerPeopleRoutes adds people, skills, absences and holidays.

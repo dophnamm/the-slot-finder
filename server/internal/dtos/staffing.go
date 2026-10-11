@@ -27,6 +27,43 @@ func (r *GenerateDraftRequest) Normalize() {
 	r.ProjectIDs = ids
 }
 
+// DraftWeekHours is an assignment's hours in one week.
+type DraftWeekHours struct {
+	Week  string  `json:"week" validate:"required,isoweek" example:"2026-W42"`
+	Hours float64 `json:"hours" validate:"gte=0,lte=80" example:"16"`
+}
+
+// AddAssignmentRequest puts a person on a covered demand; the server sets the kind.
+type AddAssignmentRequest struct {
+	PersonID    string           `json:"person_id" validate:"required,uuid"`
+	DemandID    string           `json:"demand_id" validate:"required,uuid"`
+	Allocations []DraftWeekHours `json:"allocations" validate:"max=104,dive"`
+}
+
+// SetAllocationRequest changes one week of an assignment; hours 0 removes the week.
+type SetAllocationRequest struct {
+	AssignmentID string  `json:"assignment_id" validate:"required,uuid"`
+	Week         string  `json:"week" validate:"required,isoweek" example:"2026-W42"`
+	Hours        float64 `json:"hours" validate:"gte=0,lte=80" example:"16"`
+	// Locked pins the week; leave it out to keep the current lock.
+	Locked *bool `json:"locked"`
+}
+
+// EditDraftRequest is the body of PATCH /staffing-drafts/{id}/assignments, applied together.
+type EditDraftRequest struct {
+	Add    []AddAssignmentRequest `json:"add" validate:"max=50,dive"`
+	Remove []string               `json:"remove" validate:"max=200,dive,uuid"`
+	Set    []SetAllocationRequest `json:"set" validate:"max=500,dive"`
+}
+
+// AcceptDraftRequest is the body of POST /staffing-drafts/{id}/accept.
+type AcceptDraftRequest struct {
+	// BaseVersion is the draft's base_version; a different baseline in force gives 409.
+	BaseVersion *int `json:"base_version" validate:"required,gte=0"`
+	// ConfirmStretch must be true when the draft has stretch assignments.
+	ConfirmStretch bool `json:"confirm_stretch"`
+}
+
 // DraftProjectResponse is a project a draft covers.
 type DraftProjectResponse struct {
 	ID           string     `json:"id"`
