@@ -1,0 +1,1 @@
+export { HeatmapFilters } from './component'
