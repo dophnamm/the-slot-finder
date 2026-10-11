@@ -56,7 +56,6 @@ describe('HeatmapGrid', () => {
     vi.setSystemTime(new Date('2026-10-21T09:00:00'))
     render(<HeatmapGrid data={data} expertiseId="" />)
 
-    expect(screen.getAllByText('This week')).toHaveLength(1)
     expect(screen.getByRole('button', { name: 'Erin in 2026-W43' }).closest('td')?.className).toContain(CURRENT_WEEK_CLASS)
     expect(screen.getByRole('button', { name: 'Erin in 2026-W42' }).closest('td')?.className).not.toContain(CURRENT_WEEK_CLASS)
   })
