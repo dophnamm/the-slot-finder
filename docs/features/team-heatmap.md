@@ -3,7 +3,7 @@
 **Goal:** see weeks ahead who is overloaded or underused, and which weeks will crunch. This covers G2 in the [root README](../../README.md#1-problem-and-scope).
 
 **Roles:** planner, lead.
-**Target:** 14 Oct (checkpoint) · **Depends on:** [staffing-draft](staffing-draft.md) · **Branch:** `feat/team-heatmap` · **Status:** In review
+**Target:** 14 Oct (checkpoint) · **Depends on:** [staffing-draft](staffing-draft.md) · **Branch:** `feat/team-heatmap` · **Status:** Done (PR #10)
 
 ## In scope
 
