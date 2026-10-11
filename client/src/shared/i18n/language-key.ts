@@ -278,6 +278,7 @@ export type LanguageKey = {
   'The last phase ends after the deadline week. Move the deadline or shorten a phase.': string
   'The last phase would end after the deadline week.': string
   'The server is unreachable.': string
+  'The server keeps rejecting your sign-in. Try again, or ask an admin to check the sign-in settings.': string
   'The Slot Finder': string
   'There is no program at this address.': string
   'There is no project at this address.': string

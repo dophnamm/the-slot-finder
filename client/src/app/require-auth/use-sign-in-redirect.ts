@@ -1,27 +1,29 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { signIn } from '@/shared/auth'
+import { autoSignIn, signIn } from '@/shared/auth'
+import type { SignInFailure } from './types'
 
 /**
- * Sends a signed-out user straight to the Keycloak sign-in page, once per mount. `failed` is true
- * when Keycloak could not be reached; `retry` tries again.
+ * Sends a signed-out user straight to the Keycloak sign-in page, once per mount. `failure` says
+ * why it stopped instead; `retry` tries again on the user's click.
  */
 export function useSignInRedirect(signedOut: boolean, returnTo: string) {
   const started = useRef(false)
-  const [failed, setFailed] = useState(false)
-
-  const redirect = useCallback(() => {
-    started.current = true
-    signIn(returnTo).catch(() => setFailed(true))
-  }, [returnTo])
-
-  const retry = useCallback(() => {
-    setFailed(false)
-    redirect()
-  }, [redirect])
+  const [failure, setFailure] = useState<SignInFailure | null>(null)
 
   useEffect(() => {
-    if (signedOut && !started.current) redirect()
-  }, [signedOut, redirect])
+    if (!signedOut || started.current) return
+    started.current = true
+    autoSignIn(returnTo)
+      .then((redirected) => {
+        if (!redirected) setFailure('repeated')
+      })
+      .catch(() => setFailure('unreachable'))
+  }, [signedOut, returnTo])
 
-  return { failed, retry }
+  const retry = useCallback(() => {
+    setFailure(null)
+    signIn(returnTo).catch(() => setFailure('unreachable'))
+  }, [returnTo])
+
+  return { failure, retry }
 }

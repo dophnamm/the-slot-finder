@@ -1,5 +1,6 @@
 import type { User } from 'oidc-client-ts'
 import { useAuthStore } from '@/shared/stores/auth-store'
+import { clearAutoSignIns, recordAutoSignIn } from './sign-in-attempts'
 import type { SignInState } from './types'
 import { userManager } from './user-manager'
 
@@ -23,10 +24,22 @@ export async function startAuthSession() {
   applyUser(await userManager.getUser())
 }
 
-/** Sends the browser to the Keycloak sign-in page. */
+/** Sends the browser to the Keycloak sign-in page because the user asked to. */
 export function signIn(returnTo: string) {
+  clearAutoSignIns()
   const state: SignInState = { returnTo }
   return userManager.signinRedirect({ state })
+}
+
+/**
+ * Sends a signed-out user to the Keycloak sign-in page without a click. Resolves to false, and
+ * stays, when automatic sign-ins keep coming back rejected (see recordAutoSignIn).
+ */
+export async function autoSignIn(returnTo: string) {
+  if (!recordAutoSignIn()) return false
+  const state: SignInState = { returnTo }
+  await userManager.signinRedirect({ state })
+  return true
 }
 
 let signInCompletion: Promise<SignInState | undefined> | null = null
