@@ -3,7 +3,7 @@
 **Goal:** leads describe what each program needs: its projects, their ordered phases, and demand per expertise. This is the demand side for staffing (G1) in the [root README](../../README.md#1-problem-and-scope). A phase that ends later moves the phases after it.
 
 **Roles:** lead (own programs and projects), planner (all), specialist (none).
-**Target:** 12 Oct · **Depends on:** [people-and-skills](people-and-skills.md) · **Branch:** `feat/programs-and-demand` · **Status:** In review
+**Target:** 12 Oct · **Depends on:** [people-and-skills](people-and-skills.md) · **Branch:** `feat/programs-and-demand` · **Status:** Done (PR #6)
 
 ## In scope
 
