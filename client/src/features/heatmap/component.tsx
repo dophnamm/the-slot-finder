@@ -1,5 +1,7 @@
 import { Section } from '@/shared/components/section'
+import { useDebouncedValue } from '@/shared/hooks'
 import { useTranslation } from '@/shared/i18n'
+import { SEARCH_DEBOUNCE_MS } from '@/utils/constants'
 import { addIsoWeeks } from '@/utils/functions'
 import { HeatmapFilters } from './components/heatmap-filters'
 import { HeatmapGrid } from './components/heatmap-grid'
@@ -16,7 +18,8 @@ export function Heatmap() {
   const expertiseId = useHeatmapFilters((state) => state.expertiseId)
   const search = useHeatmapFilters((state) => state.search)
   const { data, isPending } = useHeatmap({ from, to: addIsoWeeks(from, weeks - 1), expertise: expertiseId })
-  const rows = filterRows(data?.rows ?? [], search)
+  const query = useDebouncedValue(search, SEARCH_DEBOUNCE_MS)
+  const rows = filterRows(data?.rows ?? [], query)
 
   return (
     <Section
