@@ -18,9 +18,8 @@ export function ChangeHistory() {
     <Section
       title={t('Change history')}
       description={t('Leave, holidays and slipped phases or deadlines. Each change is checked against the baseline; a conflict produces a staffing draft.')}
-      footer={<Pager page={page} total={data?.meta.total} pageSize={HISTORY_PAGE_SIZE} onPageChange={setPage} />}
     >
-      <Table>
+      <Table footer={<Pager page={page} total={data?.meta.total} pageSize={HISTORY_PAGE_SIZE} onPageChange={setPage} />}>
         <TableHeader>
           <TableRow>
             <TableHead>{t('When')}</TableHead>

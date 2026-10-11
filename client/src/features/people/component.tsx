@@ -33,9 +33,8 @@ export function PeopleTable({ onShowAbsences }: PeopleTableProps) {
       title={t('People')}
       description={t('Expertise, levels and weekly hours of everyone who can be staffed.')}
       action={<Button onClick={handleAdd}>{t('Add person')}</Button>}
-      footer={<Pager page={page} total={data?.meta.total} pageSize={PEOPLE_PAGE_SIZE} onPageChange={setPage} />}
     >
-      <Table>
+      <Table footer={<Pager page={page} total={data?.meta.total} pageSize={PEOPLE_PAGE_SIZE} onPageChange={setPage} />}>
         <TableHeader>
           <TableRow>
             <TableHead>{t('Person')}</TableHead>

@@ -18,9 +18,8 @@ export function IntakeQueue() {
     <Section
       title={t('Intake queue')}
       description={t('Incoming projects across programs, highest priority and earliest deadline first.')}
-      footer={<Pager page={page} total={data?.meta.total} pageSize={PROGRAMS_PAGE_SIZE} onPageChange={setPage} />}
     >
-      <Table>
+      <Table footer={<Pager page={page} total={data?.meta.total} pageSize={PROGRAMS_PAGE_SIZE} onPageChange={setPage} />}>
         <TableHeader>
           <TableRow>
             <TableHead>{t('Project')}</TableHead>
