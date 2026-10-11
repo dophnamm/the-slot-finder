@@ -10,6 +10,9 @@ import (
 // reasonKeptLocked marks hours a Planner locked; the engine kept them as they were.
 const reasonKeptLocked = "kept: locked by the Planner"
 
+// reasonKeptExisting marks unlocked hours of the starting plan that still fit.
+const reasonKeptExisting = "kept from the current plan"
+
 // reasons explains why the candidate got the seat: their skill, why a cross-expertise
 // person was used, continuity, and the load they end at.
 func (p *planner) reasons(d Demand, c candidate, ranked []candidate) []string {

@@ -196,9 +196,43 @@ func TestPropose_KeepsLockedAllocations(t *testing.T) {
 	require.Len(t, result.Assignments, 1)
 	a := result.Assignments[0]
 	assert.Equal(t, Allocation{Week: "2026-W42", Hours: 16, Locked: true}, a.Allocations[0])
-	assert.Equal(t, map[string]float64{"2026-W42": 16, "2026-W43": 8, "2026-W44": 8, "2026-W45": 8}, hoursByWeek(a))
+	assert.Equal(t, map[string]float64{"2026-W42": 16, "2026-W43": 24}, hoursByWeek(a),
+		"the unlocked 30 h still fit, up to the 24 h the demand still needs")
 	assert.Contains(t, a.Reason, reasonKeptLocked)
-	assert.Contains(t, a.Reason, "held this demand in the current plan")
+	assert.Contains(t, a.Reason, reasonKeptExisting)
+}
+
+func TestPropose_ReplanKeepsWhatStillFits(t *testing.T) {
+	window := weekRange(44, 5)
+	capacity := flatCapacity(36, window)
+	capacity["2026-W44"] = 12 // three days of leave
+	existing := make([]Allocation, len(window))
+	for i, w := range window {
+		existing[i] = Allocation{Week: w, Hours: 32}
+	}
+	req := Request{Policy: testPolicy(),
+		People: []Person{
+			{ID: "alex", Skills: []Skill{{Expertise: engineer, Level: 5, Primary: true}}, Capacity: capacity},
+			person("bao", 36, window, Skill{Expertise: engineer, Level: 3, Primary: true}),
+			person("sam", 36, window, Skill{Expertise: engineer, Level: 4, Primary: true}),
+			person("chi", 36, window, Skill{Expertise: engineer, Level: 4, Primary: true}),
+		},
+		Demands: []Demand{func() Demand { d := demand("d1", engineer, 3, 320, window); d.Headcount = 2; return d }()},
+		Existing: []ExistingAssignment{
+			{PersonID: "alex", DemandID: "d1", ProjectID: "pr-d1", ProgramID: "pg", Expertise: engineer, Kind: KindPrimary, Allocations: existing},
+			{PersonID: "bao", DemandID: "d1", ProjectID: "pr-d1", ProgramID: "pg", Expertise: engineer, Kind: KindPrimary, Allocations: existing},
+		},
+	}
+
+	result := Propose(req)
+	require.Len(t, result.Assignments, 3, "both seats are held, so the 20 h gap goes to one person")
+	alex, sam := result.Assignments[0], result.Assignments[2]
+	assert.Equal(t, "alex", alex.PersonID)
+	assert.Equal(t, map[string]float64{"2026-W44": 12, "2026-W45": 32, "2026-W46": 32, "2026-W47": 32, "2026-W48": 32}, hoursByWeek(alex),
+		"Alex keeps every hour that still fits")
+	assert.InDelta(t, 160, totalHours(result.Assignments[1]), epsilon, "Bao keeps his seat")
+	assert.InDelta(t, 20, totalHours(sam), epsilon, "only the 20 h lost to leave move")
+	assert.Empty(t, result.Unmet)
 }
 
 func TestPropose_HigherPriorityGoesFirst(t *testing.T) {

@@ -109,7 +109,8 @@ type Assignment struct {
 //   - For a demand outside Request.Demands, every allocation is fixed load: it uses the
 //     person's capacity and is not part of the result.
 //   - For a demand inside Request.Demands, locked allocations are kept and returned as they
-//     are; unlocked ones are planned again, preferring the same person.
+//     are. Unlocked ones are kept while they still fit (window, skill, free hours, minimum);
+//     only the rest of the demand is planned again, preferring the same person.
 type ExistingAssignment struct {
 	PersonID    string
 	DemandID    string
