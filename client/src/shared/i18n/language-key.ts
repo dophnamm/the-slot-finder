@@ -117,6 +117,7 @@ export type LanguageKey = {
   Holiday: string
   'Holiday added.': string
   'Holidays lower everyone’s capacity on those days.': string
+  Home: string
   Hours: string
   'Hours in {week}': string
   'Hours per day': string

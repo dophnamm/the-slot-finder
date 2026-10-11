@@ -26,8 +26,9 @@ function renderAt(path: string) {
 afterEach(cleanup)
 
 describe('Breadcrumbs', () => {
-  it('shows a top-level page on its own, as the current page', () => {
+  it('starts at home, then the current top-level page', () => {
     renderAt('/people')
+    expect(screen.getByRole('link', { name: 'Home' }).getAttribute('href')).toBe(ROUTES.dashboard)
     expect(screen.getByText('People').getAttribute('aria-current')).toBe('page')
   })
 
