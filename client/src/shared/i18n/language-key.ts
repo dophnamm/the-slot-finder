@@ -81,7 +81,7 @@ export type LanguageKey = {
   'Hours per day': string
   Inactive: string
   Incoming: string
-  'Incoming projects across programs, with “Propose squad”.': string
+  'Incoming projects across programs, highest priority and earliest deadline first.': string
   Intake: string
   'Intake queue': string
   Lead: string
@@ -105,6 +105,7 @@ export type LanguageKey = {
   'No demand yet.': string
   'No goal yet.': string
   'No holidays yet.': string
+  'No incoming projects.': string
   'No lead': string
   'No people yet.': string
   'No person record': string

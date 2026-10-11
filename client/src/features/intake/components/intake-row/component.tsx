@@ -1,0 +1,50 @@
+import { generatePath, Link } from 'react-router'
+import { ROUTES } from '@/resources/routes'
+import { useTranslation } from '@/shared/i18n'
+import { Badge } from '@/shared/ui/badge'
+import { TableCell, TableRow } from '@/shared/ui/table'
+import { formatIsoWeekSpan } from '@/utils/functions'
+import type { IntakeRowProps } from './types'
+
+export function IntakeRow({ project }: IntakeRowProps) {
+  const { t } = useTranslation()
+  const phase = project.current_phase
+
+  return (
+    <TableRow>
+      <TableCell>
+        <div className="flex flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Link className="font-medium hover:underline" to={generatePath(ROUTES.projectDetail, { id: project.id })}>
+              {project.name}
+            </Link>
+            {project.at_risk && <Badge variant="destructive">{t('At risk')}</Badge>}
+          </div>
+          <span className="text-xs text-muted-foreground">{t('Priority {priority}', { priority: project.priority })}</span>
+        </div>
+      </TableCell>
+      <TableCell>
+        <Link className="hover:underline" to={generatePath(ROUTES.programDetail, { id: project.program_id })}>
+          {project.program_name ?? t('Program')}
+        </Link>
+      </TableCell>
+      <TableCell className="text-sm">
+        <div className="flex flex-col">
+          <span>{t('{start} – {end}', { start: project.start_week, end: project.deadline_week })}</span>
+          <span className="text-xs text-muted-foreground">{formatIsoWeekSpan(project.start_week, project.deadline_week)}</span>
+        </div>
+      </TableCell>
+      <TableCell className="text-sm">
+        {phase ? (
+          <div className="flex flex-col">
+            <span>{phase.name}</span>
+            <span className="text-xs text-muted-foreground">{t('{start} – {end}', { start: phase.start_week, end: phase.end_week })}</span>
+          </div>
+        ) : (
+          <span className="text-muted-foreground">{t('No phases yet')}</span>
+        )}
+      </TableCell>
+      <TableCell>{project.lead?.name ?? t('No lead')}</TableCell>
+    </TableRow>
+  )
+}

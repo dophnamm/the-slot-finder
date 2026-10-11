@@ -13,4 +13,5 @@ export {
   shortWeekLabel,
   toIsoWeek,
 } from './date'
+export { pageCount } from './paging'
 export type { IsoWeekRange } from './types'
