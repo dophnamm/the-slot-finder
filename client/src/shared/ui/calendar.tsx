@@ -16,12 +16,15 @@ function Calendar({
   showOutsideDays = true,
   captionLayout = "label",
   buttonVariant = "ghost",
+  highlightWeek = false,
   locale,
   formatters,
   components,
   ...props
 }: React.ComponentProps<typeof DayPicker> & {
   buttonVariant?: React.ComponentProps<typeof Button>["variant"]
+  /** Tints the whole week row under the pointer, for pickers where a day picks its week. */
+  highlightWeek?: boolean
 }) {
   const defaultClassNames = getDefaultClassNames()
 
@@ -91,7 +94,12 @@ function Calendar({
           "flex-1 rounded-(--cell-radius) text-[0.8rem] font-normal text-muted-foreground select-none",
           defaultClassNames.weekday
         ),
-        week: cn("mt-2 flex w-full", defaultClassNames.week),
+        week: cn(
+          "mt-2 flex w-full",
+          highlightWeek &&
+            "cursor-pointer rounded-(--cell-radius) transition-colors hover:bg-muted",
+          defaultClassNames.week
+        ),
         week_number_header: cn(
           "w-(--cell-size) select-none",
           defaultClassNames.week_number_header
