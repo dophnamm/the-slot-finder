@@ -7,7 +7,7 @@ import { Risks } from '@/features/risks'
  */
 export function DashboardPage() {
   return (
-    <div className="flex flex-col gap-4 xl:h-full xl:flex-row">
+    <div data-fill-screen className="flex flex-col gap-4 xl:h-full xl:flex-row">
       <div className="min-w-0 xl:min-h-0 xl:flex-1">
         <Heatmap />
       </div>
