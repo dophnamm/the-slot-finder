@@ -24,7 +24,7 @@ Run `make` at the repo root to list the shortcuts:
 | Whole stack in Docker: Postgres, Redis, Keycloak, OTel, Jaeger, migrations, API on `:3000` | `make up` · stop with `make down` · logs with `make logs` |
 | Infra in Docker, server and client on the host | `make dev` (or `make infra`, then `make server` / `make client`) |
 | Lint, test and build both sides (CI runs it on every pull request: `.github/workflows/check.yml`) | `make check` |
-| Load demo data (expertises, 12 people with skills, leave, holidays; safe to run again) | `make seed` |
+| Load demo data (expertises, 12 people with skills, leave, holidays, 2 programs with 6 projects; safe to run again) | `make seed` |
 | Wipe local data (DB and Keycloak volumes) | `make reset-data` |
 
 Compose lives in `server/docker-compose.yml` and reads `server/cmd/server/.env`. The `server` service overrides the hosts so they point at containers. The `migrate` service runs `atlas migrate apply` before the API starts.

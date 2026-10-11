@@ -17,7 +17,7 @@ From the repo root (see the root `Makefile`):
 make setup     # .env files + Go and npm dependencies
 make up        # Docker: Postgres, Redis, Keycloak, OTel collector, Jaeger, migrations, API on :3000
 make dev       # or: infra in Docker, API and client on the host
-make seed      # demo data: expertises, 12 people with skills, leave, holidays (safe to run again)
+make seed      # demo data: expertises, 12 people with skills, leave, holidays, 2 programs with 6 projects (safe to run again)
 ```
 
 Inside `server/`:
