@@ -27,7 +27,7 @@ func ProvideAbsenceRepository(db *db.PostgresDB) AbsenceRepository {
 
 func (r *absenceRepository) ListForPerson(ctx context.Context, personID string) ([]models.Absence, error) {
 	var absences []models.Absence
-	err := r.db.WithContext(ctx).
+	err := r.db.From(ctx).
 		Where("person_id = ?", personID).
 		Order("from_date ASC").Order("id ASC").
 		Find(&absences).Error
@@ -36,7 +36,7 @@ func (r *absenceRepository) ListForPerson(ctx context.Context, personID string) 
 
 func (r *absenceRepository) ListHolidays(ctx context.Context) ([]models.Absence, error) {
 	var holidays []models.Absence
-	err := r.db.WithContext(ctx).
+	err := r.db.From(ctx).
 		Where("person_id IS NULL").
 		Order("from_date ASC").Order("id ASC").
 		Find(&holidays).Error

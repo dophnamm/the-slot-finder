@@ -87,3 +87,37 @@ func TestJSON(t *testing.T) {
 	require.Error(t, json.Unmarshal([]byte(`{"week":"2026-W99"}`), &payload))
 	assert.True(t, Week{}.IsZero())
 }
+
+func TestValueAndScan(t *testing.T) {
+	w, err := Parse("2026-W53")
+	require.NoError(t, err)
+	v, err := w.Value()
+	require.NoError(t, err)
+	assert.Equal(t, date(2026, time.December, 28), v)
+
+	zero, err := Week{}.Value()
+	require.NoError(t, err)
+	assert.Nil(t, zero)
+
+	var scanned Week
+	require.NoError(t, scanned.Scan(date(2026, time.December, 31)))
+	assert.Equal(t, "2026-W53", scanned.String())
+	require.NoError(t, scanned.Scan("2027-01-04"))
+	assert.Equal(t, "2027-W01", scanned.String())
+	require.NoError(t, scanned.Scan([]byte("2026-10-12")))
+	assert.Equal(t, "2026-W42", scanned.String())
+	require.NoError(t, scanned.Scan(nil))
+	assert.True(t, scanned.IsZero())
+	require.Error(t, scanned.Scan(42))
+	require.Error(t, scanned.Scan("not a date"))
+	assert.Equal(t, "date", Week{}.GormDataType())
+}
+
+func TestWeeksBetween(t *testing.T) {
+	a, _ := Parse("2026-W47")
+	b, _ := Parse("2026-W49")
+	assert.Equal(t, 2, WeeksBetween(a, b))
+	assert.Equal(t, -2, WeeksBetween(b, a))
+	c, _ := Parse("2027-W01")
+	assert.Equal(t, 7, WeeksBetween(a, c)) // 2026 has a W53
+}

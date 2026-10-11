@@ -25,6 +25,7 @@ func TestDatabaseManager_Postgres_Health(t *testing.T) {
 		tcpostgres.WithDatabase("testdb"),
 		tcpostgres.WithUsername("testuser"),
 		tcpostgres.WithPassword("testpassword"),
+		tcpostgres.BasicWaitStrategies(),
 	)
 	if err != nil {
 		t.Fatalf("failed to start postgres container: %v", err)

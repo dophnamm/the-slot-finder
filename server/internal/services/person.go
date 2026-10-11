@@ -9,6 +9,7 @@ import (
 
 	"the-slot-finder/server/internal/config"
 	"the-slot-finder/server/internal/constants"
+	"the-slot-finder/server/internal/db"
 	"the-slot-finder/server/internal/dtos"
 	"the-slot-finder/server/internal/errors"
 	"the-slot-finder/server/internal/models"
@@ -94,12 +95,13 @@ type PeopleService interface {
 
 type peopleService struct {
 	repo repositories.PersonRepository
+	tx   db.TxManager
 	cfg  *config.Config
 }
 
 // ProvidePeopleService creates the people service.
-func ProvidePeopleService(repo repositories.PersonRepository, cfg *config.Config) PeopleService {
-	return &peopleService{repo: repo, cfg: cfg}
+func ProvidePeopleService(repo repositories.PersonRepository, tx db.TxManager, cfg *config.Config) PeopleService {
+	return &peopleService{repo: repo, tx: tx, cfg: cfg}
 }
 
 // ProvidePersonFinder exposes the people service to services that only need to find a person.
@@ -206,7 +208,8 @@ func (s *peopleService) ReplaceSkills(ctx context.Context, id string, skills []S
 	if err := s.checkSkills(ctx, skills, opReplaceSkills); err != nil {
 		return nil, err
 	}
-	if err := s.repo.ReplaceSkills(ctx, id, toSkillModels(id, skills)); err != nil {
+	replace := func(ctx context.Context) error { return s.repo.ReplaceSkills(ctx, id, toSkillModels(id, skills)) }
+	if err := s.tx.Do(ctx, replace); err != nil {
 		return nil, errors.DatabaseError(constants.MsgPersonUpdateFailed, err).
 			WithOperation(opReplaceSkills).WithResource(resourcePerson)
 	}

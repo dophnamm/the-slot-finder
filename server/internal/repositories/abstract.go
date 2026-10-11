@@ -31,7 +31,7 @@ type abstractRepository[T any] struct {
 }
 
 func (r *abstractRepository[T]) FindAll(ctx context.Context, pr *dtos.PageableRequest, preloads ...string) (*dtos.DataResponse[T], error) {
-	query := r.db.WithContext(ctx)
+	query := r.db.From(ctx)
 
 	// Apply preloading if set
 	for _, preload := range preloads {
@@ -50,7 +50,7 @@ func (r *abstractRepository[T]) FindOneByID(ctx context.Context, id string) (*T,
 		return nil, err
 	}
 
-	res := r.db.WithContext(ctx).First(&entity, "id = ?", uuid)
+	res := r.db.From(ctx).First(&entity, "id = ?", uuid)
 	if res.Error != nil {
 		return nil, res.Error
 	}
@@ -58,27 +58,27 @@ func (r *abstractRepository[T]) FindOneByID(ctx context.Context, id string) (*T,
 }
 
 func (r *abstractRepository[T]) Create(ctx context.Context, entity *T) error {
-	res := r.db.WithContext(ctx).Create(entity)
+	res := r.db.From(ctx).Create(entity)
 	return res.Error
 }
 
 func (r *abstractRepository[T]) Save(ctx context.Context, entity *T) error {
-	res := r.db.WithContext(ctx).Save(entity)
+	res := r.db.From(ctx).Save(entity)
 	return res.Error
 }
 
 func (r *abstractRepository[T]) SaveAll(ctx context.Context, entities []T) error {
-	res := r.db.WithContext(ctx).Save(&entities)
+	res := r.db.From(ctx).Save(&entities)
 	return res.Error
 }
 
 func (r *abstractRepository[T]) Delete(ctx context.Context, entity *T) error {
-	res := r.db.WithContext(ctx).Delete(entity)
+	res := r.db.From(ctx).Delete(entity)
 	return res.Error
 }
 
 func (r *abstractRepository[T]) Updates(ctx context.Context, entity *T) error {
-	res := r.db.WithContext(ctx).Updates(entity)
+	res := r.db.From(ctx).Updates(entity)
 	return res.Error
 }
 
