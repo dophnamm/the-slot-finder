@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useCurrentUser } from '@/shared/auth'
+import { ActionButton } from '@/shared/components/action-button'
 import { ProgramFormDialog } from '@/shared/components/program-form-dialog'
 import { StatusBadge } from '@/shared/components/status-badge'
 import {
@@ -15,7 +16,7 @@ import {
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
-import { ProgramActionButton } from '../program-action-button'
+import { CONFIRMED_PROGRAM_ACTIONS } from './constants'
 import type { ProgramHeaderProps } from './types'
 
 export function ProgramHeader({ program }: ProgramHeaderProps) {
@@ -52,7 +53,15 @@ export function ProgramHeader({ program }: ProgramHeaderProps) {
               </Button>
             )}
             {actions.map((name) => (
-              <ProgramActionButton key={name} action={name} disabled={action.isPending} onAction={handleAction} />
+              <ActionButton
+                key={name}
+                action={name}
+                label={t(PROGRAM_ACTIONS[name].label)}
+                destructive={name === 'cancel'}
+                confirmText={CONFIRMED_PROGRAM_ACTIONS.includes(name) ? t('This cannot be undone. Open projects of a cancelled program are cancelled too. Continue?') : undefined}
+                disabled={action.isPending}
+                onAction={handleAction}
+              />
             ))}
           </CardAction>
         )}

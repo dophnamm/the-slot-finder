@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createPerson, listExpertises, listPeople, replaceSkills, updatePerson } from './api'
-import { EXPERTISES_QUERY_KEY, PEOPLE_PAGE_SIZE, PEOPLE_QUERY_KEY } from './constants'
+import { createPerson, listPeople, replaceSkills, updatePerson } from './api'
+import { PEOPLE_PAGE_SIZE, PEOPLE_QUERY_KEY } from './constants'
 import type { SavePersonInput } from './types'
 
 export function usePeople(page: number) {
@@ -9,10 +9,6 @@ export function usePeople(page: number) {
     queryFn: () => listPeople(page, PEOPLE_PAGE_SIZE),
     placeholderData: keepPreviousData,
   })
-}
-
-export function useExpertises() {
-  return useQuery({ queryKey: EXPERTISES_QUERY_KEY, queryFn: listExpertises })
 }
 
 async function savePerson(input: SavePersonInput) {

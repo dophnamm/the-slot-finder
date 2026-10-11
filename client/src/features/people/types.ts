@@ -21,10 +21,7 @@ export interface Person {
   skills: PersonSkill[]
 }
 
-export interface Expertise {
-  id: string
-  name: string
-}
+export type { Expertise } from '@/shared/expertises'
 
 export interface SkillInput {
   expertise_id: string

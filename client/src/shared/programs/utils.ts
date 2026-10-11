@@ -1,7 +1,7 @@
 import { can, type Role } from '@/resources/rbac'
 import { formatIsoWeekSpan } from '@/utils/functions'
 import { FINAL_STATUSES } from './constants'
-import type { EditorUser, PersonRef } from './types'
+import type { EditorUser, PersonRef, ProjectDetail } from './types'
 
 /** Planners edit everything; a lead edits what one of `leads` names them as lead of. */
 export function canEdit(user: EditorUser | undefined, leads: (PersonRef | null | undefined)[]): boolean {
@@ -13,6 +13,11 @@ export function canEdit(user: EditorUser | undefined, leads: (PersonRef | null |
 /** Whether a status still allows edits. */
 export function isOpenStatus(status: string): boolean {
   return !FINAL_STATUSES.includes(status)
+}
+
+/** A project's form, phases and demand are editable by a planner or either lead while it is open. */
+export function canEditProject(user: EditorUser | undefined, project: ProjectDetail): boolean {
+  return isOpenStatus(project.status) && canEdit(user, [project.lead, project.program_lead])
 }
 
 /** "2026-W42 – 2026-W47" with the dates of those weeks. */
