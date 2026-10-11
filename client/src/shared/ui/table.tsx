@@ -3,12 +3,24 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
 // Every table is bordered: a rounded frame, lines between cells and a shaded header. The borders sit on
-// the cells (border-separate), so they stay with sticky headers and columns.
-const tableContainerVariants = cva("relative w-full rounded-lg border", {
+// the cells (border-separate), so they stay with sticky headers and columns. The frame also holds the
+// footer (e.g. the pager), outside the part that scrolls.
+const tableFrameVariants = cva("relative flex w-full flex-col overflow-hidden rounded-lg border", {
+  variants: {
+    scroll: {
+      x: "",
+      // Fills the rest of a flex column.
+      both: "min-h-0 flex-1",
+    },
+  },
+  defaultVariants: { scroll: "x" },
+})
+
+const tableContainerVariants = cva("w-full", {
   variants: {
     scroll: {
       x: "overflow-x-auto",
-      // Fills the rest of a flex column and scrolls both ways, so sticky headers and columns stay in view.
+      // Scrolls both ways, so sticky headers and columns stay in view.
       both: "min-h-0 flex-1 overflow-auto",
     },
   },
@@ -18,18 +30,30 @@ const tableContainerVariants = cva("relative w-full rounded-lg border", {
 function Table({
   className,
   scroll,
+  footer,
   ...props
-}: React.ComponentProps<"table"> & VariantProps<typeof tableContainerVariants>) {
+}: React.ComponentProps<"table"> &
+  VariantProps<typeof tableContainerVariants> & { footer?: React.ReactNode }) {
   return (
-    <div
-      data-slot="table-container"
-      className={tableContainerVariants({ scroll })}
-    >
-      <table
-        data-slot="table"
-        className={cn("w-full border-separate border-spacing-0 caption-bottom text-sm", className)}
-        {...props}
-      />
+    <div data-slot="table-frame" className={tableFrameVariants({ scroll })}>
+      <div
+        data-slot="table-container"
+        className={tableContainerVariants({ scroll })}
+      >
+        <table
+          data-slot="table"
+          className={cn("w-full border-separate border-spacing-0 caption-bottom text-sm", className)}
+          {...props}
+        />
+      </div>
+      {footer && (
+        <div
+          data-slot="table-footer-bar"
+          className="flex items-center justify-end gap-2 border-t bg-muted/40 px-3 py-2"
+        >
+          {footer}
+        </div>
+      )}
     </div>
   )
 }
