@@ -1,8 +1,8 @@
 import { AbsenceList } from '@/features/absences'
 import { useCurrentUser } from '@/shared/auth'
 import { PagePlaceholder } from '@/shared/components/page-placeholder'
+import { Section } from '@/shared/components/section'
 import { useTranslation } from '@/shared/i18n'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 
 export function MySchedulePage() {
   const { t } = useTranslation()
@@ -11,21 +11,18 @@ export function MySchedulePage() {
   if (isPending) return null
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <PagePlaceholder
         title={t('My schedule')}
         description={t('Your assignments by week appear here once a staffing draft that includes you is accepted.')}
       />
       {user?.person_id ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('My absences')}</CardTitle>
-            <CardDescription>{t('Report leave or training. A planner approves it.')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AbsenceList personId={user.person_id} canApprove={false} />
-          </CardContent>
-        </Card>
+        <Section
+          title={t('My absences')}
+          description={t('Report leave or training. A planner approves it.')}
+        >
+          <AbsenceList personId={user.person_id} canApprove={false} />
+        </Section>
       ) : (
         <PagePlaceholder
           title={t('No person record')}

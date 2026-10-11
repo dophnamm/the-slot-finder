@@ -7,6 +7,7 @@ import { ActionButton } from '@/shared/components/action-button'
 import { PagePlaceholder } from '@/shared/components/page-placeholder'
 import { ProjectFormDialog } from '@/shared/components/project-form-dialog'
 import { StatusBadge } from '@/shared/components/status-badge'
+import { Section } from '@/shared/components/section'
 import {
   availableActions,
   canEdit,
@@ -19,7 +20,6 @@ import {
 import { useTranslation } from '@/shared/i18n'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { formatDate } from '@/utils/functions'
 import { Fact } from './components/fact'
 import { CONFIRMED_PROJECT_ACTIONS } from './constants'
@@ -44,16 +44,19 @@ export function ProjectSummary({ projectId }: ProjectSummaryProps) {
   const actions = editable ? availableActions(PROJECT_ACTIONS, project.status) : []
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
+    <Section
+      card
+      title={
+        <>
           {project.name}
           <StatusBadge status={project.status} kind="project" />
           {project.at_risk && <Badge variant="red">{t('At risk')}</Badge>}
-        </CardTitle>
-        <CardDescription>{t('Priority {priority}', { priority: project.priority })}</CardDescription>
-        {editable && (
-          <CardAction className="flex flex-wrap justify-end gap-2">
+        </>
+      }
+      description={t('Priority {priority}', { priority: project.priority })}
+      action={
+        editable && (
+          <>
             {isOpenStatus(project.status) && (
               <Button variant="outline" size="sm" onClick={handleEdit}>
                 {t('Edit')}
@@ -70,35 +73,36 @@ export function ProjectSummary({ projectId }: ProjectSummaryProps) {
                 onAction={handleAction}
               />
             ))}
-          </CardAction>
-        )}
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <dl className="grid gap-4 sm:grid-cols-3">
-          <Fact label={t('Program')}>
-            <Link className="font-medium hover:underline" to={generatePath(ROUTES.programDetail, { id: project.program_id })}>
-              {project.program_name ?? t('Program')}
-            </Link>
-          </Fact>
-          <Fact label={t('Lead')}>{project.lead?.name ?? t('No lead')}</Fact>
-          <Fact label={t('Scope')}>
-            {t('{done} of {scope} points done', { done: project.done_points, scope: project.scope_points })}
-          </Fact>
-          <Fact label={t('Earliest start')}>
-            {t('{date} ({week})', { date: formatDate(project.start_earliest), week: project.start_week })}
-          </Fact>
-          <Fact label={t('Deadline')}>
-            {t('{date} ({week})', { date: formatDate(project.deadline), week: project.deadline_week })}
-          </Fact>
-          <Fact label={t('Current phase')}>{project.current_phase?.name ?? t('None this week')}</Fact>
-        </dl>
-        {project.at_risk && (
-          <p className="text-sm text-destructive">
-            {t('The last phase ends after the deadline week. Move the deadline or shorten a phase.')}
-          </p>
-        )}
-      </CardContent>
+          </>
+        )
+      }
+      variant="page"
+      contentClassName="flex flex-col gap-4"
+    >
+      <dl className="grid gap-4 sm:grid-cols-3">
+        <Fact label={t('Program')}>
+          <Link className="font-medium hover:underline" to={generatePath(ROUTES.programDetail, { id: project.program_id })}>
+            {project.program_name ?? t('Program')}
+          </Link>
+        </Fact>
+        <Fact label={t('Lead')}>{project.lead?.name ?? t('No lead')}</Fact>
+        <Fact label={t('Scope')}>
+          {t('{done} of {scope} points done', { done: project.done_points, scope: project.scope_points })}
+        </Fact>
+        <Fact label={t('Earliest start')}>
+          {t('{date} ({week})', { date: formatDate(project.start_earliest), week: project.start_week })}
+        </Fact>
+        <Fact label={t('Deadline')}>
+          {t('{date} ({week})', { date: formatDate(project.deadline), week: project.deadline_week })}
+        </Fact>
+        <Fact label={t('Current phase')}>{project.current_phase?.name ?? t('None this week')}</Fact>
+      </dl>
+      {project.at_risk && (
+        <p className="text-sm text-destructive">
+          {t('The last phase ends after the deadline week. Move the deadline or shorten a phase.')}
+        </p>
+      )}
       {editing && <ProjectFormDialog open={editing} programId={project.program_id} project={project} onOpenChange={setEditing} />}
-    </Card>
+    </Section>
   )
 }

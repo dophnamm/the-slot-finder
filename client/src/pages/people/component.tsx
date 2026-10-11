@@ -12,7 +12,7 @@ export function PeoplePage() {
   const handleCloseAbsences = () => setAbsencesOf(null)
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <PeopleTable onShowAbsences={setAbsencesOf} />
       <HolidaysCard />
       <PersonAbsencesDialog person={absencesOf} canApprove={can(user?.role, 'absences:approve')} onClose={handleCloseAbsences} />
