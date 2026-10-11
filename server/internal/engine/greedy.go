@@ -2,6 +2,7 @@ package engine
 
 import (
 	"math"
+	"slices"
 	"sort"
 )
 
@@ -53,6 +54,7 @@ type planner struct {
 func (Greedy) Propose(req Request) Result {
 	p := newPlanner(req)
 	p.applyExisting(req.Existing)
+	p.keepFeasible(req.Existing)
 	for _, demand := range p.sortedDemands(req.Demands) {
 		p.plan(demand)
 	}
@@ -82,14 +84,7 @@ func newPlanner(req Request) *planner {
 // applyExisting books the starting plan: fixed load outside the request, kept locked
 // allocations inside it, and who held each requested demand before.
 func (p *planner) applyExisting(existing []ExistingAssignment) {
-	sorted := append([]ExistingAssignment{}, existing...)
-	sort.SliceStable(sorted, func(a, b int) bool {
-		if sorted[a].PersonID != sorted[b].PersonID {
-			return sorted[a].PersonID < sorted[b].PersonID
-		}
-		return sorted[a].DemandID < sorted[b].DemandID
-	})
-	for _, ea := range sorted {
+	for _, ea := range sortedExisting(existing) {
 		_, requested := p.demands[ea.DemandID]
 		if requested {
 			setTrue(p.previous, ea.DemandID, ea.PersonID)
@@ -115,6 +110,65 @@ func (p *planner) applyExisting(existing []ExistingAssignment) {
 			}
 		}
 	}
+}
+
+// keepFeasible keeps the unlocked hours of requested demand that still fit: inside the window,
+// a person who still has the skill at the level, within their free hours, not below the
+// minimum, and not past the demand's hours. Only the rest is planned again, so a re-plan
+// changes as little as possible.
+func (p *planner) keepFeasible(existing []ExistingAssignment) {
+	sorted := sortedExisting(existing)
+	byID := make(map[string]*Person, len(p.people))
+	for _, person := range p.people {
+		byID[person.ID] = person
+	}
+	for _, ea := range sorted {
+		d, requested := p.demands[ea.DemandID]
+		person := byID[ea.PersonID]
+		if !requested || person == nil {
+			continue
+		}
+		skill, ok := skillFor(person, d.Expertise)
+		if !ok || skill.Level < d.MinLevel {
+			continue
+		}
+		allocations := append([]Allocation{}, ea.Allocations...)
+		sort.SliceStable(allocations, func(i, j int) bool { return allocations[i].Week < allocations[j].Week })
+		for _, alloc := range allocations {
+			index := slices.Index(d.Weeks, alloc.Week)
+			if alloc.Locked || index < 0 {
+				continue
+			}
+			free := p.freeHours(person, d)[index]
+			hours := roundToStep(math.Min(alloc.Hours, math.Min(free, d.Hours-p.covered[d.ID])), p.policy.HourStep)
+			if hours <= epsilon || hours < p.policy.MinHoursPerWeek-epsilon {
+				continue
+			}
+			kind := KindCrossExpertise
+			if skill.Primary {
+				kind = KindPrimary
+			}
+			p.book(person.ID, d.Expertise, d.ProjectID, d.ProgramID, alloc.Week, hours)
+			p.covered[d.ID] += hours
+			a := p.assignment(person.ID, d.ID, kind)
+			if a.Kind != KindStretch {
+				a.Kind = kind
+			}
+			a.Allocations = mergeAllocation(a.Allocations, Allocation{Week: alloc.Week, Hours: hours})
+			a.Reason = appendReasons(a.Reason, []string{skillReason(person, d, skill), reasonKeptExisting})
+		}
+	}
+}
+
+func sortedExisting(existing []ExistingAssignment) []ExistingAssignment {
+	sorted := append([]ExistingAssignment{}, existing...)
+	sort.SliceStable(sorted, func(a, b int) bool {
+		if sorted[a].PersonID != sorted[b].PersonID {
+			return sorted[a].PersonID < sorted[b].PersonID
+		}
+		return sorted[a].DemandID < sorted[b].DemandID
+	})
+	return sorted
 }
 
 // sortedDemands orders demand by priority, deadline, scarcity of the expertise, then id.
@@ -157,7 +211,7 @@ func (p *planner) plan(d Demand) {
 		return
 	}
 
-	seats := p.seatCount(d, remaining)
+	seats := p.seatCount(d, remaining, p.holders(d.ID))
 	seatHours := roundToStep(remaining/float64(seats), p.policy.HourStep)
 	seated := map[string]bool{}
 	shortfall := 0.0
@@ -176,13 +230,25 @@ func (p *planner) plan(d Demand) {
 	}
 }
 
-// seatCount is the headcount, lowered so that no seat is smaller than one minimum week.
-func (p *planner) seatCount(d Demand, remaining float64) int {
-	seats := max(1, d.Headcount)
+// seatCount is the headcount not held yet by kept hours (at least one seat), lowered so that
+// no seat is smaller than one minimum week.
+func (p *planner) seatCount(d Demand, remaining float64, holders int) int {
+	seats := max(1, d.Headcount-holders)
 	if p.policy.MinHoursPerWeek > epsilon {
 		seats = min(seats, max(1, int(math.Floor(remaining/p.policy.MinHoursPerWeek+epsilon))))
 	}
 	return seats
+}
+
+// holders is how many people already have hours on the demand, kept from the starting plan.
+func (p *planner) holders(demandID string) int {
+	n := 0
+	for _, key := range p.order {
+		if key.demandID == demandID && len(p.result[key].Allocations) > 0 {
+			n++
+		}
+	}
+	return n
 }
 
 // fillSeat gives a seat to the best candidate not seated yet; when they cannot hold all of
