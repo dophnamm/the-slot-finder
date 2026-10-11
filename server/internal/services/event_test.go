@@ -78,6 +78,17 @@ func (m *MockChangeEventRepository) RecordFailure(ctx context.Context, ids []str
 	return m.Called(ctx, ids, message, now, backoff, maxAttempts).Error(0)
 }
 
+func (m *MockChangeEventRepository) LockReplanning(ctx context.Context) error {
+	return m.Called(ctx).Error(0)
+}
+
+// newEmptyEventRepository links no events to any draft.
+func newEmptyEventRepository() *MockChangeEventRepository {
+	repo := new(MockChangeEventRepository)
+	repo.On("ListByDraft", mock.Anything, mock.Anything).Return([]models.ChangeEvent{}, nil)
+	return repo
+}
+
 var eventTime = time.Date(2026, time.October, 12, 9, 30, 0, 0, time.UTC)
 
 func TestEventService_Record(t *testing.T) {

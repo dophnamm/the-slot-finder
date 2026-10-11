@@ -50,6 +50,7 @@ const (
 	DemandNotInDraft       = "DEMAND_NOT_IN_DRAFT"
 	WeekOutsideWindow      = "WEEK_OUTSIDE_WINDOW"
 	WeekRangeTooLong       = "WEEK_RANGE_TOO_LONG"
+	DraftSuperseded        = "DRAFT_SUPERSEDED"
 
 	// Email errors
 	EmailSendError = "EMAIL_SEND_ERROR"

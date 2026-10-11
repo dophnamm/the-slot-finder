@@ -120,6 +120,8 @@ const (
 	MsgWeekRangeTooLongFormat = "The range may cover at most %d weeks"
 	MsgEventsListed           = "Change events retrieved"
 	MsgEventRecordFailed      = "Could not record the change"
+	MsgDraftSuperseded        = "A change produced a newer version of this draft; open the latest one"
+	MsgReplanFailed           = "Could not re-plan after the change"
 )
 
 // Request limit messages.

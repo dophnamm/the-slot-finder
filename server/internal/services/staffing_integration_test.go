@@ -34,7 +34,8 @@ func TestStaffingService_Accept_Postgres(t *testing.T) {
 	plans := repositories.ProvidePlanRepository(pdb)
 	finder := leadPeople{}
 	service := ProvideStaffingService(plans, repositories.ProvideProjectRepository(pdb), repositories.ProvidePersonRepository(pdb),
-		repositories.ProvideAbsenceRepository(pdb), repositories.ProvideAuditRepository(pdb), finder, ProvideAuthzService(finder),
+		repositories.ProvideAbsenceRepository(pdb), repositories.ProvideAuditRepository(pdb), repositories.ProvideChangeEventRepository(pdb),
+		finder, ProvideAuthzService(finder),
 		db.ProvideTxManager(pdb), clock.NewFixed(acceptedAt), testPlanningConfig())
 	planner := asRole("kc-planner", constants.RolePlanner)
 	ctx := context.Background()

@@ -93,16 +93,18 @@ type staffingMocks struct {
 	people   *MockPersonRepository
 	absences *MockAbsenceRepository
 	audit    *MockAuditRepository
+	events   *MockChangeEventRepository
 }
 
 func newStaffingMocks() staffingMocks {
 	return staffingMocks{plans: new(MockPlanRepository), projects: new(MockProjectRepository),
-		people: new(MockPersonRepository), absences: new(MockAbsenceRepository), audit: new(MockAuditRepository)}
+		people: new(MockPersonRepository), absences: new(MockAbsenceRepository), audit: new(MockAuditRepository),
+		events: newEmptyEventRepository()}
 }
 
 func (m staffingMocks) service() StaffingService {
 	finder := leadPeople{}
-	return ProvideStaffingService(m.plans, m.projects, m.people, m.absences, m.audit, finder, ProvideAuthzService(finder),
+	return ProvideStaffingService(m.plans, m.projects, m.people, m.absences, m.audit, m.events, finder, ProvideAuthzService(finder),
 		passthroughTx{}, clock.NewFixed(acceptedAt), testPlanningConfig())
 }
 
@@ -270,6 +272,7 @@ func TestStaffingService_Edit(t *testing.T) {
 		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(), nil)
 		m.projects.On("FindDetail", mock.Anything, projectID).Return(projectWithExpertise(t), nil)
 		m.people.On("FindWithSkills", mock.Anything, otherPersonID2).Return(juniorQA, nil)
+		m.plans.On("Touch", mock.Anything, staffingDraftID, acceptedAt).Return(nil)
 		var added *models.Assignment
 		m.plans.On("CreateAssignment", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 			added = args.Get(1).(*models.Assignment)
@@ -317,6 +320,7 @@ func TestStaffingService_Edit(t *testing.T) {
 				m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(tt.draft, nil)
 				m.projects.On("FindDetail", mock.Anything, projectID).Return(projectWithExpertise(t), nil)
 				m.people.On("FindWithSkills", mock.Anything, mock.Anything).Return(juniorQA, nil)
+				m.plans.On("Touch", mock.Anything, staffingDraftID, acceptedAt).Return(nil)
 				_, err := m.service().Edit(planner, staffingDraftID, tt.in)
 				requireAppError(t, err, tt.wantCode, tt.status)
 				m.plans.AssertNotCalled(t, "CreateAssignment", mock.Anything, mock.Anything)
