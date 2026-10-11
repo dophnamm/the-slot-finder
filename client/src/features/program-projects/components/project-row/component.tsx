@@ -19,7 +19,7 @@ export function ProjectRow({ project }: ProjectRowProps) {
     <TableRow>
       <TableCell>
         <div className="flex flex-col">
-          <Link className="font-medium hover:underline" to={generatePath(ROUTES.projectDetail, { id: project.id })}>
+          <Link className="font-medium hover:underline" to={generatePath(ROUTES.projectDetail, { programId: project.program_id, id: project.id })}>
             {project.name}
           </Link>
           <span className="text-xs text-muted-foreground">{t('Priority {priority}', { priority: project.priority })}</span>

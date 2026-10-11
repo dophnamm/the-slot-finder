@@ -16,7 +16,7 @@ export function IntakeRow({ project }: IntakeRowProps) {
       <TableCell>
         <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
-            <Link className="font-medium hover:underline" to={generatePath(ROUTES.projectDetail, { id: project.id })}>
+            <Link className="font-medium hover:underline" to={generatePath(ROUTES.projectDetail, { programId: project.program_id, id: project.id })}>
               {project.name}
             </Link>
             {project.at_risk && <Badge variant="red">{t('At risk')}</Badge>}

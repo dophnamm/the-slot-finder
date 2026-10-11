@@ -6,8 +6,9 @@ export const ROUTES = {
   programs: '/programs',
   programDetail: '/programs/:id',
   intake: '/intake',
-  projectDetail: '/projects/:id',
-  staffingDraft: '/staffing-drafts/:id',
+  // Nested like the breadcrumbs, so the sidebar marks Programs on a project and Intake on a draft.
+  projectDetail: '/programs/:programId/projects/:id',
+  staffingDraft: '/intake/staffing-drafts/:id',
   scenarios: '/scenarios',
   people: '/people',
   mySchedule: '/me',

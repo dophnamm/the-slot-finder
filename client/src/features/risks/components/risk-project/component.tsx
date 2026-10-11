@@ -12,7 +12,7 @@ export function RiskProject({ project }: RiskProjectProps) {
   return (
     <li className="flex flex-col gap-1 rounded-md border p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Link className="font-medium hover:underline" to={generatePath(ROUTES.projectDetail, { id: project.id })}>
+        <Link className="font-medium hover:underline" to={generatePath(ROUTES.projectDetail, { programId: project.program_id, id: project.id })}>
           {project.name}
         </Link>
         <span className="text-xs text-muted-foreground">{t('Deadline {week}', { week: project.deadline_week })}</span>

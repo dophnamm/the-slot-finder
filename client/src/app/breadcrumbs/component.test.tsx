@@ -32,14 +32,14 @@ describe('Breadcrumbs', () => {
   })
 
   it('walks from Programs through the program to the project', () => {
-    renderAt('/projects/p1')
+    renderAt('/programs/g1/projects/p1')
     expect(screen.getByRole('link', { name: 'Programs' }).getAttribute('href')).toBe(ROUTES.programs)
     expect(screen.getByRole('link', { name: 'Acme Commerce Platform' }).getAttribute('href')).toBe('/programs/g1')
     expect(screen.getByText('Checkout Revamp').getAttribute('aria-current')).toBe('page')
   })
 
   it('links a staffing draft back to the intake queue', () => {
-    renderAt('/staffing-drafts/d1')
+    renderAt('/intake/staffing-drafts/d1')
     expect(screen.getByRole('link', { name: 'Intake' }).getAttribute('href')).toBe(ROUTES.intake)
     expect(screen.getByText('Staffing draft')).toBeTruthy()
   })
