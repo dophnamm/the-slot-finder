@@ -7,6 +7,7 @@
  * value type is a placeholder.
  */
 export type LanguageKey = {
+  '+{expertise} {hours}': string
   'A customer engagement that groups projects under one timeline.': string
   'A later end week moves every later phase by the same number of weeks.': string
   'A new project starts as incoming until a staffing draft is accepted.': string
@@ -28,12 +29,14 @@ export type LanguageKey = {
   'Add skill': string
   Added: string
   After: string
+  'All expertises': string
   Approved: string
   'Approved absence always lowers capacity; planned absence does when the setting is on.': string
   Assigned: string
   Assignments: string
   'At risk': string
   'Back to dashboard': string
+  'Baseline load against capacity per person and ISO week. Click a cell to see its assignments.': string
   Before: string
   'Before the change': string
   'Budget hours': string
@@ -91,6 +94,7 @@ export type LanguageKey = {
   Expertise: string
   'Expertise, levels and weekly hours of everyone who can be staffed.': string
   From: string
+  'From week': string
   'From {date}': string
   'Generate a new draft': string
   'Go to your home page': string
@@ -98,6 +102,7 @@ export type LanguageKey = {
   'Goal: {goal}': string
   'Has stretch': string
   Headcount: string
+  Healthy: string
   Holiday: string
   'Holiday added.': string
   'Holidays lower everyone’s capacity on those days.': string
@@ -124,12 +129,14 @@ export type LanguageKey = {
   'My absences': string
   'My schedule': string
   Name: string
+  'Near full': string
   Needed: string
   'New phase': string
   'New program': string
   Next: string
   'No absences yet.': string
   'No access': string
+  'No assignments this week.': string
   'No changes against the baseline.': string
   'No demand yet.': string
   'No free capacity in the window': string
@@ -140,25 +147,28 @@ export type LanguageKey = {
   'No people yet.': string
   'No person record': string
   'No phases yet': string
+  'No primary skill': string
   'No programs yet.': string
   'No projects yet.': string
   'Nobody has the minimum level': string
   'Nobody has this expertise': string
   'Nobody is assigned yet.': string
+  'Nobody matches these filters.': string
   'Non-project hours': string
   'None this week': string
+  'Not primary': string
   'Objectives, one per line': string
   'On hold': string
   Open: string
   'Open the charter': string
   'Ordered by priority, then deadline.': string
+  Overloaded: string
   'Page not found': string
   'Page {page} of {pages}': string
   People: string
   Person: string
   'Person saved.': string
   'Person to add': string
-  'Person × week heatmap, with overload and deadline-risk alerts.': string
   Phase: string
   'Phase name': string
   'Phase saved.': string
@@ -167,6 +177,8 @@ export type LanguageKey = {
   Phases: string
   'Phases saved.': string
   Planned: string
+  'Planned leave this week, not approved yet.': string
+  'Planned leave, not approved yet': string
   Planner: string
   Previous: string
   Primary: string
@@ -209,9 +221,6 @@ export type LanguageKey = {
   Scenarios: string
   Scope: string
   'Scope points': string
-  'Server: checking…': string
-  'Server: OK': string
-  'Server: unreachable': string
   'Short {hours} h': string
   'Sign in': string
   'Sign in to reach the dashboard or your own schedule.': string
@@ -230,6 +239,7 @@ export type LanguageKey = {
   Status: string
   Stretch: string
   Superseded: string
+  'Team heatmap': string
   'The baseline changed to version {version} since this draft was made, so it can no longer be accepted.': string
   'The free hours are held by locked allocations': string
   'The last phase ends after the deadline week. Move the deadline or shorten a phase.': string
@@ -248,6 +258,8 @@ export type LanguageKey = {
   Training: string
   'Try again': string
   Type: string
+  Unavailable: string
+  Underused: string
   'Unexpected error.': string
   'Unlock hours': string
   'Until {date}': string
@@ -261,17 +273,25 @@ export type LanguageKey = {
   'Your role cannot open this page.': string
   'Your session has ended. Sign in again.': string
   '{client} · lead: {lead} · {timeline}': string
+  '{count} weeks': string
   '{date} ({week})': string
   '{done} of {scope} points done': string
   '{expertise} (level {level}+)': string
+  '{expertise} ({count})': string
   '{expertise} · level {level}': string
+  '{expertise} · {program}': string
   '{hours} h': string
   '{hours} h non-project': string
   '{hours} h per day': string
   '{hours} h per week': string
+  '{load} of {capacity} h · {band}': string
+  '{load}/{capacity} h': string
   '{name} (stretch)': string
+  '{percent}%': string
+  '{person} in {week}': string
   '{project} ({program})': string
   '{project} · {expertise} · {phase}': string
   '{start} – {end}': string
   '{start} – {end} · level {level}+ · {assigned} of {hours} h': string
+  '{week} ({dates})': string
 }

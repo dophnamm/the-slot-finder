@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PROGRAMS_QUERY_KEY, PROJECTS_QUERY_KEY } from '@/shared/programs'
+import { INSIGHTS_QUERY_KEY } from '@/utils/constants'
 import { acceptDraft, editDraft, generateDraft, getDraft, rejectDraft } from './api'
 import { draftQueryKey, PLAN_VERSION_CONFLICT } from './constants'
 import type { Draft, DraftAcceptance, DraftEdit } from './types'
@@ -24,8 +25,8 @@ export function useEditDraft(id: string) {
   return useMutation({ mutationFn: (edit: DraftEdit) => editDraft(id, edit), onSuccess: store })
 }
 
-/** Accepting changes project statuses, so project and program lists refetch. A version
- * conflict is shown on the page, not as a toast. */
+/** Accepting changes the baseline and project statuses, so insights and project and program
+ * lists refetch. A version conflict is shown on the page, not as a toast. */
 export function useAcceptDraft(id: string) {
   const queryClient = useQueryClient()
   const store = useStoreDraft()
@@ -36,6 +37,7 @@ export function useAcceptDraft(id: string) {
       store(draft)
       await queryClient.invalidateQueries({ queryKey: PROJECTS_QUERY_KEY })
       await queryClient.invalidateQueries({ queryKey: PROGRAMS_QUERY_KEY })
+      await queryClient.invalidateQueries({ queryKey: INSIGHTS_QUERY_KEY })
     },
     onError: (error) => {
       if (error.code === PLAN_VERSION_CONFLICT) void queryClient.invalidateQueries({ queryKey: draftQueryKey(id) })
