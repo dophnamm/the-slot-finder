@@ -122,6 +122,8 @@ const (
 	MsgEventRecordFailed      = "Could not record the change"
 	MsgDraftSuperseded        = "A change produced a newer version of this draft; open the latest one"
 	MsgReplanFailed           = "Could not re-plan after the change"
+	MsgOverviewRetrieved      = "Program overview retrieved"
+	MsgRisksRetrieved         = "Risks retrieved"
 )
 
 // Request limit messages.

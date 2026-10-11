@@ -43,6 +43,9 @@ type ProjectRepository interface {
 	DeleteDemands(ctx context.Context, ids []string) error
 	// CancelOpen cancels a program's projects that are not done or cancelled yet.
 	CancelOpen(ctx context.Context, programID string) error
+	// ListForMetrics returns the projects that are not cancelled, of one program or all when
+	// programID is empty, with program, lead, phases and demand.
+	ListForMetrics(ctx context.Context, programID string) ([]models.Project, error)
 }
 
 type projectRepository struct {
@@ -63,6 +66,19 @@ func (r *projectRepository) ListByProgram(ctx context.Context, programID string)
 		Where("program_id = ?", programID).
 		Order("priority ASC").Order("deadline ASC").Order("id ASC").
 		Find(&projects).Error
+	return projects, err
+}
+
+func (r *projectRepository) ListForMetrics(ctx context.Context, programID string) ([]models.Project, error) {
+	var projects []models.Project
+	query := r.db.From(ctx).
+		Preload(projectProgramPreload).Preload(projectLeadPreload).Preload(projectPhasesPreload, phasesInOrder).
+		Preload(projectDemandsPreload).Preload(demandExpertisePreload).
+		Where("status <> ?", constants.ProjectStatusCancelled)
+	if programID != "" {
+		query = query.Where("program_id = ?", programID)
+	}
+	err := query.Order("priority ASC").Order("deadline ASC").Order("id ASC").Find(&projects).Error
 	return projects, err
 }
 

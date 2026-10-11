@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"time"
 
 	"the-slot-finder/server/internal/capacity"
 	"the-slot-finder/server/internal/clock"
@@ -12,13 +13,18 @@ import (
 	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/errors"
 	"the-slot-finder/server/internal/isoweek"
+	"the-slot-finder/server/internal/metrics"
 	"the-slot-finder/server/internal/models"
 	"the-slot-finder/server/internal/repositories"
 )
 
 const (
-	opHeatmap       = "heatmap"
-	resourceHeatmap = "heatmap"
+	opHeatmap         = "heatmap"
+	opProgramOverview = "program_overview"
+	opProjectMetrics  = "project_metrics"
+	opRisks           = "risks"
+	resourceHeatmap   = "heatmap"
+	resourceMetrics   = "metrics"
 )
 
 // HeatmapInput asks for the heatmap of a week range, optionally for one expertise. A nil
@@ -35,12 +41,22 @@ type InsightsService interface {
 	// expertise per week. With an expertise, it keeps people who hold that skill or work on
 	// it in the range.
 	Heatmap(ctx context.Context, in HeatmapInput) (*models.Heatmap, error)
+	// ProgramOverview is a program's progress and cost figures summed over its projects that
+	// are not cancelled, with staffing by expertise.
+	ProgramOverview(ctx context.Context, programID string) (*models.ProgramOverview, error)
+	// ProjectMetrics is the progress of each project of a program, by project id.
+	ProjectMetrics(ctx context.Context, programID string) (map[string]metrics.Progress, error)
+	// Risks lists open projects that are understaffed, at risk or behind on delivery, and
+	// people over 100 % in the next HEATMAP_DEFAULT_WEEKS weeks.
+	Risks(ctx context.Context) (*models.Risks, error)
 }
 
 type insightsService struct {
 	plans    repositories.PlanRepository
 	people   repositories.PersonRepository
 	absences repositories.AbsenceRepository
+	programs repositories.ProgramRepository
+	projects repositories.ProjectRepository
 	authz    AuthzService
 	clock    clock.Clock
 	cfg      *config.Config
@@ -48,15 +64,22 @@ type insightsService struct {
 
 // ProvideInsightsService creates the insights service.
 func ProvideInsightsService(plans repositories.PlanRepository, people repositories.PersonRepository,
-	absences repositories.AbsenceRepository, authz AuthzService, clk clock.Clock, cfg *config.Config,
+	absences repositories.AbsenceRepository, programs repositories.ProgramRepository, projects repositories.ProjectRepository,
+	authz AuthzService, clk clock.Clock, cfg *config.Config,
 ) InsightsService {
-	return &insightsService{plans: plans, people: people, absences: absences, authz: authz, clock: clk, cfg: cfg}
+	return &insightsService{plans: plans, people: people, absences: absences, programs: programs, projects: projects,
+		authz: authz, clock: clk, cfg: cfg}
 }
 
 func (s *insightsService) Heatmap(ctx context.Context, in HeatmapInput) (*models.Heatmap, error) {
 	if _, err := s.authz.Require(ctx, CanViewInsights); err != nil {
 		return nil, err
 	}
+	return s.heatmap(ctx, in)
+}
+
+// heatmap builds the heatmap without the permission check, for Heatmap and Risks.
+func (s *insightsService) heatmap(ctx context.Context, in HeatmapInput) (*models.Heatmap, error) {
 	from, to, err := s.weekRange(in)
 	if err != nil {
 		return nil, err
@@ -218,4 +241,174 @@ func keepsExpertise(row models.HeatmapRow, expertiseID string) bool {
 		}
 	}
 	return false
+}
+
+// plannedHours is a demand's baseline hours in total and up to and including the current week.
+type plannedHours struct {
+	total  float64
+	toDate float64
+}
+
+func plannedByDemand(assignments []models.Assignment, current isoweek.Week) map[string]plannedHours {
+	out := map[string]plannedHours{}
+	for _, a := range assignments {
+		hours := out[a.DemandID]
+		for _, alloc := range a.Allocations {
+			hours.total += alloc.Hours
+			if !alloc.Week.After(current) {
+				hours.toDate += alloc.Hours
+			}
+		}
+		out[a.DemandID] = hours
+	}
+	return out
+}
+
+// today is the organization's current date, as a UTC date like the stored dates.
+func (s *insightsService) today() time.Time {
+	now := s.clock.Now().In(s.clock.Location())
+	return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+func (s *insightsService) settings() metrics.Settings {
+	return metrics.Settings{ScopeLagThreshold: s.cfg.ScopeLagThreshold, AlertHorizonWeeks: s.cfg.AlertHorizonWeeks}
+}
+
+// projectInput is a project's metric input from its demand and the baseline.
+func (s *insightsService) projectInput(p models.Project, planned map[string]plannedHours, today time.Time) metrics.Input {
+	current := isoweek.Of(today)
+	in := metrics.Input{Start: p.StartEarliest, End: p.Deadline, Today: today, ScopePoints: p.ScopePoints, DonePoints: p.DonePoints,
+		WeeksToDeadline: isoweek.WeeksBetween(current, p.DeadlineWeek()), LastPhaseLate: p.AtRisk(),
+		Closed: p.Status == constants.ProjectStatusDone || p.Status == constants.ProjectStatusCancelled}
+	for _, d := range p.Demands {
+		in.BudgetHours += d.TotalHours
+		in.PlannedHours += planned[d.ID].total
+		in.PlannedToDateHours += planned[d.ID].toDate
+	}
+	return in
+}
+
+// metricsData loads the projects (one program, or all) and the baseline's planned hours.
+func (s *insightsService) metricsData(ctx context.Context, programID, op string) ([]models.Project, map[string]plannedHours, time.Time, error) {
+	projects, err := s.projects.ListForMetrics(ctx, programID)
+	if err != nil {
+		return nil, nil, time.Time{}, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(op).WithResource(resourceMetrics)
+	}
+	baseline, err := findBaseline(ctx, s.plans, op, true)
+	if err != nil {
+		return nil, nil, time.Time{}, err
+	}
+	today := s.today()
+	return projects, plannedByDemand(baseline.Assignments, isoweek.Of(today)), today, nil
+}
+
+func (s *insightsService) ProgramOverview(ctx context.Context, programID string) (*models.ProgramOverview, error) {
+	if _, err := s.authz.Require(ctx, CanUsePrograms); err != nil {
+		return nil, err
+	}
+	program, err := s.programs.FindWithLead(ctx, programID)
+	if err != nil {
+		return nil, notFoundOrDatabase(err, constants.ProgramNotFound, constants.MsgProgramNotFound, resourceProgram, opProgramOverview)
+	}
+	projects, planned, today, err := s.metricsData(ctx, programID, opProgramOverview)
+	if err != nil {
+		return nil, err
+	}
+	in := metrics.Input{Start: program.StartDate, End: program.EndDate, Today: today,
+		WeeksToDeadline: isoweek.WeeksBetween(isoweek.Of(today), isoweek.Of(program.EndDate)),
+		Closed:          program.Status == constants.ProgramStatusClosed || program.Status == constants.ProgramStatusCancelled}
+	byExpertise := map[string]*models.ExpertiseStaffing{}
+	var order []string
+	for _, p := range projects {
+		pin := s.projectInput(p, planned, today)
+		in.ScopePoints += pin.ScopePoints
+		in.DonePoints += pin.DonePoints
+		in.BudgetHours += pin.BudgetHours
+		in.PlannedHours += pin.PlannedHours
+		in.PlannedToDateHours += pin.PlannedToDateHours
+		in.LastPhaseLate = in.LastPhaseLate || metrics.Compute(pin, s.settings()).AtRisk
+		for _, d := range p.Demands {
+			row, ok := byExpertise[d.ExpertiseID]
+			if !ok {
+				row = &models.ExpertiseStaffing{Expertise: d.Expertise}
+				byExpertise[d.ExpertiseID] = row
+				order = append(order, d.ExpertiseID)
+			}
+			row.BudgetHours += d.TotalHours
+			row.PlannedHours += planned[d.ID].total
+		}
+	}
+	rows := make([]models.ExpertiseStaffing, 0, len(order))
+	for _, id := range order {
+		row := byExpertise[id]
+		progress := metrics.Compute(metrics.Input{BudgetHours: row.BudgetHours, PlannedHours: row.PlannedHours}, s.settings())
+		row.GapHours, row.StaffingPercent, row.Understaffed = progress.GapHours, progress.StaffingPercent, progress.Understaffed
+		rows = append(rows, *row)
+	}
+	sort.SliceStable(rows, func(i, j int) bool {
+		if rows[i].Expertise.Sequence != rows[j].Expertise.Sequence {
+			return rows[i].Expertise.Sequence < rows[j].Expertise.Sequence
+		}
+		return rows[i].Expertise.Name < rows[j].Expertise.Name
+	})
+	return &models.ProgramOverview{Program: *program, Metrics: metrics.Compute(in, s.settings()), ByExpertise: rows, Projects: len(projects)}, nil
+}
+
+func (s *insightsService) ProjectMetrics(ctx context.Context, programID string) (map[string]metrics.Progress, error) {
+	if _, err := s.authz.Require(ctx, CanUsePrograms); err != nil {
+		return nil, err
+	}
+	projects, planned, today, err := s.metricsData(ctx, programID, opProjectMetrics)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]metrics.Progress, len(projects))
+	for _, p := range projects {
+		out[p.ID] = metrics.Compute(s.projectInput(p, planned, today), s.settings())
+	}
+	return out, nil
+}
+
+func (s *insightsService) Risks(ctx context.Context) (*models.Risks, error) {
+	if _, err := s.authz.Require(ctx, CanViewInsights); err != nil {
+		return nil, err
+	}
+	projects, planned, today, err := s.metricsData(ctx, "", opRisks)
+	if err != nil {
+		return nil, err
+	}
+	risks := &models.Risks{Projects: []models.ProjectRisk{}, People: []models.PersonOverload{}}
+	for _, p := range projects {
+		if p.Status == constants.ProjectStatusDone {
+			continue
+		}
+		progress := metrics.Compute(s.projectInput(p, planned, today), s.settings())
+		if progress.AtRisk || progress.Understaffed || progress.BehindOnDelivery {
+			risks.Projects = append(risks.Projects, models.ProjectRisk{Project: p, Metrics: progress})
+		}
+	}
+	sort.SliceStable(risks.Projects, func(i, j int) bool {
+		a, b := risks.Projects[i].Metrics, risks.Projects[j].Metrics
+		if a.AtRisk != b.AtRisk {
+			return a.AtRisk
+		}
+		return a.Understaffed && !b.Understaffed
+	})
+
+	heatmap, err := s.heatmap(ctx, HeatmapInput{})
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range heatmap.Rows {
+		var weeks []models.HeatmapCell
+		for _, cell := range row.Cells {
+			if cell.Band == constants.BandOverloaded {
+				weeks = append(weeks, cell)
+			}
+		}
+		if len(weeks) > 0 {
+			risks.People = append(risks.People, models.PersonOverload{Person: row.Person, Weeks: weeks})
+		}
+	}
+	return risks, nil
 }

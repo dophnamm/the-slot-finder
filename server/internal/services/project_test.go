@@ -55,6 +55,11 @@ func (m *MockProjectRepository) ListByProgram(ctx context.Context, programID str
 	return args.Get(0).([]models.Project), args.Error(1)
 }
 
+func (m *MockProjectRepository) ListForMetrics(ctx context.Context, programID string) ([]models.Project, error) {
+	args := m.Called(ctx, programID)
+	return args.Get(0).([]models.Project), args.Error(1)
+}
+
 func (m *MockProjectRepository) ListByStatus(ctx context.Context, status string, page *dtos.PageableRequest) (*dtos.DataResponse[models.Project], error) {
 	args := m.Called(ctx, status, page)
 	return args.Get(0).(*dtos.DataResponse[models.Project]), args.Error(1)

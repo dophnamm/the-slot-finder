@@ -126,9 +126,11 @@ type ProjectResponse struct {
 	Lead          *PersonRef `json:"lead"`
 	CreatedAt     time.Time  `json:"created_at"`
 	// StaffedAt is when an accepted staffing draft first covered the whole project.
-	StaffedAt    *time.Time     `json:"staffed_at"`
-	AtRisk       bool           `json:"at_risk"`
-	CurrentPhase *PhaseResponse `json:"current_phase"`
+	StaffedAt *time.Time `json:"staffed_at"`
+	// Metrics is set on a program's project list: Time, Scope, Planned burn and Staffing.
+	Metrics      *ProgressResponse `json:"metrics,omitempty"`
+	AtRisk       bool              `json:"at_risk"`
+	CurrentPhase *PhaseResponse    `json:"current_phase"`
 }
 
 // ProjectDetailResponse is a project with its phases and demand.

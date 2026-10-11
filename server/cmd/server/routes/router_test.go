@@ -80,7 +80,7 @@ func newTestRouter(cfg *config.Config) *echo.Echo {
 	person := handlers.ProvidePersonHandler(nil, authz, nil)
 	absence := handlers.ProvideAbsenceHandler(nil, nil)
 	program := handlers.ProvideProgramHandler(nil, nil)
-	project := handlers.ProvideProjectHandler(nil, nil, nil)
+	project := handlers.ProvideProjectHandler(nil, nil, nil, nil)
 	plan := handlers.ProvidePlanHandler(nil, nil)
 	staffing := handlers.ProvideStaffingHandler(nil, nil)
 	insights := handlers.ProvideInsightsHandler(nil, nil)
@@ -206,6 +206,8 @@ func TestRouter_People_RBAC(t *testing.T) {
 		{name: "lead cannot edit a staffing draft", method: http.MethodPatch, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa/assignments", token: "lead-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read a staffing draft", method: http.MethodGet, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the change history", method: http.MethodGet, path: constants.PathEvents, token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot read the risks", method: http.MethodGet, path: constants.PathRisks, token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot read a program overview", method: http.MethodGet, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/overview", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the heatmap", method: http.MethodGet, path: constants.PathHeatmap, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the baseline", method: http.MethodGet, path: constants.PathCurrentPlan, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no role cannot read assignments", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/assignments", token: "no-role-token", wantStatus: http.StatusForbidden},

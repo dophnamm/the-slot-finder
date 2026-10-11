@@ -19,9 +19,10 @@ const (
 	PathAbsence        = "/absences/:id"
 	PathHolidays       = "/holidays"
 
-	PathPrograms      = "/programs"
-	PathProgram       = "/programs/:id"
-	PathProgramAction = "/programs/:id/actions/:action"
+	PathPrograms        = "/programs"
+	PathProgram         = "/programs/:id"
+	PathProgramAction   = "/programs/:id/actions/:action"
+	PathProgramOverview = "/programs/:id/overview"
 
 	PathProgramProjects = "/programs/:id/projects"
 	PathProjects        = "/projects"
@@ -40,6 +41,7 @@ const (
 	PathDraftReject       = "/staffing-drafts/:id/reject"
 
 	PathHeatmap = "/insights/heatmap"
+	PathRisks   = "/insights/risks"
 
 	PathEvents = "/events"
 )

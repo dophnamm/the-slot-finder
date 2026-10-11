@@ -70,3 +70,40 @@ func optionalWeek(value string) (*isoweek.Week, error) {
 	}
 	return &week, nil
 }
+
+// ProgramOverview godoc
+// @Summary A program's overview
+// @Description Time, Scope, Planned burn and Staffing with their warnings, cost figures (budget, planned, forecast, gap, planned to date) and staffing by expertise, summed over projects that are not cancelled.
+// @Tags Programs
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Program id"
+// @Success 200 {object} object{meta=dtos.Meta,data=dtos.ProgramOverviewResponse}
+// @Router /programs/{id}/overview [get]
+func (h *InsightsHandler) ProgramOverview(c *echo.Context) error {
+	id, ok := h.pathID(c)
+	if !ok {
+		return nil
+	}
+	overview, err := h.insights.ProgramOverview(c.Request().Context(), id)
+	if err != nil {
+		return h.HandleError(c, err)
+	}
+	return h.SuccessResponse(c, constants.MsgOverviewRetrieved, dtos.NewProgramOverviewResponse(*overview), nil)
+}
+
+// Risks godoc
+// @Summary Risks
+// @Description Open projects that are understaffed, at risk or behind on delivery, and people over 100 % in the next HEATMAP_DEFAULT_WEEKS weeks.
+// @Tags Insights
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} object{meta=dtos.Meta,data=dtos.RisksResponse}
+// @Router /insights/risks [get]
+func (h *InsightsHandler) Risks(c *echo.Context) error {
+	risks, err := h.insights.Risks(c.Request().Context())
+	if err != nil {
+		return h.HandleError(c, err)
+	}
+	return h.SuccessResponse(c, constants.MsgRisksRetrieved, dtos.NewRisksResponse(*risks), nil)
+}

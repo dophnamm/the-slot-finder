@@ -101,7 +101,7 @@ func heatmapConfig() *config.Config {
 
 func newInsightsService(plans *MockPlanRepository, people *MockPersonRepository, absences *MockAbsenceRepository) InsightsService {
 	finder := leadPeople{}
-	return ProvideInsightsService(plans, people, absences, ProvideAuthzService(finder),
+	return ProvideInsightsService(plans, people, absences, nil, nil, ProvideAuthzService(finder),
 		clock.NewFixed(time.Date(2026, time.October, 14, 9, 0, 0, 0, time.UTC)), heatmapConfig())
 }
 
