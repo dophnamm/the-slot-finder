@@ -3,7 +3,7 @@
 **Goal:** the Planner gets a squad for incoming projects in seconds, with a reason for every choice, edits it, and accepts it into the baseline. This covers G1 in the [root README](../../README.md#1-problem-and-scope).
 
 **Roles:** planner (generate, edit, accept, reject), lead (view drafts that touch their programs).
-**Target:** 12–13 Oct · **Depends on:** [programs-and-demand](programs-and-demand.md) · **Branch:** `feat/staffing-draft` · **Status:** In review
+**Target:** 12–13 Oct · **Depends on:** [programs-and-demand](programs-and-demand.md) · **Branch:** `feat/staffing-draft` · **Status:** Done (PR #8)
 
 ## In scope
 
