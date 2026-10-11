@@ -3,7 +3,7 @@
 **Goal:** each program shows how far along it is and whether it is understaffed, and the team sees one list of risks. This covers G1 and G2 in the [root README](../../README.md#1-problem-and-scope).
 
 **Roles:** planner, lead.
-**Target:** 16 Oct · **Depends on:** [staffing-draft](staffing-draft.md) · **Branch:** `feat/program-metrics`
+**Target:** 16 Oct · **Depends on:** [staffing-draft](staffing-draft.md) · **Branch:** `feat/program-metrics` · **Status:** In review
 
 ## In scope
 
@@ -43,6 +43,15 @@
 - Program values sum over projects that are not cancelled.
 - Warnings are flags in the response (`behind_on_delivery`, `understaffed`, `at_risk`, `over_planned`). The Client shows them and never compares numbers itself.
 
+**As built**
+- The formulas live in `internal/metrics` as pure functions with "today" as a parameter. Percentages are 0–100; Time % is 0 before the start and may pass 100, which sets `past_end` while the work is not closed.
+- `at_risk` also covers a gap with the deadline already past. A program is at risk when any of its projects is.
+- A project's Time % runs from `start_earliest` to `deadline`; a program's from its start to end date.
+- The overview sums over projects that are not cancelled, done ones included. The risks list leaves out done and cancelled projects.
+- Overloaded people are those over 100 % in the next `HEATMAP_DEFAULT_WEEKS` weeks from the current week, the same range the dashboard heatmap shows.
+- `GET /programs/{id}/projects` adds a `metrics` object to each project.
+- An incoming project without accepted assignments shows its whole budget as the gap, so it is understaffed until a staffing draft covers it.
+
 ## Client
 
 - `/programs/:id`:
@@ -53,6 +62,7 @@
 - `/`: the risks list next to the heatmap.
 - Feature folders: `features/program-overview` and `features/program-projects` move from mock data to API data; `features/risks` is new.
 - A `null` metric is shown as "—".
+- As built: `MetricBar` (shared) draws each percentage with its bar, red on a warning. The dashboard puts the risks list next to the heatmap on wide screens and above it otherwise.
 
 ## Acceptance criteria
 
@@ -68,13 +78,13 @@ With "now" pinned in tests:
 ## Tasks
 
 **Server**
-- [ ] Metric functions with a Clock; overview, projects and risks endpoints
-- [ ] Settings used: `SCOPE_LAG_THRESHOLD`, `ALERT_HORIZON_WEEKS`; constants; Swagger
+- [x] Metric functions with a Clock; overview, projects and risks endpoints
+- [x] Settings used: `SCOPE_LAG_THRESHOLD`, `ALERT_HORIZON_WEEKS`; constants; Swagger
 
 **Client**
-- [ ] Program header bars and warnings, cost figures, staffing table, project rows from the API
-- [ ] Risks list on the dashboard
+- [x] Program header bars and warnings, cost figures, staffing table, project rows from the API
+- [x] Risks list on the dashboard
 
 **Tests**
-- [ ] One table test per formula, including `null` on a zero denominator
-- [ ] Component tests for the bars and the risks list
+- [x] One table test per formula, including `null` on a zero denominator
+- [x] Component tests for the bars and the risks list

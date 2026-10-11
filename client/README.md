@@ -207,7 +207,8 @@ client/
     │   ├── intake/
     │   ├── draft-review/
     │   ├── heatmap/              ← the dashboard; filters in use-heatmap-filters.ts (Zustand)
-    │   └── replan-banner/ · change-history/
+    │   ├── replan-banner/ · change-history/
+    │   └── risks/                ← the dashboard's risks list, next to the heatmap
     ├── resources/
     │   ├── endpoints/            ← server API paths per domain (HEALTH_ENDPOINTS, PROGRAM_ENDPOINTS)
     │   ├── routes/               ← client route paths (ROUTES)

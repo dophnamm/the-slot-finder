@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The Slot Finder assigns incoming customer projects to cross-functional squads (PM, Analyst, Engineer, QA), forecasts who is overloaded or idle per ISO week, and re-plans when projects slip or people take leave. `README.md` is the architecture source of truth: goals, data model, metrics formulas, flows and ADRs. `docs/architecture.drawio` mirrors its diagrams. `server/README.md` and `client/README.md` hold the per-side details, API table and screens. `docs/features/` holds one spec per feature in build order (scope, acceptance criteria, tasks); read the feature's spec before building it.
 
-Status: sign-in, people-and-skills, programs-and-demand, staffing-draft, team-heatmap and replan-on-change are built; `docs/features/README.md` tracks the rest (program metrics).
+Status: all seven features in `docs/features/README.md` are built (sign-in through program metrics). Next: a sign-in that looks native through a Keycloak login theme.
 
 ## Repo-wide rules
 
@@ -64,7 +64,7 @@ A Program contains Projects. A Project is split into ordered **Phases** (week ra
 - A result is saved as a versioned `PLAN` of kind `draft`, shown in the UI as a "staffing draft". The word "proposal" is avoided because it means a business proposal.
 - A Planner accepts the draft with `baseVersion` and it becomes the new `baseline`. A stale version gets `409`.
 - A ChangeEvent (leave, slipped deadline) triggers a re-plan. Events are debounced, and there is at most one open auto re-plan draft per baseline: later events are merged into it, keeping the Planner's edits and locks.
-- All metrics (utilization, gap, staffing %, Time/Scope/Planned burn %, EAC hours, capacity forecast) are computed on the server. The formulas are in `README.md` section 7. Thresholds and policy defaults are server config (`server/README.md` section 8).
+- All metrics (utilization, gap, staffing %, Time/Scope/Planned burn %, EAC hours, capacity forecast) are computed on the server, as pure functions in `internal/metrics`. The formulas are in `README.md` section 7. Thresholds and policy defaults are server config (`server/README.md` section 8).
 
 ### Server (Go, Echo v5, not Gin)
 
