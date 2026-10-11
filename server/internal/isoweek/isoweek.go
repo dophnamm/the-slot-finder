@@ -156,3 +156,12 @@ func (w *Week) scanText(text string) error {
 func WeeksBetween(a, b Week) int {
 	return int(b.Monday().Sub(a.Monday()).Hours() / (24 * daysPerWeek))
 }
+
+// Range lists every week from from through to, in order; it is empty when to is before from.
+func Range(from, to Week) []Week {
+	var weeks []Week
+	for w := from; !w.After(to); w = w.AddWeeks(1) {
+		weeks = append(weeks, w)
+	}
+	return weeks
+}

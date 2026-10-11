@@ -24,6 +24,8 @@ type PersonRepository interface {
 	// ReplaceSkills deletes a person's skills and inserts the new ones. Run it inside
 	// TxManager.Do so both steps commit together.
 	ReplaceSkills(ctx context.Context, personID string, skills []models.PersonSkill) error
+	// ListActive returns every active person with their skills, ordered by id.
+	ListActive(ctx context.Context) ([]models.Person, error)
 	ListExpertises(ctx context.Context) ([]models.Expertise, error)
 	CountExpertises(ctx context.Context, ids []string) (int64, error)
 }
@@ -77,6 +79,12 @@ func (r *personRepository) ReplaceSkills(ctx context.Context, personID string, s
 		return nil
 	}
 	return tx.Omit("Expertise").Create(&skills).Error
+}
+
+func (r *personRepository) ListActive(ctx context.Context) ([]models.Person, error) {
+	var people []models.Person
+	err := r.db.From(ctx).Preload(personSkillsPreload).Where("active = ?", true).Order("id ASC").Find(&people).Error
+	return people, err
 }
 
 func (r *personRepository) ListExpertises(ctx context.Context) ([]models.Expertise, error) {

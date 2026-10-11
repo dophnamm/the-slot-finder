@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"time"
 
 	"the-slot-finder/server/internal/db"
 	"the-slot-finder/server/internal/models"
@@ -14,6 +15,9 @@ type AbsenceRepository interface {
 	ListForPerson(ctx context.Context, personID string) ([]models.Absence, error)
 	// ListHolidays returns the company-wide holidays (no person), oldest first.
 	ListHolidays(ctx context.Context) ([]models.Absence, error)
+	// ListOverlapping returns every absence, personal or holiday, that touches the dates
+	// from through to.
+	ListOverlapping(ctx context.Context, from, to time.Time) ([]models.Absence, error)
 }
 
 type absenceRepository struct {
@@ -41,4 +45,13 @@ func (r *absenceRepository) ListHolidays(ctx context.Context) ([]models.Absence,
 		Order("from_date ASC").Order("id ASC").
 		Find(&holidays).Error
 	return holidays, err
+}
+
+func (r *absenceRepository) ListOverlapping(ctx context.Context, from, to time.Time) ([]models.Absence, error) {
+	var absences []models.Absence
+	err := r.db.From(ctx).
+		Where("from_date <= ? AND to_date >= ?", to, from).
+		Order("from_date ASC").Order("id ASC").
+		Find(&absences).Error
+	return absences, err
 }

@@ -99,6 +99,12 @@ const (
 	MsgPlanLoadFailed         = "Could not load the plan"
 	MsgAssignmentsListed      = "Assignments retrieved"
 	MsgWeekRangeInvalid       = "to must not be before from"
+	MsgDraftCreated           = "Staffing draft created"
+	MsgDraftRetrieved         = "Staffing draft retrieved"
+	MsgDraftSaveFailed        = "Could not save the staffing draft"
+	MsgPlanNotFound           = "Staffing draft not found"
+	MsgProjectNotPlannable    = "Only incoming, planned or active projects can be staffed"
+	MsgNoDemandToStaff        = "The chosen projects have no demand to staff; add demand first"
 )
 
 // Request limit messages.

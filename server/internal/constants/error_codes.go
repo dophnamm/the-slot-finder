@@ -38,6 +38,9 @@ const (
 	DemandNotInProject     = "DEMAND_NOT_IN_PROJECT"
 	ExpertiseUnknown       = "EXPERTISE_UNKNOWN"
 	WeekRangeInvalid       = "WEEK_RANGE_INVALID"
+	PlanNotFound           = "PLAN_NOT_FOUND"
+	ProjectNotPlannable    = "PROJECT_NOT_PLANNABLE"
+	NoDemandToStaff        = "NO_DEMAND_TO_STAFF"
 
 	// Email errors
 	EmailSendError = "EMAIL_SEND_ERROR"

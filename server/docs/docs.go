@@ -1810,6 +1810,106 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/staffing-drafts": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The planning engine staffs the projects' demand on top of the baseline. Only incoming, planned or active projects.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Staffing drafts"
+                ],
+                "summary": "Generate a staffing draft",
+                "parameters": [
+                    {
+                        "description": "Projects to staff",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.GenerateDraftRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.DraftResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/staffing-drafts/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The draft's assignments for the covered demand, coverage and unmet reasons, and changes against the baseline in force.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Staffing drafts"
+                ],
+                "summary": "A staffing draft",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Draft id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.DraftResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -2257,6 +2357,171 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.DraftDemandResponse": {
+            "type": "object",
+            "properties": {
+                "assigned_hours": {
+                    "type": "number",
+                    "example": 80
+                },
+                "expertise": {
+                    "type": "string",
+                    "example": "QA"
+                },
+                "from_week": {
+                    "type": "string",
+                    "example": "2026-W48"
+                },
+                "headcount": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "hours": {
+                    "type": "number",
+                    "example": 100
+                },
+                "id": {
+                    "type": "string"
+                },
+                "min_level": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "phase": {
+                    "type": "string",
+                    "example": "Test"
+                },
+                "project": {
+                    "type": "string",
+                    "example": "Checkout Revamp"
+                },
+                "project_id": {
+                    "type": "string"
+                },
+                "to_week": {
+                    "type": "string",
+                    "example": "2026-W50"
+                },
+                "unmet_reason": {
+                    "description": "UnmetReason is the engine's code for hours it could not place when it made the draft.",
+                    "type": "string",
+                    "enum": [
+                        "NO_SKILL",
+                        "LEVEL_TOO_LOW",
+                        "NO_CAPACITY_BEFORE_DEADLINE",
+                        "BLOCKED_BY_LOCKED"
+                    ]
+                }
+            }
+        },
+        "dtos.DraftProjectResponse": {
+            "type": "object",
+            "properties": {
+                "deadline_week": {
+                    "type": "string",
+                    "example": "2026-W50"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Checkout Revamp"
+                },
+                "priority": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "program": {
+                    "type": "string",
+                    "example": "Acme Commerce Platform"
+                },
+                "program_id": {
+                    "type": "string"
+                },
+                "staffed_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "incoming"
+                }
+            }
+        },
+        "dtos.DraftResponse": {
+            "type": "object",
+            "properties": {
+                "assignments": {
+                    "description": "Assignments are those of the covered demand; the rest of the baseline is unchanged.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.AssignmentResponse"
+                    }
+                },
+                "base_version": {
+                    "description": "BaseVersion is the baseline version the draft was built on; send it back to accept.",
+                    "type": "integer",
+                    "example": 3
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.PlanChangeResponse"
+                    }
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "current_version": {
+                    "description": "CurrentVersion is the baseline in force now. Stale is true when they differ.",
+                    "type": "integer",
+                    "example": 3
+                },
+                "demands": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.DraftDemandResponse"
+                    }
+                },
+                "has_stretch": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "projects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.DraftProjectResponse"
+                    }
+                },
+                "published_at": {
+                    "type": "string"
+                },
+                "stale": {
+                    "type": "boolean"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "draft",
+                        "published",
+                        "rejected",
+                        "superseded"
+                    ]
+                },
+                "weeks": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "2026-W42",
+                        "2026-W43"
+                    ]
+                }
+            }
+        },
         "dtos.ExpertiseResponse": {
             "type": "object",
             "properties": {
@@ -2266,6 +2531,22 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "QA"
+                }
+            }
+        },
+        "dtos.GenerateDraftRequest": {
+            "type": "object",
+            "required": [
+                "project_ids"
+            ],
+            "properties": {
+                "project_ids": {
+                    "type": "array",
+                    "maxItems": 20,
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -2442,6 +2723,41 @@ const docTemplate = `{
                 "start_week": {
                     "type": "string",
                     "example": "2026-W42"
+                }
+            }
+        },
+        "dtos.PlanChangeResponse": {
+            "type": "object",
+            "properties": {
+                "after_hours": {
+                    "type": "number",
+                    "example": 80
+                },
+                "before_hours": {
+                    "type": "number",
+                    "example": 0
+                },
+                "change": {
+                    "type": "string",
+                    "enum": [
+                        "added",
+                        "removed",
+                        "changed"
+                    ]
+                },
+                "demand_id": {
+                    "type": "string"
+                },
+                "expertise": {
+                    "type": "string",
+                    "example": "QA"
+                },
+                "person": {
+                    "$ref": "#/definitions/dtos.PersonRef"
+                },
+                "project": {
+                    "type": "string",
+                    "example": "Checkout Revamp"
                 }
             }
         },

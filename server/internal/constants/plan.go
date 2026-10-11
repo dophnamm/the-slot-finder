@@ -22,6 +22,16 @@ const (
 	AssignmentKindStretch        = "stretch"
 )
 
+// Plan change kinds in a draft's diff against the baseline.
+const (
+	PlanChangeAdded   = "added"
+	PlanChangeRemoved = "removed"
+	PlanChangeChanged = "changed"
+)
+
+// PlannableProjectStatuses are the project statuses a staffing draft may cover.
+var PlannableProjectStatuses = []string{ProjectStatusIncoming, ProjectStatusPlanned, ProjectStatusActive}
+
 // Audit actions and resources.
 const (
 	AuditActionPlanAccepted = "plan.accepted"

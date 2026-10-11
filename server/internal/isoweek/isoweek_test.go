@@ -121,3 +121,18 @@ func TestWeeksBetween(t *testing.T) {
 	c, _ := Parse("2027-W01")
 	assert.Equal(t, 7, WeeksBetween(a, c)) // 2026 has a W53
 }
+
+func TestRange(t *testing.T) {
+	from, err := Parse("2026-W52")
+	require.NoError(t, err)
+	to, err := Parse("2027-W02")
+	require.NoError(t, err)
+
+	weeks := Range(from, to)
+	labels := make([]string, len(weeks))
+	for i, w := range weeks {
+		labels[i] = w.String()
+	}
+	assert.Equal(t, []string{"2026-W52", "2026-W53", "2027-W01", "2027-W02"}, labels)
+	assert.Empty(t, Range(to, from))
+}

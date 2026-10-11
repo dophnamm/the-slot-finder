@@ -34,6 +34,17 @@ type PlanUnmet struct {
 	Reason   string
 }
 
+// PlanChange is how one person's hours on one demand differ between two plans. It is
+// computed for review, not stored.
+type PlanChange struct {
+	PersonID   string
+	PersonName string
+	// Demand has its expertise and project loaded when either plan had them.
+	Demand *Demand
+	Before float64
+	After  float64
+}
+
 // Assignment is one person covering one demand in a plan, with weekly allocations.
 type Assignment struct {
 	BaseModel
