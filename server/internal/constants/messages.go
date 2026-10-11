@@ -61,6 +61,24 @@ const (
 	MsgAbsenceDeleteFailed = "Could not delete the absence"
 )
 
+// Program and project messages.
+const (
+	MsgProgramsListed         = "Programs retrieved"
+	MsgProgramRetrieved       = "Program retrieved"
+	MsgProgramCreated         = "Program created"
+	MsgProgramUpdated         = "Program updated"
+	MsgProgramNotFound        = "Program not found"
+	MsgProgramDatesInvalid    = "end_date must not be before start_date"
+	MsgProgramSaveFailed      = "Could not save the program"
+	MsgProgramListFailed      = "Could not list programs"
+	MsgStateTransitionInvalid = "This action is not allowed in the current status"
+	MsgActionUnknown          = "Unknown action"
+	MsgNoPersonRecord         = "Your account has no person record; ask a planner to add you"
+	MsgLeadNotFound           = "lead_id does not match a person"
+	MsgMustUseAction          = "cannot be set here; use an action"
+	MsgWeekInvalid            = "must be an ISO week like 2026-W42"
+)
+
 // Request limit messages.
 const (
 	MsgRateLimitExceeded       = "Rate limit exceeded"

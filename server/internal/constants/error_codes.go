@@ -21,6 +21,14 @@ const (
 	AbsenceNotFound     = "ABSENCE_NOT_FOUND"
 	AbsenceDatesInvalid = "ABSENCE_DATES_INVALID"
 
+	// Program and project errors
+	ProgramNotFound        = "PROGRAM_NOT_FOUND"
+	ProgramDatesInvalid    = "PROGRAM_DATES_INVALID"
+	InvalidStateTransition = "INVALID_STATE_TRANSITION"
+	UnknownAction          = "UNKNOWN_ACTION"
+	NoPersonRecord         = "NO_PERSON_RECORD"
+	LeadNotFound           = "LEAD_NOT_FOUND"
+
 	// Email errors
 	EmailSendError = "EMAIL_SEND_ERROR"
 

@@ -30,4 +30,9 @@ var (
 	HolidayViewRoles = []string{RolePlanner, RoleLead, RoleSpecialist}
 	// HolidayManageRoles may add and remove holidays.
 	HolidayManageRoles = []string{RolePlanner}
+	// ProgramRoles may reach the program and project routes; leads may edit only the
+	// programs and projects they lead (checked in the service).
+	ProgramRoles = []string{RolePlanner, RoleLead}
+	// ProgramManageAllRoles may edit every program and project and choose their leads.
+	ProgramManageAllRoles = []string{RolePlanner}
 )

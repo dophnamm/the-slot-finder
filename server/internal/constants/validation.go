@@ -10,4 +10,10 @@ const (
 	ValidationTagAbsenceType = "absence_type"
 	// ValidationTagAbsenceStatus accepts only the values in AbsenceStatuses.
 	ValidationTagAbsenceStatus = "absence_status"
+	// ValidationTagISOWeek accepts an existing ISO week such as 2026-W42.
+	ValidationTagISOWeek = "isoweek"
+	// ValidationTagDemandProfile accepts only the values in SupportedDemandProfiles.
+	ValidationTagDemandProfile = "demand_profile"
+	// ValidationTagMustBeEmpty is the validator's built-in isdefault: the field must not be sent.
+	ValidationTagMustBeEmpty = "isdefault"
 )
