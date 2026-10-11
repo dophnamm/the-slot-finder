@@ -91,6 +91,8 @@ type DraftView struct {
 	BaselineVersion int
 	// Changes compares the draft with the baseline in force, person by person and demand by demand.
 	Changes []models.PlanChange
+	// Events are the changes that triggered a re-plan draft; empty for a draft a Planner asked for.
+	Events []models.ChangeEvent
 }
 
 // StaffingService generates staffing drafts with the planning engine and shows them for review.
@@ -110,26 +112,34 @@ type StaffingService interface {
 	Reject(ctx context.Context, id string) (*DraftView, error)
 }
 
-type staffingService struct {
-	plans    repositories.PlanRepository
+// draftBuilder reads what the engine needs and builds its request; staffing drafts and
+// re-plans share it.
+type draftBuilder struct {
 	projects repositories.ProjectRepository
 	people   repositories.PersonRepository
 	absences repositories.AbsenceRepository
-	audit    repositories.AuditRepository
-	finder   PersonFinder
-	authz    AuthzService
-	tx       db.TxManager
-	clock    clock.Clock
 	cfg      *config.Config
+}
+
+type staffingService struct {
+	draftBuilder
+	plans  repositories.PlanRepository
+	audit  repositories.AuditRepository
+	events repositories.ChangeEventRepository
+	finder PersonFinder
+	authz  AuthzService
+	tx     db.TxManager
+	clock  clock.Clock
 }
 
 // ProvideStaffingService creates the staffing service.
 func ProvideStaffingService(plans repositories.PlanRepository, projects repositories.ProjectRepository,
 	people repositories.PersonRepository, absences repositories.AbsenceRepository, audit repositories.AuditRepository,
-	finder PersonFinder, authz AuthzService, tx db.TxManager, clk clock.Clock, cfg *config.Config,
+	events repositories.ChangeEventRepository, finder PersonFinder, authz AuthzService, tx db.TxManager, clk clock.Clock,
+	cfg *config.Config,
 ) StaffingService {
-	return &staffingService{plans: plans, projects: projects, people: people, absences: absences, audit: audit,
-		finder: finder, authz: authz, tx: tx, clock: clk, cfg: cfg}
+	return &staffingService{draftBuilder: draftBuilder{projects: projects, people: people, absences: absences, cfg: cfg},
+		plans: plans, audit: audit, events: events, finder: finder, authz: authz, tx: tx, clock: clk}
 }
 
 func (s *staffingService) Generate(ctx context.Context, in GenerateDraftInput) (*DraftView, error) {
@@ -151,7 +161,7 @@ func (s *staffingService) Generate(ctx context.Context, in GenerateDraftInput) (
 	if err != nil {
 		return nil, err
 	}
-	req, err := s.snapshot(ctx, projects, baseline)
+	req, err := s.snapshot(ctx, projects, baseline.Assignments, s.policy(s.cfg.PlanningWeightStability))
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +197,7 @@ func (s *staffingService) Get(ctx context.Context, id string) (*DraftView, error
 }
 
 // loadProjects reads each project with its phases, demand and program.
-func (s *staffingService) loadProjects(ctx context.Context, ids []string, op string) ([]models.Project, error) {
+func (s *draftBuilder) loadProjects(ctx context.Context, ids []string, op string) ([]models.Project, error) {
 	projects := make([]models.Project, 0, len(ids))
 	for _, id := range ids {
 		project, err := s.projects.FindDetail(ctx, id)
@@ -201,7 +211,7 @@ func (s *staffingService) loadProjects(ctx context.Context, ids []string, op str
 
 // snapshot builds the engine request: the projects' demand with their windows, every active
 // person with their capacity over those weeks, and the baseline as the starting plan.
-func (s *staffingService) snapshot(ctx context.Context, projects []models.Project, baseline *models.Plan) (engine.Request, error) {
+func (s *draftBuilder) snapshot(ctx context.Context, projects []models.Project, existing []models.Assignment, policy engine.Policy) (engine.Request, error) {
 	demands, from, to := engineDemands(projects)
 	if len(demands) == 0 {
 		return engine.Request{}, errors.NewAppError(constants.NoDemandToStaff, constants.MsgNoDemandToStaff, errors.ErrorTypeConflict,
@@ -216,14 +226,15 @@ func (s *staffingService) snapshot(ctx context.Context, projects []models.Projec
 		return engine.Request{}, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opGenerateDraft).WithResource(resourceDraft)
 	}
 	return engine.Request{
-		Policy:   s.policy(),
+		Policy:   policy,
 		People:   s.enginePeople(people, absences, isoweek.Range(from, to)),
 		Demands:  demands,
-		Existing: engineExisting(baseline.Assignments),
+		Existing: engineExisting(existing),
 	}, nil
 }
 
-func (s *staffingService) policy() engine.Policy {
+// policy is the planning policy from config, with the given stability weight.
+func (s *draftBuilder) policy(stability float64) engine.Policy {
 	return engine.Policy{
 		TargetUtilization:          s.cfg.PlanningTargetUtilization,
 		MaxUtilization:             s.cfg.PlanningMaxUtilization,
@@ -234,7 +245,7 @@ func (s *staffingService) policy() engine.Policy {
 			Deadline:   s.cfg.PlanningWeightDeadline,
 			PrimaryFit: s.cfg.PlanningWeightPrimaryFit,
 			Balance:    s.cfg.PlanningWeightBalance,
-			Stability:  s.cfg.PlanningWeightStability,
+			Stability:  stability,
 			Continuity: s.cfg.PlanningWeightContinuity,
 		},
 	}
@@ -242,7 +253,7 @@ func (s *staffingService) policy() engine.Policy {
 
 // enginePeople gives each person their skills and capacity per week: weekly hours minus
 // non-project hours and absence (their own and company holidays), 0 outside employment.
-func (s *staffingService) enginePeople(people []models.Person, absences []models.Absence, weeks []isoweek.Week) []engine.Person {
+func (s *draftBuilder) enginePeople(people []models.Person, absences []models.Absence, weeks []isoweek.Week) []engine.Person {
 	policy := capacityPolicy(s.cfg)
 	out := make([]engine.Person, 0, len(people))
 	for _, p := range people {
@@ -362,9 +373,13 @@ func (s *staffingService) view(ctx context.Context, id, op string) (*DraftView, 
 	if err != nil {
 		return nil, err
 	}
+	events, err := s.events.ListByDraft(ctx, plan.ID)
+	if err != nil {
+		return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(op).WithResource(resourceDraft)
+	}
 	_, from, to := engineDemands(projects)
 	return &DraftView{Plan: plan, Projects: projects, Weeks: isoweek.Range(from, to), BaselineVersion: baseline.Version,
-		Changes: diffPlans(baseline, plan)}, nil
+		Changes: diffPlans(baseline, plan), Events: events}, nil
 }
 
 // diffPlans lists every person and demand whose hours differ between two plans, ordered by
@@ -450,6 +465,9 @@ func (s *staffingService) openDraft(ctx context.Context, id, op string) (*models
 	if err != nil {
 		return nil, notFoundOrDatabase(err, constants.PlanNotFound, constants.MsgPlanNotFound, resourceDraft, op)
 	}
+	if plan.Kind == constants.PlanKindDraft && plan.Status == constants.PlanStatusSuperseded {
+		return nil, draftError(constants.DraftSuperseded, constants.MsgDraftSuperseded, http.StatusConflict, op)
+	}
 	if plan.Kind != constants.PlanKindDraft || plan.Status != constants.PlanStatusDraft {
 		return nil, errors.NewAppError(constants.DraftNotEditable, constants.MsgDraftNotEditable, errors.ErrorTypeConflict,
 			http.StatusConflict).WithOperation(op).WithResource(resourceDraft)
@@ -502,6 +520,9 @@ func (s *staffingService) Edit(ctx context.Context, id string, in EditDraftInput
 		return nil, err
 	}
 	err = s.tx.Do(ctx, func(ctx context.Context) error {
+		if err := s.plans.Touch(ctx, plan.ID, s.clock.Now().UTC()); err != nil {
+			return err
+		}
 		if err := s.removeAssignments(ctx, plan, in.Remove); err != nil {
 			return err
 		}

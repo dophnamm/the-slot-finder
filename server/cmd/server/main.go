@@ -197,6 +197,7 @@ func appOptions(cfg *config.Config) []fx.Option {
 			services.ProvideInsightsService,
 			services.ProvideEventService,
 			services.ProvideEventRecorder,
+			services.ProvideReplanService,
 			handlers.ProvideHealthHandler,
 			handlers.ProvideIdentityHandler,
 			handlers.ProvidePersonHandler,
@@ -210,6 +211,7 @@ func appOptions(cfg *config.Config) []fx.Option {
 		),
 		fx.Invoke(func(*http.Server) {}),
 		fx.Invoke(registerBaselineHook),
+		fx.Invoke(registerReplanRunner),
 	}
 }
 
@@ -234,4 +236,27 @@ func ProvideGormPostgres(cfg *config.Config) *db.PostgresDB {
 // so the first accepted staffing draft follows the same path as every later one.
 func registerBaselineHook(lc fx.Lifecycle, plans services.PlanService) {
 	lc.Append(fx.Hook{OnStart: plans.EnsureBaseline})
+}
+
+// registerReplanRunner runs the re-plan runner in the background from startup until shutdown.
+func registerReplanRunner(lc fx.Lifecycle, replan services.ReplanService) {
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	lc.Append(fx.Hook{
+		OnStart: func(context.Context) error {
+			go func() {
+				defer close(done)
+				replan.Run(ctx)
+			}()
+			return nil
+		},
+		OnStop: func(stopCtx context.Context) error {
+			cancel()
+			select {
+			case <-done:
+			case <-stopCtx.Done():
+			}
+			return nil
+		},
+	})
 }

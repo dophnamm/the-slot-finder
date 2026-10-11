@@ -87,6 +87,20 @@ func (m *MockPlanRepository) SetStatus(ctx context.Context, id, status string) e
 	return m.Called(ctx, id, status).Error(0)
 }
 
+func (m *MockPlanRepository) FindOpenAutoDraft(ctx context.Context, version int) (*models.Plan, error) {
+	args := m.Called(ctx, version)
+	return planOrNil(args.Get(0)), args.Error(1)
+}
+
+func (m *MockPlanRepository) SupersedeDraft(ctx context.Context, id string, readAt time.Time, newID string) (int64, error) {
+	args := m.Called(ctx, id, readAt, newID)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockPlanRepository) Touch(ctx context.Context, id string, at time.Time) error {
+	return m.Called(ctx, id, at).Error(0)
+}
+
 func (m *MockPlanRepository) FindAssignment(ctx context.Context, id string) (*models.Assignment, error) {
 	args := m.Called(ctx, id)
 	if a, ok := args.Get(0).(*models.Assignment); ok {

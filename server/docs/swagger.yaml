@@ -462,6 +462,10 @@ definitions:
         items:
           $ref: '#/definitions/dtos.AssignmentResponse'
         type: array
+      auto:
+        description: Auto is true for a re-plan draft that change events created;
+          TriggeredBy lists them.
+        type: boolean
       base_version:
         description: BaseVersion is the baseline version the draft was built on; send
           it back to accept.
@@ -501,6 +505,14 @@ definitions:
         - rejected
         - superseded
         type: string
+      superseded_by:
+        description: SupersededBy is the newer version of a re-plan draft that replaced
+          this one.
+        type: string
+      triggered_by:
+        items:
+          $ref: '#/definitions/dtos.ChangeEventResponse'
+        type: array
       weeks:
         example:
         - 2026-W42

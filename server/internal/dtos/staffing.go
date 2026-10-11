@@ -122,12 +122,17 @@ type DraftResponse struct {
 	Assignments []AssignmentResponse `json:"assignments"`
 	Changes     []PlanChangeResponse `json:"changes"`
 	HasStretch  bool                 `json:"has_stretch"`
+	// Auto is true for a re-plan draft that change events created; TriggeredBy lists them.
+	Auto        bool                  `json:"auto"`
+	TriggeredBy []ChangeEventResponse `json:"triggered_by"`
+	// SupersededBy is the newer version of a re-plan draft that replaced this one.
+	SupersededBy *string `json:"superseded_by"`
 }
 
 // NewDraftResponse maps a draft with its projects, the weeks they span, the baseline
 // version in force and the changes against it.
 func NewDraftResponse(plan models.Plan, projects []models.Project, weeks []isoweek.Week, currentVersion int,
-	changes []models.PlanChange,
+	changes []models.PlanChange, events []models.ChangeEvent,
 ) DraftResponse {
 	covered := map[string]bool{}
 	for _, p := range projects {
@@ -160,6 +165,7 @@ func NewDraftResponse(plan models.Plan, projects []models.Project, weeks []isowe
 		PublishedAt: plan.PublishedAt, Weeks: labels, Projects: newDraftProjects(projects),
 		Demands: newDraftDemands(projects, assigned, unmet), Assignments: NewAssignmentResponses(assignments),
 		Changes: newPlanChanges(changes), HasStretch: hasStretch,
+		Auto: len(events) > 0, TriggeredBy: NewChangeEventResponses(events), SupersededBy: plan.SupersededBy,
 	}
 }
 

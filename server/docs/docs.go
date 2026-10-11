@@ -2850,6 +2850,10 @@ const docTemplate = `{
                         "$ref": "#/definitions/dtos.AssignmentResponse"
                     }
                 },
+                "auto": {
+                    "description": "Auto is true for a re-plan draft that change events created; TriggeredBy lists them.",
+                    "type": "boolean"
+                },
                 "base_version": {
                     "description": "BaseVersion is the baseline version the draft was built on; send it back to accept.",
                     "type": "integer",
@@ -2901,6 +2905,16 @@ const docTemplate = `{
                         "rejected",
                         "superseded"
                     ]
+                },
+                "superseded_by": {
+                    "description": "SupersededBy is the newer version of a re-plan draft that replaced this one.",
+                    "type": "string"
+                },
+                "triggered_by": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ChangeEventResponse"
+                    }
                 },
                 "weeks": {
                     "type": "array",

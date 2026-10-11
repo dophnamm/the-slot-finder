@@ -50,6 +50,14 @@ type PlanRepository interface {
 	Publish(ctx context.Context, id string, version int, at time.Time, by *string) error
 	// SetStatus changes a plan's status.
 	SetStatus(ctx context.Context, id, status string) error
+	// FindOpenAutoDraft returns the open re-plan draft built on a baseline version, with its
+	// assignments: a draft that change events link to.
+	FindOpenAutoDraft(ctx context.Context, version int) (*models.Plan, error)
+	// SupersedeDraft marks a draft superseded by a newer version, only while it is still an
+	// open draft last changed at readAt. It returns the rows changed: 0 means it changed.
+	SupersedeDraft(ctx context.Context, id string, readAt time.Time, newID string) (int64, error)
+	// Touch records that a draft changed, so a re-plan merge does not drop the change.
+	Touch(ctx context.Context, id string, at time.Time) error
 	// FindAssignment returns one assignment with its allocations.
 	FindAssignment(ctx context.Context, id string) (*models.Assignment, error)
 	CreateAssignment(ctx context.Context, assignment *models.Assignment) error
@@ -131,6 +139,30 @@ func (r *planRepository) Publish(ctx context.Context, id string, version int, at
 
 func (r *planRepository) SetStatus(ctx context.Context, id, status string) error {
 	return r.db.From(ctx).Model(&models.Plan{}).Where("id = ?", id).Update("status", status).Error
+}
+
+func (r *planRepository) FindOpenAutoDraft(ctx context.Context, version int) (*models.Plan, error) {
+	var plan models.Plan
+	err := r.withAssignments(ctx).
+		Where("kind = ? AND status = ? AND version = ?", constants.PlanKindDraft, constants.PlanStatusDraft, version).
+		Where("EXISTS (SELECT 1 FROM change_events WHERE change_events.draft_id = plans.id)").
+		Order("created_at DESC").Order("id DESC").
+		First(&plan).Error
+	if err != nil {
+		return nil, err
+	}
+	return &plan, nil
+}
+
+func (r *planRepository) SupersedeDraft(ctx context.Context, id string, readAt time.Time, newID string) (int64, error) {
+	result := r.db.From(ctx).Model(&models.Plan{}).
+		Where("id = ? AND status = ? AND updated_at = ?", id, constants.PlanStatusDraft, readAt).
+		Updates(map[string]any{"status": constants.PlanStatusSuperseded, "superseded_by": newID})
+	return result.RowsAffected, result.Error
+}
+
+func (r *planRepository) Touch(ctx context.Context, id string, at time.Time) error {
+	return r.db.From(ctx).Model(&models.Plan{}).Where("id = ?", id).UpdateColumn("updated_at", at).Error
 }
 
 func (r *planRepository) FindAssignment(ctx context.Context, id string) (*models.Assignment, error) {

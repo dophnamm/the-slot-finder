@@ -36,7 +36,13 @@ type ChangeEventRepository interface {
 	// RecordFailure counts a failed attempt on pending events: it keeps the error, makes them
 	// available again after backoff × attempts, and fails those that reach maxAttempts.
 	RecordFailure(ctx context.Context, ids []string, message string, now time.Time, backoff time.Duration, maxAttempts int) error
+	// LockReplanning takes a transaction-wide lock so only one runner, on any server, builds
+	// re-plan drafts at a time; it keeps one open auto draft per baseline.
+	LockReplanning(ctx context.Context) error
 }
+
+// replanLockKey names the advisory lock that serializes re-plan batches.
+const replanLockKey = "slot-finder.replan"
 
 type changeEventRepository struct {
 	abstractRepository[models.ChangeEvent]
@@ -80,6 +86,10 @@ func (r *changeEventRepository) ListByDraft(ctx context.Context, draftID string)
 	var events []models.ChangeEvent
 	err := r.db.From(ctx).Where("draft_id = ?", draftID).Order("occurred_at ASC").Order("id ASC").Find(&events).Error
 	return events, err
+}
+
+func (r *changeEventRepository) LockReplanning(ctx context.Context) error {
+	return r.db.From(ctx).Exec("SELECT pg_advisory_xact_lock(hashtext(?))", replanLockKey).Error
 }
 
 func (r *changeEventRepository) RecordFailure(ctx context.Context, ids []string, message string, now time.Time, backoff time.Duration, maxAttempts int) error {
