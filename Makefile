@@ -65,8 +65,9 @@ lint: ## Lint the server and the client
 	cd $(SERVER_DIR) && $(MAKE) lint
 	cd $(CLIENT_DIR) && npm run lint
 
-test: ## Run the server tests
+test: ## Run the server and client tests
 	cd $(SERVER_DIR) && go test ./...
+	cd $(CLIENT_DIR) && npm test
 
 build: ## Build the server and the client
 	cd $(SERVER_DIR) && go build ./...

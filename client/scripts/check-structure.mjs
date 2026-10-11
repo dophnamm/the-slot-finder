@@ -7,7 +7,7 @@ const SRC = new URL('../src/', import.meta.url).pathname
 const ROOTS = ['app', 'pages', 'features', 'shared/components']
 // app/ also holds bootstrap files that are not components.
 const ROOT_FILES = { app: ['main.tsx', 'router.tsx'] }
-const ALLOWED_FILES = /^(index\.ts|component\.tsx|types\.ts|mock-data\.ts|constants\.ts|utils\.ts|api\.ts|use-[a-z0-9-]+\.ts)$/
+const ALLOWED_FILES = /^(index\.ts|component\.tsx|types\.ts|mock-data\.ts|constants\.ts|utils\.ts|api\.ts|use-[a-z0-9-]+\.ts|(component|utils|use-[a-z0-9-]+)\.test\.tsx?)$/
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/
 // owner (1) → components/child (2) → components/grandchild (3)
 const MAX_COMPONENTS_DEPTH = 2
@@ -40,7 +40,7 @@ function checkFolder(dir, componentsDepth) {
         problems.push(`${relative(SRC, path)}: only a components/ folder may sit inside a component or feature folder`)
       }
     } else if (!ALLOWED_FILES.test(entry)) {
-      problems.push(`${relative(SRC, path)}: unexpected file name (allowed: index.ts, component.tsx, types.ts, mock-data.ts, constants.ts, utils.ts, api.ts, use-*.ts)`)
+      problems.push(`${relative(SRC, path)}: unexpected file name (allowed: index.ts, component.tsx, types.ts, mock-data.ts, constants.ts, utils.ts, api.ts, use-*.ts, and component/utils/use-* .test.ts(x))`)
     }
   }
 }
