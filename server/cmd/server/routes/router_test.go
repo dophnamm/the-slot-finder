@@ -79,7 +79,8 @@ func newTestRouter(cfg *config.Config) *echo.Echo {
 	health := handlers.ProvideHealthHandler(cfg, nil)
 	person := handlers.ProvidePersonHandler(nil, authz, nil)
 	absence := handlers.ProvideAbsenceHandler(nil, nil)
-	return Router(health, identity, person, absence, verifier, cfg)
+	program := handlers.ProvideProgramHandler(nil, nil)
+	return Router(health, identity, person, absence, program, verifier, cfg)
 }
 
 func baseConfig() *config.Config {
@@ -190,6 +191,8 @@ func TestRouter_People_RBAC(t *testing.T) {
 		{name: "lead cannot edit skills", method: http.MethodPut, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/skills", token: "lead-token", wantStatus: http.StatusForbidden},
 		{name: "no token", method: http.MethodGet, path: constants.PathExpertises, wantStatus: http.StatusUnauthorized},
 		{name: "lead cannot add holidays", method: http.MethodPost, path: constants.PathHolidays, token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot list programs", method: http.MethodGet, path: constants.PathPrograms, token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot create programs", method: http.MethodPost, path: constants.PathPrograms, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no role cannot read absences", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/absences", token: "no-role-token", wantStatus: http.StatusForbidden},
 	}
 	for _, tt := range tests {

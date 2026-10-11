@@ -48,6 +48,16 @@ func CanManageHolidays(principal request.Principal) bool {
 	return principal.HasAnyRole(constants.HolidayManageRoles...)
 }
 
+// CanManageAllPrograms allows planners to edit every program and project.
+func CanManageAllPrograms(principal request.Principal) bool {
+	return principal.HasAnyRole(constants.ProgramManageAllRoles...)
+}
+
+// CanUsePrograms allows planners and leads to reach programs and projects.
+func CanUsePrograms(principal request.Principal) bool {
+	return principal.HasAnyRole(constants.ProgramRoles...)
+}
+
 // AuthzService answers who is signed in and what they may do.
 type AuthzService interface {
 	// Principal returns the signed-in user, or a 401 error when there is none.
@@ -58,6 +68,9 @@ type AuthzService interface {
 	// RequireSelfOr lets the signed-in user through when check passes or when personID is
 	// their own person record (matched by Keycloak id, then email).
 	RequireSelfOr(ctx context.Context, personID string, check Check) (request.Principal, error)
+	// RequireLeadOf lets the signed-in user through when check passes, or when they hold the
+	// lead role and their person record is one of leadIDs (nil entries are ignored).
+	RequireLeadOf(ctx context.Context, check Check, leadIDs ...*string) (request.Principal, error)
 }
 
 type authzService struct {
@@ -105,6 +118,29 @@ func (s authzService) RequireSelfOr(ctx context.Context, personID string, check 
 		}
 		if self != nil && self.ID == personID {
 			return principal, nil
+		}
+	}
+	return request.Principal{}, errors.ForbiddenError(constants.MsgInsufficientPermissions, nil).
+		WithOperation(opAuthorize).WithResource(resourcePrincipal)
+}
+
+func (s authzService) RequireLeadOf(ctx context.Context, check Check, leadIDs ...*string) (request.Principal, error) {
+	principal, err := s.Principal(ctx)
+	if err != nil {
+		return request.Principal{}, err
+	}
+	if check(principal) {
+		return principal, nil
+	}
+	if s.people != nil && principal.HasAnyRole(constants.RoleLead) {
+		self, err := s.people.FindForPrincipal(ctx, principal)
+		if err != nil {
+			return request.Principal{}, err
+		}
+		for _, leadID := range leadIDs {
+			if self != nil && leadID != nil && *leadID == self.ID {
+				return principal, nil
+			}
 		}
 	}
 	return request.Principal{}, errors.ForbiddenError(constants.MsgInsufficientPermissions, nil).

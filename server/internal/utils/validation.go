@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"the-slot-finder/server/internal/constants"
+	"the-slot-finder/server/internal/isoweek"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -17,6 +18,8 @@ const (
 	ValidationTagDate          = constants.ValidationTagDate
 	ValidationTagAbsenceType   = constants.ValidationTagAbsenceType
 	ValidationTagAbsenceStatus = constants.ValidationTagAbsenceStatus
+	ValidationTagISOWeek       = constants.ValidationTagISOWeek
+	ValidationTagDemandProfile = constants.ValidationTagDemandProfile
 )
 
 // RegisterValidations adds the project's custom validation tags to v and makes validation
@@ -36,6 +39,13 @@ func RegisterValidations(v *validator.Validate) error {
 		},
 		ValidationTagAbsenceStatus: func(fl validator.FieldLevel) bool {
 			return slices.Contains(constants.AbsenceStatuses, fl.Field().String())
+		},
+		ValidationTagISOWeek: func(fl validator.FieldLevel) bool {
+			_, err := isoweek.Parse(fl.Field().String())
+			return err == nil
+		},
+		ValidationTagDemandProfile: func(fl validator.FieldLevel) bool {
+			return slices.Contains(constants.SupportedDemandProfiles, fl.Field().String())
 		},
 	}
 	for tag, fn := range validations {

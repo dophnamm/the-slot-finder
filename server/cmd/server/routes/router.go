@@ -24,6 +24,7 @@ func Router(
 	identityHandler *handlers.IdentityHandler,
 	personHandler *handlers.PersonHandler,
 	absenceHandler *handlers.AbsenceHandler,
+	programHandler *handlers.ProgramHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 ) *echo.Echo {
@@ -144,6 +145,14 @@ func Router(
 	v1.DELETE(constants.PathAbsence, absenceHandler.Delete, authenticated, middlewares.RequireRole(constants.AbsenceRoles...))
 	v1.GET(constants.PathHolidays, absenceHandler.ListHolidays, authenticated, middlewares.RequireRole(constants.HolidayViewRoles...))
 	v1.POST(constants.PathHolidays, absenceHandler.CreateHoliday, authenticated, middlewares.RequireRole(constants.HolidayManageRoles...))
+
+	// Programs (leads edit only their own; checked in the service)
+	programRoles := middlewares.RequireRole(constants.ProgramRoles...)
+	v1.GET(constants.PathPrograms, programHandler.List, authenticated, programRoles)
+	v1.POST(constants.PathPrograms, programHandler.Create, authenticated, programRoles)
+	v1.GET(constants.PathProgram, programHandler.Get, authenticated, programRoles)
+	v1.PATCH(constants.PathProgram, programHandler.Update, authenticated, programRoles)
+	v1.POST(constants.PathProgramAction, programHandler.Action, authenticated, programRoles)
 
 	return r
 }

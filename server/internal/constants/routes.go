@@ -18,4 +18,8 @@ const (
 	PathPersonAbsences = "/people/:id/absences"
 	PathAbsence        = "/absences/:id"
 	PathHolidays       = "/holidays"
+
+	PathPrograms      = "/programs"
+	PathProgram       = "/programs/:id"
+	PathProgramAction = "/programs/:id/actions/:action"
 )

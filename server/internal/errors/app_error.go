@@ -219,8 +219,14 @@ func customTagMessage(fieldName, tag string) (string, bool) {
 		return oneOf(constants.PersonalAbsenceTypes), true
 	case constants.ValidationTagAbsenceStatus:
 		return oneOf(constants.AbsenceStatuses), true
+	case constants.ValidationTagDemandProfile:
+		return oneOf(constants.SupportedDemandProfiles), true
 	case constants.ValidationTagDate:
 		return fieldName + " " + constants.MsgDateInvalid, true
+	case constants.ValidationTagISOWeek:
+		return fieldName + " " + constants.MsgWeekInvalid, true
+	case constants.ValidationTagMustBeEmpty:
+		return fieldName + " " + constants.MsgMustUseAction, true
 	default:
 		return "", false
 	}

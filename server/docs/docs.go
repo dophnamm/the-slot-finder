@@ -791,6 +791,304 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/programs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Programs"
+                ],
+                "summary": "List programs",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page, from 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/dtos.ProgramResponse"
+                                    }
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Planners may set lead_id; a lead who creates a program becomes its lead.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Programs"
+                ],
+                "summary": "Create a program",
+                "parameters": [
+                    {
+                        "description": "Program",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateProgramRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.ProgramResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/programs/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Programs"
+                ],
+                "summary": "Get a program",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Program id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.ProgramResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Only the fields sent change. charter_url and lead_id accept null; only planners change the lead. status is rejected: use an action.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Programs"
+                ],
+                "summary": "Edit a program",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Program id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Changed fields",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.UpdateProgramRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.ProgramResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/programs/{id}/actions/{action}": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "hold (open → pending), resume (pending → open), start-closing (open → closing), close (closing → closed), cancel (open, pending or closing → cancelled; also cancels its open projects).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Programs"
+                ],
+                "summary": "Change a program's status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Program id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "hold",
+                            "resume",
+                            "start-closing",
+                            "close",
+                            "cancel"
+                        ],
+                        "type": "string",
+                        "description": "Action",
+                        "name": "action",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.ProgramResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -928,6 +1226,52 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.CreateProgramRequest": {
+            "type": "object",
+            "required": [
+                "client",
+                "end_date",
+                "name",
+                "objectives",
+                "start_date"
+            ],
+            "properties": {
+                "charter_url": {
+                    "type": "string",
+                    "maxLength": 2000
+                },
+                "client": {
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "end_date": {
+                    "type": "string",
+                    "example": "2026-12-18"
+                },
+                "goal": {
+                    "type": "string",
+                    "maxLength": 2000
+                },
+                "lead_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "objectives": {
+                    "type": "array",
+                    "maxItems": 20,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "start_date": {
+                    "type": "string",
+                    "example": "2026-09-28"
+                }
+            }
+        },
         "dtos.CurrentUserResponse": {
             "type": "object",
             "properties": {
@@ -1026,6 +1370,18 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.PersonRef": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Lee Lead"
+                }
+            }
+        },
         "dtos.PersonResponse": {
             "type": "object",
             "properties": {
@@ -1086,6 +1442,64 @@ const docTemplate = `{
                 },
                 "primary": {
                     "type": "boolean"
+                }
+            }
+        },
+        "dtos.ProgramResponse": {
+            "type": "object",
+            "properties": {
+                "charter_url": {
+                    "type": "string"
+                },
+                "client": {
+                    "type": "string",
+                    "example": "Acme"
+                },
+                "end_date": {
+                    "type": "string",
+                    "example": "2026-12-18"
+                },
+                "end_week": {
+                    "type": "string",
+                    "example": "2026-W51"
+                },
+                "goal": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lead": {
+                    "$ref": "#/definitions/dtos.PersonRef"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Acme onboarding"
+                },
+                "objectives": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "start_date": {
+                    "type": "string",
+                    "example": "2026-09-28"
+                },
+                "start_week": {
+                    "type": "string",
+                    "example": "2026-W40"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "open",
+                        "pending",
+                        "closing",
+                        "closed",
+                        "cancelled"
+                    ],
+                    "example": "open"
                 }
             }
         },
@@ -1153,6 +1567,47 @@ const docTemplate = `{
                 "weekly_hours": {
                     "type": "number",
                     "maximum": 80
+                }
+            }
+        },
+        "dtos.UpdateProgramRequest": {
+            "type": "object",
+            "required": [
+                "objectives"
+            ],
+            "properties": {
+                "charter_url": {
+                    "type": "string"
+                },
+                "client": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "goal": {
+                    "type": "string",
+                    "maxLength": 2000
+                },
+                "lead_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1
+                },
+                "objectives": {
+                    "type": "array",
+                    "maxItems": 20,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "start_date": {
+                    "type": "string"
                 }
             }
         }

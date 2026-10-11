@@ -38,11 +38,12 @@ func NewHTTPServer(lc fx.Lifecycle,
 	identityHandler *handlers.IdentityHandler,
 	personHandler *handlers.PersonHandler,
 	absenceHandler *handlers.AbsenceHandler,
+	programHandler *handlers.ProgramHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 	db *db.PostgresDB,
 ) *http.Server {
-	handler := routes.Router(healthHandler, identityHandler, personHandler, absenceHandler, verifier, cfg)
+	handler := routes.Router(healthHandler, identityHandler, personHandler, absenceHandler, programHandler, verifier, cfg)
 
 	srv := &http.Server{
 		Addr:              cfg.AppHTTPServer,
@@ -176,13 +177,16 @@ func appOptions(cfg *config.Config) []fx.Option {
 			services.ProvideAuthzService,
 			repositories.ProvidePersonRepository,
 			repositories.ProvideAbsenceRepository,
+			repositories.ProvideProgramRepository,
 			services.ProvidePeopleService,
 			services.ProvidePersonFinder,
 			services.ProvideAvailabilityService,
+			services.ProvideProgramService,
 			handlers.ProvideHealthHandler,
 			handlers.ProvideIdentityHandler,
 			handlers.ProvidePersonHandler,
 			handlers.ProvideAbsenceHandler,
+			handlers.ProvideProgramHandler,
 		),
 		fx.Invoke(func(*http.Server) {}),
 	}

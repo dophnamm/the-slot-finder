@@ -97,6 +97,40 @@ definitions:
     - role
     - skills
     type: object
+  dtos.CreateProgramRequest:
+    properties:
+      charter_url:
+        maxLength: 2000
+        type: string
+      client:
+        maxLength: 200
+        type: string
+      end_date:
+        example: "2026-12-18"
+        type: string
+      goal:
+        maxLength: 2000
+        type: string
+      lead_id:
+        type: string
+      name:
+        maxLength: 200
+        type: string
+      objectives:
+        items:
+          type: string
+        maxItems: 20
+        type: array
+      start_date:
+        example: "2026-09-28"
+        type: string
+    required:
+    - client
+    - end_date
+    - name
+    - objectives
+    - start_date
+    type: object
   dtos.CurrentUserResponse:
     properties:
       email:
@@ -169,6 +203,14 @@ definitions:
         example: 18
         type: integer
     type: object
+  dtos.PersonRef:
+    properties:
+      id:
+        type: string
+      name:
+        example: Lee Lead
+        type: string
+    type: object
   dtos.PersonResponse:
     properties:
       active:
@@ -212,6 +254,48 @@ definitions:
         type: integer
       primary:
         type: boolean
+    type: object
+  dtos.ProgramResponse:
+    properties:
+      charter_url:
+        type: string
+      client:
+        example: Acme
+        type: string
+      end_date:
+        example: "2026-12-18"
+        type: string
+      end_week:
+        example: 2026-W51
+        type: string
+      goal:
+        type: string
+      id:
+        type: string
+      lead:
+        $ref: '#/definitions/dtos.PersonRef'
+      name:
+        example: Acme onboarding
+        type: string
+      objectives:
+        items:
+          type: string
+        type: array
+      start_date:
+        example: "2026-09-28"
+        type: string
+      start_week:
+        example: 2026-W40
+        type: string
+      status:
+        enum:
+        - open
+        - pending
+        - closing
+        - closed
+        - cancelled
+        example: open
+        type: string
     type: object
   dtos.ReplaceSkillsRequest:
     properties:
@@ -259,6 +343,35 @@ definitions:
       weekly_hours:
         maximum: 80
         type: number
+    type: object
+  dtos.UpdateProgramRequest:
+    properties:
+      charter_url:
+        type: string
+      client:
+        maxLength: 200
+        minLength: 1
+        type: string
+      end_date:
+        type: string
+      goal:
+        maxLength: 2000
+        type: string
+      lead_id:
+        type: string
+      name:
+        maxLength: 200
+        minLength: 1
+        type: string
+      objectives:
+        items:
+          type: string
+        maxItems: 20
+        type: array
+      start_date:
+        type: string
+    required:
+    - objectives
     type: object
 info:
   contact: {}
@@ -760,6 +873,198 @@ paths:
       summary: Replace a person's skills
       tags:
       - People
+  /programs:
+    get:
+      parameters:
+      - description: Page, from 1
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/dtos.ProgramResponse'
+                type: array
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List programs
+      tags:
+      - Programs
+    post:
+      consumes:
+      - application/json
+      description: Planners may set lead_id; a lead who creates a program becomes
+        its lead.
+      parameters:
+      - description: Program
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateProgramRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.ProgramResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a program
+      tags:
+      - Programs
+  /programs/{id}:
+    get:
+      parameters:
+      - description: Program id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.ProgramResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a program
+      tags:
+      - Programs
+    patch:
+      consumes:
+      - application/json
+      description: 'Only the fields sent change. charter_url and lead_id accept null;
+        only planners change the lead. status is rejected: use an action.'
+      parameters:
+      - description: Program id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Changed fields
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateProgramRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.ProgramResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Edit a program
+      tags:
+      - Programs
+  /programs/{id}/actions/{action}:
+    post:
+      description: hold (open → pending), resume (pending → open), start-closing (open
+        → closing), close (closing → closed), cancel (open, pending or closing → cancelled;
+        also cancels its open projects).
+      parameters:
+      - description: Program id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Action
+        enum:
+        - hold
+        - resume
+        - start-closing
+        - close
+        - cancel
+        in: path
+        name: action
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.ProgramResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Change a program's status
+      tags:
+      - Programs
 schemes:
 - http
 - https
