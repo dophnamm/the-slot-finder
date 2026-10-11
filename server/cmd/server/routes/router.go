@@ -143,6 +143,7 @@ func Router(
 	v1.GET(constants.PathHeatmap, insightsHandler.Heatmap, authenticated, middlewares.RequireRole(constants.InsightRoles...))
 	v1.GET(constants.PathRisks, insightsHandler.Risks, authenticated, middlewares.RequireRole(constants.InsightRoles...))
 	v1.GET(constants.PathProgramOverview, insightsHandler.ProgramOverview, authenticated, middlewares.RequireRole(constants.ProgramRoles...))
+	v1.GET(constants.PathProgramMembers, insightsHandler.ProgramMembers, authenticated, middlewares.RequireRole(constants.ProgramRoles...))
 	v1.GET(constants.PathEvents, eventHandler.List, authenticated, middlewares.RequireRole(constants.EventViewRoles...))
 
 	return r

@@ -1418,6 +1418,51 @@ const docTemplate = `{
                 }
             }
         },
+        "/programs/{id}/members": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Everyone with baseline hours on the program's projects, most hours first: hours per expertise and assignment kind, first and last week, and the projects.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Programs"
+                ],
+                "summary": "A program's members",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Program id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/dtos.ProgramMemberResponse"
+                                    }
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/programs/{id}/overview": {
             "get": {
                 "security": [
@@ -3248,6 +3293,31 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.MemberExpertiseResponse": {
+            "type": "object",
+            "properties": {
+                "expertise": {
+                    "type": "string",
+                    "example": "Engineer"
+                },
+                "expertise_id": {
+                    "type": "string"
+                },
+                "hours": {
+                    "type": "number",
+                    "example": 120
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "primary",
+                        "cross_expertise",
+                        "stretch"
+                    ],
+                    "example": "primary"
+                }
+            }
+        },
         "dtos.Meta": {
             "description": "Metadata for pagination",
             "type": "object",
@@ -3510,6 +3580,38 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.ProgramMemberResponse": {
+            "type": "object",
+            "properties": {
+                "expertises": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.MemberExpertiseResponse"
+                    }
+                },
+                "from_week": {
+                    "type": "string",
+                    "example": "2026-W44"
+                },
+                "person": {
+                    "$ref": "#/definitions/dtos.PersonRef"
+                },
+                "projects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ProjectRef"
+                    }
+                },
+                "to_week": {
+                    "type": "string",
+                    "example": "2026-W48"
+                },
+                "total_hours": {
+                    "type": "number",
+                    "example": 160
+                }
+            }
+        },
         "dtos.ProgramOverviewResponse": {
             "type": "object",
             "properties": {
@@ -3739,6 +3841,18 @@ const docTemplate = `{
                         "cancelled"
                     ],
                     "example": "incoming"
+                }
+            }
+        },
+        "dtos.ProjectRef": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Checkout Revamp"
                 }
             }
         },

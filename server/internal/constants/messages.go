@@ -123,6 +123,7 @@ const (
 	MsgDraftSuperseded        = "A change produced a newer version of this draft; open the latest one"
 	MsgReplanFailed           = "Could not re-plan after the change"
 	MsgOverviewRetrieved      = "Program overview retrieved"
+	MsgMembersRetrieved       = "Program members retrieved"
 	MsgRisksRetrieved         = "Risks retrieved"
 )
 

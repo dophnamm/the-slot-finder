@@ -693,6 +693,24 @@ definitions:
       primary_expertise_id:
         type: string
     type: object
+  dtos.MemberExpertiseResponse:
+    properties:
+      expertise:
+        example: Engineer
+        type: string
+      expertise_id:
+        type: string
+      hours:
+        example: 120
+        type: number
+      kind:
+        enum:
+        - primary
+        - cross_expertise
+        - stretch
+        example: primary
+        type: string
+    type: object
   dtos.Meta:
     description: Metadata for pagination
     properties:
@@ -878,6 +896,28 @@ definitions:
         example: 3
         type: integer
     type: object
+  dtos.ProgramMemberResponse:
+    properties:
+      expertises:
+        items:
+          $ref: '#/definitions/dtos.MemberExpertiseResponse'
+        type: array
+      from_week:
+        example: 2026-W44
+        type: string
+      person:
+        $ref: '#/definitions/dtos.PersonRef'
+      projects:
+        items:
+          $ref: '#/definitions/dtos.ProjectRef'
+        type: array
+      to_week:
+        example: 2026-W48
+        type: string
+      total_hours:
+        example: 160
+        type: number
+    type: object
   dtos.ProgramOverviewResponse:
     properties:
       metrics:
@@ -1043,6 +1083,14 @@ definitions:
         - done
         - cancelled
         example: incoming
+        type: string
+    type: object
+  dtos.ProjectRef:
+    properties:
+      id:
+        type: string
+      name:
+        example: Checkout Revamp
         type: string
     type: object
   dtos.ProjectResponse:
@@ -2191,6 +2239,36 @@ paths:
       security:
       - BearerAuth: []
       summary: Change a program's status
+      tags:
+      - Programs
+  /programs/{id}/members:
+    get:
+      description: 'Everyone with baseline hours on the program''s projects, most
+        hours first: hours per expertise and assignment kind, first and last week,
+        and the projects.'
+      parameters:
+      - description: Program id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/dtos.ProgramMemberResponse'
+                type: array
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: A program's members
       tags:
       - Programs
   /programs/{id}/overview:
