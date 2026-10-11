@@ -41,7 +41,7 @@ export const router = createBrowserRouter([
             children: [{ path: ROUTES.intake, Component: IntakePage }],
           },
           {
-            element: <RequirePermission permission="staffing-drafts:review" />,
+            element: <RequirePermission permission="staffing-drafts:view" />,
             children: [{ path: ROUTES.staffingDraft, Component: StaffingDraftPage }],
           },
           {

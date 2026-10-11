@@ -1,4 +1,5 @@
 import type { PlainKey } from '@/shared/i18n'
+import { MAX_PAGE_SIZE } from '@/utils/constants'
 import type { ProgramAction, ProgramStatus, ProjectAction, ProjectStatus } from './types'
 
 export const PROGRAMS_QUERY_KEY = ['programs'] as const
@@ -12,8 +13,8 @@ export const LEAD_OPTIONS_QUERY_KEY = ['lead-options'] as const
 /** Programs shown per page of the list. */
 export const PROGRAMS_PAGE_SIZE = 20
 
-/** The server's largest page; enough for every lead candidate. */
-export const LEAD_OPTIONS_PAGE_SIZE = 100
+/** Enough for every lead candidate. */
+export const LEAD_OPTIONS_PAGE_SIZE = MAX_PAGE_SIZE
 
 /** Roles that can lead a program or project. */
 export const LEAD_ROLES = ['planner', 'lead'] as const
