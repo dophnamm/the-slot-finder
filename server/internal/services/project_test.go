@@ -161,7 +161,7 @@ func buildAndTest(t *testing.T) *models.Project {
 
 func newProjectService(projects *MockProjectRepository, programs *MockProgramRepository) ProjectService {
 	people := knownExpertisePeople{}
-	return ProvideProjectService(projects, programs, people, ProvideAuthzService(people), passthroughTx{})
+	return ProvideProjectService(projects, programs, people, ProvideAuthzService(people), passthroughTx{}, &recordedEvents{})
 }
 
 func TestProjectService_UpdatePhase_SlipPropagation(t *testing.T) {

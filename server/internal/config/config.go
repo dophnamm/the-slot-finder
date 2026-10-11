@@ -171,6 +171,15 @@ type Config struct {
 	HeatmapMaxWeeks           int
 	UtilizationUnderusedBelow float64
 	UtilizationNearFullFrom   float64
+
+	// Re-plan runner (server/README §6): debounce, polling, batch size, retries, and the raised
+	// stability weight that keeps a re-plan close to the baseline.
+	ReplanDebounce                time.Duration
+	ReplanPollInterval            time.Duration
+	ReplanBatchSize               int
+	ReplanMaxAttempts             int
+	ReplanRetryBackoff            time.Duration
+	PlanningReplanStabilityWeight float64
 }
 
 // Load loads configuration from environment variables
@@ -271,6 +280,13 @@ func Load() (*Config, error) {
 		HeatmapMaxWeeks:           getEnvAsInt("HEATMAP_MAX_WEEKS", 52),
 		UtilizationUnderusedBelow: getEnvAsFloat("UTILIZATION_UNDERUSED_BELOW", 0.5),
 		UtilizationNearFullFrom:   getEnvAsFloat("UTILIZATION_NEAR_FULL_FROM", 0.85),
+
+		ReplanDebounce:                getEnvAsDuration("REPLAN_DEBOUNCE", 5*time.Minute),
+		ReplanPollInterval:            getEnvAsDuration("REPLAN_POLL_INTERVAL", 10*time.Second),
+		ReplanBatchSize:               getEnvAsInt("REPLAN_BATCH_SIZE", 50),
+		ReplanMaxAttempts:             getEnvAsInt("REPLAN_MAX_ATTEMPTS", 5),
+		ReplanRetryBackoff:            getEnvAsDuration("REPLAN_RETRY_BACKOFF", 30*time.Second),
+		PlanningReplanStabilityWeight: getEnvAsFloat("PLANNING_REPLAN_STABILITY_WEIGHT", 2.0),
 	}
 
 	weekdays, err := parseWeekdays(getEnv("WORKING_WEEKDAYS", defaultWorkingWeekdays))

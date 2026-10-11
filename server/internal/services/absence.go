@@ -9,6 +9,7 @@ import (
 	"the-slot-finder/server/internal/capacity"
 	"the-slot-finder/server/internal/config"
 	"the-slot-finder/server/internal/constants"
+	"the-slot-finder/server/internal/db"
 	"the-slot-finder/server/internal/errors"
 	"the-slot-finder/server/internal/models"
 	"the-slot-finder/server/internal/repositories"
@@ -56,11 +57,31 @@ type availabilityService struct {
 	repo   repositories.AbsenceRepository
 	people PeopleService
 	authz  AuthzService
+	tx     db.TxManager
+	events EventRecorder
 }
 
 // ProvideAvailabilityService creates the availability service.
-func ProvideAvailabilityService(repo repositories.AbsenceRepository, people PeopleService, authz AuthzService) AvailabilityService {
-	return &availabilityService{repo: repo, people: people, authz: authz}
+func ProvideAvailabilityService(repo repositories.AbsenceRepository, people PeopleService, authz AuthzService, tx db.TxManager,
+	events EventRecorder,
+) AvailabilityService {
+	return &availabilityService{repo: repo, people: people, authz: authz, tx: tx, events: events}
+}
+
+// absenceChange is the event payload for an absence; name is empty for a holiday.
+func absenceChange(a *models.Absence, name string) AbsenceChange {
+	return AbsenceChange{AbsenceID: a.ID, PersonID: a.PersonID, PersonName: name, FromDate: a.FromDate.Format(constants.DateLayout),
+		ToDate: a.ToDate.Format(constants.DateLayout), Type: a.Type, Status: a.Status}
+}
+
+// saveWithEvent runs the write and records its change event in one transaction.
+func (s *availabilityService) saveWithEvent(ctx context.Context, write func(ctx context.Context) error, event ChangeInput) error {
+	return s.tx.Do(ctx, func(ctx context.Context) error {
+		if err := write(ctx); err != nil {
+			return err
+		}
+		return s.events.Record(ctx, event)
+	})
 }
 
 func (s *availabilityService) ListForPerson(ctx context.Context, personID string) ([]models.Absence, error) {
@@ -83,7 +104,8 @@ func (s *availabilityService) Create(ctx context.Context, in CreateAbsenceInput)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := s.people.Get(ctx, in.PersonID); err != nil {
+	person, err := s.people.Get(ctx, in.PersonID)
+	if err != nil {
 		return nil, err
 	}
 	if err := checkAbsenceDates(in.FromDate, in.ToDate, opCreateAbsence); err != nil {
@@ -104,9 +126,10 @@ func (s *availabilityService) Create(ctx context.Context, in CreateAbsenceInput)
 		Type:        in.Type,
 		Status:      status,
 	}
-	if err := s.repo.Create(ctx, absence); err != nil {
-		return nil, errors.DatabaseError(constants.MsgAbsenceCreateFailed, err).
-			WithOperation(opCreateAbsence).WithResource(resourceAbsence)
+	create := func(ctx context.Context) error { return s.repo.Create(ctx, absence) }
+	event := ChangeInput{Type: constants.EventAbsenceAdded, Payload: absenceChange(absence, person.Name)}
+	if err := s.saveWithEvent(ctx, create, event); err != nil {
+		return nil, asAppError(err, constants.MsgAbsenceCreateFailed, opCreateAbsence, resourceAbsence)
 	}
 	return absence, nil
 }
@@ -131,9 +154,16 @@ func (s *availabilityService) Delete(ctx context.Context, absenceID string) erro
 		return err
 	}
 
-	if err := s.repo.Delete(ctx, absence); err != nil {
-		return errors.DatabaseError(constants.MsgAbsenceDeleteFailed, err).
-			WithOperation(opDeleteAbsence).WithResource(resourceAbsence)
+	name := ""
+	if absence.PersonID != nil {
+		if person, err := s.people.Get(ctx, *absence.PersonID); err == nil {
+			name = person.Name
+		}
+	}
+	remove := func(ctx context.Context) error { return s.repo.Delete(ctx, absence) }
+	event := ChangeInput{Type: constants.EventAbsenceRemoved, Payload: absenceChange(absence, name)}
+	if err := s.saveWithEvent(ctx, remove, event); err != nil {
+		return asAppError(err, constants.MsgAbsenceDeleteFailed, opDeleteAbsence, resourceAbsence)
 	}
 	return nil
 }
@@ -162,9 +192,10 @@ func (s *availabilityService) CreateHoliday(ctx context.Context, in CreateHolida
 		Type:        constants.AbsenceTypeHoliday,
 		Status:      constants.AbsenceStatusApproved,
 	}
-	if err := s.repo.Create(ctx, holiday); err != nil {
-		return nil, errors.DatabaseError(constants.MsgAbsenceCreateFailed, err).
-			WithOperation(opCreateHoliday).WithResource(resourceAbsence)
+	create := func(ctx context.Context) error { return s.repo.Create(ctx, holiday) }
+	event := ChangeInput{Type: constants.EventAbsenceAdded, Payload: absenceChange(holiday, "")}
+	if err := s.saveWithEvent(ctx, create, event); err != nil {
+		return nil, asAppError(err, constants.MsgAbsenceCreateFailed, opCreateHoliday, resourceAbsence)
 	}
 	return holiday, nil
 }

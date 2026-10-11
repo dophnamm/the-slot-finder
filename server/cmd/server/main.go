@@ -43,11 +43,12 @@ func NewHTTPServer(lc fx.Lifecycle,
 	planHandler *handlers.PlanHandler,
 	staffingHandler *handlers.StaffingHandler,
 	insightsHandler *handlers.InsightsHandler,
+	eventHandler *handlers.EventHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 	db *db.PostgresDB,
 ) *http.Server {
-	handler := routes.Router(healthHandler, identityHandler, personHandler, absenceHandler, programHandler, projectHandler, planHandler, staffingHandler, insightsHandler, verifier, cfg)
+	handler := routes.Router(healthHandler, identityHandler, personHandler, absenceHandler, programHandler, projectHandler, planHandler, staffingHandler, insightsHandler, eventHandler, verifier, cfg)
 
 	srv := &http.Server{
 		Addr:              cfg.AppHTTPServer,
@@ -185,6 +186,7 @@ func appOptions(cfg *config.Config) []fx.Option {
 			repositories.ProvideProjectRepository,
 			repositories.ProvidePlanRepository,
 			repositories.ProvideAuditRepository,
+			repositories.ProvideChangeEventRepository,
 			services.ProvidePeopleService,
 			services.ProvidePersonFinder,
 			services.ProvideAvailabilityService,
@@ -193,6 +195,8 @@ func appOptions(cfg *config.Config) []fx.Option {
 			services.ProvidePlanService,
 			services.ProvideStaffingService,
 			services.ProvideInsightsService,
+			services.ProvideEventService,
+			services.ProvideEventRecorder,
 			handlers.ProvideHealthHandler,
 			handlers.ProvideIdentityHandler,
 			handlers.ProvidePersonHandler,
@@ -202,6 +206,7 @@ func appOptions(cfg *config.Config) []fx.Option {
 			handlers.ProvidePlanHandler,
 			handlers.ProvideStaffingHandler,
 			handlers.ProvideInsightsHandler,
+			handlers.ProvideEventHandler,
 		),
 		fx.Invoke(func(*http.Server) {}),
 		fx.Invoke(registerBaselineHook),

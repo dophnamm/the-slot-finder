@@ -40,4 +40,6 @@ const (
 	PathDraftReject       = "/staffing-drafts/:id/reject"
 
 	PathHeatmap = "/insights/heatmap"
+
+	PathEvents = "/events"
 )

@@ -44,4 +44,6 @@ var (
 	PersonAssignmentRoles = []string{RolePlanner, RoleLead, RoleSpecialist}
 	// InsightRoles may read the heatmap and other insights.
 	InsightRoles = []string{RolePlanner, RoleLead}
+	// EventViewRoles may read the change history.
+	EventViewRoles = []string{RolePlanner, RoleLead}
 )

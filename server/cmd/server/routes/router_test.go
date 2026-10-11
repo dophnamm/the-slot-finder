@@ -84,7 +84,8 @@ func newTestRouter(cfg *config.Config) *echo.Echo {
 	plan := handlers.ProvidePlanHandler(nil, nil)
 	staffing := handlers.ProvideStaffingHandler(nil, nil)
 	insights := handlers.ProvideInsightsHandler(nil, nil)
-	return Router(health, identity, person, absence, program, project, plan, staffing, insights, verifier, cfg)
+	events := handlers.ProvideEventHandler(nil, nil)
+	return Router(health, identity, person, absence, program, project, plan, staffing, insights, events, verifier, cfg)
 }
 
 func baseConfig() *config.Config {
@@ -204,6 +205,7 @@ func TestRouter_People_RBAC(t *testing.T) {
 		{name: "lead cannot accept a staffing draft", method: http.MethodPost, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa/accept", token: "lead-token", wantStatus: http.StatusForbidden},
 		{name: "lead cannot edit a staffing draft", method: http.MethodPatch, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa/assignments", token: "lead-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read a staffing draft", method: http.MethodGet, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa", token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot read the change history", method: http.MethodGet, path: constants.PathEvents, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the heatmap", method: http.MethodGet, path: constants.PathHeatmap, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the baseline", method: http.MethodGet, path: constants.PathCurrentPlan, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no role cannot read assignments", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/assignments", token: "no-role-token", wantStatus: http.StatusForbidden},

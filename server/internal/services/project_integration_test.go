@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"the-slot-finder/server/internal/clock"
 	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/db"
 	"the-slot-finder/server/internal/db/dbtest"
@@ -60,10 +61,20 @@ func TestProjectService_UpdatePhase_Postgres(t *testing.T) {
 	projects := repositories.ProvideProjectRepository(pdb)
 	programs := repositories.ProvideProgramRepository(pdb)
 	people := knownExpertisePeople{}
+	events := ProvideEventService(repositories.ProvideChangeEventRepository(pdb), projects, ProvideAuthzService(people), clock.NewFixed(acceptedAt))
 	newService := func(repo repositories.ProjectRepository) ProjectService {
-		return ProvideProjectService(repo, programs, people, ProvideAuthzService(people), db.ProvideTxManager(pdb))
+		return ProvideProjectService(repo, programs, people, ProvideAuthzService(people), db.ProvideTxManager(pdb), events)
 	}
 	planner := asRole("kc-planner", constants.RolePlanner)
+	slipEvents := func(t *testing.T, phaseID string) int64 {
+		t.Helper()
+		phase, err := projects.FindPhase(context.Background(), phaseID)
+		require.NoError(t, err)
+		var n int64
+		require.NoError(t, pdb.Model(&models.ChangeEvent{}).
+			Where("type = ? AND jsonb_exists(project_ids, ?)", constants.EventPhaseSlipped, phase.ProjectID).Count(&n).Error)
+		return n
+	}
 	weeks := func(t *testing.T, id string) string {
 		t.Helper()
 		phase, err := projects.FindPhase(context.Background(), id)
@@ -78,6 +89,7 @@ func TestProjectService_UpdatePhase_Postgres(t *testing.T) {
 		assert.Len(t, changed, 2)
 		assert.Equal(t, "2026-W42 2026-W49", weeks(t, buildID))
 		assert.Equal(t, "2026-W48 2026-W53", weeks(t, testID))
+		assert.Equal(t, int64(1), slipEvents(t, buildID), "one PhaseSlipped event in the same transaction")
 	})
 
 	t.Run("an earlier end moves nothing else", func(t *testing.T) {
@@ -86,6 +98,7 @@ func TestProjectService_UpdatePhase_Postgres(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "2026-W42 2026-W46", weeks(t, buildID))
 		assert.Equal(t, "2026-W46 2026-W51", weeks(t, testID))
+		assert.Equal(t, int64(0), slipEvents(t, buildID), "an earlier end records no slip")
 	})
 
 	t.Run("a failed write changes no phase", func(t *testing.T) {
@@ -95,5 +108,6 @@ func TestProjectService_UpdatePhase_Postgres(t *testing.T) {
 		require.Error(t, err)
 		assert.Equal(t, "2026-W42 2026-W47", weeks(t, buildID))
 		assert.Equal(t, "2026-W46 2026-W51", weeks(t, testID))
+		assert.Equal(t, int64(0), slipEvents(t, buildID), "no event without its change")
 	})
 }

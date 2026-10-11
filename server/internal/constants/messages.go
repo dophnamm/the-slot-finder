@@ -118,6 +118,8 @@ const (
 	MsgWeekOutsideWindow      = "The week is outside the demand's window"
 	MsgHeatmapRetrieved       = "Heatmap retrieved"
 	MsgWeekRangeTooLongFormat = "The range may cover at most %d weeks"
+	MsgEventsListed           = "Change events retrieved"
+	MsgEventRecordFailed      = "Could not record the change"
 )
 
 // Request limit messages.

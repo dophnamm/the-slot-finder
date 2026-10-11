@@ -107,6 +107,62 @@ const docTemplate = `{
                 }
             }
         },
+        "/events": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Changes that may break the plan (absence, slipped phases and deadlines), newest first, with their processing status and re-plan draft. With program_id, only changes that touch its projects; the program page uses it for the re-plan banner.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Change history",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Program id",
+                        "name": "program_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page, from 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/dtos.ChangeEventResponse"
+                                    }
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/expertises": {
             "get": {
                 "security": [
@@ -2339,6 +2395,55 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.ChangeEventResponse": {
+            "type": "object",
+            "properties": {
+                "attempts": {
+                    "type": "integer"
+                },
+                "draft": {
+                    "$ref": "#/definitions/dtos.EventDraftResponse"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "last_error": {
+                    "type": "string"
+                },
+                "occurred_at": {
+                    "type": "string"
+                },
+                "payload": {
+                    "description": "Payload depends on the type, e.g. person_name, from_date and to_date for absence.",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "project_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "pending",
+                        "no_impact",
+                        "draft_created",
+                        "failed"
+                    ]
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "AbsenceAdded",
+                        "AbsenceRemoved",
+                        "PhaseSlipped",
+                        "ProjectSlipped"
+                    ]
+                }
+            }
+        },
         "dtos.CreateAbsenceRequest": {
             "type": "object",
             "required": [
@@ -2850,6 +2955,23 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dtos.SetAllocationRequest"
                     }
+                }
+            }
+        },
+        "dtos.EventDraftResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "draft",
+                        "published",
+                        "rejected",
+                        "superseded"
+                    ]
                 }
             }
         },
