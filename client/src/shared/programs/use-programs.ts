@@ -1,11 +1,12 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { applyProgramAction, createProgram, getProgram, getProgramOverview, listLeadCandidates, listPrograms, updateProgram } from './api'
+import { applyProgramAction, createProgram, getProgram, getProgramOverview, listLeadCandidates, listProgramMembers, listPrograms, updateProgram } from './api'
 import {
   LEAD_OPTIONS_QUERY_KEY,
   LEAD_ROLES,
   PROGRAMS_PAGE_SIZE,
   PROGRAMS_QUERY_KEY,
   PROJECTS_QUERY_KEY,
+  programMembersQueryKey,
   programOverviewQueryKey,
   programQueryKey,
 } from './constants'
@@ -21,6 +22,11 @@ export function usePrograms(page: number) {
 
 export function useProgram(id: string) {
   return useQuery({ queryKey: programQueryKey(id), queryFn: () => getProgram(id) })
+}
+
+/** Everyone with baseline hours on the program; refetched with programs after a draft is accepted. */
+export function useProgramMembers(id: string) {
+  return useQuery({ queryKey: programMembersQueryKey(id), queryFn: () => listProgramMembers(id) })
 }
 
 /** Creates a program, or edits one when `id` is given; refetches programs afterwards. */

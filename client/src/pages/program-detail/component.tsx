@@ -1,9 +1,9 @@
 import { useParams } from 'react-router'
+import { ProgramMembers } from '@/features/program-members'
 import { ProgramOverview } from '@/features/program-overview'
 import { ProgramProjects } from '@/features/program-projects'
 import { ReplanBanner } from '@/features/replan-banner'
 import { useTranslation } from '@/shared/i18n'
-import { Card, CardContent } from '@/shared/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
 
 export function ProgramDetailPage() {
@@ -23,11 +23,7 @@ export function ProgramDetailPage() {
           <ProgramProjects programId={id} />
         </TabsContent>
         <TabsContent value="members">
-          <Card>
-            <CardContent className="text-sm text-muted-foreground">
-              {t('Members appear here once a staffing draft for this program is accepted.')}
-            </CardContent>
-          </Card>
+          <ProgramMembers programId={id} />
         </TabsContent>
       </Tabs>
     </div>
