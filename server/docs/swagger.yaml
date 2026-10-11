@@ -22,6 +22,83 @@ definitions:
         example: leave
         type: string
     type: object
+  dtos.AllocationResponse:
+    properties:
+      hours:
+        example: 16
+        type: number
+      locked:
+        type: boolean
+      week:
+        example: 2026-W42
+        type: string
+    type: object
+  dtos.AssignmentDemandResponse:
+    properties:
+      expertise:
+        example: QA
+        type: string
+      from_week:
+        example: 2026-W48
+        type: string
+      headcount:
+        example: 1
+        type: integer
+      hours:
+        example: 120
+        type: number
+      id:
+        type: string
+      min_level:
+        example: 3
+        type: integer
+      phase:
+        example: Test
+        type: string
+      program:
+        example: Acme Commerce Platform
+        type: string
+      program_id:
+        type: string
+      project:
+        example: Checkout Revamp
+        type: string
+      project_id:
+        type: string
+      to_week:
+        example: 2026-W50
+        type: string
+    type: object
+  dtos.AssignmentResponse:
+    properties:
+      allocations:
+        items:
+          $ref: '#/definitions/dtos.AllocationResponse'
+        type: array
+      by_hand:
+        description: ByHand is true when a Planner added the assignment; false when
+          the engine proposed it.
+        type: boolean
+      demand:
+        $ref: '#/definitions/dtos.AssignmentDemandResponse'
+      id:
+        type: string
+      kind:
+        enum:
+        - primary
+        - cross_expertise
+        - stretch
+        type: string
+      person:
+        $ref: '#/definitions/dtos.PersonRef'
+      reason:
+        items:
+          type: string
+        type: array
+      total_hours:
+        example: 120
+        type: number
+    type: object
   dtos.CreateAbsenceRequest:
     properties:
       from_date:
@@ -379,6 +456,32 @@ definitions:
         example: 2026-W42
         type: string
     type: object
+  dtos.PlanResponse:
+    properties:
+      assignments:
+        items:
+          $ref: '#/definitions/dtos.AssignmentResponse'
+        type: array
+      id:
+        type: string
+      kind:
+        enum:
+        - baseline
+        - draft
+        type: string
+      published_at:
+        type: string
+      status:
+        enum:
+        - draft
+        - published
+        - rejected
+        - superseded
+        type: string
+      version:
+        example: 3
+        type: integer
+    type: object
   dtos.ProgramResponse:
     properties:
       charter_url:
@@ -464,6 +567,10 @@ definitions:
         type: string
       scope_points:
         type: number
+      staffed_at:
+        description: StaffedAt is when an accepted staffing draft first covered the
+          whole project.
+        type: string
       start_earliest:
         example: "2026-10-12"
         type: string
@@ -514,6 +621,10 @@ definitions:
         type: string
       scope_points:
         type: number
+      staffed_at:
+        description: StaffedAt is when an accepted staffing draft first covered the
+          whole project.
+        type: string
       start_earliest:
         example: "2026-10-12"
         type: string
@@ -1110,6 +1221,47 @@ paths:
       summary: Report an absence
       tags:
       - Availability
+  /people/{id}/assignments:
+    get:
+      description: Assignments with hours from one ISO week through another. Specialists
+        may read only their own.
+      parameters:
+      - description: Person id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: First week
+        example: 2026-W42
+        in: query
+        name: from
+        required: true
+        type: string
+      - description: Last week
+        example: 2026-W50
+        in: query
+        name: to
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/dtos.AssignmentResponse'
+                type: array
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: A person's baseline assignments
+      tags:
+      - Planning
   /people/{id}/skills:
     put:
       consumes:
@@ -1211,6 +1363,27 @@ paths:
       summary: Edit a phase
       tags:
       - Projects
+  /plans/current:
+    get:
+      description: The published plan in force, with every assignment and its weekly
+        hours.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.PlanResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: The baseline
+      tags:
+      - Planning
   /programs:
     get:
       parameters:

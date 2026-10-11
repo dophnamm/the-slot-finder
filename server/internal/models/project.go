@@ -18,6 +18,8 @@ type Project struct {
 	ScopePoints   float64   `gorm:"column:scope_points;type:numeric(8,2);not null;default:0"`
 	DonePoints    float64   `gorm:"column:done_points;type:numeric(8,2);not null;default:0"`
 	LeadID        *string   `gorm:"column:lead_id;type:uuid;index"`
+	// StaffedAt is when the first accepted staffing draft fully covered the project.
+	StaffedAt *time.Time `gorm:"column:staffed_at;type:timestamptz"`
 
 	Program *Program       `gorm:"foreignKey:ProgramID;constraint:OnDelete:CASCADE"`
 	Lead    *Person        `gorm:"foreignKey:LeadID;constraint:OnDelete:SET NULL"`
@@ -49,6 +51,8 @@ type Demand struct {
 
 	Expertise Expertise     `gorm:"foreignKey:ExpertiseID;constraint:OnDelete:RESTRICT"`
 	Phase     *ProjectPhase `gorm:"foreignKey:PhaseID;constraint:OnDelete:RESTRICT"`
+	// Project is for preloading only; the foreign key comes from Project.Demands.
+	Project *Project `gorm:"foreignKey:ProjectID;-:migration"`
 }
 
 // StartWeek is the ISO week of the earliest start.

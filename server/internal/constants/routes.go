@@ -30,4 +30,7 @@ const (
 	PathProjectPhases   = "/projects/:id/phases"
 	PathProjectDemands  = "/projects/:id/demands"
 	PathPhase           = "/phases/:id"
+
+	PathCurrentPlan       = "/plans/current"
+	PathPersonAssignments = "/people/:id/assignments"
 )

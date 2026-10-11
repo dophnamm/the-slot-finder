@@ -40,11 +40,12 @@ func NewHTTPServer(lc fx.Lifecycle,
 	absenceHandler *handlers.AbsenceHandler,
 	programHandler *handlers.ProgramHandler,
 	projectHandler *handlers.ProjectHandler,
+	planHandler *handlers.PlanHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 	db *db.PostgresDB,
 ) *http.Server {
-	handler := routes.Router(healthHandler, identityHandler, personHandler, absenceHandler, programHandler, projectHandler, verifier, cfg)
+	handler := routes.Router(healthHandler, identityHandler, personHandler, absenceHandler, programHandler, projectHandler, planHandler, verifier, cfg)
 
 	srv := &http.Server{
 		Addr:              cfg.AppHTTPServer,
@@ -180,19 +181,24 @@ func appOptions(cfg *config.Config) []fx.Option {
 			repositories.ProvideAbsenceRepository,
 			repositories.ProvideProgramRepository,
 			repositories.ProvideProjectRepository,
+			repositories.ProvidePlanRepository,
+			repositories.ProvideAuditRepository,
 			services.ProvidePeopleService,
 			services.ProvidePersonFinder,
 			services.ProvideAvailabilityService,
 			services.ProvideProgramService,
 			services.ProvideProjectService,
+			services.ProvidePlanService,
 			handlers.ProvideHealthHandler,
 			handlers.ProvideIdentityHandler,
 			handlers.ProvidePersonHandler,
 			handlers.ProvideAbsenceHandler,
 			handlers.ProvideProgramHandler,
 			handlers.ProvideProjectHandler,
+			handlers.ProvidePlanHandler,
 		),
 		fx.Invoke(func(*http.Server) {}),
+		fx.Invoke(registerBaselineHook),
 	}
 }
 
@@ -211,4 +217,10 @@ func ProvideGormPostgres(cfg *config.Config) *db.PostgresDB {
 		logger.Sugar.Fatalf("Connecting to Database: %v", err)
 	}
 	return appDB
+}
+
+// registerBaselineHook creates the empty published baseline at startup when none exists,
+// so the first accepted staffing draft follows the same path as every later one.
+func registerBaselineHook(lc fx.Lifecycle, plans services.PlanService) {
+	lc.Append(fx.Hook{OnStart: plans.EnsureBaseline})
 }

@@ -81,7 +81,8 @@ func newTestRouter(cfg *config.Config) *echo.Echo {
 	absence := handlers.ProvideAbsenceHandler(nil, nil)
 	program := handlers.ProvideProgramHandler(nil, nil)
 	project := handlers.ProvideProjectHandler(nil, nil, nil)
-	return Router(health, identity, person, absence, program, project, verifier, cfg)
+	plan := handlers.ProvidePlanHandler(nil, nil)
+	return Router(health, identity, person, absence, program, project, plan, verifier, cfg)
 }
 
 func baseConfig() *config.Config {
@@ -197,6 +198,8 @@ func TestRouter_People_RBAC(t *testing.T) {
 		{name: "specialist cannot read the intake queue", method: http.MethodGet, path: constants.PathProjects, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot move phases", method: http.MethodPatch, path: "/phases/0192f3a4-0000-7000-8000-0000000000aa", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no role cannot read absences", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/absences", token: "no-role-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot read the baseline", method: http.MethodGet, path: constants.PathCurrentPlan, token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "no role cannot read assignments", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/assignments", token: "no-role-token", wantStatus: http.StatusForbidden},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

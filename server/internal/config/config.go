@@ -153,6 +153,18 @@ type Config struct {
 	WorkingWeekdays        []time.Weekday
 	DefaultNonProjectHours float64
 	CountPlannedAbsence    bool
+
+	// Planning policy, copied into each engine request (server/README §8).
+	PlanningTargetUtilization          float64
+	PlanningMaxUtilization             float64
+	PlanningMaxExpertisesPerPersonWeek int
+	PlanningMinHoursPerWeek            float64
+	PlanningHourStep                   float64
+	PlanningWeightDeadline             float64
+	PlanningWeightPrimaryFit           float64
+	PlanningWeightBalance              float64
+	PlanningWeightStability            float64
+	PlanningWeightContinuity           float64
 }
 
 // Load loads configuration from environment variables
@@ -237,6 +249,17 @@ func Load() (*Config, error) {
 		HTTPClientTLSInsecureSkipTLS: getEnvAsBool("HTTP_CLIENT_TLS_INSECURE_SKIP_TLS", false),
 		DefaultNonProjectHours:       getEnvAsFloat("DEFAULT_NON_PROJECT_HOURS", 4),
 		CountPlannedAbsence:          getEnvAsBool("COUNT_PLANNED_ABSENCE", true),
+
+		PlanningTargetUtilization:          getEnvAsFloat("PLANNING_TARGET_UTILIZATION", 0.8),
+		PlanningMaxUtilization:             getEnvAsFloat("PLANNING_MAX_UTILIZATION", 1.0),
+		PlanningMaxExpertisesPerPersonWeek: getEnvAsInt("PLANNING_MAX_EXPERTISES_PER_PERSON_WEEK", 2),
+		PlanningMinHoursPerWeek:            getEnvAsFloat("PLANNING_MIN_HOURS_PER_WEEK", 8),
+		PlanningHourStep:                   getEnvAsFloat("PLANNING_HOUR_STEP", 1),
+		PlanningWeightDeadline:             getEnvAsFloat("PLANNING_WEIGHT_DEADLINE", 1.0),
+		PlanningWeightPrimaryFit:           getEnvAsFloat("PLANNING_WEIGHT_PRIMARY_FIT", 0.8),
+		PlanningWeightBalance:              getEnvAsFloat("PLANNING_WEIGHT_BALANCE", 0.6),
+		PlanningWeightStability:            getEnvAsFloat("PLANNING_WEIGHT_STABILITY", 0.5),
+		PlanningWeightContinuity:           getEnvAsFloat("PLANNING_WEIGHT_CONTINUITY", 0.3),
 	}
 
 	weekdays, err := parseWeekdays(getEnv("WORKING_WEEKDAYS", defaultWorkingWeekdays))

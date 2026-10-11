@@ -26,6 +26,7 @@ func Router(
 	absenceHandler *handlers.AbsenceHandler,
 	programHandler *handlers.ProgramHandler,
 	projectHandler *handlers.ProjectHandler,
+	planHandler *handlers.PlanHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 ) *echo.Echo {
@@ -135,8 +136,17 @@ func Router(
 
 	registerPeopleRoutes(v1, authenticated, personHandler, absenceHandler)
 	registerProgramRoutes(v1, authenticated, programHandler, projectHandler)
+	registerPlanRoutes(v1, authenticated, planHandler)
 
 	return r
+}
+
+// registerPlanRoutes adds the baseline, people's assignments and staffing drafts.
+func registerPlanRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc, planHandler *handlers.PlanHandler) {
+	v1.GET(constants.PathCurrentPlan, planHandler.Current, authenticated, middlewares.RequireRole(constants.PlanViewRoles...))
+	// A specialist reads only their own assignments (checked in the service).
+	v1.GET(constants.PathPersonAssignments, planHandler.PersonAssignments, authenticated,
+		middlewares.RequireRole(constants.PersonAssignmentRoles...))
 }
 
 // registerPeopleRoutes adds people, skills, absences and holidays.

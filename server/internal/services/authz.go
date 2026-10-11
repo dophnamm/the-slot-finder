@@ -58,6 +58,16 @@ func CanUsePrograms(principal request.Principal) bool {
 	return principal.HasAnyRole(constants.ProgramRoles...)
 }
 
+// CanViewPlans allows planners and leads to read the baseline and staffing drafts.
+func CanViewPlans(principal request.Principal) bool {
+	return principal.HasAnyRole(constants.PlanViewRoles...)
+}
+
+// CanManagePlans allows planners to generate, edit, accept and reject staffing drafts.
+func CanManagePlans(principal request.Principal) bool {
+	return principal.HasAnyRole(constants.PlanManageRoles...)
+}
+
 // AuthzService answers who is signed in and what they may do.
 type AuthzService interface {
 	// Principal returns the signed-in user, or a 401 error when there is none.
