@@ -323,6 +323,128 @@ definitions:
         example: 120
         type: number
     type: object
+  dtos.DraftDemandResponse:
+    properties:
+      assigned_hours:
+        example: 80
+        type: number
+      expertise:
+        example: QA
+        type: string
+      from_week:
+        example: 2026-W48
+        type: string
+      headcount:
+        example: 1
+        type: integer
+      hours:
+        example: 100
+        type: number
+      id:
+        type: string
+      min_level:
+        example: 3
+        type: integer
+      phase:
+        example: Test
+        type: string
+      project:
+        example: Checkout Revamp
+        type: string
+      project_id:
+        type: string
+      to_week:
+        example: 2026-W50
+        type: string
+      unmet_reason:
+        description: UnmetReason is the engine's code for hours it could not place
+          when it made the draft.
+        enum:
+        - NO_SKILL
+        - LEVEL_TOO_LOW
+        - NO_CAPACITY_BEFORE_DEADLINE
+        - BLOCKED_BY_LOCKED
+        type: string
+    type: object
+  dtos.DraftProjectResponse:
+    properties:
+      deadline_week:
+        example: 2026-W50
+        type: string
+      id:
+        type: string
+      name:
+        example: Checkout Revamp
+        type: string
+      priority:
+        example: 1
+        type: integer
+      program:
+        example: Acme Commerce Platform
+        type: string
+      program_id:
+        type: string
+      staffed_at:
+        type: string
+      status:
+        example: incoming
+        type: string
+    type: object
+  dtos.DraftResponse:
+    properties:
+      assignments:
+        description: Assignments are those of the covered demand; the rest of the
+          baseline is unchanged.
+        items:
+          $ref: '#/definitions/dtos.AssignmentResponse'
+        type: array
+      base_version:
+        description: BaseVersion is the baseline version the draft was built on; send
+          it back to accept.
+        example: 3
+        type: integer
+      changes:
+        items:
+          $ref: '#/definitions/dtos.PlanChangeResponse'
+        type: array
+      created_at:
+        type: string
+      current_version:
+        description: CurrentVersion is the baseline in force now. Stale is true when
+          they differ.
+        example: 3
+        type: integer
+      demands:
+        items:
+          $ref: '#/definitions/dtos.DraftDemandResponse'
+        type: array
+      has_stretch:
+        type: boolean
+      id:
+        type: string
+      projects:
+        items:
+          $ref: '#/definitions/dtos.DraftProjectResponse'
+        type: array
+      published_at:
+        type: string
+      stale:
+        type: boolean
+      status:
+        enum:
+        - draft
+        - published
+        - rejected
+        - superseded
+        type: string
+      weeks:
+        example:
+        - 2026-W42
+        - 2026-W43
+        items:
+          type: string
+        type: array
+    type: object
   dtos.ExpertiseResponse:
     properties:
       id:
@@ -330,6 +452,17 @@ definitions:
       name:
         example: QA
         type: string
+    type: object
+  dtos.GenerateDraftRequest:
+    properties:
+      project_ids:
+        items:
+          type: string
+        maxItems: 20
+        minItems: 1
+        type: array
+    required:
+    - project_ids
     type: object
   dtos.HealthResponse:
     properties:
@@ -454,6 +587,31 @@ definitions:
         type: integer
       start_week:
         example: 2026-W42
+        type: string
+    type: object
+  dtos.PlanChangeResponse:
+    properties:
+      after_hours:
+        example: 80
+        type: number
+      before_hours:
+        example: 0
+        type: number
+      change:
+        enum:
+        - added
+        - removed
+        - changed
+        type: string
+      demand_id:
+        type: string
+      expertise:
+        example: QA
+        type: string
+      person:
+        $ref: '#/definitions/dtos.PersonRef'
+      project:
+        example: Checkout Revamp
         type: string
     type: object
   dtos.PlanResponse:
@@ -1934,6 +2092,70 @@ paths:
       summary: Replace a project's phases
       tags:
       - Projects
+  /staffing-drafts:
+    post:
+      consumes:
+      - application/json
+      description: The planning engine staffs the projects' demand on top of the baseline.
+        Only incoming, planned or active projects.
+      parameters:
+      - description: Projects to staff
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.GenerateDraftRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.DraftResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Generate a staffing draft
+      tags:
+      - Staffing drafts
+  /staffing-drafts/{id}:
+    get:
+      description: The draft's assignments for the covered demand, coverage and unmet
+        reasons, and changes against the baseline in force.
+      parameters:
+      - description: Draft id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.DraftResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: A staffing draft
+      tags:
+      - Staffing drafts
 schemes:
 - http
 - https

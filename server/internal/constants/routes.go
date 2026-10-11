@@ -33,4 +33,6 @@ const (
 
 	PathCurrentPlan       = "/plans/current"
 	PathPersonAssignments = "/people/:id/assignments"
+	PathStaffingDrafts    = "/staffing-drafts"
+	PathStaffingDraft     = "/staffing-drafts/:id"
 )

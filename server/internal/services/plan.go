@@ -62,20 +62,20 @@ func (s *planService) Current(ctx context.Context) (*models.Plan, error) {
 	if _, err := s.authz.Require(ctx, CanViewPlans); err != nil {
 		return nil, err
 	}
-	return s.baseline(ctx, opGetPlan, true)
+	return findBaseline(ctx, s.plans, opGetPlan, true)
 }
 
-// baseline loads the published baseline, creating the empty one first if it is missing.
+// findBaseline loads the published baseline, creating the empty one first if it is missing.
 // With assignments it loads them too; without, only the plan record.
-func (s *planService) baseline(ctx context.Context, op string, withAssignments bool) (*models.Plan, error) {
-	find := s.plans.FindBaselineSummary
+func findBaseline(ctx context.Context, plans repositories.PlanRepository, op string, withAssignments bool) (*models.Plan, error) {
+	find := plans.FindBaselineSummary
 	if withAssignments {
-		find = s.plans.FindBaseline
+		find = plans.FindBaseline
 	}
 	plan, err := find(ctx)
 	if stderrors.Is(err, gorm.ErrRecordNotFound) {
-		if err := s.EnsureBaseline(ctx); err != nil {
-			return nil, err
+		if err := plans.EnsureBaseline(ctx); err != nil {
+			return nil, errors.DatabaseError(constants.MsgPlanLoadFailed, err).WithOperation(op).WithResource(resourcePlan)
 		}
 		plan, err = find(ctx)
 	}
@@ -96,7 +96,7 @@ func (s *planService) PersonAssignments(ctx context.Context, in PersonAssignment
 	if _, err := s.people.FindOneByID(ctx, in.PersonID); err != nil {
 		return nil, notFoundOrDatabase(err, constants.PersonNotFound, constants.MsgPersonNotFound, resourcePerson, opPersonAssignments)
 	}
-	plan, err := s.baseline(ctx, opPersonAssignments, false)
+	plan, err := findBaseline(ctx, s.plans, opPersonAssignments, false)
 	if err != nil {
 		return nil, err
 	}

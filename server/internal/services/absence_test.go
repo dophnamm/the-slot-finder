@@ -64,6 +64,11 @@ func (m *MockAbsenceRepository) ListHolidays(ctx context.Context) ([]models.Abse
 	return args.Get(0).([]models.Absence), args.Error(1)
 }
 
+func (m *MockAbsenceRepository) ListOverlapping(ctx context.Context, from, to time.Time) ([]models.Absence, error) {
+	args := m.Called(ctx, from, to)
+	return args.Get(0).([]models.Absence), args.Error(1)
+}
+
 // stubPeople knows one person, linked to the signed-in specialist.
 type stubPeople struct {
 	PeopleService

@@ -77,6 +77,11 @@ func (m *MockPersonRepository) ReplaceSkills(ctx context.Context, personID strin
 	return m.Called(ctx, personID, skills).Error(0)
 }
 
+func (m *MockPersonRepository) ListActive(ctx context.Context) ([]models.Person, error) {
+	args := m.Called(ctx)
+	return args.Get(0).([]models.Person), args.Error(1)
+}
+
 func (m *MockPersonRepository) ListExpertises(ctx context.Context) ([]models.Expertise, error) {
 	args := m.Called(ctx)
 	return args.Get(0).([]models.Expertise), args.Error(1)
