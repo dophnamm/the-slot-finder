@@ -11,3 +11,7 @@ export const NEW_DEMAND = {
   headcount: '1',
   totalHours: '40',
 } as const
+
+/** Columns of the demand table, read-only and with the remove column while editing. */
+export const DEMAND_TABLE_COLUMNS = 6
+export const DEMAND_EDIT_COLUMNS = 7

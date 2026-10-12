@@ -1,7 +1,10 @@
+import { CircleCheck } from 'lucide-react'
 import { Section } from '@/shared/components/section'
+import { TableEmpty } from '@/shared/components/table-empty'
 import { useTranslation } from '@/shared/i18n'
 import { UNMET_REASON_LABELS } from '@/shared/staffing'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { UNMET_TABLE_COLUMNS } from './constants'
 import type { ScenarioUnmetProps } from './types'
 
 /** Demand hours nobody could take in this scenario, with the engine's reason. */
@@ -30,11 +33,11 @@ export function ScenarioUnmet({ unmet }: ScenarioUnmetProps) {
               <TableCell>{t(UNMET_REASON_LABELS[row.reason])}</TableCell>
             </TableRow>
           ))}
+          {unmet.length === 0 && (
+            <TableEmpty columns={UNMET_TABLE_COLUMNS} icon={CircleCheck} title={t('Every demand is covered.')} />
+          )}
         </TableBody>
       </Table>
-      {unmet.length === 0 && (
-        <p className="py-6 text-center text-sm text-muted-foreground">{t('Every demand is covered.')}</p>
-      )}
     </Section>
   )
 }

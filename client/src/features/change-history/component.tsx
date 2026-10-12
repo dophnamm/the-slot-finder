@@ -1,11 +1,14 @@
+import { History } from 'lucide-react'
 import { useState } from 'react'
 import { Pager } from '@/shared/components/pager'
 import { Section } from '@/shared/components/section'
+import { TableEmpty } from '@/shared/components/table-empty'
+import { TableLoading } from '@/shared/components/table-loading'
 import { useEvents } from '@/shared/events'
 import { useTranslation } from '@/shared/i18n'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 import { ChangeRow } from './components/change-row'
-import { HISTORY_PAGE_SIZE } from './constants'
+import { HISTORY_PAGE_SIZE, HISTORY_TABLE_COLUMNS } from './constants'
 
 /** Every change that may break the plan, with what the re-plan made of it. */
 export function ChangeHistory() {
@@ -36,12 +39,17 @@ export function ChangeHistory() {
           {events.map((event) => (
             <ChangeRow key={event.id} event={event} />
           ))}
+          {isPending && <TableLoading columns={HISTORY_TABLE_COLUMNS} />}
+          {!isPending && events.length === 0 && (
+            <TableEmpty
+              columns={HISTORY_TABLE_COLUMNS}
+              icon={History}
+              title={t('No changes yet.')}
+              description={t('Leave, holidays and moved phases or deadlines appear here.')}
+            />
+          )}
         </TableBody>
       </Table>
-      {isPending && <p className="py-6 text-center text-sm text-muted-foreground">{t('Loading…')}</p>}
-      {!isPending && events.length === 0 && (
-        <p className="py-6 text-center text-sm text-muted-foreground">{t('No changes yet.')}</p>
-      )}
     </Section>
   )
 }

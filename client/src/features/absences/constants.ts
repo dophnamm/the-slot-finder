@@ -18,3 +18,6 @@ export const ABSENCE_STATUS_LABELS: Record<AbsenceStatus, PlainKey> = {
   planned: 'Planned',
   approved: 'Approved',
 }
+
+/** Columns of the table; the loading and empty rows span them all. */
+export const ABSENCE_TABLE_COLUMNS = 5

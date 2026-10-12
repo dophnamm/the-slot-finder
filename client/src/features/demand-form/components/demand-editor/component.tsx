@@ -1,11 +1,13 @@
-import { Plus } from 'lucide-react'
+import { ClipboardList, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useReplaceDemands } from '@/shared/programs'
 import { Section } from '@/shared/components/section'
+import { TableEmpty } from '@/shared/components/table-empty'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { DEMAND_EDIT_COLUMNS, DEMAND_TABLE_COLUMNS } from './constants'
 import { DemandRow } from './components/demand-row'
 import { DemandViewRow } from './components/demand-view-row'
 import type { DemandDraft, DemandEditorProps } from './types'
@@ -84,9 +86,16 @@ export function DemandEditor({ project, expertises, editable }: DemandEditorProp
             : project.demands.map((demand) => (
                 <DemandViewRow key={demand.id} demand={demand} phase={phaseName(project, demand.phase_id)} />
               ))}
+          {empty && (
+            <TableEmpty
+              columns={editable ? DEMAND_EDIT_COLUMNS : DEMAND_TABLE_COLUMNS}
+              icon={ClipboardList}
+              title={t('No demand yet.')}
+              description={t('Add the hours each expertise needs, in a phase or across the whole project.')}
+            />
+          )}
         </TableBody>
       </Table>
-      {empty && <p className="py-6 text-center text-sm text-muted-foreground">{t('No demand yet.')}</p>}
     </Section>
   )
 }

@@ -14,3 +14,6 @@ export const GROUP_LABEL_CELL_CLASS = 'bg-muted align-top whitespace-normal'
 
 /** The demand's weeks, drawn as a bar under the week columns. */
 export const WINDOW_BAR_CLASS = 'h-1.5 rounded-full bg-underused/40'
+
+/** Columns of the table; the loading and empty rows span them all. */
+export const LABEL_COLUMNS = 1

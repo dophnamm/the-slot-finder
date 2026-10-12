@@ -1,8 +1,11 @@
+import { ClipboardList } from 'lucide-react'
 import { MetricBar } from '@/shared/components/metric-bar'
 import { Section } from '@/shared/components/section'
+import { TableEmpty } from '@/shared/components/table-empty'
 import { useTranslation } from '@/shared/i18n'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 import { cn } from '@/utils/functions'
+import { STAFFING_TABLE_COLUMNS } from './constants'
 import type { ExpertiseStaffingProps } from './types'
 
 /** Budget against planned hours per expertise across the program. */
@@ -42,9 +45,11 @@ export function ExpertiseStaffing({ rows }: ExpertiseStaffingProps) {
               </TableCell>
             </TableRow>
           ))}
+          {rows.length === 0 && (
+            <TableEmpty columns={STAFFING_TABLE_COLUMNS} icon={ClipboardList} title={t('No demand yet.')} />
+          )}
         </TableBody>
       </Table>
-      {rows.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">{t('No demand yet.')}</p>}
     </Section>
   )
 }

@@ -1,11 +1,14 @@
+import { Inbox } from 'lucide-react'
 import { useState } from 'react'
 import { Pager } from '@/shared/components/pager'
 import { Section } from '@/shared/components/section'
+import { TableEmpty } from '@/shared/components/table-empty'
+import { TableLoading } from '@/shared/components/table-loading'
 import { PROGRAMS_PAGE_SIZE, useProjects } from '@/shared/programs'
 import { useTranslation } from '@/shared/i18n'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 import { IntakeRow } from './components/intake-row'
-import { INTAKE_STATUS } from './constants'
+import { INTAKE_STATUS, INTAKE_TABLE_COLUMNS } from './constants'
 
 /** Incoming projects across programs, highest priority and earliest deadline first. */
 export function IntakeQueue() {
@@ -36,12 +39,17 @@ export function IntakeQueue() {
           {projects.map((project) => (
             <IntakeRow key={project.id} project={project} />
           ))}
+          {isPending && <TableLoading columns={INTAKE_TABLE_COLUMNS} />}
+          {!isPending && projects.length === 0 && (
+            <TableEmpty
+              columns={INTAKE_TABLE_COLUMNS}
+              icon={Inbox}
+              title={t('No incoming projects.')}
+              description={t('Projects added to a program wait here until a staffing draft covers them.')}
+            />
+          )}
         </TableBody>
       </Table>
-      {isPending && <p className="py-6 text-center text-sm text-muted-foreground">{t('Loading…')}</p>}
-      {!isPending && projects.length === 0 && (
-        <p className="py-6 text-center text-sm text-muted-foreground">{t('No incoming projects.')}</p>
-      )}
     </Section>
   )
 }

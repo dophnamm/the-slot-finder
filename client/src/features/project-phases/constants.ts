@@ -6,3 +6,6 @@ export const NEW_PHASE_WEEKS = 2
 
 /** The timeline never shows more weeks than this, whatever is typed. */
 export const MAX_TIMELINE_WEEKS = 104
+
+/** Columns of the table; the loading and empty rows span them all. */
+export const PHASE_TABLE_COLUMNS = 5

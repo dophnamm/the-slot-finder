@@ -1,7 +1,10 @@
+import { ArrowLeftRight } from 'lucide-react'
 import { Section } from '@/shared/components/section'
+import { TableEmpty } from '@/shared/components/table-empty'
 import { useTranslation } from '@/shared/i18n'
 import { Badge } from '@/shared/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { CHANGES_TABLE_COLUMNS } from './constants'
 import type { ScenarioChangesProps } from './types'
 import { changeBadge, weekSpan } from './utils'
 
@@ -50,11 +53,15 @@ export function ScenarioChanges({ changes }: ScenarioChangesProps) {
               </TableCell>
             </TableRow>
           ))}
+          {changes.length === 0 && (
+            <TableEmpty
+              columns={CHANGES_TABLE_COLUMNS}
+              icon={ArrowLeftRight}
+              title={t('Nobody’s hours change in this scenario.')}
+            />
+          )}
         </TableBody>
       </Table>
-      {changes.length === 0 && (
-        <p className="py-6 text-center text-sm text-muted-foreground">{t('Nobody’s hours change in this scenario.')}</p>
-      )}
     </Section>
   )
 }

@@ -1,5 +1,7 @@
+import { UserX } from 'lucide-react'
 import { Fragment } from 'react'
 import { Section } from '@/shared/components/section'
+import { TableEmpty } from '@/shared/components/table-empty'
 import { useTranslation } from '@/shared/i18n'
 import { type Assignment, useEditDraft } from '@/shared/staffing'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
@@ -7,7 +9,7 @@ import { cn, formatIsoWeekRange, shortWeekLabel } from '@/utils/functions'
 import { useStaffablePeople } from '../../use-staffable-people'
 import { AssignmentRow } from './components/assignment-row'
 import { GroupHeaderRow } from './components/group-header-row'
-import { PERSON_COLUMN_CLASS, WEEK_COLUMN_CLASS } from './constants'
+import { LABEL_COLUMNS, PERSON_COLUMN_CLASS, WEEK_COLUMN_CLASS } from './constants'
 import type { AssignmentGridProps } from './types'
 import { groupByDemand, lockChanges } from './utils'
 
@@ -71,11 +73,15 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
               ))}
             </Fragment>
           ))}
+          {draft.assignments.length === 0 && (
+            <TableEmpty
+              columns={draft.weeks.length + LABEL_COLUMNS}
+              icon={UserX}
+              title={t('Nobody is assigned yet.')}
+            />
+          )}
         </TableBody>
       </Table>
-      {draft.assignments.length === 0 && (
-        <p className="py-6 text-center text-sm text-muted-foreground">{t('Nobody is assigned yet.')}</p>
-      )}
     </Section>
   )
 }
