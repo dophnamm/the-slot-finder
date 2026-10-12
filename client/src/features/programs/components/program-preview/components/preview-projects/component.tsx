@@ -1,7 +1,8 @@
-import { generatePath, Link } from 'react-router'
+import { generatePath } from 'react-router'
 import { ROUTES } from '@/resources/routes'
 import { MetricBar } from '@/shared/components/metric-bar'
 import { StatusBadge } from '@/shared/components/status-badge'
+import { TextLink } from '@/shared/components/text-link'
 import { useTranslation } from '@/shared/i18n'
 import { Badge } from '@/shared/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
@@ -27,9 +28,9 @@ export function PreviewProjects({ projects, isPending, programId }: PreviewProje
           {projects.map((project) => (
             <TableRow key={project.id}>
               <TableCell>
-                <Link className="font-medium hover:underline" to={generatePath(ROUTES.projectDetail, { programId, id: project.id })}>
+                <TextLink to={generatePath(ROUTES.projectDetail, { programId, id: project.id })}>
                   {project.name}
-                </Link>
+                </TextLink>
               </TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-1">

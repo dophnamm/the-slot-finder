@@ -6,6 +6,7 @@ import { ROUTES } from '@/resources/routes'
 import { useCurrentUser } from '@/shared/auth'
 import { EventSummary } from '@/shared/components/event-summary'
 import { Section } from '@/shared/components/section'
+import { TextLink } from '@/shared/components/text-link'
 import { useTranslation } from '@/shared/i18n'
 import {
   type Draft,
@@ -81,9 +82,9 @@ export function DraftHeader({ draft, editable }: DraftHeaderProps) {
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
         <span className="text-muted-foreground">{t('Covers')}</span>
         {draft.projects.map((project) => (
-          <Link key={project.id} className="font-medium hover:underline" to={generatePath(ROUTES.projectDetail, { programId: project.program_id, id: project.id })}>
+          <TextLink key={project.id} to={generatePath(ROUTES.projectDetail, { programId: project.program_id, id: project.id })}>
             {t('{project} ({program})', { project: project.name, program: project.program })}
-          </Link>
+          </TextLink>
         ))}
       </div>
       {draft.superseded_by && (

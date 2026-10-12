@@ -1,7 +1,8 @@
-import { generatePath, Link } from 'react-router'
+import { generatePath } from 'react-router'
 import { ROUTES } from '@/resources/routes'
 import { AssumptionText } from '@/shared/components/assumption-text'
 import { LinkRow } from '@/shared/components/link-row'
+import { TextLink } from '@/shared/components/text-link'
 import { useTranslation } from '@/shared/i18n'
 import { Badge } from '@/shared/ui/badge'
 import { TableCell } from '@/shared/ui/table'
@@ -18,9 +19,9 @@ export function ScenarioRow({ scenario }: ScenarioRowProps) {
     <LinkRow to={detailPath}>
       <TableCell>
         <div className="flex flex-col">
-          <Link className="font-medium hover:underline" to={detailPath}>
+          <TextLink to={detailPath}>
             {scenario.name}
-          </Link>
+          </TextLink>
           <span className="text-xs text-muted-foreground">{formatDateTime(scenario.updated_at)}</span>
         </div>
       </TableCell>

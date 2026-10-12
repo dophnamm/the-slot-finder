@@ -33,6 +33,13 @@ const NO_NATIVE_DATE_INPUTS = [
   },
 ]
 
+const NO_STYLED_LINKS = [
+  {
+    selector: 'JSXOpeningElement[name.name=/^(Link|a)$/] > JSXAttribute[name.name="className"]',
+    message: "Text links use TextLink from '@/shared/components/text-link', so every link looks clickable the same way.",
+  },
+]
+
 const NO_INLINE_STYLE = [
   {
     selector: 'JSXAttribute[name.name="style"]',
@@ -119,13 +126,28 @@ export default defineConfig([
   {
     files: APP_CODE,
     rules: {
-      'no-restricted-syntax': ['error', ...NO_RAW_TEXT, ...NO_INLINE_STYLE, ...NO_NATIVE_DATE_INPUTS, ...NO_INLINE_FUNCTION_PROPS],
+      'no-restricted-syntax': ['error', ...NO_RAW_TEXT, ...NO_INLINE_STYLE, ...NO_NATIVE_DATE_INPUTS, ...NO_STYLED_LINKS, ...NO_INLINE_FUNCTION_PROPS],
     },
   },
   {
     // Later configs replace earlier ones for the same rule, so this one repeats the shared selectors.
     files: ['src/**/component.tsx'],
     ignores: ['src/shared/ui/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...NO_RAW_TEXT,
+        ...NO_INLINE_STYLE, ...NO_NATIVE_DATE_INPUTS, ...NO_STYLED_LINKS,
+        ...NO_INLINE_FUNCTION_PROPS,
+        ...NO_TYPES_IN_COMPONENT,
+        ...ONE_COMPONENT_PER_FILE,
+        ...ONLY_IMPORTS_AND_COMPONENT,
+      ],
+    },
+  },
+  {
+    // TextLink is the one place that styles a link; it keeps every other rule.
+    files: ['src/shared/components/text-link/component.tsx'],
     rules: {
       'no-restricted-syntax': [
         'error',
