@@ -1942,7 +1942,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Creates a person with their skills. Exactly one skill must be primary.
+      description: Creates a person with their expertise and levels. Exactly one expertise
+        must be primary.
       parameters:
       - description: Person
         in: body
@@ -2167,8 +2168,8 @@ paths:
     put:
       consumes:
       - application/json
-      description: Replaces the whole list. Exactly one skill must be primary; each
-        expertise appears once.
+      description: Replaces the person's whole expertise list. Exactly one must be
+        primary; each expertise appears once.
       parameters:
       - description: Person id
         in: path
