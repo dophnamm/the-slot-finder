@@ -149,8 +149,9 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | PATCH | `/staffing-drafts/{id}/assignments` | One batch `{ add, remove, set }`: add or remove an assignment (any person to a covered demand; the server sets `kind`), change weekly hours (0 removes the week), lock or unlock. Swap to an alternative comes later | planner |
 | POST | `/staffing-drafts/{id}/accept` | Publish (`{ baseVersion }`; `409 PLAN_VERSION_CONFLICT` if the baseline changed) | planner |
 | POST | `/staffing-drafts/{id}/reject` | Discard a draft | planner |
-| POST | `/scenarios` | Create a what-if from a list of hypothetical changes | planner |
-| GET | `/scenarios/{id}/diff` | Compare a scenario with the baseline | planner |
+| GET, POST | `/scenarios` | List scenarios (newest first, with stale flag and churn), or create one from `{ name, assumptions }` (`shift_project`, `add_absence`) and compute it on a copy of the baseline | planner |
+| GET, DELETE | `/scenarios/{id}` | A scenario with its changes against the baseline it was built on (week by week), churn, unmet demand and the projects planned again; or delete it | planner |
+| POST | `/scenarios/{id}/rerun` | Compute a scenario again, with the same assumptions, against the baseline in force | planner |
 | GET | `/insights/heatmap?from=&to=&expertise=` | Person × week matrix. Each cell holds total hours plus hours per expertise; `expertise=` (an expertise id) keeps people who hold that expertise or work on it in the range. Each cell also has capacity, utilization, its band and a tentative flag for planned leave | planner, lead |
 | GET | `/insights/risks` | Understaffed and at-risk projects, delivery behind time, overloaded people in the next `HEATMAP_DEFAULT_WEEKS` weeks; likely over budget, sustained overload and overdue milestones later | planner, lead |
 | GET | `/insights/capacity-forecast?from=&to=&expertise=` | Per expertise × week: free capacity, unmet confirmed demand, expected pipeline demand (× confidence), and shortfall signals | planner, lead |
@@ -358,6 +359,7 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `REPLAN_DEBOUNCE` | Window in which change events are batched into one re-plan (30s in `.env.example` for local demos) | 5m |
 | `REPLAN_POLL_INTERVAL` · `REPLAN_BATCH_SIZE` | How often the runner looks for pending events, and how many it claims at once | 10s · 50 |
 | `REPLAN_MAX_ATTEMPTS` · `REPLAN_RETRY_BACKOFF` | Retries before an event is `failed`, and the delay step between them | 5 · 30s |
+| `SCENARIO_MAX_SHIFT_WEEKS` · `SCENARIO_MAX_ASSUMPTIONS` | The most weeks a scenario may move a project, and the most assumptions in one scenario | 12 · 10 |
 | `WORKING_WEEKDAYS` | Days that count when absence hours are computed | Mon–Fri |
 | `HEATMAP_DEFAULT_WEEKS` · `HEATMAP_MAX_WEEKS` | Weeks shown by default on the heatmap, and the largest range allowed | 12 · 52 |
 | `ALERT_HORIZON_WEEKS` | A deadline this close turns a gap into **at risk** | 4 |
