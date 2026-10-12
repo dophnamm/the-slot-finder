@@ -23,10 +23,12 @@ Run `make` at the repo root to list the shortcuts:
 | First run: `.env` files and dependencies | `make setup` |
 | Whole stack in Docker: Postgres, Redis, Keycloak, OTel, Jaeger, migrations, API on `:3000` | `make up` · stop with `make down` · logs with `make logs` |
 | Infra in Docker, server and client on the host | `make dev` (or `make infra`, then `make server` / `make client`) |
-| Lint, test and build both sides (CI runs it on every pull request: `.github/workflows/check.yml`) | `make check` |
+| Lint, test and build both sides, or one side | `make check` · `make check-server` · `make check-client` |
 | Load demo data (expertises, 12 people with skills, leave, holidays, 2 programs with 6 projects, a baseline staffing 3 of them, 2 what-if scenarios; safe to run again) | `make seed` |
 | Wipe local data (DB and Keycloak volumes) | `make reset-data` |
 | Apply the sign-in theme to existing Keycloak data (a fresh realm import already has it) | `make keycloak-theme` |
+
+CI (`.github/workflows/check.yml`) runs on every pull request and every push to `main`. The server and client jobs run in parallel, each only when its folder, the workflow or the root `Makefile` changed.
 
 Compose lives in `server/docker-compose.yml` and reads `server/cmd/server/.env`. The `server` service overrides the hosts so they point at containers. The `migrate` service runs `atlas migrate apply` before the API starts.
 
@@ -41,7 +43,7 @@ Compose lives in `server/docker-compose.yml` and reads `server/cmd/server/.env`.
 | Unit tests | `go test ./...` · CI-like: `make tests` (race, coverage, count=1) |
 | Single test | `go test ./internal/services -run TestName -v` |
 | Integration tests (testcontainers, needs Docker) | `go test -tags=integration ./...` |
-| Lint | `make lint` (golangci-lint v2 via `go run`) |
+| Lint | `make lint` (golangci-lint v2 via `go run`; the version is in `.golangci-lint-version`, which CI reads too) |
 | Regenerate Swagger after changing handler annotations | `make swagger-load` (needs `swag`), or `go run github.com/swaggo/swag/cmd/swag@v1.16.6 init` with the same flags as the Makefile |
 | New migration from GORM models (needs Atlas CLI + Docker) | `make migrate-generate name=<name>`, then `make migrate-up` |
 
