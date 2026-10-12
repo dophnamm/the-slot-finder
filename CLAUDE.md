@@ -51,7 +51,8 @@ Compose lives in `server/docker-compose.yml` and reads `server/cmd/server/.env`.
 |---|---|
 | Dev server on `:5173` (proxies `/api` to `:3000`) | `npm run dev` |
 | Type-check | `npx tsc -b` |
-| Lint (ESLint, then `scripts/check-structure.mjs`) | `npm run lint` |
+| Lint (ESLint, Prettier check, then `scripts/check-structure.mjs`) | `npm run lint` |
+| Format with Prettier (no semicolons, single quotes, 120 columns, Tailwind class order) | `npm run format` |
 | Tests (Vitest + Testing Library, jsdom) | `npm test` · one file: `npx vitest run src/features/heatmap/utils.test.ts` |
 | Production build | `npm run build` |
 | Add a shadcn component (lands in `src/shared/ui`) | `npx shadcn@latest add <name>` |
