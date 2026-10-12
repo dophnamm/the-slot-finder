@@ -83,7 +83,9 @@ export function ProgramDetailPage() {
 
 ## Checks
 
-`npm run lint` runs ESLint and then `scripts/check-structure.mjs`. Together they reject:
+Format with `npm run format` (Prettier) before committing; `npm run lint` fails on unformatted files.
+
+`npm run lint` runs ESLint, the Prettier check and then `scripts/check-structure.mjs`. Together they reject:
 - types declared in `component.tsx`, including inline object types
 - a second or nested component
 - constants, helpers or other statements outside the exported component
