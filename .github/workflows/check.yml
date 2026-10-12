@@ -1,8 +1,12 @@
 name: check
 
-# Lint, test and build the server and the client on every pull request (the same as `make check`).
+# Lint, test and build on every pull request (the same as `make check-server` / `make check-client`).
+# Each side runs only when its folder, this workflow or the root Makefile changed; a skipped job counts as passed.
+# Pushes to main run too, so main holds the Go, lint and npm caches that every pull request restores.
 on:
   pull_request:
+  push:
+    branches: [main]
 
 permissions:
   contents: read
@@ -12,7 +16,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+      client: ${{ steps.filter.outputs.client }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            shared: &shared
+              - .github/workflows/check.yml
+              - Makefile
+            server:
+              - *shared
+              - server/**
+            client:
+              - *shared
+              - client/**
+
+  server:
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,15 +53,33 @@ jobs:
           go-version-file: server/go.mod
           cache-dependency-path: server/go.sum
 
+      # A prebuilt, cached binary instead of `go run`, which compiles golangci-lint from source on every run.
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          working-directory: server
+          version-file: .golangci-lint-version
+          args: --config .golangci.yml
+
+      - name: Test and build
+        run: make test-server build-server
+
+  client:
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version-file: client/.nvmrc
           cache: npm
           cache-dependency-path: client/package-lock.json
 
-      - name: Install client dependencies
+      - name: Install dependencies
         run: npm ci
         working-directory: client
 
-      - name: make check
-        run: make check
+      - name: Lint, test and build
+        run: make check-client
