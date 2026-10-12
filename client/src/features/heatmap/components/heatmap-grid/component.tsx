@@ -41,7 +41,7 @@ export function HeatmapGrid({ data, expertiseId }: HeatmapGridProps) {
             <TableRow className={GROUP_ROW_CLASS}>
               <TableCell className={GROUP_LABEL_CLASS}>
                 {t('{expertise} ({count})', {
-                  expertise: group.expertise || t('No primary skill'),
+                  expertise: group.expertise || t('No primary expertise'),
                   count: group.rows.length,
                 })}
               </TableCell>

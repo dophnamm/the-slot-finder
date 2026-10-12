@@ -63,7 +63,7 @@ export function PersonFormDialog({ open, person, onOpenChange }: PersonFormDialo
           <DialogHeader>
             <DialogTitle>{person ? t('Edit person') : t('Add person')}</DialogTitle>
             <DialogDescription>
-              {t('Exactly one skill is primary: the expertise this person is staffed for first.')}
+              {t('Exactly one expertise is primary: the one this person is staffed for first.')}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">

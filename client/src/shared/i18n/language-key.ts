@@ -24,14 +24,14 @@ export type LanguageKey = {
   Active: string
   'Add absence': string
   'Add assumption': string
-  'Add at least one skill.': string
+  'Add at least one expertise.': string
   'Add demand': string
+  'Add expertise': string
   'Add holiday': string
   'Add leave': string
   'Add person': string
   'Add phase': string
   'Add project': string
-  'Add skill': string
   Added: string
   After: string
   'All expertises': string
@@ -113,7 +113,7 @@ export type LanguageKey = {
   'End week': string
   Events: string
   'Every demand is covered.': string
-  'Exactly one skill is primary: the expertise this person is staffed for first.': string
+  'Exactly one expertise is primary: the one this person is staffed for first.': string
   Expertise: string
   'Expertise, levels and weekly hours of everyone who can be staffed.': string
   Failed: string
@@ -184,7 +184,7 @@ export type LanguageKey = {
   'No people yet.': string
   'No person record': string
   'No phases yet': string
-  'No primary skill': string
+  'No primary expertise': string
   'No programs yet.': string
   'No project needs attention.': string
   'No projects yet.': string
@@ -266,10 +266,10 @@ export type LanguageKey = {
   'Remove absence': string
   'Remove assumption': string
   'Remove demand': string
+  'Remove expertise': string
   'Remove from the draft': string
   'Remove holiday': string
   'Remove phase': string
-  'Remove skill': string
   'Remove the phase {name}?': string
   Removed: string
   'Report leave or training. A planner approves it.': string
@@ -296,7 +296,6 @@ export type LanguageKey = {
   'Signed in as {name}': string
   'Signed out': string
   'Signing you in…': string
-  Skills: string
   Someone: string
   Specialist: string
   Staffing: string
@@ -327,7 +326,7 @@ export type LanguageKey = {
   'There is no staffing draft at this address.': string
   'This cannot be undone. Continue?': string
   'This cannot be undone. Open projects of a cancelled program are cancelled too. Continue?': string
-  'This draft has stretch assignments: people below the minimum level or without the skill. Accept them anyway?': string
+  'This draft has stretch assignments: people below the minimum level or without the expertise. Accept them anyway?': string
   Time: string
   Timeline: string
   To: string
