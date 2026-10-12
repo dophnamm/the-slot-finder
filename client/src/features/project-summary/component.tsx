@@ -39,7 +39,8 @@ export function ProjectSummary({ projectId }: ProjectSummaryProps) {
   const handleAction = (next: ProjectAction) => action.mutate(next, { onSuccess: handleDone })
 
   if (isPending) return null
-  if (!project) return <PagePlaceholder title={t('Project not found')} description={t('There is no project at this address.')} />
+  if (!project)
+    return <PagePlaceholder title={t('Project not found')} description={t('There is no project at this address.')} />
 
   const editable = canEdit(user, [project.lead, project.program_lead])
   const actions = editable ? availableActions(PROJECT_ACTIONS, project.status) : []
@@ -69,7 +70,9 @@ export function ProjectSummary({ projectId }: ProjectSummaryProps) {
                 action={name}
                 label={t(PROJECT_ACTIONS[name].label)}
                 destructive={name === 'cancel'}
-                confirmText={CONFIRMED_PROJECT_ACTIONS.includes(name) ? t('This cannot be undone. Continue?') : undefined}
+                confirmText={
+                  CONFIRMED_PROJECT_ACTIONS.includes(name) ? t('This cannot be undone. Continue?') : undefined
+                }
                 disabled={action.isPending}
                 onAction={handleAction}
               />
@@ -103,7 +106,9 @@ export function ProjectSummary({ projectId }: ProjectSummaryProps) {
           {t('The last phase ends after the deadline week. Move the deadline or shorten a phase.')}
         </p>
       )}
-      {editing && <ProjectFormDialog open={editing} programId={project.program_id} project={project} onOpenChange={setEditing} />}
+      {editing && (
+        <ProjectFormDialog open={editing} programId={project.program_id} project={project} onOpenChange={setEditing} />
+      )}
     </Section>
   )
 }

@@ -30,8 +30,14 @@ export function SkillsEditor({ skills, expertises, onChange }: SkillsEditorProps
       </div>
       {skills.length === 0 && <p className="text-sm text-muted-foreground">{t('Add at least one skill.')}</p>}
       {skills.map((skill, index) => (
-        <SkillRow key={skill.expertise_id} index={index} skill={skill} expertises={optionsForRow(skills, expertises, index)}
-          onChange={handleSkillChange} onRemove={handleRemove} />
+        <SkillRow
+          key={skill.expertise_id}
+          index={index}
+          skill={skill}
+          expertises={optionsForRow(skills, expertises, index)}
+          onChange={handleSkillChange}
+          onRemove={handleRemove}
+        />
       ))}
     </div>
   )

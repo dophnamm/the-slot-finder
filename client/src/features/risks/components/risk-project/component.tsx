@@ -27,7 +27,10 @@ export function RiskProject({ project }: RiskProjectProps) {
         ))}
         {metrics.understaffed && (
           <span className="text-xs text-muted-foreground">
-            {t('{gap} h short of {budget} h', { gap: Math.round(metrics.gap_hours), budget: Math.round(metrics.budget_hours) })}
+            {t('{gap} h short of {budget} h', {
+              gap: Math.round(metrics.gap_hours),
+              budget: Math.round(metrics.budget_hours),
+            })}
           </span>
         )}
       </div>

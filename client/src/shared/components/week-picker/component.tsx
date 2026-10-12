@@ -24,16 +24,28 @@ export function WeekPicker({ id, name, value, onChange, min, className, 'aria-la
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         render={
-          <Button id={id} variant="outline" aria-label={ariaLabel}
-            className={cn('justify-start font-normal', !value && 'text-muted-foreground', className)} />
+          <Button
+            id={id}
+            variant="outline"
+            aria-label={ariaLabel}
+            className={cn('justify-start font-normal', !value && 'text-muted-foreground', className)}
+          />
         }
       >
         <CalendarRange />
         {isIsoWeek(value) ? t('{week} · {range}', { week: value, range: formatIsoWeekRange(value) }) : t('Pick a week')}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <Calendar mode="range" ISOWeek showWeekNumber highlightWeek selected={selected} defaultMonth={selected?.from ?? earliest}
-          onSelect={handleSelect} disabled={earliest ? { before: earliest } : undefined} />
+        <Calendar
+          mode="range"
+          ISOWeek
+          showWeekNumber
+          highlightWeek
+          selected={selected}
+          defaultMonth={selected?.from ?? earliest}
+          onSelect={handleSelect}
+          disabled={earliest ? { before: earliest } : undefined}
+        />
       </PopoverContent>
     </Popover>
   )

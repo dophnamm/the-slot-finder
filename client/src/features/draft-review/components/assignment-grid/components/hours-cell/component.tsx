@@ -41,9 +41,19 @@ export function HoursCell({ week, hours, locked, inWindow, editable, onCommit }:
 
   return (
     <TableCell className={cn(WEEK_COLUMN_CLASS, 'p-1')}>
-      <Input type="number" inputMode="decimal" min={0} max={MAX_WEEK_HOURS} step="any" value={value}
-        aria-label={t('Hours in {week}', { week })} className={cn('mx-auto h-8 w-14 bg-card text-center', locked && 'border-primary')}
-        onChange={handleChange} onBlur={handleBlur} onKeyDown={handleKeyDown} />
+      <Input
+        type="number"
+        inputMode="decimal"
+        min={0}
+        max={MAX_WEEK_HOURS}
+        step="any"
+        value={value}
+        aria-label={t('Hours in {week}', { week })}
+        className={cn('mx-auto h-8 w-14 bg-card text-center', locked && 'border-primary')}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+      />
     </TableCell>
   )
 }

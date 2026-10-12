@@ -4,7 +4,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { cn, currentIsoWeek, formatIsoWeekRange, shortWeekLabel } from '@/utils/functions'
 import { groupByExpertise } from '../../utils'
 import { HeatmapRow } from './components/heatmap-row'
-import { CORNER_CELL_CLASS, CURRENT_WEEK_CLASS, GROUP_LABEL_CLASS, GROUP_ROW_CLASS, HEADER_CELL_CLASS, WEEK_COLUMN_CLASS } from './constants'
+import {
+  CORNER_CELL_CLASS,
+  CURRENT_WEEK_CLASS,
+  GROUP_LABEL_CLASS,
+  GROUP_ROW_CLASS,
+  HEADER_CELL_CLASS,
+  WEEK_COLUMN_CLASS,
+} from './constants'
 import type { HeatmapGridProps } from './types'
 
 /** People grouped by primary expertise, one column per ISO week. */
@@ -33,7 +40,10 @@ export function HeatmapGrid({ data, expertiseId }: HeatmapGridProps) {
           <Fragment key={group.expertise}>
             <TableRow className={GROUP_ROW_CLASS}>
               <TableCell className={GROUP_LABEL_CLASS}>
-                {t('{expertise} ({count})', { expertise: group.expertise || t('No primary skill'), count: group.rows.length })}
+                {t('{expertise} ({count})', {
+                  expertise: group.expertise || t('No primary skill'),
+                  count: group.rows.length,
+                })}
               </TableCell>
               {data.weeks.map((week) => (
                 <TableCell key={week} className={cn(week === thisWeek && CURRENT_WEEK_CLASS)} />

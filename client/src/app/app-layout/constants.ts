@@ -1,12 +1,4 @@
-import {
-  CalendarDays,
-  FolderKanban,
-  GitCompareArrows,
-  History,
-  Inbox,
-  LayoutDashboard,
-  Users,
-} from 'lucide-react'
+import { CalendarDays, FolderKanban, GitCompareArrows, History, Inbox, LayoutDashboard, Users } from 'lucide-react'
 import { ROUTES } from '@/resources/routes'
 import type { NavItem } from './types'
 

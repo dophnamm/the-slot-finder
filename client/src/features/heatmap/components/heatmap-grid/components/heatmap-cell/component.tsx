@@ -24,7 +24,9 @@ export function HeatmapCell({ cell, person, current }: HeatmapCellProps) {
             cell.tentative && 'bg-hatched',
           )}
         >
-          <span className="text-sm font-semibold">{cell.utilization === null ? '—' : t('{percent}%', { percent: percent(cell.utilization) })}</span>
+          <span className="text-sm font-semibold">
+            {cell.utilization === null ? '—' : t('{percent}%', { percent: percent(cell.utilization) })}
+          </span>
           <span>{t('{load}/{capacity} h', { load: cell.load, capacity: cell.capacity })}</span>
           {crossHours.map((hours) => (
             <span key={hours.expertise_id} className="truncate text-muted-foreground">

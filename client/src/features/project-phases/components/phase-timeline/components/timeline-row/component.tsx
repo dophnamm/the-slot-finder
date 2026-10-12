@@ -12,7 +12,12 @@ export function TimelineRow({ row, weeks, deadlineWeek }: TimelineRowProps) {
       {row.cells.map((state, index) => (
         <span
           key={weeks[index]}
-          className={cn(WEEK_COLUMN_CLASS, 'h-6 rounded-sm', CELL_CLASSES[state], weeks[index] === deadlineWeek && DEADLINE_CELL_CLASS)}
+          className={cn(
+            WEEK_COLUMN_CLASS,
+            'h-6 rounded-sm',
+            CELL_CLASSES[state],
+            weeks[index] === deadlineWeek && DEADLINE_CELL_CLASS,
+          )}
         />
       ))}
     </div>

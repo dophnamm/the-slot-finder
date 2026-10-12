@@ -9,5 +9,7 @@ export function ScenarioTrail({ scenarioId }: ScenarioTrailProps) {
   const { t } = useTranslation()
   const { data: scenario } = useScenario(scenarioId)
 
-  return <Trail crumbs={[{ label: t('Scenarios'), to: ROUTES.scenarios }, { label: scenario?.name ?? t('Loading…') }]} />
+  return (
+    <Trail crumbs={[{ label: t('Scenarios'), to: ROUTES.scenarios }, { label: scenario?.name ?? t('Loading…') }]} />
+  )
 }

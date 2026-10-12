@@ -11,9 +11,13 @@ export function CoverageRow({ demand }: CoverageRowProps) {
   return (
     <TableRow>
       <TableCell className="font-medium">{demand.project}</TableCell>
-      <TableCell>{t('{expertise} (level {level}+)', { expertise: demand.expertise, level: demand.min_level })}</TableCell>
+      <TableCell>
+        {t('{expertise} (level {level}+)', { expertise: demand.expertise, level: demand.min_level })}
+      </TableCell>
       <TableCell>{demand.phase ?? t('Whole project')}</TableCell>
-      <TableCell className="text-sm text-muted-foreground">{t('{start} – {end}', { start: demand.from_week, end: demand.to_week })}</TableCell>
+      <TableCell className="text-sm text-muted-foreground">
+        {t('{start} – {end}', { start: demand.from_week, end: demand.to_week })}
+      </TableCell>
       <TableCell className="text-right">{demand.hours}</TableCell>
       <TableCell className="text-right">{demand.assigned_hours}</TableCell>
       <TableCell>
@@ -22,7 +26,9 @@ export function CoverageRow({ demand }: CoverageRowProps) {
         ) : (
           <div className="flex flex-col gap-1">
             <Badge variant="red">{t('Short {hours} h', { hours: missing })}</Badge>
-            {demand.unmet_reason && <span className="text-xs text-muted-foreground">{t(UNMET_REASON_LABELS[demand.unmet_reason])}</span>}
+            {demand.unmet_reason && (
+              <span className="text-xs text-muted-foreground">{t(UNMET_REASON_LABELS[demand.unmet_reason])}</span>
+            )}
           </div>
         )}
       </TableCell>

@@ -17,7 +17,10 @@ export function initialValues(program: Program | null): ProgramFormValues {
 }
 
 function objectiveList(text: string): string[] {
-  return text.split(LINE_BREAK).map((line) => line.trim()).filter(Boolean)
+  return text
+    .split(LINE_BREAK)
+    .map((line) => line.trim())
+    .filter(Boolean)
 }
 
 /** The full new program; the lead is sent only when the user may choose it. */

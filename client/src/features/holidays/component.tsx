@@ -18,10 +18,7 @@ export function HolidaysCard() {
   const handleDelete = (id: string) => remove.mutate(id)
 
   return (
-    <Section
-      title={t('Company holidays')}
-      description={t('Holidays lower everyone’s capacity on those days.')}
-    >
+    <Section title={t('Company holidays')} description={t('Holidays lower everyone’s capacity on those days.')}>
       <Table>
         <TableBody>
           {holidays.map((holiday) => (

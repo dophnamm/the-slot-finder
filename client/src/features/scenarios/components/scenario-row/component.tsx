@@ -19,9 +19,7 @@ export function ScenarioRow({ scenario }: ScenarioRowProps) {
     <LinkRow to={detailPath}>
       <TableCell>
         <div className="flex flex-col">
-          <TextLink to={detailPath}>
-            {scenario.name}
-          </TextLink>
+          <TextLink to={detailPath}>{scenario.name}</TextLink>
           <span className="text-xs text-muted-foreground">{formatDateTime(scenario.updated_at)}</span>
         </div>
       </TableCell>

@@ -31,7 +31,9 @@ export function DemandEditor({ project, expertises, editable }: DemandEditorProp
   return (
     <Section
       title={t('Demand')}
-      description={t('Budget hours per expertise and minimum level. Without a phase, a demand spans the whole project.')}
+      description={t(
+        'Budget hours per expertise and minimum level. Without a phase, a demand spans the whole project.',
+      )}
       action={
         editable && (
           <Button variant="outline" size="sm" disabled={expertises.length === 0} onClick={handleAdd}>
@@ -68,8 +70,16 @@ export function DemandEditor({ project, expertises, editable }: DemandEditorProp
         <TableBody>
           {editable
             ? drafts.map((draft, index) => (
-                <DemandRow key={draft.key} index={index} draft={draft} expertises={expertises} phases={project.phases}
-                  window={demandWindow(project, draft.phase_id || null)} onChange={handleChange} onRemove={handleRemove} />
+                <DemandRow
+                  key={draft.key}
+                  index={index}
+                  draft={draft}
+                  expertises={expertises}
+                  phases={project.phases}
+                  window={demandWindow(project, draft.phase_id || null)}
+                  onChange={handleChange}
+                  onRemove={handleRemove}
+                />
               ))
             : project.demands.map((demand) => (
                 <DemandViewRow key={demand.id} demand={demand} phase={phaseName(project, demand.phase_id)} />

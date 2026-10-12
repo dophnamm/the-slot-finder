@@ -58,7 +58,9 @@ export function draftsChanged(demands: Demand[], drafts: DemandDraft[]): boolean
 /** Weeks a demand may be staffed in: its phase, or the project's start through its deadline. */
 export function demandWindow(project: ProjectDetail, phaseId: string | null): WeekWindow {
   const phase = project.phases.find((p) => p.id === phaseId)
-  return phase ? { from: phase.start_week, to: phase.end_week } : { from: project.start_week, to: project.deadline_week }
+  return phase
+    ? { from: phase.start_week, to: phase.end_week }
+    : { from: project.start_week, to: project.deadline_week }
 }
 
 export function phaseName(project: ProjectDetail, phaseId: string | null): string | null {

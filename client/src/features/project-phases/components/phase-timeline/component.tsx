@@ -18,7 +18,11 @@ export function PhaseTimeline({ weeks, deadlineWeek, rows }: PhaseTimelineProps)
               <span
                 key={week}
                 title={formatIsoWeekRange(week)}
-                className={cn(WEEK_COLUMN_CLASS, 'text-center text-xs text-muted-foreground', week === deadlineWeek && 'font-semibold text-destructive')}
+                className={cn(
+                  WEEK_COLUMN_CLASS,
+                  'text-center text-xs text-muted-foreground',
+                  week === deadlineWeek && 'font-semibold text-destructive',
+                )}
               >
                 {shortWeekLabel(week)}
               </span>

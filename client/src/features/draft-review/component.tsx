@@ -15,7 +15,13 @@ export function DraftReview({ draftId }: DraftReviewProps) {
   const { data: draft, isPending } = useDraft(draftId)
 
   if (isPending) return null
-  if (!draft) return <PagePlaceholder title={t('Staffing draft not found')} description={t('There is no staffing draft at this address.')} />
+  if (!draft)
+    return (
+      <PagePlaceholder
+        title={t('Staffing draft not found')}
+        description={t('There is no staffing draft at this address.')}
+      />
+    )
 
   const editable = canEditDraft(user?.role, draft)
 

@@ -22,21 +22,24 @@ const NO_RAW_TEXT = [
 const NO_INLINE_FUNCTION_PROPS = [
   {
     selector: 'JSXAttribute > JSXExpressionContainer > :matches(ArrowFunctionExpression, FunctionExpression)',
-    message: 'Declare the function first (a handler in the component body, or a module-level function) and pass it by name.',
+    message:
+      'Declare the function first (a handler in the component body, or a module-level function) and pass it by name.',
   },
 ]
 
 const NO_NATIVE_DATE_INPUTS = [
   {
     selector: 'JSXAttribute[name.name="type"] > Literal[value=/^(date|week|month|datetime-local)$/]',
-    message: "The browser's date pickers do not match the app. Use DatePicker or WeekPicker from '@/shared/components'.",
+    message:
+      "The browser's date pickers do not match the app. Use DatePicker or WeekPicker from '@/shared/components'.",
   },
 ]
 
 const NO_STYLED_LINKS = [
   {
     selector: 'JSXOpeningElement[name.name=/^(Link|a)$/] > JSXAttribute[name.name="className"]',
-    message: "Text links use TextLink from '@/shared/components/text-link', so every link looks clickable the same way.",
+    message:
+      "Text links use TextLink from '@/shared/components/text-link', so every link looks clickable the same way.",
   },
 ]
 
@@ -75,7 +78,8 @@ const ONE_COMPONENT_PER_FILE = [
 const ONLY_IMPORTS_AND_COMPONENT = [
   {
     selector: 'Program > :not(ImportDeclaration, ExportNamedDeclaration)',
-    message: 'component.tsx holds only imports and the exported component. Constants go in constants.ts, helpers in utils.ts, types in types.ts.',
+    message:
+      'component.tsx holds only imports and the exported component. Constants go in constants.ts, helpers in utils.ts, types in types.ts.',
   },
   {
     selector: 'Program > ExportNamedDeclaration > VariableDeclaration',
@@ -126,7 +130,14 @@ export default defineConfig([
   {
     files: APP_CODE,
     rules: {
-      'no-restricted-syntax': ['error', ...NO_RAW_TEXT, ...NO_INLINE_STYLE, ...NO_NATIVE_DATE_INPUTS, ...NO_STYLED_LINKS, ...NO_INLINE_FUNCTION_PROPS],
+      'no-restricted-syntax': [
+        'error',
+        ...NO_RAW_TEXT,
+        ...NO_INLINE_STYLE,
+        ...NO_NATIVE_DATE_INPUTS,
+        ...NO_STYLED_LINKS,
+        ...NO_INLINE_FUNCTION_PROPS,
+      ],
     },
   },
   {
@@ -137,7 +148,9 @@ export default defineConfig([
       'no-restricted-syntax': [
         'error',
         ...NO_RAW_TEXT,
-        ...NO_INLINE_STYLE, ...NO_NATIVE_DATE_INPUTS, ...NO_STYLED_LINKS,
+        ...NO_INLINE_STYLE,
+        ...NO_NATIVE_DATE_INPUTS,
+        ...NO_STYLED_LINKS,
         ...NO_INLINE_FUNCTION_PROPS,
         ...NO_TYPES_IN_COMPONENT,
         ...ONE_COMPONENT_PER_FILE,
@@ -152,7 +165,8 @@ export default defineConfig([
       'no-restricted-syntax': [
         'error',
         ...NO_RAW_TEXT,
-        ...NO_INLINE_STYLE, ...NO_NATIVE_DATE_INPUTS,
+        ...NO_INLINE_STYLE,
+        ...NO_NATIVE_DATE_INPUTS,
         ...NO_INLINE_FUNCTION_PROPS,
         ...NO_TYPES_IN_COMPONENT,
         ...ONE_COMPONENT_PER_FILE,

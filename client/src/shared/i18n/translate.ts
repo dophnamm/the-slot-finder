@@ -6,9 +6,7 @@ import { locales, type Language } from './locales'
 export type TranslationKey = keyof LanguageKey
 
 /** Placeholder names in a key: `'Hello {name}'` → `'name'`. */
-type ParamNames<K extends string> = K extends `${string}{${infer Name}}${infer Rest}`
-  ? Name | ParamNames<Rest>
-  : never
+type ParamNames<K extends string> = K extends `${string}{${infer Name}}${infer Rest}` ? Name | ParamNames<Rest> : never
 
 export type TranslationParams<K extends TranslationKey> = Record<ParamNames<K>, string | number>
 
@@ -30,9 +28,7 @@ type RawParams = Record<string, string | number>
 
 function interpolate(template: string, params?: RawParams): string {
   if (!params) return template
-  return template.replace(/\{(\w+)\}/g, (match, name: string) =>
-    name in params ? String(params[name]) : match,
-  )
+  return template.replace(/\{(\w+)\}/g, (match, name: string) => (name in params ? String(params[name]) : match))
 }
 
 function resolve(language: Language, key: TranslationKey, params?: RawParams): string {

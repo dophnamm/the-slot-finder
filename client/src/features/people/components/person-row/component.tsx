@@ -35,7 +35,11 @@ export function PersonRow({ person, onEdit, onShowAbsences }: PersonRowProps) {
       <TableCell>
         <div className="flex flex-wrap gap-1">
           {person.skills.map((skill) => (
-            <Badge key={skill.expertise_id} variant={expertiseBadge(skill.expertise_id)} title={skill.primary ? t('Primary expertise') : undefined}>
+            <Badge
+              key={skill.expertise_id}
+              variant={expertiseBadge(skill.expertise_id)}
+              title={skill.primary ? t('Primary expertise') : undefined}
+            >
               {skill.primary && <Star data-icon="inline-start" aria-hidden />}
               {t('{expertise} · level {level}', { expertise: skill.expertise, level: skill.level })}
             </Badge>
@@ -46,10 +50,14 @@ export function PersonRow({ person, onEdit, onShowAbsences }: PersonRowProps) {
         <div className="flex flex-col items-start gap-1">
           <Badge variant={person.active ? 'green' : 'gray'}>{person.active ? t('Active') : t('Inactive')}</Badge>
           {person.start_date && (
-            <span className="text-xs text-muted-foreground">{t('From {date}', { date: formatDate(person.start_date) })}</span>
+            <span className="text-xs text-muted-foreground">
+              {t('From {date}', { date: formatDate(person.start_date) })}
+            </span>
           )}
           {person.end_date && (
-            <span className="text-xs text-muted-foreground">{t('Until {date}', { date: formatDate(person.end_date) })}</span>
+            <span className="text-xs text-muted-foreground">
+              {t('Until {date}', { date: formatDate(person.end_date) })}
+            </span>
           )}
         </div>
       </TableCell>

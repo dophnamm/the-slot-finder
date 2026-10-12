@@ -15,7 +15,9 @@ export function ChangeRow({ event }: ChangeRowProps) {
 
   return (
     <TableRow>
-      <TableCell className="text-sm whitespace-nowrap text-muted-foreground">{formatDateTime(event.occurred_at)}</TableCell>
+      <TableCell className="text-sm whitespace-nowrap text-muted-foreground">
+        {formatDateTime(event.occurred_at)}
+      </TableCell>
       <TableCell className="whitespace-normal">
         <EventSummary event={event} />
       </TableCell>

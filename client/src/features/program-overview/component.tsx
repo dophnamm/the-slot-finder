@@ -14,7 +14,8 @@ export function ProgramOverview({ programId }: ProgramOverviewProps) {
   const { data: overview } = useProgramOverview(programId)
 
   if (isPending) return null
-  if (!program) return <PagePlaceholder title={t('Program not found')} description={t('There is no program at this address.')} />
+  if (!program)
+    return <PagePlaceholder title={t('Program not found')} description={t('There is no program at this address.')} />
 
   return (
     <div className="flex flex-col gap-8">

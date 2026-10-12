@@ -24,12 +24,25 @@ export function PhaseEditRow({ draft, canSave, busy, onChange, onSave, onCancel 
         <Input name="name" aria-label={t('Phase name')} value={draft.name} onChange={handleChange} autoFocus />
       </TableCell>
       <TableCell>
-        <WeekPicker name="start_week" aria-label={t('Start week')} value={draft.start_week} onChange={handleWeekChange} />
+        <WeekPicker
+          name="start_week"
+          aria-label={t('Start week')}
+          value={draft.start_week}
+          onChange={handleWeekChange}
+        />
       </TableCell>
       <TableCell>
-        <WeekPicker name="end_week" min={draft.start_week} aria-label={t('End week')} value={draft.end_week} onChange={handleWeekChange} />
+        <WeekPicker
+          name="end_week"
+          min={draft.start_week}
+          aria-label={t('End week')}
+          value={draft.end_week}
+          onChange={handleWeekChange}
+        />
       </TableCell>
-      <TableCell className="text-muted-foreground">{canSave && formatIsoWeekSpan(draft.start_week, draft.end_week)}</TableCell>
+      <TableCell className="text-muted-foreground">
+        {canSave && formatIsoWeekSpan(draft.start_week, draft.end_week)}
+      </TableCell>
       <TableCell>
         <div className="flex justify-end gap-1">
           <Button type="button" size="sm" disabled={!canSave || busy} onClick={onSave}>

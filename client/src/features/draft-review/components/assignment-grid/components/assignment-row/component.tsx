@@ -12,7 +12,15 @@ import type { AssignmentRowProps } from './types'
 import { allocationsByWeek } from './utils'
 
 /** One person on one demand: kind, reasons, weekly hours, lock and remove. */
-export function AssignmentRow({ assignment, weeks, editable, busy, onSetHours, onToggleLock, onRemove }: AssignmentRowProps) {
+export function AssignmentRow({
+  assignment,
+  weeks,
+  editable,
+  busy,
+  onSetHours,
+  onToggleLock,
+  onRemove,
+}: AssignmentRowProps) {
   const { t } = useTranslation()
   const byWeek = allocationsByWeek(assignment)
   const { demand } = assignment
@@ -31,18 +39,33 @@ export function AssignmentRow({ assignment, weeks, editable, busy, onSetHours, o
           <div className="flex min-w-0 flex-col gap-0.5">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-medium">{assignment.person.name}</span>
-              <Badge variant={ASSIGNMENT_KIND_BADGE[assignment.kind]}>{t(ASSIGNMENT_KIND_LABELS[assignment.kind])}</Badge>
+              <Badge variant={ASSIGNMENT_KIND_BADGE[assignment.kind]}>
+                {t(ASSIGNMENT_KIND_LABELS[assignment.kind])}
+              </Badge>
               <span className="text-xs text-muted-foreground">{t('{hours} h', { hours: assignment.total_hours })}</span>
             </div>
-            <span className="truncate text-xs text-muted-foreground" title={reason}>{reason}</span>
+            <span className="truncate text-xs text-muted-foreground" title={reason}>
+              {reason}
+            </span>
           </div>
           {editable && (
             <div className="flex shrink-0 gap-1">
-              <Button variant="ghost" size="icon-sm" aria-label={allLocked ? t('Unlock hours') : t('Lock hours')}
-                disabled={busy || stretch || assignment.allocations.length === 0} onClick={handleToggleLock}>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={allLocked ? t('Unlock hours') : t('Lock hours')}
+                disabled={busy || stretch || assignment.allocations.length === 0}
+                onClick={handleToggleLock}
+              >
                 {allLocked ? <Lock /> : <LockOpen />}
               </Button>
-              <Button variant="ghost" size="icon-sm" aria-label={t('Remove from the draft')} disabled={busy} onClick={handleRemove}>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={t('Remove from the draft')}
+                disabled={busy}
+                onClick={handleRemove}
+              >
                 <Trash2 />
               </Button>
             </div>
@@ -50,9 +73,15 @@ export function AssignmentRow({ assignment, weeks, editable, busy, onSetHours, o
         </div>
       </TableCell>
       {weeks.map((week) => (
-        <HoursCell key={`${week}:${byWeek.get(week)?.hours ?? 0}:${byWeek.get(week)?.locked ?? false}`} week={week}
-          hours={byWeek.get(week)?.hours ?? 0} locked={byWeek.get(week)?.locked ?? false}
-          inWindow={inWindow(week, demand.from_week, demand.to_week)} editable={editable && !busy} onCommit={handleCommit} />
+        <HoursCell
+          key={`${week}:${byWeek.get(week)?.hours ?? 0}:${byWeek.get(week)?.locked ?? false}`}
+          week={week}
+          hours={byWeek.get(week)?.hours ?? 0}
+          locked={byWeek.get(week)?.locked ?? false}
+          inWindow={inWindow(week, demand.from_week, demand.to_week)}
+          editable={editable && !busy}
+          onCommit={handleCommit}
+        />
       ))}
     </TableRow>
   )

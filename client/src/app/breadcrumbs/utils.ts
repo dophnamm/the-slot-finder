@@ -7,5 +7,8 @@ function isBreadcrumbHandle(handle: unknown): handle is BreadcrumbHandle {
 
 /** The trail of the deepest matched route that declares one. */
 export function currentBreadcrumb(matches: UIMatch[]): BreadcrumbKind | undefined {
-  return matches.map((match) => match.handle).filter(isBreadcrumbHandle).at(-1)?.breadcrumb
+  return matches
+    .map((match) => match.handle)
+    .filter(isBreadcrumbHandle)
+    .at(-1)?.breadcrumb
 }

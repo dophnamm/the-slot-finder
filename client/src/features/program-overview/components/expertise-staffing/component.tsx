@@ -28,8 +28,12 @@ export function ExpertiseStaffing({ rows }: ExpertiseStaffingProps) {
           {rows.map((row) => (
             <TableRow key={row.expertise_id}>
               <TableCell className="font-medium">{row.expertise}</TableCell>
-              <TableCell className="text-right tabular-nums">{t('{hours} h', { hours: Math.round(row.budget_hours) })}</TableCell>
-              <TableCell className="text-right tabular-nums">{t('{hours} h', { hours: Math.round(row.planned_hours) })}</TableCell>
+              <TableCell className="text-right tabular-nums">
+                {t('{hours} h', { hours: Math.round(row.budget_hours) })}
+              </TableCell>
+              <TableCell className="text-right tabular-nums">
+                {t('{hours} h', { hours: Math.round(row.planned_hours) })}
+              </TableCell>
               <TableCell className={cn('text-right tabular-nums', row.understaffed && 'text-destructive')}>
                 {t('{hours} h', { hours: Math.round(row.gap_hours) })}
               </TableCell>

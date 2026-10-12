@@ -27,7 +27,8 @@ export function ProgramFormDialog({ open, program, onOpenChange, onSaved }: Prog
     const { value } = event.target
     setValues((current) => ({ ...current, [field]: value }))
   }
-  const handleDateChange = (value: string, name: string) => setValues((current) => ({ ...current, [name as ProgramTextField]: value }))
+  const handleDateChange = (value: string, name: string) =>
+    setValues((current) => ({ ...current, [name as ProgramTextField]: value }))
   const handleLeadChange = (leadId: string) => setValues((current) => ({ ...current, lead_id: leadId }))
   const handleSaved = (saved: Program) => {
     toast.success(t('Program saved.'))
@@ -63,7 +64,13 @@ export function ProgramFormDialog({ open, program, onOpenChange, onSaved }: Prog
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="program-end">{t('End date')}</Label>
-              <DatePicker id="program-end" name="end_date" min={values.start_date} value={values.end_date} onChange={handleDateChange} />
+              <DatePicker
+                id="program-end"
+                name="end_date"
+                min={values.start_date}
+                value={values.end_date}
+                onChange={handleDateChange}
+              />
             </div>
             {canChooseLead && (
               <div className="flex flex-col gap-2">
@@ -73,7 +80,13 @@ export function ProgramFormDialog({ open, program, onOpenChange, onSaved }: Prog
             )}
             <div className="flex flex-col gap-2">
               <Label htmlFor="program-charter">{t('Charter link')}</Label>
-              <Input id="program-charter" name="charter_url" type="url" value={values.charter_url} onChange={handleChange} />
+              <Input
+                id="program-charter"
+                name="charter_url"
+                type="url"
+                value={values.charter_url}
+                onChange={handleChange}
+              />
             </div>
           </div>
           <div className="flex flex-col gap-2">

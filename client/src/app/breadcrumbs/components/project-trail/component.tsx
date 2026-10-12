@@ -15,7 +15,10 @@ export function ProjectTrail({ projectId }: ProjectTrailProps) {
     <Trail
       crumbs={[
         { label: t('Programs'), to: ROUTES.programs },
-        { label: project.program_name ?? t('Program'), to: generatePath(ROUTES.programDetail, { id: project.program_id }) },
+        {
+          label: project.program_name ?? t('Program'),
+          to: generatePath(ROUTES.programDetail, { id: project.program_id }),
+        },
         { label: project.name },
       ]}
     />

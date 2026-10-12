@@ -41,5 +41,10 @@ export function toChanges(project: Project, values: ProjectFormValues, canChoose
 
 /** A name and both dates, the deadline not before the start. */
 export function canSave(values: ProjectFormValues): boolean {
-  return values.name.trim() !== '' && values.start_earliest !== '' && values.deadline !== '' && values.deadline >= values.start_earliest
+  return (
+    values.name.trim() !== '' &&
+    values.start_earliest !== '' &&
+    values.deadline !== '' &&
+    values.deadline >= values.start_earliest
+  )
 }

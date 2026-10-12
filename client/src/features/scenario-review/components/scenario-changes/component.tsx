@@ -10,7 +10,10 @@ export function ScenarioChanges({ changes }: ScenarioChangesProps) {
   const { t } = useTranslation()
 
   return (
-    <Section title={t('Changes against the baseline')} description={t('Each person and demand whose hours or weeks differ in this scenario.')}>
+    <Section
+      title={t('Changes against the baseline')}
+      description={t('Each person and demand whose hours or weeks differ in this scenario.')}
+    >
       <Table>
         <TableHeader>
           <TableRow>
@@ -31,7 +34,9 @@ export function ScenarioChanges({ changes }: ScenarioChangesProps) {
               <TableCell>
                 <div className="flex flex-col">
                   <span className="tabular-nums">{t('{hours} h', { hours: change.before_hours })}</span>
-                  <span className="text-xs text-muted-foreground">{weekSpan(change.before_from, change.before_to)}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {weekSpan(change.before_from, change.before_to)}
+                  </span>
                 </div>
               </TableCell>
               <TableCell>
@@ -47,7 +52,9 @@ export function ScenarioChanges({ changes }: ScenarioChangesProps) {
           ))}
         </TableBody>
       </Table>
-      {changes.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">{t('Nobody’s hours change in this scenario.')}</p>}
+      {changes.length === 0 && (
+        <p className="py-6 text-center text-sm text-muted-foreground">{t('Nobody’s hours change in this scenario.')}</p>
+      )}
     </Section>
   )
 }

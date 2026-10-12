@@ -109,16 +109,36 @@ export function ProjectPhases({ projectId }: ProjectPhasesProps) {
         <TableBody>
           {phases.map((phase) =>
             draft?.id === phase.id ? (
-              <PhaseEditRow key={phase.id} draft={draft} canSave={isValidDraft(draft)} busy={busy} onChange={setDraft}
-                onSave={handleSave} onCancel={handleCancel} />
+              <PhaseEditRow
+                key={phase.id}
+                draft={draft}
+                canSave={isValidDraft(draft)}
+                busy={busy}
+                onChange={setDraft}
+                onSave={handleSave}
+                onCancel={handleCancel}
+              />
             ) : (
-              <PhaseRow key={phase.id} phase={phase} editable={editable} disabled={busy || draft !== null} onEdit={handleEdit}
-                onRemove={handleRemove} />
+              <PhaseRow
+                key={phase.id}
+                phase={phase}
+                editable={editable}
+                disabled={busy || draft !== null}
+                onEdit={handleEdit}
+                onRemove={handleRemove}
+              />
             ),
           )}
           {draft?.id === null && (
-            <PhaseEditRow key={NEW_PHASE_KEY} draft={draft} canSave={isValidDraft(draft)} busy={busy} onChange={setDraft}
-              onSave={handleSave} onCancel={handleCancel} />
+            <PhaseEditRow
+              key={NEW_PHASE_KEY}
+              draft={draft}
+              canSave={isValidDraft(draft)}
+              busy={busy}
+              onChange={setDraft}
+              onSave={handleSave}
+              onCancel={handleCancel}
+            />
           )}
         </TableBody>
       </Table>

@@ -11,7 +11,9 @@ afterEach(() => {
 
 describe('useDebouncedValue', () => {
   it('keeps the old value while it keeps changing, then takes the last one', () => {
-    const { result, rerender } = renderHook(({ value }) => useDebouncedValue(value, 250), { initialProps: { value: '' } })
+    const { result, rerender } = renderHook(({ value }) => useDebouncedValue(value, 250), {
+      initialProps: { value: '' },
+    })
 
     rerender({ value: 'n' })
     act(() => vi.advanceTimersByTime(100))

@@ -19,12 +19,12 @@ export function IntakeRow({ project }: IntakeRowProps) {
       <TableCell>
         <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
-            <TextLink to={detailPath}>
-              {project.name}
-            </TextLink>
+            <TextLink to={detailPath}>{project.name}</TextLink>
             {project.at_risk && <Badge variant="red">{t('At risk')}</Badge>}
           </div>
-          <span className="text-xs text-muted-foreground">{t('Priority {priority}', { priority: project.priority })}</span>
+          <span className="text-xs text-muted-foreground">
+            {t('Priority {priority}', { priority: project.priority })}
+          </span>
         </div>
       </TableCell>
       <TableCell>
@@ -35,14 +35,18 @@ export function IntakeRow({ project }: IntakeRowProps) {
       <TableCell className="text-sm">
         <div className="flex flex-col">
           <span>{t('{start} – {end}', { start: project.start_week, end: project.deadline_week })}</span>
-          <span className="text-xs text-muted-foreground">{formatIsoWeekSpan(project.start_week, project.deadline_week)}</span>
+          <span className="text-xs text-muted-foreground">
+            {formatIsoWeekSpan(project.start_week, project.deadline_week)}
+          </span>
         </div>
       </TableCell>
       <TableCell className="text-sm">
         {phase ? (
           <div className="flex flex-col">
             <span>{phase.name}</span>
-            <span className="text-xs text-muted-foreground">{t('{start} – {end}', { start: phase.start_week, end: phase.end_week })}</span>
+            <span className="text-xs text-muted-foreground">
+              {t('{start} – {end}', { start: phase.start_week, end: phase.end_week })}
+            </span>
           </div>
         ) : (
           <span className="text-muted-foreground">{t('No phases yet')}</span>

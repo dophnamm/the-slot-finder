@@ -29,7 +29,11 @@ export function ReplanBanner({ programId }: ReplanBannerProps) {
           </span>
         </div>
       </div>
-      <Button size="sm" nativeButton={false} render={<Link to={generatePath(ROUTES.staffingDraft, { id: open.draftId })} />}>
+      <Button
+        size="sm"
+        nativeButton={false}
+        render={<Link to={generatePath(ROUTES.staffingDraft, { id: open.draftId })} />}
+      >
         {t('Review draft')}
       </Button>
     </div>

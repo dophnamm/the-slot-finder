@@ -40,7 +40,10 @@ const data: HeatmapData = {
       person: { id: 'q1', name: 'Quinn' },
       primary_expertise_id: 'qa',
       primary_expertise: 'QA',
-      cells: [cell('2026-W42', { tentative: true, capacity: 28 }), cell('2026-W43', { load: 44, capacity: 40, utilization: 1.1, band: 'overloaded' })],
+      cells: [
+        cell('2026-W42', { tentative: true, capacity: 28 }),
+        cell('2026-W43', { load: 44, capacity: 40, utilization: 1.1, band: 'overloaded' }),
+      ],
     },
   ],
 }
@@ -51,13 +54,17 @@ afterEach(() => {
 })
 
 describe('HeatmapGrid', () => {
-  it('outlines the current week\'s column', () => {
+  it("outlines the current week's column", () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-10-21T09:00:00'))
     render(<HeatmapGrid data={data} expertiseId="" />)
 
-    expect(screen.getByRole('button', { name: 'Erin in 2026-W43' }).closest('td')?.className).toContain(CURRENT_WEEK_CLASS)
-    expect(screen.getByRole('button', { name: 'Erin in 2026-W42' }).closest('td')?.className).not.toContain(CURRENT_WEEK_CLASS)
+    expect(screen.getByRole('button', { name: 'Erin in 2026-W43' }).closest('td')?.className).toContain(
+      CURRENT_WEEK_CLASS,
+    )
+    expect(screen.getByRole('button', { name: 'Erin in 2026-W42' }).closest('td')?.className).not.toContain(
+      CURRENT_WEEK_CLASS,
+    )
   })
 
   it('groups people by primary expertise and colours each cell by its band', () => {

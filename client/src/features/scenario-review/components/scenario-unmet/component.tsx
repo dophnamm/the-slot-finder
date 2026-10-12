@@ -24,13 +24,17 @@ export function ScenarioUnmet({ unmet }: ScenarioUnmetProps) {
             <TableRow key={row.demand_id}>
               <TableCell className="font-medium">{row.project}</TableCell>
               <TableCell>{row.expertise}</TableCell>
-              <TableCell className="text-right tabular-nums text-destructive">{t('{hours} h', { hours: row.hours })}</TableCell>
+              <TableCell className="text-right text-destructive tabular-nums">
+                {t('{hours} h', { hours: row.hours })}
+              </TableCell>
               <TableCell>{t(UNMET_REASON_LABELS[row.reason])}</TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
-      {unmet.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">{t('Every demand is covered.')}</p>}
+      {unmet.length === 0 && (
+        <p className="py-6 text-center text-sm text-muted-foreground">{t('Every demand is covered.')}</p>
+      )}
     </Section>
   )
 }

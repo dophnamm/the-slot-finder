@@ -45,7 +45,12 @@ export function PreviewProjects({ projects, isPending, programId }: PreviewProje
               <TableCell className="text-sm">{project.deadline_week}</TableCell>
               <TableCell>
                 {project.metrics && (
-                  <MetricBar compact label={t('Staffing')} value={project.metrics.staffing_percent} warning={project.metrics.understaffed} />
+                  <MetricBar
+                    compact
+                    label={t('Staffing')}
+                    value={project.metrics.staffing_percent}
+                    warning={project.metrics.understaffed}
+                  />
                 )}
               </TableCell>
             </TableRow>
@@ -53,7 +58,9 @@ export function PreviewProjects({ projects, isPending, programId }: PreviewProje
         </TableBody>
       </Table>
       {isPending && <p className="py-6 text-center text-sm text-muted-foreground">{t('Loading…')}</p>}
-      {!isPending && projects.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">{t('No projects yet.')}</p>}
+      {!isPending && projects.length === 0 && (
+        <p className="py-6 text-center text-sm text-muted-foreground">{t('No projects yet.')}</p>
+      )}
     </div>
   )
 }

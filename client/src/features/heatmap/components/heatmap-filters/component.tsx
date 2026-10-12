@@ -25,8 +25,14 @@ export function HeatmapFilters() {
         <Label htmlFor="heatmap-search">{t('Search')}</Label>
         <div className="relative">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input id="heatmap-search" type="search" className="w-56 pl-8" placeholder={t('Name or expertise')} value={search}
-            onChange={handleSearchChange} />
+          <Input
+            id="heatmap-search"
+            type="search"
+            className="w-56 pl-8"
+            placeholder={t('Name or expertise')}
+            value={search}
+            onChange={handleSearchChange}
+          />
         </div>
       </div>
       <div className="flex flex-col gap-2">

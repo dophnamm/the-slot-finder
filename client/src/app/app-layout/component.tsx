@@ -36,7 +36,9 @@ export function AppLayout() {
           <Separator />
           {user && (
             <div className="flex flex-col px-2 text-sm">
-              <span className="truncate font-medium">{t('Signed in as {name}', { name: user.name || user.username })}</span>
+              <span className="truncate font-medium">
+                {t('Signed in as {name}', { name: user.name || user.username })}
+              </span>
               {user.role && <span className="text-muted-foreground">{t(ROLE_LABELS[user.role])}</span>}
             </div>
           )}

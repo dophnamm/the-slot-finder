@@ -10,7 +10,10 @@ export function ProgramMembers({ programId }: ProgramMembersProps) {
   const { data: members = [], isPending } = useProgramMembers(programId)
 
   return (
-    <Section title={t('Members')} description={t('People with hours in the baseline on this program’s projects, most hours first.')}>
+    <Section
+      title={t('Members')}
+      description={t('People with hours in the baseline on this program’s projects, most hours first.')}
+    >
       <MembersTable members={members} isPending={isPending} programId={programId} />
     </Section>
   )

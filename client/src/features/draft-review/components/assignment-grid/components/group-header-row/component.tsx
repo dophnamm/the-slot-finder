@@ -6,7 +6,13 @@ import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
 import { TableCell, TableRow } from '@/shared/ui/table'
 import { cn } from '@/utils/functions'
 import { inWindow } from '../../utils'
-import { GROUP_LABEL_CELL_CLASS, GROUP_ROW_CLASS, PERSON_COLUMN_CLASS, WEEK_COLUMN_CLASS, WINDOW_BAR_CLASS } from '../../constants'
+import {
+  GROUP_LABEL_CELL_CLASS,
+  GROUP_ROW_CLASS,
+  PERSON_COLUMN_CLASS,
+  WEEK_COLUMN_CLASS,
+  WINDOW_BAR_CLASS,
+} from '../../constants'
 import type { GroupHeaderRowProps } from './types'
 import { personOptions } from './utils'
 
@@ -15,7 +21,11 @@ export function GroupHeaderRow({ group, weeks, people, editable, busy, onAdd }: 
   const { t } = useTranslation()
   const [personId, setPersonId] = useState('')
   const { demand, assignments } = group
-  const options = personOptions(people, demand, assignments.map((assignment) => assignment.person.id))
+  const options = personOptions(
+    people,
+    demand,
+    assignments.map((assignment) => assignment.person.id),
+  )
 
   const handleChange = (event: ChangeEvent<HTMLSelectElement>) => setPersonId(event.target.value)
   const handleAdd = () => {
@@ -47,7 +57,12 @@ export function GroupHeaderRow({ group, weeks, people, editable, busy, onAdd }: 
           </div>
           {editable && (
             <div className="flex items-center gap-2">
-              <NativeSelect className="min-w-0 flex-1 bg-card" aria-label={t('Person to add')} value={personId} onChange={handleChange}>
+              <NativeSelect
+                className="min-w-0 flex-1 bg-card"
+                aria-label={t('Person to add')}
+                value={personId}
+                onChange={handleChange}
+              >
                 <NativeSelectOption value="">{t('Choose a person')}</NativeSelectOption>
                 {options.map((option) => (
                   <NativeSelectOption key={option.id} value={option.id}>

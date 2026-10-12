@@ -11,7 +11,12 @@ const row = (name: string, expertise: string): HeatmapRow => ({
 
 describe('groupByExpertise', () => {
   it('keeps the server order and groups neighbours with the same primary expertise', () => {
-    const groups = groupByExpertise([row('Pat', 'PM'), row('Alex', 'Engineer'), row('Bao', 'Engineer'), row('Hoa', 'QA')])
+    const groups = groupByExpertise([
+      row('Pat', 'PM'),
+      row('Alex', 'Engineer'),
+      row('Bao', 'Engineer'),
+      row('Hoa', 'QA'),
+    ])
     expect(groups.map((g) => [g.expertise, g.rows.map((r) => r.person.name)])).toEqual([
       ['PM', ['Pat']],
       ['Engineer', ['Alex', 'Bao']],

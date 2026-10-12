@@ -11,11 +11,19 @@ export function EventSummary({ event }: EventSummaryProps) {
 
   switch (event.type) {
     case 'AbsenceAdded':
-      return <span>{payload.person_id ? t('{person} is away {dates}', { person, dates }) : t('Company holiday {dates}', { dates })}</span>
+      return (
+        <span>
+          {payload.person_id
+            ? t('{person} is away {dates}', { person, dates })
+            : t('Company holiday {dates}', { dates })}
+        </span>
+      )
     case 'AbsenceRemoved':
       return (
         <span>
-          {payload.person_id ? t('{person} is no longer away {dates}', { person, dates }) : t('Company holiday {dates} removed', { dates })}
+          {payload.person_id
+            ? t('{person} is no longer away {dates}', { person, dates })
+            : t('Company holiday {dates} removed', { dates })}
         </span>
       )
     case 'PhaseSlipped':
