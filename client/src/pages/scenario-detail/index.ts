@@ -1,0 +1,1 @@
+export { ScenarioDetailPage } from './component'

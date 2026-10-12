@@ -10,6 +10,7 @@ export const ROUTES = {
   projectDetail: '/programs/:programId/projects/:id',
   staffingDraft: '/intake/staffing-drafts/:id',
   scenarios: '/scenarios',
+  scenarioDetail: '/scenarios/:id',
   people: '/people',
   mySchedule: '/me',
   events: '/events',

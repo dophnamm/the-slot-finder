@@ -13,6 +13,7 @@ export type LanguageKey = {
   'A customer engagement that groups projects under one timeline.': string
   'A later end week moves every later phase by the same number of weeks.': string
   'A new project starts as incoming until a staffing draft is accepted.': string
+  'A project': string
   'Absence added.': string
   Absences: string
   'Absences of {name}': string
@@ -22,9 +23,11 @@ export type LanguageKey = {
   'Accepted as baseline version {version}.': string
   Active: string
   'Add absence': string
+  'Add assumption': string
   'Add at least one skill.': string
   'Add demand': string
   'Add holiday': string
+  'Add leave': string
   'Add person': string
   'Add phase': string
   'Add project': string
@@ -36,8 +39,10 @@ export type LanguageKey = {
   'Approved absence always lowers capacity; planned absence does when the setting is on.': string
   Assigned: string
   Assignments: string
+  Assumptions: string
   'At risk': string
   'Back to dashboard': string
+  Baseline: string
   'Baseline load against capacity per person and ISO week. Click a cell to see its assignments.': string
   Before: string
   'Before the change': string
@@ -48,6 +53,7 @@ export type LanguageKey = {
   'Budget hours from the demand against hours planned in the baseline.': string
   'Budget hours per expertise and minimum level. Without a phase, a demand spans the whole project.': string
   'Build scenarios (move a project, add leave) and view the diff.': string
+  'Built on baseline version {base}; version {current} is in force now. Run it again to see today’s effect.': string
   'Built on baseline version {version}.': string
   Cancel: string
   'Cancel program': string
@@ -59,6 +65,7 @@ export type LanguageKey = {
   'Changes against the baseline': string
   'Charter link': string
   'Choose a person': string
+  'Choose a project': string
   Client: string
   Close: string
   Closed: string
@@ -66,11 +73,13 @@ export type LanguageKey = {
   'Company holiday {dates}': string
   'Company holiday {dates} removed': string
   'Company holidays': string
+  'Computing…': string
   'Could not finish signing in.': string
   'Could not reach the sign-in service.': string
   Coverage: string
   Covered: string
   Covers: string
+  'Create scenario': string
   'Cross-expertise': string
   'Current phase': string
   'Customer engagements and their projects.': string
@@ -80,6 +89,8 @@ export type LanguageKey = {
   'Deadline week': string
   'Deadline {week}': string
   Default: string
+  Delete: string
+  'Delete this scenario? The real plan is not affected.': string
   Demand: string
   'Demand saved.': string
   Done: string
@@ -88,6 +99,9 @@ export type LanguageKey = {
   'Draft accepted. It is now the baseline.': string
   'Draft created': string
   'Draft rejected.': string
+  'e.g. Checkout slips two weeks': string
+  'Each assumption is applied to a copy of the baseline. Nothing real changes.': string
+  'Each person and demand whose hours or weeks differ in this scenario.': string
   'Earliest start': string
   Edit: string
   'Edit person': string
@@ -98,6 +112,7 @@ export type LanguageKey = {
   'End date': string
   'End week': string
   Events: string
+  'Every demand is covered.': string
   'Exactly one skill is primary: the expertise this person is staffed for first.': string
   Expertise: string
   'Expertise, levels and weekly hours of everyone who can be staffed.': string
@@ -121,8 +136,10 @@ export type LanguageKey = {
   Home: string
   Hours: string
   'Hours in {week}': string
+  'Hours moved': string
   'Hours per day': string
   'Hours per ISO week. Locked hours stay as they are when a draft is generated again; stretch is always locked.': string
+  'Hours the planning engine could not place in this scenario.': string
   Inactive: string
   Incoming: string
   'Incoming projects across programs, highest priority and earliest deadline first.': string
@@ -139,6 +156,8 @@ export type LanguageKey = {
   Members: string
   'Members ({count})': string
   'Minimum level': string
+  'Move a project': string
+  Moved: string
   'Moved, not saved yet': string
   'My absences': string
   'My schedule': string
@@ -148,6 +167,7 @@ export type LanguageKey = {
   Needed: string
   'New phase': string
   'New program': string
+  'New scenario': string
   Next: string
   'No absences yet.': string
   'No access': string
@@ -168,15 +188,18 @@ export type LanguageKey = {
   'No programs yet.': string
   'No project needs attention.': string
   'No projects yet.': string
+  'No scenarios yet. Create one to try a change.': string
   'Nobody has hours on this program yet.': string
   'Nobody has the minimum level': string
   'Nobody has this expertise': string
   'Nobody is assigned yet.': string
   'Nobody is over 100 % in the coming weeks.': string
   'Nobody matches these filters.': string
+  'Nobody’s hours change in this scenario.': string
   'Non-project hours': string
   'None this week': string
   'Not primary': string
+  'Nothing real has changed. To make it real, move the phases on the project’s page or add the leave on the People page; a re-plan draft follows.': string
   'Objectives, one per line': string
   'On hold': string
   Open: string
@@ -191,6 +214,7 @@ export type LanguageKey = {
   'Page {page} of {pages}': string
   'Past the end date': string
   People: string
+  'People changed': string
   'People with hours in the baseline on this program’s projects, most hours first.': string
   Person: string
   'Person saved.': string
@@ -205,6 +229,7 @@ export type LanguageKey = {
   'Pick a date': string
   'Pick a week': string
   Planned: string
+  'Planned again:': string
   'Planned burn': string
   'Planned leave this week, not approved yet.': string
   'Planned leave, not approved yet': string
@@ -234,10 +259,12 @@ export type LanguageKey = {
   'Proposing…': string
   'Put on hold': string
   'Re-plan': string
+  Reason: string
   Reject: string
   'Reject this staffing draft?': string
   Rejected: string
   'Remove absence': string
+  'Remove assumption': string
   'Remove demand': string
   'Remove from the draft': string
   'Remove holiday': string
@@ -251,10 +278,12 @@ export type LanguageKey = {
   'Review draft': string
   Risks: string
   Role: string
+  'Run again': string
   Save: string
   'Save demand': string
   'Saving moves every later phase by 1 week.': string
   'Saving moves every later phase by {weeks} weeks.': string
+  Scenario: string
   Scenarios: string
   Scope: string
   'Scope points': string
@@ -268,11 +297,13 @@ export type LanguageKey = {
   'Signed out': string
   'Signing you in…': string
   Skills: string
+  Someone: string
   Specialist: string
   Staffing: string
   'Staffing by expertise': string
   'Staffing draft': string
   'Staffing draft not found': string
+  Stale: string
   'Start closing': string
   'Start date': string
   'Start week': string
@@ -302,6 +333,7 @@ export type LanguageKey = {
   To: string
   Training: string
   'Triggered by': string
+  'Try a change, such as a project slipping or someone on leave, and see what it does to the plan. Nothing real changes.': string
   'Try again': string
   Type: string
   Unavailable: string
@@ -309,10 +341,14 @@ export type LanguageKey = {
   Underused: string
   'Unexpected error.': string
   'Unlock hours': string
+  Unmet: string
+  'Unmet demand': string
   'Until {date}': string
+  'Version {version}': string
   Waiting: string
   'Weekly hours': string
   Weeks: string
+  'Weeks (minus is earlier)': string
   'What-if scenarios': string
   When: string
   'Who gains or loses hours if this draft is accepted.': string
@@ -343,10 +379,15 @@ export type LanguageKey = {
   '{load}/{capacity} h': string
   '{name} (stretch)': string
   '{percent}%': string
+  '{person} away {dates}, {hours} h a day': string
   '{person} in {week}': string
   '{person} is away {dates}': string
   '{person} is no longer away {dates}': string
   '{project} ({program})': string
+  '{project} 1 week earlier': string
+  '{project} 1 week later': string
+  '{project} {weeks} weeks earlier': string
+  '{project} {weeks} weeks later': string
   '{project} · {expertise} · {phase}': string
   '{project}: deadline moved from {from} to {to}': string
   '{project}: {phase} now ends {week}, {weeks} weeks later': string

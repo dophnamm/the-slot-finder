@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { EVENTS_QUERY_KEY } from '@/shared/events'
 import { translate } from '@/shared/i18n'
 import { PROGRAMS_QUERY_KEY, PROJECTS_QUERY_KEY } from '@/shared/programs'
+import { SCENARIOS_QUERY_KEY } from '@/shared/scenarios'
 import { INSIGHTS_QUERY_KEY } from '@/utils/constants'
 import { acceptDraft, editDraft, generateDraft, getDraft, rejectDraft } from './api'
 import { DRAFT_SUPERSEDED, draftQueryKey, PLAN_VERSION_CONFLICT } from './constants'
@@ -44,8 +45,8 @@ export function useEditDraft(id: string) {
   })
 }
 
-/** Accepting changes the baseline and project statuses, so insights, the change history and
- * project and program lists refetch. A version conflict is shown on the page, not as a toast. */
+/** Accepting changes the baseline and project statuses, so insights, the change history,
+ * project and program lists and scenarios (now stale) refetch. A version conflict is shown on the page, not as a toast. */
 export function useAcceptDraft(id: string) {
   const queryClient = useQueryClient()
   const store = useStoreDraft()
@@ -59,6 +60,7 @@ export function useAcceptDraft(id: string) {
       await queryClient.invalidateQueries({ queryKey: PROGRAMS_QUERY_KEY })
       await queryClient.invalidateQueries({ queryKey: INSIGHTS_QUERY_KEY })
       await queryClient.invalidateQueries({ queryKey: EVENTS_QUERY_KEY })
+      await queryClient.invalidateQueries({ queryKey: SCENARIOS_QUERY_KEY })
     },
     onError: (error) => {
       if (error.code === PLAN_VERSION_CONFLICT) void queryClient.invalidateQueries({ queryKey: draftQueryKey(id) })
