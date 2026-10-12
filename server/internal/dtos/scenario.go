@@ -101,13 +101,20 @@ type ScenarioUnmetResponse struct {
 	Reason    string  `json:"reason" enums:"NO_SKILL,LEVEL_TOO_LOW,NO_CAPACITY_BEFORE_DEADLINE,BLOCKED_BY_LOCKED"`
 }
 
+// ScenarioProjectResponse is a project a scenario planned again.
+type ScenarioProjectResponse struct {
+	ID        string `json:"id"`
+	Name      string `json:"name" example:"Checkout Revamp"`
+	ProgramID string `json:"program_id"`
+}
+
 // ScenarioDetailResponse is one scenario with its result against the baseline it was built on.
 type ScenarioDetailResponse struct {
 	ScenarioResponse
 	// Projects are those planned again.
-	Projects []ProjectRef             `json:"projects"`
-	Changes  []ScenarioChangeResponse `json:"changes"`
-	Unmet    []ScenarioUnmetResponse  `json:"unmet"`
+	Projects []ScenarioProjectResponse `json:"projects"`
+	Changes  []ScenarioChangeResponse  `json:"changes"`
+	Unmet    []ScenarioUnmetResponse   `json:"unmet"`
 }
 
 // NewScenarioResponse maps a scenario for the list.
@@ -145,11 +152,11 @@ func NewScenarioDetailResponse(plan models.Plan, names map[string]string, curren
 	changes []models.ScenarioChange,
 ) ScenarioDetailResponse {
 	out := ScenarioDetailResponse{ScenarioResponse: NewScenarioResponse(plan, names, currentVersion, stale),
-		Projects: make([]ProjectRef, 0, len(projects)), Changes: make([]ScenarioChangeResponse, 0, len(changes)),
+		Projects: make([]ScenarioProjectResponse, 0, len(projects)), Changes: make([]ScenarioChangeResponse, 0, len(changes)),
 		Unmet: make([]ScenarioUnmetResponse, 0, len(plan.Unmet))}
 	demands := map[string]demandRef{}
 	for _, p := range projects {
-		out.Projects = append(out.Projects, ProjectRef{ID: p.ID, Name: p.Name})
+		out.Projects = append(out.Projects, ScenarioProjectResponse{ID: p.ID, Name: p.Name, ProgramID: p.ProgramID})
 		for _, d := range p.Demands {
 			demands[d.ID] = demandRef{project: p, demand: d}
 		}

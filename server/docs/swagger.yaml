@@ -1357,7 +1357,7 @@ definitions:
       projects:
         description: Projects are those planned again.
         items:
-          $ref: '#/definitions/dtos.ProjectRef'
+          $ref: '#/definitions/dtos.ScenarioProjectResponse'
         type: array
       stale:
         type: boolean
@@ -1368,6 +1368,16 @@ definitions:
           $ref: '#/definitions/dtos.ScenarioUnmetResponse'
         type: array
       updated_at:
+        type: string
+    type: object
+  dtos.ScenarioProjectResponse:
+    properties:
+      id:
+        type: string
+      name:
+        example: Checkout Revamp
+        type: string
+      program_id:
         type: string
     type: object
   dtos.ScenarioResponse:

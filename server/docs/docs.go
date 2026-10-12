@@ -4467,7 +4467,7 @@ const docTemplate = `{
                     "description": "Projects are those planned again.",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dtos.ProjectRef"
+                        "$ref": "#/definitions/dtos.ScenarioProjectResponse"
                     }
                 },
                 "stale": {
@@ -4483,6 +4483,21 @@ const docTemplate = `{
                     }
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ScenarioProjectResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Checkout Revamp"
+                },
+                "program_id": {
                     "type": "string"
                 }
             }
