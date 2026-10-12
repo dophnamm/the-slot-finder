@@ -2050,6 +2050,251 @@
                 }
             }
         },
+        "/scenarios": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Every scenario, newest first, with its assumptions, churn and whether the baseline has moved on since.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Scenarios"
+                ],
+                "summary": "What-if scenarios",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/dtos.ScenarioResponse"
+                                    }
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Applies the assumptions (a project moving by weeks, a person away) to a copy of the baseline, plans the affected projects again and saves the result. Nothing else changes.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Scenarios"
+                ],
+                "summary": "Create a what-if scenario",
+                "parameters": [
+                    {
+                        "description": "Name and assumptions",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateScenarioRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.ScenarioDetailResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/scenarios/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The scenario's assumptions, the projects planned again, and its changes, churn and unmet demand against the baseline it was built on.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Scenarios"
+                ],
+                "summary": "A what-if scenario",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Scenario id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.ScenarioDetailResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Scenarios"
+                ],
+                "summary": "Delete a scenario",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Scenario id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/scenarios/{id}/rerun": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Computes the scenario again, with the same assumptions, against the baseline in force.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Scenarios"
+                ],
+                "summary": "Run a scenario again",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Scenario id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.ScenarioDetailResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/staffing-drafts": {
             "post": {
                 "security": [
@@ -2512,6 +2757,86 @@
                 }
             }
         },
+        "dtos.AssumptionRequest": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "from_date": {
+                    "type": "string",
+                    "example": "2026-10-26"
+                },
+                "hours_per_day": {
+                    "type": "number",
+                    "maximum": 24,
+                    "example": 8
+                },
+                "person_id": {
+                    "type": "string"
+                },
+                "project_id": {
+                    "type": "string"
+                },
+                "to_date": {
+                    "type": "string",
+                    "example": "2026-11-06"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "shift_project",
+                        "add_absence"
+                    ]
+                },
+                "weeks": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "dtos.AssumptionResponse": {
+            "type": "object",
+            "properties": {
+                "from_date": {
+                    "type": "string",
+                    "example": "2026-10-26"
+                },
+                "hours_per_day": {
+                    "type": "number",
+                    "example": 8
+                },
+                "person": {
+                    "type": "string",
+                    "example": "Alex Nguyen"
+                },
+                "person_id": {
+                    "type": "string"
+                },
+                "project": {
+                    "type": "string",
+                    "example": "Checkout Revamp"
+                },
+                "project_id": {
+                    "type": "string"
+                },
+                "to_date": {
+                    "type": "string",
+                    "example": "2026-11-06"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "shift_project",
+                        "add_absence"
+                    ]
+                },
+                "weeks": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
         "dtos.ChangeEventResponse": {
             "type": "object",
             "properties": {
@@ -2746,6 +3071,27 @@
                 "start_earliest": {
                     "type": "string",
                     "example": "2026-10-12"
+                }
+            }
+        },
+        "dtos.CreateScenarioRequest": {
+            "type": "object",
+            "required": [
+                "assumptions",
+                "name"
+            ],
+            "properties": {
+                "assumptions": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dtos.AssumptionRequest"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "example": "Checkout slips two weeks"
                 }
             }
         },
@@ -4017,6 +4363,213 @@
                     "items": {
                         "$ref": "#/definitions/dtos.RiskProjectResponse"
                     }
+                }
+            }
+        },
+        "dtos.ScenarioChangeResponse": {
+            "type": "object",
+            "properties": {
+                "after_from": {
+                    "type": "string",
+                    "example": "2026-W46"
+                },
+                "after_hours": {
+                    "type": "number",
+                    "example": 80
+                },
+                "after_to": {
+                    "type": "string",
+                    "example": "2026-W49"
+                },
+                "before_from": {
+                    "description": "The weeks are the first and last with hours; empty when there are none.",
+                    "type": "string",
+                    "example": "2026-W44"
+                },
+                "before_hours": {
+                    "type": "number",
+                    "example": 80
+                },
+                "before_to": {
+                    "type": "string",
+                    "example": "2026-W47"
+                },
+                "change": {
+                    "type": "string",
+                    "enum": [
+                        "added",
+                        "removed",
+                        "changed"
+                    ]
+                },
+                "demand_id": {
+                    "type": "string"
+                },
+                "expertise": {
+                    "type": "string",
+                    "example": "QA"
+                },
+                "moved_hours": {
+                    "description": "MovedHours is the hours placed in a week beyond what that week had before.",
+                    "type": "number",
+                    "example": 40
+                },
+                "person": {
+                    "$ref": "#/definitions/dtos.PersonRef"
+                },
+                "project": {
+                    "type": "string",
+                    "example": "Checkout Revamp"
+                },
+                "project_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ScenarioDetailResponse": {
+            "type": "object",
+            "properties": {
+                "assumptions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.AssumptionResponse"
+                    }
+                },
+                "base_version": {
+                    "description": "BaseVersion is the baseline version it was computed on; Stale is true once the baseline\nin force (CurrentVersion) is another one.",
+                    "type": "integer",
+                    "example": 3
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ScenarioChangeResponse"
+                    }
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "current_version": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Checkout slips two weeks"
+                },
+                "projects": {
+                    "description": "Projects are those planned again.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ProjectRef"
+                    }
+                },
+                "stale": {
+                    "type": "boolean"
+                },
+                "summary": {
+                    "$ref": "#/definitions/dtos.ScenarioSummaryResponse"
+                },
+                "unmet": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ScenarioUnmetResponse"
+                    }
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ScenarioResponse": {
+            "type": "object",
+            "properties": {
+                "assumptions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.AssumptionResponse"
+                    }
+                },
+                "base_version": {
+                    "description": "BaseVersion is the baseline version it was computed on; Stale is true once the baseline\nin force (CurrentVersion) is another one.",
+                    "type": "integer",
+                    "example": 3
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "current_version": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Checkout slips two weeks"
+                },
+                "stale": {
+                    "type": "boolean"
+                },
+                "summary": {
+                    "$ref": "#/definitions/dtos.ScenarioSummaryResponse"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ScenarioSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "hours_moved": {
+                    "description": "HoursMoved is the hours placed in a week beyond what that week had in the baseline.",
+                    "type": "number",
+                    "example": 120
+                },
+                "people_changed": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "unmet_hours": {
+                    "type": "number",
+                    "example": 40
+                }
+            }
+        },
+        "dtos.ScenarioUnmetResponse": {
+            "type": "object",
+            "properties": {
+                "demand_id": {
+                    "type": "string"
+                },
+                "expertise": {
+                    "type": "string",
+                    "example": "QA"
+                },
+                "hours": {
+                    "type": "number",
+                    "example": 40
+                },
+                "project": {
+                    "type": "string",
+                    "example": "Checkout Revamp"
+                },
+                "project_id": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string",
+                    "enum": [
+                        "NO_SKILL",
+                        "LEVEL_TOO_LOW",
+                        "NO_CAPACITY_BEFORE_DEADLINE",
+                        "BLOCKED_BY_LOCKED"
+                    ]
                 }
             }
         },

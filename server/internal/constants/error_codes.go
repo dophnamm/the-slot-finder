@@ -51,6 +51,8 @@ const (
 	WeekOutsideWindow      = "WEEK_OUTSIDE_WINDOW"
 	WeekRangeTooLong       = "WEEK_RANGE_TOO_LONG"
 	DraftSuperseded        = "DRAFT_SUPERSEDED"
+	ScenarioNotFound       = "SCENARIO_NOT_FOUND"
+	AssumptionInvalid      = "ASSUMPTION_INVALID"
 
 	// Email errors
 	EmailSendError = "EMAIL_SEND_ERROR"

@@ -25,8 +25,50 @@ type Plan struct {
 	PublishedBy *string     `gorm:"column:published_by;type:uuid"`
 	// SupersededBy is the newer version of a re-plan draft that replaced this one.
 	SupersededBy *string `gorm:"column:superseded_by;type:uuid"`
+	// Name labels a scenario; empty for other kinds.
+	Name *string `gorm:"column:name"`
+	// Assumptions are a scenario's hypothetical changes.
+	Assumptions []ScenarioAssumption `gorm:"column:assumptions;serializer:json;type:jsonb;not null;default:'[]'"`
+	// Summary is a scenario's churn and unmet hours against the baseline it was built on.
+	Summary *ScenarioSummary `gorm:"column:summary;serializer:json;type:jsonb"`
 
 	Assignments []Assignment `gorm:"foreignKey:PlanID;constraint:OnDelete:CASCADE"`
+}
+
+// ScenarioAssumption is one hypothetical change of a scenario: a project moves by Weeks
+// (shift_project), or a person is away from FromDate to ToDate (add_absence).
+type ScenarioAssumption struct {
+	Type        string
+	ProjectID   string
+	Weeks       int
+	PersonID    string
+	FromDate    time.Time
+	ToDate      time.Time
+	HoursPerDay float64
+}
+
+// ScenarioSummary is how much a scenario changes the plan it was built on.
+type ScenarioSummary struct {
+	PeopleChanged int
+	HoursMoved    float64
+	UnmetHours    float64
+}
+
+// ScenarioChange is how one person's hours on one demand differ between the baseline and a
+// scenario, in total and in which weeks.
+type ScenarioChange struct {
+	PersonID   string
+	PersonName string
+	// Demand has its expertise and project loaded when either plan had them.
+	Demand     *Demand
+	Before     float64
+	After      float64
+	BeforeFrom isoweek.Week
+	BeforeTo   isoweek.Week
+	AfterFrom  isoweek.Week
+	AfterTo    isoweek.Week
+	// Moved is the hours placed in a week beyond what that week had in the baseline.
+	Moved float64
 }
 
 // PlanUnmet is demand hours a draft leaves uncovered, with the engine's reason code.

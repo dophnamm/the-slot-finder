@@ -161,7 +161,7 @@ func (s *staffingService) Generate(ctx context.Context, in GenerateDraftInput) (
 	if err != nil {
 		return nil, err
 	}
-	req, err := s.snapshot(ctx, projects, baseline.Assignments, s.policy(s.cfg.PlanningWeightStability))
+	req, err := s.snapshot(ctx, projects, baseline.Assignments, s.policy(s.cfg.PlanningWeightStability), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -210,8 +210,11 @@ func (s *draftBuilder) loadProjects(ctx context.Context, ids []string, op string
 }
 
 // snapshot builds the engine request: the projects' demand with their windows, every active
-// person with their capacity over those weeks, and the baseline as the starting plan.
-func (s *draftBuilder) snapshot(ctx context.Context, projects []models.Project, existing []models.Assignment, policy engine.Policy) (engine.Request, error) {
+// person with their capacity over those weeks, and the baseline as the starting plan. Extra
+// absences (a scenario's assumptions) lower capacity as if they were approved leave.
+func (s *draftBuilder) snapshot(ctx context.Context, projects []models.Project, existing []models.Assignment, policy engine.Policy,
+	extra []models.Absence,
+) (engine.Request, error) {
 	demands, from, to := engineDemands(projects)
 	if len(demands) == 0 {
 		return engine.Request{}, errors.NewAppError(constants.NoDemandToStaff, constants.MsgNoDemandToStaff, errors.ErrorTypeConflict,
@@ -227,7 +230,7 @@ func (s *draftBuilder) snapshot(ctx context.Context, projects []models.Project, 
 	}
 	return engine.Request{
 		Policy:   policy,
-		People:   s.enginePeople(people, absences, isoweek.Range(from, to)),
+		People:   s.enginePeople(people, append(absences, extra...), isoweek.Range(from, to)),
 		Demands:  demands,
 		Existing: engineExisting(existing),
 	}, nil
@@ -361,9 +364,9 @@ func copyAssignment(a models.Assignment) models.Assignment {
 // view loads a draft with its projects, the weeks they span and its changes against the
 // baseline in force.
 func (s *staffingService) view(ctx context.Context, id, op string) (*DraftView, error) {
-	plan, err := s.plans.FindWithAssignments(ctx, id)
+	plan, err := s.findDraftPlan(ctx, id, op)
 	if err != nil {
-		return nil, notFoundOrDatabase(err, constants.PlanNotFound, constants.MsgPlanNotFound, resourceDraft, op)
+		return nil, err
 	}
 	projects, err := s.loadProjects(ctx, plan.ProjectIDs, op)
 	if err != nil {
@@ -460,10 +463,24 @@ func personIDOf(person *models.Person) *string {
 }
 
 // openDraft loads a plan that is still a draft, for a change.
-func (s *staffingService) openDraft(ctx context.Context, id, op string) (*models.Plan, error) {
+// findDraftPlan loads a staffing draft or a published plan with its assignments. A scenario is
+// not a staffing draft, so these routes do not find it.
+func (s *staffingService) findDraftPlan(ctx context.Context, id, op string) (*models.Plan, error) {
 	plan, err := s.plans.FindWithAssignments(ctx, id)
 	if err != nil {
 		return nil, notFoundOrDatabase(err, constants.PlanNotFound, constants.MsgPlanNotFound, resourceDraft, op)
+	}
+	if plan.Kind == constants.PlanKindScenario {
+		return nil, errors.NewAppError(constants.PlanNotFound, constants.MsgPlanNotFound, errors.ErrorTypeNotFound, http.StatusNotFound).
+			WithOperation(op).WithResource(resourceDraft)
+	}
+	return plan, nil
+}
+
+func (s *staffingService) openDraft(ctx context.Context, id, op string) (*models.Plan, error) {
+	plan, err := s.findDraftPlan(ctx, id, op)
+	if err != nil {
+		return nil, err
 	}
 	if plan.Kind == constants.PlanKindDraft && plan.Status == constants.PlanStatusSuperseded {
 		return nil, draftError(constants.DraftSuperseded, constants.MsgDraftSuperseded, http.StatusConflict, op)

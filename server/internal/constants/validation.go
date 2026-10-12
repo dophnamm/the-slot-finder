@@ -16,6 +16,8 @@ const (
 	ValidationTagDemandProfile = "demand_profile"
 	// ValidationTagProjectStatus accepts only the values in ProjectStatuses.
 	ValidationTagProjectStatus = "project_status"
+	// ValidationTagAssumptionType accepts only the values in AssumptionTypes.
+	ValidationTagAssumptionType = "assumption_type"
 	// ValidationTagMustBeEmpty is the validator's built-in isdefault: the field must not be sent.
 	ValidationTagMustBeEmpty = "isdefault"
 )

@@ -180,6 +180,8 @@ type Config struct {
 	ReplanMaxAttempts             int
 	ReplanRetryBackoff            time.Duration
 	PlanningReplanStabilityWeight float64
+	ScenarioMaxShiftWeeks         int
+	ScenarioMaxAssumptions        int
 
 	// Program metrics (root README §7): how far Scope % may trail Time %, in percentage
 	// points, and how close a deadline turns a gap into at risk.
@@ -292,6 +294,8 @@ func Load() (*Config, error) {
 		ReplanMaxAttempts:             getEnvAsInt("REPLAN_MAX_ATTEMPTS", 5),
 		ReplanRetryBackoff:            getEnvAsDuration("REPLAN_RETRY_BACKOFF", 30*time.Second),
 		PlanningReplanStabilityWeight: getEnvAsFloat("PLANNING_REPLAN_STABILITY_WEIGHT", 2.0),
+		ScenarioMaxShiftWeeks:         getEnvAsInt("SCENARIO_MAX_SHIFT_WEEKS", 12),
+		ScenarioMaxAssumptions:        getEnvAsInt("SCENARIO_MAX_ASSUMPTIONS", 10),
 
 		ScopeLagThreshold: getEnvAsFloat("SCOPE_LAG_THRESHOLD", 20),
 		AlertHorizonWeeks: getEnvAsInt("ALERT_HORIZON_WEEKS", 4),

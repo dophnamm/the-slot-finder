@@ -85,7 +85,8 @@ func newTestRouter(cfg *config.Config) *echo.Echo {
 	staffing := handlers.ProvideStaffingHandler(nil, nil)
 	insights := handlers.ProvideInsightsHandler(nil, nil)
 	events := handlers.ProvideEventHandler(nil, nil)
-	return Router(health, identity, person, absence, program, project, plan, staffing, insights, events, verifier, cfg)
+	scenarios := handlers.ProvideScenarioHandler(nil, nil)
+	return Router(health, identity, person, absence, program, project, plan, staffing, insights, events, scenarios, verifier, cfg)
 }
 
 func baseConfig() *config.Config {
@@ -208,6 +209,11 @@ func TestRouter_People_RBAC(t *testing.T) {
 		{name: "specialist cannot read the change history", method: http.MethodGet, path: constants.PathEvents, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the risks", method: http.MethodGet, path: constants.PathRisks, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read a program overview", method: http.MethodGet, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/overview", token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "lead cannot list scenarios", method: http.MethodGet, path: constants.PathScenarios, token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "lead cannot create a scenario", method: http.MethodPost, path: constants.PathScenarios, token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot read a scenario", method: http.MethodGet, path: "/scenarios/0192f3a4-0000-7000-8000-0000000000aa", token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "lead cannot run a scenario again", method: http.MethodPost, path: "/scenarios/0192f3a4-0000-7000-8000-0000000000aa/rerun", token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "lead cannot delete a scenario", method: http.MethodDelete, path: "/scenarios/0192f3a4-0000-7000-8000-0000000000aa", token: "lead-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read program members", method: http.MethodGet, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/members", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the heatmap", method: http.MethodGet, path: constants.PathHeatmap, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the baseline", method: http.MethodGet, path: constants.PathCurrentPlan, token: "specialist-token", wantStatus: http.StatusForbidden},

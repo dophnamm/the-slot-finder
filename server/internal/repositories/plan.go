@@ -69,6 +69,16 @@ type PlanRepository interface {
 	// ListPersonAssignments returns a person's assignments in a plan with their allocations
 	// from one week through another.
 	ListPersonAssignments(ctx context.Context, planID, personID string, from, to isoweek.Week) ([]models.Assignment, error)
+	// ListScenarios returns every scenario without its assignments, newest first.
+	ListScenarios(ctx context.Context) ([]models.Plan, error)
+	// FindScenario returns a scenario with its assignments.
+	FindScenario(ctx context.Context, id string) (*models.Plan, error)
+	// ReplaceAssignments removes a plan's assignments and inserts the given ones with their
+	// allocations.
+	ReplaceAssignments(ctx context.Context, planID string, assignments []models.Assignment) error
+	// DeleteScenario removes a scenario with its assignments and allocations. It returns the
+	// rows deleted: 0 means there was no such scenario.
+	DeleteScenario(ctx context.Context, id string) (int64, error)
 }
 
 type planRepository struct {
@@ -205,4 +215,36 @@ func (r *planRepository) ListPersonAssignments(ctx context.Context, planID, pers
 		Order("demand_id ASC").
 		Find(&assignments).Error
 	return assignments, err
+}
+
+func (r *planRepository) ListScenarios(ctx context.Context) ([]models.Plan, error) {
+	var plans []models.Plan
+	err := r.db.From(ctx).Where("kind = ?", constants.PlanKindScenario).Order("created_at DESC").Order("id DESC").Find(&plans).Error
+	return plans, err
+}
+
+func (r *planRepository) FindScenario(ctx context.Context, id string) (*models.Plan, error) {
+	var plan models.Plan
+	if err := r.withAssignments(ctx).First(&plan, "id = ? AND kind = ?", id, constants.PlanKindScenario).Error; err != nil {
+		return nil, err
+	}
+	return &plan, nil
+}
+
+func (r *planRepository) ReplaceAssignments(ctx context.Context, planID string, assignments []models.Assignment) error {
+	if err := r.db.From(ctx).Unscoped().Where("plan_id = ?", planID).Delete(&models.Assignment{}).Error; err != nil {
+		return err
+	}
+	if len(assignments) == 0 {
+		return nil
+	}
+	for i := range assignments {
+		assignments[i].PlanID = planID
+	}
+	return r.db.From(ctx).Omit("Person", "Demand").Create(&assignments).Error
+}
+
+func (r *planRepository) DeleteScenario(ctx context.Context, id string) (int64, error) {
+	result := r.db.From(ctx).Unscoped().Where("id = ? AND kind = ?", id, constants.PlanKindScenario).Delete(&models.Plan{})
+	return result.RowsAffected, result.Error
 }

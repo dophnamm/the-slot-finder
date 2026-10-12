@@ -14,13 +14,14 @@ import (
 
 // Custom validation tags (names live in constants so error messages can match them).
 const (
-	ValidationTagRole          = constants.ValidationTagRole
-	ValidationTagDate          = constants.ValidationTagDate
-	ValidationTagAbsenceType   = constants.ValidationTagAbsenceType
-	ValidationTagAbsenceStatus = constants.ValidationTagAbsenceStatus
-	ValidationTagISOWeek       = constants.ValidationTagISOWeek
-	ValidationTagDemandProfile = constants.ValidationTagDemandProfile
-	ValidationTagProjectStatus = constants.ValidationTagProjectStatus
+	ValidationTagRole           = constants.ValidationTagRole
+	ValidationTagDate           = constants.ValidationTagDate
+	ValidationTagAbsenceType    = constants.ValidationTagAbsenceType
+	ValidationTagAbsenceStatus  = constants.ValidationTagAbsenceStatus
+	ValidationTagISOWeek        = constants.ValidationTagISOWeek
+	ValidationTagDemandProfile  = constants.ValidationTagDemandProfile
+	ValidationTagProjectStatus  = constants.ValidationTagProjectStatus
+	ValidationTagAssumptionType = constants.ValidationTagAssumptionType
 )
 
 // RegisterValidations adds the project's custom validation tags to v and makes validation
@@ -47,6 +48,9 @@ func RegisterValidations(v *validator.Validate) error {
 		},
 		ValidationTagProjectStatus: func(fl validator.FieldLevel) bool {
 			return slices.Contains(constants.ProjectStatuses, fl.Field().String())
+		},
+		ValidationTagAssumptionType: func(fl validator.FieldLevel) bool {
+			return slices.Contains(constants.AssumptionTypes, fl.Field().String())
 		},
 		ValidationTagDemandProfile: func(fl validator.FieldLevel) bool {
 			return slices.Contains(constants.SupportedDemandProfiles, fl.Field().String())

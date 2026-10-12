@@ -45,4 +45,8 @@ const (
 	PathRisks   = "/insights/risks"
 
 	PathEvents = "/events"
+
+	PathScenarios     = "/scenarios"
+	PathScenario      = "/scenarios/:id"
+	PathScenarioRerun = "/scenarios/:id/rerun"
 )
