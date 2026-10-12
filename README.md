@@ -41,6 +41,7 @@ Details per part:
 | **Program** | A customer engagement that groups several projects, with one timeline, a brief (goal, objectives) and a charter |
 | **Project** | A unit of delivery inside a program, with its own deadline and staffing demand |
 | **Phase** | An ordered stage of a project (e.g. Discovery → Build → Test) with its own week range. When a phase ends later, every later phase of the project moves by the same number of weeks |
+| **Expertise** | A kind of work: PM, Analyst, Engineer, QA. A person holds one or more expertises, each at a level, and exactly one is their **primary** expertise. The data model stores this as `PERSON_SKILL`; the UI always says *expertise*, never *skill* |
 | **Demand** | Hours a project needs from one expertise, at a minimum level, inside one phase (or across the whole project). Its hours are the **budget hours** |
 | **Staffing draft** | A plan the engine proposes (for new demand or after a change). The Planner reviews and accepts it |
 | **Baseline** | The plan currently in force |

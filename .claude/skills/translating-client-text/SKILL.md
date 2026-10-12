@@ -50,6 +50,15 @@ Import everything from `@/shared/i18n`.
 - **Plurals:** use two keys and choose one in code: `count === 1 ? t('{count} project', { count }) : t('{count} projects', { count })`.
 - **Never create an English locale file.** `locales.en` stays `{}`.
 
+## Words to use
+
+One word per idea, the same on every screen:
+
+| Say | Not | Because |
+|---|---|---|
+| expertise (PM, Analyst, Engineer, QA), primary expertise | skill, primary skill | The demand, cross-expertise and staffing screens all say expertise; `PERSON_SKILL` is only the table name |
+| staffing draft | proposal | A proposal is a business document |
+
 ## Adding a language
 
 1. Add the code to `LANGUAGES` in `src/shared/i18n/locales/index.ts`, e.g. `['en', 'vi'] as const`.
