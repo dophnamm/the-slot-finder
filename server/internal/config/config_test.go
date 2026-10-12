@@ -55,6 +55,19 @@ func TestGetEnvHelpers(t *testing.T) {
 			},
 		},
 		{
+			name: "getEnv drops the quotes a Makefile export keeps",
+			run: func(t *testing.T) {
+				t.Setenv("TEST_GET_ENV_QUOTED", `"UTC"`)
+				assert.Equal(t, "UTC", getEnv("TEST_GET_ENV_QUOTED", "fallback"))
+				t.Setenv("TEST_GET_ENV_QUOTED", `'debug'`)
+				assert.Equal(t, "debug", getEnv("TEST_GET_ENV_QUOTED", "fallback"))
+				t.Setenv("TEST_GET_ENV_QUOTED", `"half`)
+				assert.Equal(t, `"half`, getEnv("TEST_GET_ENV_QUOTED", "fallback"), "an unmatched quote stays")
+				t.Setenv("TEST_GET_ENV_QUOTED_INT", `"42"`)
+				assert.Equal(t, 42, getEnvAsInt("TEST_GET_ENV_QUOTED_INT", 1))
+			},
+		},
+		{
 			name: "getEnv uses fallback when empty",
 			run: func(t *testing.T) {
 				t.Setenv("TEST_GET_ENV_EMPTY", "")
