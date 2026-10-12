@@ -58,7 +58,7 @@ client: env ## Run the client dev server (port 5173, proxies /api to port 3000)
 migrate: env ## Apply database migrations
 	$(COMPOSE) run --rm migrate
 
-seed: env ## Load the demo data (people, skills, leave, holidays); safe to run again
+seed: env ## Load the demo data (people, programs, a staffed baseline, scenarios); safe to run again
 	cd $(SERVER_DIR) && $(MAKE) seed
 
 keycloak-theme: env ## Apply the sign-in theme to the running Keycloak (a new realm gets it on import)
