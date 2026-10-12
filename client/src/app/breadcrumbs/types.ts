@@ -9,6 +9,7 @@ export type BreadcrumbKind =
   | 'intake'
   | 'staffingDraft'
   | 'scenarios'
+  | 'scenarioDetail'
   | 'people'
   | 'events'
   | 'mySchedule'

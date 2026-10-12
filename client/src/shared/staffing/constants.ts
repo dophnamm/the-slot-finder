@@ -61,6 +61,13 @@ export const UNMET_REASON_LABELS: Record<UnmetReason, PlainKey> = {
   BLOCKED_BY_LOCKED: 'The free hours are held by locked allocations',
 }
 
+/** Badge colour per change: added green, changed amber, removed red. */
+export const PLAN_CHANGE_BADGE: Record<PlanChangeKind, BadgeVariant> = {
+  added: 'green',
+  changed: 'amber',
+  removed: 'red',
+}
+
 export const PLAN_CHANGE_LABELS: Record<PlanChangeKind, PlainKey> = {
   added: 'Added',
   removed: 'Removed',

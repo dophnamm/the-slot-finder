@@ -2,6 +2,7 @@ import { useMatches, useParams } from 'react-router'
 import { useTranslation } from '@/shared/i18n'
 import { ProgramTrail } from './components/program-trail'
 import { ProjectTrail } from './components/project-trail'
+import { ScenarioTrail } from './components/scenario-trail'
 import { Trail } from './components/trail'
 import { STATIC_TRAILS } from './constants'
 import { currentBreadcrumb } from './utils'
@@ -14,6 +15,7 @@ export function Breadcrumbs() {
 
   if (kind === 'programDetail') return <ProgramTrail programId={id} />
   if (kind === 'projectDetail') return <ProjectTrail projectId={id} />
+  if (kind === 'scenarioDetail') return <ScenarioTrail scenarioId={id} />
   const trail = kind ? STATIC_TRAILS[kind] : undefined
   if (!trail) return null
   return <Trail crumbs={trail.map((crumb) => ({ label: t(crumb.label), to: crumb.to }))} />

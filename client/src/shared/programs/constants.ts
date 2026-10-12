@@ -11,6 +11,7 @@ export const programMembersQueryKey = (id: string) => ['programs', id, 'members'
 export const PROJECTS_QUERY_KEY = ['projects'] as const
 export const projectsQueryKey = (status: ProjectStatus | 'all') => ['projects', 'list', status] as const
 export const projectQueryKey = (id: string) => ['projects', id] as const
+export const openProjectsQueryKey = ['projects', 'open-options'] as const
 export const LEAD_OPTIONS_QUERY_KEY = ['lead-options'] as const
 
 /** Programs shown per page of the list. */

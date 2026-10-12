@@ -1,4 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { MAX_PAGE_SIZE } from '@/utils/constants'
 import {
   applyProjectAction,
   createProject,
@@ -13,12 +14,18 @@ import {
 import {
   PROGRAMS_PAGE_SIZE,
   PROGRAMS_QUERY_KEY,
+  FINAL_STATUSES,
+  openProjectsQueryKey,
   PROJECTS_QUERY_KEY,
   programProjectsQueryKey,
   projectQueryKey,
   projectsQueryKey,
 } from './constants'
-import type { DemandInput, PhaseChanges, PhaseInput, ProjectAction, ProjectInput, ProjectStatus } from './types'
+import type { DemandInput, PhaseChanges, PhaseInput, Project, ProjectAction, ProjectInput, ProjectStatus } from './types'
+
+function openOnly(page: { data: Project[] }): Project[] {
+  return page.data.filter((project) => !FINAL_STATUSES.includes(project.status))
+}
 
 export function useProgramProjects(programId: string) {
   return useQuery({ queryKey: programProjectsQueryKey(programId), queryFn: () => listProgramProjects(programId) })
@@ -29,6 +36,15 @@ export function useProjects(status: ProjectStatus | undefined, page: number) {
     queryKey: [...projectsQueryKey(status ?? 'all'), page],
     queryFn: () => listProjects(status, page, PROGRAMS_PAGE_SIZE),
     placeholderData: keepPreviousData,
+  })
+}
+
+/** Projects that are not done or cancelled, for pickers; up to MAX_PAGE_SIZE of them. */
+export function useOpenProjects() {
+  return useQuery({
+    queryKey: openProjectsQueryKey,
+    queryFn: () => listProjects(undefined, 1, MAX_PAGE_SIZE),
+    select: openOnly,
   })
 }
 

@@ -9,6 +9,7 @@ import { PeoplePage } from '@/pages/people'
 import { ProgramDetailPage } from '@/pages/program-detail'
 import { ProgramsPage } from '@/pages/programs'
 import { ProjectDetailPage } from '@/pages/project-detail'
+import { ScenarioDetailPage } from '@/pages/scenario-detail'
 import { ScenariosPage } from '@/pages/scenarios'
 import { SignedOutPage } from '@/pages/signed-out'
 import { StaffingDraftPage } from '@/pages/staffing-draft'
@@ -50,7 +51,10 @@ export const router = createBrowserRouter([
           },
           {
             element: <RequirePermission permission="scenarios:view" />,
-            children: [{ path: ROUTES.scenarios, Component: ScenariosPage, handle: crumb('scenarios') }],
+            children: [
+              { path: ROUTES.scenarios, Component: ScenariosPage, handle: crumb('scenarios') },
+              { path: ROUTES.scenarioDetail, Component: ScenarioDetailPage, handle: crumb('scenarioDetail') },
+            ],
           },
           {
             element: <RequirePermission permission="people:manage" />,
