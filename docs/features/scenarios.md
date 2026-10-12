@@ -3,7 +3,7 @@
 **Goal:** a planner tries a what-if, such as "Checkout Revamp slips two weeks" or "Alex is on leave from 26 Oct to 6 Nov". They see who would gain or lose hours, which demand would go unmet and how much the plan would change, without touching the baseline or any real data. This is the **Scenario** of the [root README](../../README.md#6-data-model): a `PLAN` of kind `scenario` with `assumptions`.
 
 **Roles:** planner (create, view, run again, delete).
-**Target:** 12–13 Oct · **Depends on:** [staffing-draft](staffing-draft.md), [replan-on-change](replan-on-change.md) · **Branch:** `feat/scenarios` · **Status:** Not started
+**Target:** 12–13 Oct · **Depends on:** [staffing-draft](staffing-draft.md), [replan-on-change](replan-on-change.md) · **Branch:** `feat/scenarios` · **Status:** In review
 
 ## In scope
 
@@ -25,6 +25,21 @@
   - a scenario is **stale** once the baseline has moved on
   - **Run again** computes it once more, with the same assumptions, against the current baseline
 - **Making it real** is outside the scenario. The planner moves the phases on the project page or adds the leave, and the existing re-plan flow then creates a staffing draft. The scenario page links to the project and to the person's absences.
+
+**As built**
+- **A shifted project keeps its people.** Before planning, its baseline hours move by the same weeks. The engine then re-plans only where the new weeks do not fit, such as a holiday week. Without this, hours outside the new window became a fresh seat for someone else.
+- **The diff compares week by week.** Hours are compared per person and demand for each week, so a project that only moves still shows up.
+  - The same hours in other weeks show as **Moved**.
+  - **Hours moved** counts the hours placed in a week beyond what that week had in the baseline.
+  - **People changed** counts the distinct people with any change.
+- The migration also adds `summary` (jsonb: people changed, hours moved, unmet hours), so the list does not recompute every scenario.
+- An unstaffed (incoming) project that is shifted is planned the way a staffing draft would plan it. This shows who could take it at the new dates.
+- The scenario page has its own changes table, because it shows weeks. The draft review keeps its table. The change badge colours moved to `shared/staffing`.
+- The projects planned again come with their program id, so the page links straight to each project.
+- The staffing-draft routes answer `404` for a scenario id (`findDraftPlan`).
+- Checked on the real stack, with Checkout Revamp accepted into the baseline:
+  - "+2 weeks": four people moved two weeks, and 9 QA hours went to Hoa in the Christmas week.
+  - "Alex away 26 Oct – 6 Nov": Chi took Alex's 64 hours.
 
 ## Not now
 
@@ -89,15 +104,15 @@ The [server README](../../server/README.md#3-api-restjson) lists `GET /scenarios
 ## Tasks
 
 **Server**
-- [ ] Migration (`name`, `assumptions`), constants, settings
-- [ ] Assumption validation and in-memory application (shift a project, add an absence)
-- [ ] `ScenarioService`: create, list, get with diff, run again, delete; handlers, DTOs, routes, Swagger
-- [ ] Tests: assumptions applied in memory, projects picked for planning, no writes outside the scenario, stale flag, RBAC
+- [x] Migration (`name`, `assumptions`), constants, settings
+- [x] Assumption validation and in-memory application (shift a project, add an absence)
+- [x] `ScenarioService`: create, list, get with diff, run again, delete; handlers, DTOs, routes, Swagger
+- [x] Tests: assumptions applied in memory, projects picked for planning, no writes outside the scenario, stale flag, RBAC
 
 **Client**
-- [ ] `shared/scenarios`: types, API, hooks; endpoints, routes and breadcrumbs
-- [ ] Scenarios list and New scenario dialog
-- [ ] Scenario page; changes table moved to `shared/components`
-- [ ] Component tests for the dialog rows and the scenario page
+- [x] `shared/scenarios`: types, API, hooks; endpoints, routes and breadcrumbs
+- [x] Scenarios list and New scenario dialog
+- [x] Scenario page with its own changes table (see As built)
+- [x] Component tests for the dialog rows and the scenario page
 
 **Estimate:** about one day (server about 5 hours, client about 4 hours).

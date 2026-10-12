@@ -31,7 +31,8 @@ Sign in with a demo user (`planner`, `lead` or `specialist`; see [`server/README
 | `/intake/from-document` | **Intake from a document** (later, AI): paste or upload a brief, review the suggested project with a source quote per field, edit, confirm | planner, lead | `/ai/intake-extractions`, then `/programs/:id/projects`, `/projects/:id/phases`, `/projects/:id/demands` |
 | `/programs/:programId/projects/:id` | **Project detail**: project form (with confidence), phase timeline, demand per phase with hours suggestion, assigned people, risks, scope points | planner, lead | `/projects/:id`, `/projects/:id/phases`, `/projects/:id/demands`, `/projects/:id/hours-suggestion`, `/plans/current` |
 | `/intake/staffing-drafts/:id` | **Staffing draft review**: assignment grid, reasons, alternatives with one-click swap, diff with plan churn, manual edits, lock, accept, AI summary (later) | planner | `/staffing-drafts/:id`, `/staffing-drafts/:id/assignments`, `/staffing-drafts/:id/summary` |
-| `/scenarios` | **What-if**: build scenarios (move a project, add leave), view the diff | planner | `/scenarios` |
+| `/scenarios` | **What-if scenarios**: the list (assumptions, baseline version with Stale, people changed, hours moved, unmet) and **New scenario** (move a project, add leave) | planner | `/scenarios`, `/projects`, `/people` |
+| `/scenarios/:id` | **Scenario**: assumptions and figures, Run again, Delete, changes week by week (Moved / Added / Removed / Changed), unmet demand, links to the projects planned again | planner | `/scenarios/:id`, `/scenarios/:id/rerun` |
 | `/people` | **People**: expertise and level matrix, skill tags, start and end dates, location, leave and holidays, capacity changes | planner | `/people`, `/people/:id/absences`, `/people/:id/tags`, `/people/:id/capacity-changes`, `/tags`, `/holidays` |
 | `/insights` | **Insights**: capacity forecast by expertise (with pipeline × confidence and shortfall signals), bench list, plan churn over time | planner, lead (forecast only) | `/insights/capacity-forecast`, `/insights/bench`, `/insights/churn` |
 | `/me` | **My schedule**: my assignments by week, grouped by expertise (primary first, cross-expertise and stretch marked), report leave | specialist | `/me`, `/people/:id/assignments`, `/people/:id/absences` (id from `/me`) |
@@ -56,7 +57,8 @@ flowchart LR
   intake -->|"From a document (later)"| extract["/intake/from-document"]
   extract -->|"Confirm"| project
   events -->|"Open re-plan draft"| draft
-  scenarios -->|"Turn scenario into draft"| draft
+  scenarios --> scenario["/scenarios/:id"]
+  scenario -->|"Make it real: move phases"| project
   draft -->|"Accept"| program
 ```
 
