@@ -592,7 +592,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Creates a person with their skills. Exactly one skill must be primary.",
+                "description": "Creates a person with their expertise and levels. Exactly one expertise must be primary.",
                 "consumes": [
                     "application/json"
                 ],
@@ -939,7 +939,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Replaces the whole list. Exactly one skill must be primary; each expertise appears once.",
+                "description": "Replaces the person's whole expertise list. Exactly one must be primary; each expertise appears once.",
                 "consumes": [
                     "application/json"
                 ],

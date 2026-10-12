@@ -55,7 +55,7 @@ func (h *PersonHandler) List(c *echo.Context) error {
 
 // Create godoc
 // @Summary Create a person
-// @Description Creates a person with their skills. Exactly one skill must be primary.
+// @Description Creates a person with their expertise and levels. Exactly one expertise must be primary.
 // @Tags People
 // @Accept json
 // @Produce json
@@ -151,7 +151,7 @@ func (h *PersonHandler) Update(c *echo.Context) error {
 
 // ReplaceSkills godoc
 // @Summary Replace a person's skills
-// @Description Replaces the whole list. Exactly one skill must be primary; each expertise appears once.
+// @Description Replaces the person's whole expertise list. Exactly one must be primary; each expertise appears once.
 // @Tags People
 // @Accept json
 // @Produce json
