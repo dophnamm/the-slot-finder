@@ -3,7 +3,7 @@
 **Goal:** from the Programs list, a planner or lead opens any program in place and sees its key figures, its projects and who works on it, without leaving the list. The program page's Members tab shows the same people in full.
 
 **Roles:** planner, lead.
-**Target:** 16–17 Oct · **Depends on:** [program-metrics](program-metrics.md) · **Branch:** `feat/program-quick-view` · **Status:** In review
+**Target:** 16–17 Oct · **Depends on:** [program-metrics](program-metrics.md) · **Branch:** `feat/program-quick-view` · **Status:** Done (PR #21)
 
 ## In scope
 
