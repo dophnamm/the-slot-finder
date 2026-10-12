@@ -40,7 +40,7 @@ export function PeopleTable({ onShowAbsences }: PeopleTableProps) {
             <TableHead>{t('Person')}</TableHead>
             <TableHead>{t('Role')}</TableHead>
             <TableHead>{t('Hours')}</TableHead>
-            <TableHead>{t('Skills')}</TableHead>
+            <TableHead>{t('Expertise')}</TableHead>
             <TableHead>{t('Status')}</TableHead>
             <TableHead />
           </TableRow>

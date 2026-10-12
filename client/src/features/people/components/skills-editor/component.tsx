@@ -22,13 +22,13 @@ export function SkillsEditor({ skills, expertises, onChange }: SkillsEditorProps
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <Label>{t('Skills')}</Label>
+        <Label>{t('Expertise')}</Label>
         <Button type="button" variant="outline" size="sm" onClick={handleAdd} disabled={!canAdd}>
           <Plus />
-          {t('Add skill')}
+          {t('Add expertise')}
         </Button>
       </div>
-      {skills.length === 0 && <p className="text-sm text-muted-foreground">{t('Add at least one skill.')}</p>}
+      {skills.length === 0 && <p className="text-sm text-muted-foreground">{t('Add at least one expertise.')}</p>}
       {skills.map((skill, index) => (
         <SkillRow
           key={skill.expertise_id}

@@ -48,7 +48,7 @@ export function SkillRow({ index, skill, expertises, onChange, onRemove }: Skill
         />
         {t('Primary')}
       </label>
-      <Button type="button" variant="ghost" size="icon-sm" aria-label={t('Remove skill')} onClick={handleRemove}>
+      <Button type="button" variant="ghost" size="icon-sm" aria-label={t('Remove expertise')} onClick={handleRemove}>
         <Trash2 />
       </Button>
     </div>

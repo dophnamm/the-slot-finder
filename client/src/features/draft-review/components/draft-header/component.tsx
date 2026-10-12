@@ -43,7 +43,7 @@ export function DraftHeader({ draft, editable }: DraftHeaderProps) {
       confirmStretch &&
       !window.confirm(
         t(
-          'This draft has stretch assignments: people below the minimum level or without the skill. Accept them anyway?',
+          'This draft has stretch assignments: people below the minimum level or without the expertise. Accept them anyway?',
         ),
       )
     )
