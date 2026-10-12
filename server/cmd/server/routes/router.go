@@ -30,6 +30,7 @@ func Router(
 	staffingHandler *handlers.StaffingHandler,
 	insightsHandler *handlers.InsightsHandler,
 	eventHandler *handlers.EventHandler,
+	scenarioHandler *handlers.ScenarioHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 ) *echo.Echo {
@@ -145,6 +146,12 @@ func Router(
 	v1.GET(constants.PathProgramOverview, insightsHandler.ProgramOverview, authenticated, middlewares.RequireRole(constants.ProgramRoles...))
 	v1.GET(constants.PathProgramMembers, insightsHandler.ProgramMembers, authenticated, middlewares.RequireRole(constants.ProgramRoles...))
 	v1.GET(constants.PathEvents, eventHandler.List, authenticated, middlewares.RequireRole(constants.EventViewRoles...))
+
+	v1.GET(constants.PathScenarios, scenarioHandler.List, authenticated, middlewares.RequireRole(constants.ScenarioRoles...))
+	v1.POST(constants.PathScenarios, scenarioHandler.Create, authenticated, middlewares.RequireRole(constants.ScenarioRoles...))
+	v1.GET(constants.PathScenario, scenarioHandler.Get, authenticated, middlewares.RequireRole(constants.ScenarioRoles...))
+	v1.DELETE(constants.PathScenario, scenarioHandler.Delete, authenticated, middlewares.RequireRole(constants.ScenarioRoles...))
+	v1.POST(constants.PathScenarioRerun, scenarioHandler.Rerun, authenticated, middlewares.RequireRole(constants.ScenarioRoles...))
 
 	return r
 }

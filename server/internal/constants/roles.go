@@ -42,6 +42,8 @@ var (
 	// PersonAssignmentRoles may reach a person's assignments; the service lets a specialist
 	// read only their own.
 	PersonAssignmentRoles = []string{RolePlanner, RoleLead, RoleSpecialist}
+	// ScenarioRoles may create, read, run again and delete what-if scenarios.
+	ScenarioRoles = []string{RolePlanner}
 	// InsightRoles may read the heatmap and other insights.
 	InsightRoles = []string{RolePlanner, RoleLead}
 	// EventViewRoles may read the change history.

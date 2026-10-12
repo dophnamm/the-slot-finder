@@ -120,7 +120,7 @@ func (s *replanService) process(ctx context.Context, events []models.ChangeEvent
 		return err
 	}
 	touched := touchedProjects(events, baseline.Assignments)
-	conflicts, err := s.conflicts(ctx, baseline)
+	conflicts, err := s.conflicts(ctx, baseline.Assignments, nil)
 	if err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func (s *replanService) process(ctx context.Context, events []models.ChangeEvent
 	if open != nil {
 		scope = unionIDs(scope, open.ProjectIDs)
 	}
-	projects, err := s.plannable(ctx, scope)
+	projects, err := s.plannable(ctx, scope, opReplan)
 	if err != nil {
 		return err
 	}
@@ -177,8 +177,8 @@ func (s *replanService) process(ctx context.Context, events []models.ChangeEvent
 }
 
 // plannable loads the projects a draft may cover, skipping those on hold, done or cancelled.
-func (s *replanService) plannable(ctx context.Context, ids []string) ([]models.Project, error) {
-	projects, err := s.loadProjects(ctx, ids, opReplan)
+func (s *draftBuilder) plannable(ctx context.Context, ids []string, op string) ([]models.Project, error) {
+	projects, err := s.loadProjects(ctx, ids, op)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +214,7 @@ func (s *replanService) replan(ctx context.Context, baseline, open *models.Plan,
 			}
 		}
 	}
-	req, err := s.snapshot(ctx, projects, existing, s.policy(s.cfg.PlanningReplanStabilityWeight))
+	req, err := s.snapshot(ctx, projects, existing, s.policy(s.cfg.PlanningReplanStabilityWeight), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -293,8 +293,8 @@ func restoreHandEdits(draft, open *models.Plan, inOpen map[string]bool) {
 
 // conflicts finds the projects whose baseline hours no longer fit: a person over capacity ×
 // PLANNING_MAX_UTILIZATION in a week, or hours outside the demand's window.
-func (s *replanService) conflicts(ctx context.Context, baseline *models.Plan) ([]string, error) {
-	from, to, ok := allocationRange(baseline.Assignments)
+func (s *draftBuilder) conflicts(ctx context.Context, assignments []models.Assignment, extra []models.Absence) ([]string, error) {
+	from, to, ok := allocationRange(assignments)
 	if !ok {
 		return nil, nil
 	}
@@ -306,6 +306,7 @@ func (s *replanService) conflicts(ctx context.Context, baseline *models.Plan) ([
 	if err != nil {
 		return nil, err
 	}
+	absences = append(absences, extra...)
 	policy := capacityPolicy(s.cfg)
 	byID := make(map[string]models.Person, len(people))
 	for _, p := range people {
@@ -319,7 +320,7 @@ func (s *replanService) conflicts(ctx context.Context, baseline *models.Plan) ([
 		person, own := capacityInputs(p, absences)
 		return capacity.Weekly(person, week, own, policy)
 	}
-	return conflictingProjects(baseline.Assignments, capacityOf, s.cfg.PlanningMaxUtilization), nil
+	return conflictingProjects(assignments, capacityOf, s.cfg.PlanningMaxUtilization), nil
 }
 
 // conflictingProjects is the pure part of the assessment, sorted by id.

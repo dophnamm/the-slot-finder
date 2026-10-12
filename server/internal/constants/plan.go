@@ -4,7 +4,18 @@ package constants
 const (
 	PlanKindBaseline = "baseline"
 	PlanKindDraft    = "draft"
+	// PlanKindScenario is a what-if: the baseline planned again under hypothetical changes.
+	PlanKindScenario = "scenario"
 )
+
+// Scenario assumption types: a project's dates move, or a person is away.
+const (
+	AssumptionShiftProject = "shift_project"
+	AssumptionAddAbsence   = "add_absence"
+)
+
+// AssumptionTypes lists the assumption types a scenario accepts.
+var AssumptionTypes = []string{AssumptionShiftProject, AssumptionAddAbsence}
 
 // Plan statuses. A draft is published (it becomes the baseline) or rejected; a published
 // baseline is superseded by the next one.

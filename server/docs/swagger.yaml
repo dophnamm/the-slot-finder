@@ -127,6 +127,63 @@ definitions:
         example: 120
         type: number
     type: object
+  dtos.AssumptionRequest:
+    properties:
+      from_date:
+        example: "2026-10-26"
+        type: string
+      hours_per_day:
+        example: 8
+        maximum: 24
+        type: number
+      person_id:
+        type: string
+      project_id:
+        type: string
+      to_date:
+        example: "2026-11-06"
+        type: string
+      type:
+        enum:
+        - shift_project
+        - add_absence
+        type: string
+      weeks:
+        example: 2
+        type: integer
+    required:
+    - type
+    type: object
+  dtos.AssumptionResponse:
+    properties:
+      from_date:
+        example: "2026-10-26"
+        type: string
+      hours_per_day:
+        example: 8
+        type: number
+      person:
+        example: Alex Nguyen
+        type: string
+      person_id:
+        type: string
+      project:
+        example: Checkout Revamp
+        type: string
+      project_id:
+        type: string
+      to_date:
+        example: "2026-11-06"
+        type: string
+      type:
+        enum:
+        - shift_project
+        - add_absence
+        type: string
+      weeks:
+        example: 2
+        type: integer
+    type: object
   dtos.ChangeEventResponse:
     properties:
       attempts:
@@ -300,6 +357,21 @@ definitions:
     - deadline
     - name
     - start_earliest
+    type: object
+  dtos.CreateScenarioRequest:
+    properties:
+      assumptions:
+        items:
+          $ref: '#/definitions/dtos.AssumptionRequest'
+        minItems: 1
+        type: array
+      name:
+        example: Checkout slips two weeks
+        maxLength: 120
+        type: string
+    required:
+    - assumptions
+    - name
     type: object
   dtos.CurrentUserResponse:
     properties:
@@ -1209,6 +1281,160 @@ definitions:
         items:
           $ref: '#/definitions/dtos.RiskProjectResponse'
         type: array
+    type: object
+  dtos.ScenarioChangeResponse:
+    properties:
+      after_from:
+        example: 2026-W46
+        type: string
+      after_hours:
+        example: 80
+        type: number
+      after_to:
+        example: 2026-W49
+        type: string
+      before_from:
+        description: The weeks are the first and last with hours; empty when there
+          are none.
+        example: 2026-W44
+        type: string
+      before_hours:
+        example: 80
+        type: number
+      before_to:
+        example: 2026-W47
+        type: string
+      change:
+        enum:
+        - added
+        - removed
+        - changed
+        type: string
+      demand_id:
+        type: string
+      expertise:
+        example: QA
+        type: string
+      moved_hours:
+        description: MovedHours is the hours placed in a week beyond what that week
+          had before.
+        example: 40
+        type: number
+      person:
+        $ref: '#/definitions/dtos.PersonRef'
+      project:
+        example: Checkout Revamp
+        type: string
+      project_id:
+        type: string
+    type: object
+  dtos.ScenarioDetailResponse:
+    properties:
+      assumptions:
+        items:
+          $ref: '#/definitions/dtos.AssumptionResponse'
+        type: array
+      base_version:
+        description: |-
+          BaseVersion is the baseline version it was computed on; Stale is true once the baseline
+          in force (CurrentVersion) is another one.
+        example: 3
+        type: integer
+      changes:
+        items:
+          $ref: '#/definitions/dtos.ScenarioChangeResponse'
+        type: array
+      created_at:
+        type: string
+      current_version:
+        example: 3
+        type: integer
+      id:
+        type: string
+      name:
+        example: Checkout slips two weeks
+        type: string
+      projects:
+        description: Projects are those planned again.
+        items:
+          $ref: '#/definitions/dtos.ProjectRef'
+        type: array
+      stale:
+        type: boolean
+      summary:
+        $ref: '#/definitions/dtos.ScenarioSummaryResponse'
+      unmet:
+        items:
+          $ref: '#/definitions/dtos.ScenarioUnmetResponse'
+        type: array
+      updated_at:
+        type: string
+    type: object
+  dtos.ScenarioResponse:
+    properties:
+      assumptions:
+        items:
+          $ref: '#/definitions/dtos.AssumptionResponse'
+        type: array
+      base_version:
+        description: |-
+          BaseVersion is the baseline version it was computed on; Stale is true once the baseline
+          in force (CurrentVersion) is another one.
+        example: 3
+        type: integer
+      created_at:
+        type: string
+      current_version:
+        example: 3
+        type: integer
+      id:
+        type: string
+      name:
+        example: Checkout slips two weeks
+        type: string
+      stale:
+        type: boolean
+      summary:
+        $ref: '#/definitions/dtos.ScenarioSummaryResponse'
+      updated_at:
+        type: string
+    type: object
+  dtos.ScenarioSummaryResponse:
+    properties:
+      hours_moved:
+        description: HoursMoved is the hours placed in a week beyond what that week
+          had in the baseline.
+        example: 120
+        type: number
+      people_changed:
+        example: 3
+        type: integer
+      unmet_hours:
+        example: 40
+        type: number
+    type: object
+  dtos.ScenarioUnmetResponse:
+    properties:
+      demand_id:
+        type: string
+      expertise:
+        example: QA
+        type: string
+      hours:
+        example: 40
+        type: number
+      project:
+        example: Checkout Revamp
+        type: string
+      project_id:
+        type: string
+      reason:
+        enum:
+        - NO_SKILL
+        - LEVEL_TOO_LOW
+        - NO_CAPACITY_BEFORE_DEADLINE
+        - BLOCKED_BY_LOCKED
+        type: string
     type: object
   dtos.SetAllocationRequest:
     properties:
@@ -2657,6 +2883,163 @@ paths:
       summary: Replace a project's phases
       tags:
       - Projects
+  /scenarios:
+    get:
+      description: Every scenario, newest first, with its assumptions, churn and whether
+        the baseline has moved on since.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/dtos.ScenarioResponse'
+                type: array
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: What-if scenarios
+      tags:
+      - Scenarios
+    post:
+      consumes:
+      - application/json
+      description: Applies the assumptions (a project moving by weeks, a person away)
+        to a copy of the baseline, plans the affected projects again and saves the
+        result. Nothing else changes.
+      parameters:
+      - description: Name and assumptions
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateScenarioRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.ScenarioDetailResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a what-if scenario
+      tags:
+      - Scenarios
+  /scenarios/{id}:
+    delete:
+      parameters:
+      - description: Scenario id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a scenario
+      tags:
+      - Scenarios
+    get:
+      description: The scenario's assumptions, the projects planned again, and its
+        changes, churn and unmet demand against the baseline it was built on.
+      parameters:
+      - description: Scenario id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.ScenarioDetailResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: A what-if scenario
+      tags:
+      - Scenarios
+  /scenarios/{id}/rerun:
+    post:
+      description: Computes the scenario again, with the same assumptions, against
+        the baseline in force.
+      parameters:
+      - description: Scenario id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.ScenarioDetailResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Run a scenario again
+      tags:
+      - Scenarios
   /staffing-drafts:
     post:
       consumes:
