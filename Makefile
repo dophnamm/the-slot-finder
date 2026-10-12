@@ -8,7 +8,7 @@ COMPOSE    := docker compose -f $(SERVER_DIR)/docker-compose.yml --env-file $(SE
 INFRA      := postgres redis keycloak otel-collector jaeger
 
 .DEFAULT_GOAL := help
-.PHONY: help setup env up down logs ps infra dev server client migrate seed keycloak-theme lint test build check reset-data
+.PHONY: help setup env up down logs ps infra dev server client migrate seed keycloak-theme lint lint-server lint-client test test-server test-client build build-server build-client check check-server check-client reset-data
 
 help: ## List the commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -68,19 +68,35 @@ keycloak-theme: env ## Apply the sign-in theme to the running Keycloak (a new re
 			--realm master --user "$$KC_BOOTSTRAP_ADMIN_USERNAME" --password "$$KC_BOOTSTRAP_ADMIN_PASSWORD" && \
 		/opt/keycloak/bin/kcadm.sh update "realms/$$KEYCLOAK_REALM" -s "loginTheme=$$KEYCLOAK_LOGIN_THEME"'
 
-lint: ## Lint the server and the client
+lint: lint-server lint-client ## Lint the server and the client
+
+lint-server:
 	cd $(SERVER_DIR) && $(MAKE) lint
+
+lint-client:
 	cd $(CLIENT_DIR) && npm run lint
 
-test: ## Run the server and client tests
+test: test-server test-client ## Run the server and client tests
+
+test-server:
 	cd $(SERVER_DIR) && go test ./...
+
+test-client:
 	cd $(CLIENT_DIR) && npm test
 
-build: ## Build the server and the client
+build: build-server build-client ## Build the server and the client
+
+build-server:
 	cd $(SERVER_DIR) && go build ./...
+
+build-client:
 	cd $(CLIENT_DIR) && npm run build
 
-check: lint test build ## Lint, test and build everything
+check: check-server check-client ## Lint, test and build everything
+
+check-server: lint-server test-server build-server ## Lint, test and build the server only
+
+check-client: lint-client test-client build-client ## Lint, test and build the client only
 
 reset-data: ## Stop containers and DELETE all local data (Postgres, Redis, Keycloak volumes)
 	$(COMPOSE) down -v
