@@ -1,6 +1,9 @@
+import { ArrowLeftRight } from 'lucide-react'
 import { Section } from '@/shared/components/section'
+import { TableEmpty } from '@/shared/components/table-empty'
 import { useTranslation } from '@/shared/i18n'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { PLAN_CHANGE_COLUMNS } from './constants'
 import { ChangeRow } from './components/change-row'
 import type { PlanChangesProps } from './types'
 
@@ -28,11 +31,15 @@ export function PlanChanges({ changes }: PlanChangesProps) {
           {changes.map((change) => (
             <ChangeRow key={`${change.person.id}:${change.demand_id}`} change={change} />
           ))}
+          {changes.length === 0 && (
+            <TableEmpty
+              columns={PLAN_CHANGE_COLUMNS}
+              icon={ArrowLeftRight}
+              title={t('No changes against the baseline.')}
+            />
+          )}
         </TableBody>
       </Table>
-      {changes.length === 0 && (
-        <p className="py-6 text-center text-sm text-muted-foreground">{t('No changes against the baseline.')}</p>
-      )}
     </Section>
   )
 }

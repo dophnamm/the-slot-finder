@@ -13,6 +13,7 @@ export type LanguageKey = {
   'A customer engagement that groups projects under one timeline.': string
   'A later end week moves every later phase by the same number of weeks.': string
   'A new project starts as incoming until a staffing draft is accepted.': string
+  'A program groups a customer’s projects under one timeline.': string
   'A project': string
   'Absence added.': string
   Absences: string
@@ -32,6 +33,9 @@ export type LanguageKey = {
   'Add person': string
   'Add phase': string
   'Add project': string
+  'Add the hours each expertise needs, in a phase or across the whole project.': string
+  'Add the people who can be staffed, with their expertise and levels.': string
+  'Add the program’s projects with their phases and demand.': string
   Added: string
   After: string
   'All expertises': string
@@ -147,6 +151,7 @@ export type LanguageKey = {
   'Intake queue': string
   Lead: string
   Leave: string
+  'Leave, holidays and moved phases or deadlines appear here.': string
   'Leave, holidays and slipped phases or deadlines. Each change is checked against the baseline; a conflict produces a staffing draft.': string
   Level: string
   'Level {level}': string
@@ -214,6 +219,7 @@ export type LanguageKey = {
   'Page {page} of {pages}': string
   'Past the end date': string
   People: string
+  'People appear here once a staffing draft for this program is accepted.': string
   'People changed': string
   'People with hours in the baseline on this program’s projects, most hours first.': string
   Person: string
@@ -254,6 +260,7 @@ export type LanguageKey = {
   'Project updated.': string
   Projects: string
   'Projects ({count})': string
+  'Projects added to a program wait here until a staffing draft covers them.': string
   'Projects that are understaffed, at risk or behind on delivery, and people over 100 % in the coming weeks.': string
   'Propose squad': string
   'Proposing…': string
@@ -298,6 +305,7 @@ export type LanguageKey = {
   'Signing you in…': string
   Someone: string
   Specialist: string
+  'Split the project into phases such as Discovery, Build and Test.': string
   Staffing: string
   'Staffing by expertise': string
   'Staffing draft': string
@@ -334,6 +342,7 @@ export type LanguageKey = {
   'Triggered by': string
   'Try a change, such as a project slipping or someone on leave, and see what it does to the plan. Nothing real changes.': string
   'Try again': string
+  'Try another name or expertise, or clear the search.': string
   Type: string
   Unavailable: string
   Understaffed: string

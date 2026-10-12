@@ -1,8 +1,12 @@
+import { CalendarOff } from 'lucide-react'
 import { can } from '@/resources/rbac'
 import { useCurrentUser } from '@/shared/auth'
 import { Section } from '@/shared/components/section'
+import { TableEmpty } from '@/shared/components/table-empty'
+import { TableLoading } from '@/shared/components/table-loading'
 import { useTranslation } from '@/shared/i18n'
 import { Table, TableBody } from '@/shared/ui/table'
+import { HOLIDAY_TABLE_COLUMNS } from './constants'
 import { HolidayForm } from './components/holiday-form'
 import { HolidayRow } from './components/holiday-row'
 import { useDeleteHoliday, useHolidays } from './use-holidays'
@@ -24,12 +28,12 @@ export function HolidaysCard() {
           {holidays.map((holiday) => (
             <HolidayRow key={holiday.id} holiday={holiday} canDelete={canManage} onDelete={handleDelete} />
           ))}
+          {isPending && <TableLoading columns={HOLIDAY_TABLE_COLUMNS} />}
+          {!isPending && holidays.length === 0 && (
+            <TableEmpty columns={HOLIDAY_TABLE_COLUMNS} icon={CalendarOff} title={t('No holidays yet.')} />
+          )}
         </TableBody>
       </Table>
-      {isPending && <p className="text-center text-sm text-muted-foreground">{t('Loading…')}</p>}
-      {!isPending && holidays.length === 0 && (
-        <p className="text-center text-sm text-muted-foreground">{t('No holidays yet.')}</p>
-      )}
       {canManage && <HolidayForm />}
     </Section>
   )

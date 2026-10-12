@@ -1,5 +1,9 @@
+import { CalendarOff } from 'lucide-react'
+import { TableEmpty } from '@/shared/components/table-empty'
+import { TableLoading } from '@/shared/components/table-loading'
 import { useTranslation } from '@/shared/i18n'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { ABSENCE_TABLE_COLUMNS } from './constants'
 import { AbsenceForm } from './components/absence-form'
 import { AbsenceRow } from './components/absence-row'
 import type { AbsenceListProps } from './types'
@@ -29,12 +33,12 @@ export function AbsenceList({ personId, canApprove }: AbsenceListProps) {
           {absences.map((absence) => (
             <AbsenceRow key={absence.id} absence={absence} onDelete={handleDelete} />
           ))}
+          {isPending && <TableLoading columns={ABSENCE_TABLE_COLUMNS} />}
+          {!isPending && absences.length === 0 && (
+            <TableEmpty columns={ABSENCE_TABLE_COLUMNS} icon={CalendarOff} title={t('No absences yet.')} />
+          )}
         </TableBody>
       </Table>
-      {isPending && <p className="text-center text-sm text-muted-foreground">{t('Loading…')}</p>}
-      {!isPending && absences.length === 0 && (
-        <p className="text-center text-sm text-muted-foreground">{t('No absences yet.')}</p>
-      )}
       <AbsenceForm personId={personId} canApprove={canApprove} />
     </div>
   )

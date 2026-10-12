@@ -1,3 +1,5 @@
+import { SearchX } from 'lucide-react'
+import { EmptyState } from '@/shared/components/empty-state'
 import { Section } from '@/shared/components/section'
 import { useDebouncedValue } from '@/shared/hooks'
 import { useTranslation } from '@/shared/i18n'
@@ -31,7 +33,12 @@ export function Heatmap() {
       {data && rows.length > 0 && <HeatmapGrid data={{ ...data, rows }} expertiseId={expertiseId} />}
       {isPending && <p className="py-6 text-center text-sm text-muted-foreground">{t('Loading…')}</p>}
       {data && rows.length === 0 && (
-        <p className="py-6 text-center text-sm text-muted-foreground">{t('Nobody matches these filters.')}</p>
+        <EmptyState
+          framed
+          icon={SearchX}
+          title={t('Nobody matches these filters.')}
+          description={t('Try another name or expertise, or clear the search.')}
+        />
       )}
       <HeatmapLegend />
     </Section>

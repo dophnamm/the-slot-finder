@@ -1,10 +1,13 @@
-import { Plus } from 'lucide-react'
+import { GitCompareArrows, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { Section } from '@/shared/components/section'
+import { TableEmpty } from '@/shared/components/table-empty'
+import { TableLoading } from '@/shared/components/table-loading'
 import { useTranslation } from '@/shared/i18n'
 import { useScenarios } from '@/shared/scenarios'
 import { Button } from '@/shared/ui/button'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { SCENARIO_TABLE_COLUMNS } from './constants'
 import { NewScenarioDialog } from './components/new-scenario-dialog'
 import { ScenarioRow } from './components/scenario-row'
 
@@ -44,14 +47,16 @@ export function Scenarios() {
           {scenarios.map((scenario) => (
             <ScenarioRow key={scenario.id} scenario={scenario} />
           ))}
+          {isPending && <TableLoading columns={SCENARIO_TABLE_COLUMNS} />}
+          {!isPending && scenarios.length === 0 && (
+            <TableEmpty
+              columns={SCENARIO_TABLE_COLUMNS}
+              icon={GitCompareArrows}
+              title={t('No scenarios yet. Create one to try a change.')}
+            />
+          )}
         </TableBody>
       </Table>
-      {isPending && <p className="py-6 text-center text-sm text-muted-foreground">{t('Loading…')}</p>}
-      {!isPending && scenarios.length === 0 && (
-        <p className="py-6 text-center text-sm text-muted-foreground">
-          {t('No scenarios yet. Create one to try a change.')}
-        </p>
-      )}
       {creating && <NewScenarioDialog open={creating} onOpenChange={setCreating} />}
     </Section>
   )

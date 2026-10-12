@@ -1,16 +1,17 @@
-import { Plus } from 'lucide-react'
+import { Layers, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useCurrentUser } from '@/shared/auth'
 import { canEditProject, type Phase, useProject, useReplacePhases, useUpdatePhase } from '@/shared/programs'
 import { Section } from '@/shared/components/section'
+import { TableEmpty } from '@/shared/components/table-empty'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 import { PhaseEditRow } from './components/phase-edit-row'
 import { PhaseRow } from './components/phase-row'
 import { PhaseTimeline } from './components/phase-timeline'
-import { NEW_PHASE_KEY } from './constants'
+import { NEW_PHASE_KEY, PHASE_TABLE_COLUMNS } from './constants'
 import type { PhaseDraft, ProjectPhasesProps } from './types'
 import {
   endsLate,
@@ -140,11 +141,16 @@ export function ProjectPhases({ projectId }: ProjectPhasesProps) {
               onCancel={handleCancel}
             />
           )}
+          {phases.length === 0 && draft === null && (
+            <TableEmpty
+              columns={PHASE_TABLE_COLUMNS}
+              icon={Layers}
+              title={t('No phases yet')}
+              description={t('Split the project into phases such as Discovery, Build and Test.')}
+            />
+          )}
         </TableBody>
       </Table>
-      {phases.length === 0 && draft === null && (
-        <p className="py-2 text-center text-sm text-muted-foreground">{t('No phases yet')}</p>
-      )}
     </Section>
   )
 }

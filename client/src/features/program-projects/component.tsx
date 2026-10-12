@@ -1,11 +1,15 @@
+import { FolderOpen } from 'lucide-react'
 import { useState } from 'react'
 import { useCurrentUser } from '@/shared/auth'
 import { ProjectFormDialog } from '@/shared/components/project-form-dialog'
 import { Section } from '@/shared/components/section'
+import { TableEmpty } from '@/shared/components/table-empty'
+import { TableLoading } from '@/shared/components/table-loading'
 import { canEdit, isOpenStatus, useProgram, useProgramProjects } from '@/shared/programs'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { PROJECT_TABLE_COLUMNS } from './constants'
 import { ProjectRow } from './components/project-row'
 import type { ProgramProjectsProps } from './types'
 
@@ -42,12 +46,17 @@ export function ProgramProjects({ programId }: ProgramProjectsProps) {
           {projects.map((project) => (
             <ProjectRow key={project.id} project={project} />
           ))}
+          {isPending && <TableLoading columns={PROJECT_TABLE_COLUMNS} />}
+          {!isPending && projects.length === 0 && (
+            <TableEmpty
+              columns={PROJECT_TABLE_COLUMNS}
+              icon={FolderOpen}
+              title={t('No projects yet.')}
+              description={t('Add the program’s projects with their phases and demand.')}
+            />
+          )}
         </TableBody>
       </Table>
-      {isPending && <p className="py-6 text-center text-sm text-muted-foreground">{t('Loading…')}</p>}
-      {!isPending && projects.length === 0 && (
-        <p className="py-6 text-center text-sm text-muted-foreground">{t('No projects yet.')}</p>
-      )}
       {adding && <ProjectFormDialog open={adding} programId={programId} project={null} onOpenChange={setAdding} />}
     </Section>
   )

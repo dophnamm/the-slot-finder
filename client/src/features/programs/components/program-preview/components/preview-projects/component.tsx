@@ -1,11 +1,15 @@
+import { FolderOpen } from 'lucide-react'
 import { generatePath } from 'react-router'
 import { ROUTES } from '@/resources/routes'
 import { MetricBar } from '@/shared/components/metric-bar'
 import { StatusBadge } from '@/shared/components/status-badge'
+import { TableEmpty } from '@/shared/components/table-empty'
+import { TableLoading } from '@/shared/components/table-loading'
 import { TextLink } from '@/shared/components/text-link'
 import { useTranslation } from '@/shared/i18n'
 import { Badge } from '@/shared/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { PREVIEW_PROJECT_COLUMNS } from './constants'
 import type { PreviewProjectsProps } from './types'
 import { projectWarnings } from './utils'
 
@@ -55,12 +59,12 @@ export function PreviewProjects({ projects, isPending, programId }: PreviewProje
               </TableCell>
             </TableRow>
           ))}
+          {isPending && <TableLoading columns={PREVIEW_PROJECT_COLUMNS} />}
+          {!isPending && projects.length === 0 && (
+            <TableEmpty columns={PREVIEW_PROJECT_COLUMNS} icon={FolderOpen} title={t('No projects yet.')} />
+          )}
         </TableBody>
       </Table>
-      {isPending && <p className="py-6 text-center text-sm text-muted-foreground">{t('Loading…')}</p>}
-      {!isPending && projects.length === 0 && (
-        <p className="py-6 text-center text-sm text-muted-foreground">{t('No projects yet.')}</p>
-      )}
     </div>
   )
 }
