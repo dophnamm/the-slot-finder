@@ -290,8 +290,9 @@ func (s *scenarioService) validate(ctx context.Context, in []AssumptionInput) ([
 }
 
 // compute plans the baseline again under the assumptions, in memory: shifted projects get new
-// dates and phase weeks, absences lower capacity, and the shifted projects plus any project
-// whose baseline hours no longer fit are planned again with the re-plan stability weight.
+// dates and phase weeks and their people's hours move with them, absences lower capacity, and
+// the shifted projects plus any project whose baseline hours no longer fit are planned again
+// with the re-plan stability weight. The engine keeps the moved hours where they still fit.
 func (s *scenarioService) compute(ctx context.Context, assumptions []models.ScenarioAssumption, actor *string, op string) (*models.Plan, error) {
 	baseline, err := findBaseline(ctx, s.plans, op, true)
 	if err != nil {
@@ -321,7 +322,8 @@ func (s *scenarioService) compute(ctx context.Context, assumptions []models.Scen
 	if demands, _, _ := engineDemands(projects); len(demands) == 0 {
 		plan, err = buildDraft(baseline, nil, engine.Result{}, projectIDs(projects), actor)
 	} else {
-		req, snapErr := s.snapshot(ctx, projects, baseline.Assignments, s.policy(s.cfg.PlanningReplanStabilityWeight), extra)
+		existing := shiftedAssignments(baseline.Assignments, shifts)
+		req, snapErr := s.snapshot(ctx, projects, existing, s.policy(s.cfg.PlanningReplanStabilityWeight), extra)
 		if snapErr != nil {
 			return nil, snapErr
 		}
@@ -357,6 +359,25 @@ func applyAssumptions(assumptions []models.ScenarioAssumption) (shifts map[strin
 		}
 	}
 	return shifts, extra
+}
+
+// shiftedAssignments is the baseline as the engine's starting plan, with the hours of shifted
+// projects moved by the same weeks: a project that slips keeps its people, later.
+func shiftedAssignments(assignments []models.Assignment, shifts map[string]int) []models.Assignment {
+	out := make([]models.Assignment, len(assignments))
+	for i, a := range assignments {
+		out[i] = a
+		weeks := shifts[projectOf(a)]
+		if weeks == 0 {
+			continue
+		}
+		out[i].Allocations = make([]models.Allocation, len(a.Allocations))
+		for j, alloc := range a.Allocations {
+			alloc.Week = alloc.Week.AddWeeks(weeks)
+			out[i].Allocations[j] = alloc
+		}
+	}
+	return out
 }
 
 // shiftProject moves a project's dates and phases by whole weeks, in memory only.
