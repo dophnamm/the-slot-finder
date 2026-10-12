@@ -45,6 +45,7 @@ Styles are Tailwind classes, never `style={...}`. Colors come from theme tokens.
 - **Blocks are `Section`s** (`@/shared/components/section`): the title, description and actions sit above the body, never inside a card header. Use `variant="page"` for the header at the top of a page.
 - **A table is never inside a card.** Put it straight in the `Section`; the bordered table is its own frame. Pass `card` only for other content (figures, lists, text).
 - **Tables are bordered** by `shared/ui/table`: frame, cell lines, grey header. Do not add your own borders or header colours. To scroll a table in place (fixed header, fixed first column), use `<Table scroll="both">` in a flex column, and give sticky cells an opaque background (`bg-card`, `bg-muted`) so rows do not show through.
+- **An empty or loading table keeps its frame.** Put `<TableLoading columns={X} />` and `<TableEmpty columns={X} icon={…} title={…} description={…} />` as the last rows of `<TableBody>` (`@/shared/components/table-loading`, `table-empty`), with the column count as a named constant. Say what is missing and, when the user can act, what to do. Content that is not a table uses `<EmptyState framed />`. Never a grey `<p>` under the table.
 - **Badges are pastel and pick their colour by meaning**: `blue`, `green`, `amber`, `red`, `violet`, `teal`, `pink`, `gray` (tokens `--badge-*` in `index.css`). Map a status or kind to a colour in a `Record<…, BadgeVariant>` constant next to its labels; do not use `secondary`, `outline` or `default` for statuses.
 - **Text that opens a page is a `TextLink`** (`@/shared/components/text-link`): blue (`--link`) with a light underline, darker on hover; `external` opens another site in a new tab. Lint rejects `<Link className>` and `<a className>` elsewhere. Buttons that navigate stay buttons (`render={<Link />}`).
 - **A row that opens a detail page is a `LinkRow`** (`@/shared/components/link-row`) when its other cells only show data: the whole row is clickable, its buttons keep their own action. Keep the name as a `<Link>` for keyboard users.
@@ -64,4 +65,5 @@ Styles are Tailwind classes, never `style={...}`. Colors come from theme tokens.
 | Margins on siblings to space a list | `flex flex-col gap-4` on the parent |
 | `<Card><CardHeader><CardTitle>…` around a block | `<Section title=… description=… action=…>` |
 | A `<Table>` inside a `Card` | The table directly in a `Section` (no `card`) |
+| `<p>No items yet.</p>` under an empty table | `<TableEmpty>` as a row inside `<TableBody>` |
 | `<Badge variant="secondary">` for a status | A pastel variant chosen from a `BadgeVariant` map |
