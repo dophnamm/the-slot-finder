@@ -3,7 +3,7 @@
 **Goal:** signing in looks and feels like part of The Slot Finder, with no "Sign in with Keycloak" step and no Keycloak branding, while Keycloak still handles credentials, sessions and lockouts.
 
 **Roles:** everyone who signs in (planner, lead, specialist).
-**Target:** before the 17 Oct freeze · **Depends on:** [sign-in](sign-in.md) · **Branch:** `feat/sign-in-theme` · **Status:** In review
+**Target:** before the 17 Oct freeze · **Depends on:** [sign-in](sign-in.md) · **Branch:** `feat/sign-in-theme` · **Status:** Done (PR #19)
 
 ## Approach
 
