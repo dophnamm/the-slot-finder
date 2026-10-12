@@ -14,13 +14,17 @@ bootstrap: container-up migrate-up up
 ########################################################################################
 # Linting
 ########################################################################################
+# The version lives in .golangci-lint-version so CI (golangci-lint-action) pins the same one.
+GOLANGCI_LINT_VERSION := $(shell cat .golangci-lint-version)
+GOLANGCI_LINT := go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+
 .PHONY: lint
 lint:
-	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0 run ./... --config .golangci.yml
+	$(GOLANGCI_LINT) run ./... --config .golangci.yml
 
 .PHONY: lint-fix
 lint-fix:
-	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0 run ./... --config .golangci.yml --fix
+	$(GOLANGCI_LINT) run ./... --config .golangci.yml --fix
 
 ########################################################################################
 # Mocks
