@@ -60,7 +60,11 @@ export function ProgramHeader({ program }: ProgramHeaderProps) {
                   action={name}
                   label={t(PROGRAM_ACTIONS[name].label)}
                   destructive={name === 'cancel'}
-                  confirmText={CONFIRMED_PROGRAM_ACTIONS.includes(name) ? t('This cannot be undone. Open projects of a cancelled program are cancelled too. Continue?') : undefined}
+                  confirmText={
+                    CONFIRMED_PROGRAM_ACTIONS.includes(name)
+                      ? t('This cannot be undone. Open projects of a cancelled program are cancelled too. Continue?')
+                      : undefined
+                  }
                   disabled={action.isPending}
                   onAction={handleAction}
                 />

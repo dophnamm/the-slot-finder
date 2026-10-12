@@ -27,14 +27,17 @@ export function ProgramRow({ program }: ProgramRowProps) {
       <LinkRow to={detailPath}>
         <TableCell>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon-sm" aria-expanded={expanded} aria-label={expanded ? t('Hide details') : t('Show details')}
-              onClick={handleToggle}>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-expanded={expanded}
+              aria-label={expanded ? t('Hide details') : t('Show details')}
+              onClick={handleToggle}
+            >
               <ChevronRight className={cn('transition-transform', expanded && 'rotate-90')} />
             </Button>
             <div className="flex flex-col">
-              <TextLink to={detailPath}>
-                {program.name}
-              </TextLink>
+              <TextLink to={detailPath}>{program.name}</TextLink>
               <span className="text-xs text-muted-foreground">{program.client}</span>
             </div>
           </div>

@@ -16,7 +16,11 @@ export function MetricsCard({ overview }: MetricsCardProps) {
     <Section
       card
       title={t('Progress')}
-      description={overview.projects === 1 ? t('Summed over {count} project that is not cancelled.', { count: overview.projects }) : t('Summed over {count} projects that are not cancelled.', { count: overview.projects })}
+      description={
+        overview.projects === 1
+          ? t('Summed over {count} project that is not cancelled.', { count: overview.projects })
+          : t('Summed over {count} projects that are not cancelled.', { count: overview.projects })
+      }
       contentClassName="gap-5"
     >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

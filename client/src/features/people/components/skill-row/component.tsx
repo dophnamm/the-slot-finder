@@ -19,7 +19,12 @@ export function SkillRow({ index, skill, expertises, onChange, onRemove }: Skill
 
   return (
     <div className="flex items-center gap-2">
-      <NativeSelect className="flex-1" aria-label={t('Expertise')} value={skill.expertise_id} onChange={handleExpertiseChange}>
+      <NativeSelect
+        className="flex-1"
+        aria-label={t('Expertise')}
+        value={skill.expertise_id}
+        onChange={handleExpertiseChange}
+      >
         {expertises.map((expertise) => (
           <NativeSelectOption key={expertise.id} value={expertise.id}>
             {expertise.name}
@@ -34,8 +39,13 @@ export function SkillRow({ index, skill, expertises, onChange, onRemove }: Skill
         ))}
       </NativeSelect>
       <label className="flex items-center gap-2 text-sm">
-        <input type="radio" className="size-4 accent-primary" name={PRIMARY_RADIO_NAME} checked={skill.primary}
-          onChange={handlePrimaryChange} />
+        <input
+          type="radio"
+          className="size-4 accent-primary"
+          name={PRIMARY_RADIO_NAME}
+          checked={skill.primary}
+          onChange={handlePrimaryChange}
+        />
         {t('Primary')}
       </label>
       <Button type="button" variant="ghost" size="icon-sm" aria-label={t('Remove skill')} onClick={handleRemove}>

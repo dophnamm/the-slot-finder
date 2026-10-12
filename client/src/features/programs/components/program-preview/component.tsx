@@ -32,7 +32,11 @@ export function ProgramPreview({ programId }: ProgramPreviewProps) {
               </dd>
             </div>
           ))}
-          <MetricBar label={t('Staffing')} value={overview.metrics.staffing_percent} warning={overview.metrics.understaffed} />
+          <MetricBar
+            label={t('Staffing')}
+            value={overview.metrics.staffing_percent}
+            warning={overview.metrics.understaffed}
+          />
         </dl>
       )}
       <Tabs defaultValue="projects">

@@ -9,10 +9,7 @@ export function DemandCoverage({ demands }: DemandCoverageProps) {
   const { t } = useTranslation()
 
   return (
-    <Section
-      title={t('Coverage')}
-      description={t('Budget hours each demand needs and the hours this draft assigns.')}
-    >
+    <Section title={t('Coverage')} description={t('Budget hours each demand needs and the hours this draft assigns.')}>
       <Table>
         <TableHeader>
           <TableRow>

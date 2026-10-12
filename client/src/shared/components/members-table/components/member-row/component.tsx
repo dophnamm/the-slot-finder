@@ -22,8 +22,12 @@ export function MemberRow({ member, programId }: MemberRowProps) {
         <div className="flex flex-wrap items-center gap-1">
           {member.expertises.map((row) => (
             <Fragment key={`${row.expertise_id}:${row.kind}`}>
-              <Badge variant={expertiseBadge(row.expertise_id)}>{t('{expertise} · {hours} h', { expertise: row.expertise, hours: row.hours })}</Badge>
-              {row.kind !== PRIMARY_KIND && <Badge variant={ASSIGNMENT_KIND_BADGE[row.kind]}>{t(ASSIGNMENT_KIND_LABELS[row.kind])}</Badge>}
+              <Badge variant={expertiseBadge(row.expertise_id)}>
+                {t('{expertise} · {hours} h', { expertise: row.expertise, hours: row.hours })}
+              </Badge>
+              {row.kind !== PRIMARY_KIND && (
+                <Badge variant={ASSIGNMENT_KIND_BADGE[row.kind]}>{t(ASSIGNMENT_KIND_LABELS[row.kind])}</Badge>
+              )}
             </Fragment>
           ))}
         </div>
@@ -33,7 +37,11 @@ export function MemberRow({ member, programId }: MemberRowProps) {
       <TableCell>
         <div className="flex flex-wrap gap-x-3 gap-y-1">
           {member.projects.map((project) => (
-            <TextLink key={project.id} className="text-sm" to={generatePath(ROUTES.projectDetail, { programId, id: project.id })}>
+            <TextLink
+              key={project.id}
+              className="text-sm"
+              to={generatePath(ROUTES.projectDetail, { programId, id: project.id })}
+            >
               {project.name}
             </TextLink>
           ))}

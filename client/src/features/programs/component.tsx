@@ -28,7 +28,9 @@ export function ProgramsTable({ onCreated }: ProgramsTableProps) {
       description={t('Customer engagements and their projects.')}
       action={can(user?.role, 'programs:manage') && <Button onClick={handleNew}>{t('New program')}</Button>}
     >
-      <Table footer={<Pager page={page} total={data?.meta.total} pageSize={PROGRAMS_PAGE_SIZE} onPageChange={setPage} />}>
+      <Table
+        footer={<Pager page={page} total={data?.meta.total} pageSize={PROGRAMS_PAGE_SIZE} onPageChange={setPage} />}
+      >
         <TableHeader>
           <TableRow>
             <TableHead>{t('Program')}</TableHead>

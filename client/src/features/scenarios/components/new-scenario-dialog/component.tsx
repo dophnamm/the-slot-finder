@@ -26,7 +26,8 @@ export function NewScenarioDialog({ open, onOpenChange }: NewScenarioDialogProps
 
   const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => setName(event.target.value)
   const handleAdd = () => setDrafts((current) => [...current, newAssumption()])
-  const handleChange = (next: AssumptionDraft) => setDrafts((current) => current.map((draft) => (draft.key === next.key ? next : draft)))
+  const handleChange = (next: AssumptionDraft) =>
+    setDrafts((current) => current.map((draft) => (draft.key === next.key ? next : draft)))
   const handleRemove = (key: string) => setDrafts((current) => current.filter((draft) => draft.key !== key))
   const handleCreated = (scenario: ScenarioDetail) => {
     onOpenChange(false)
@@ -43,17 +44,31 @@ export function NewScenarioDialog({ open, onOpenChange }: NewScenarioDialogProps
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>{t('New scenario')}</DialogTitle>
-            <DialogDescription>{t('Each assumption is applied to a copy of the baseline. Nothing real changes.')}</DialogDescription>
+            <DialogDescription>
+              {t('Each assumption is applied to a copy of the baseline. Nothing real changes.')}
+            </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2">
             <Label htmlFor="scenario-name">{t('Name')}</Label>
-            <Input id="scenario-name" value={name} placeholder={t('e.g. Checkout slips two weeks')} onChange={handleNameChange} />
+            <Input
+              id="scenario-name"
+              value={name}
+              placeholder={t('e.g. Checkout slips two weeks')}
+              onChange={handleNameChange}
+            />
           </div>
           <div className="flex flex-col gap-3">
             <span className="text-sm font-medium">{t('Assumptions')}</span>
             {drafts.map((draft) => (
-              <AssumptionRow key={draft.key} draft={draft} projects={projects} people={people} removable={drafts.length > 1}
-                onChange={handleChange} onRemove={handleRemove} />
+              <AssumptionRow
+                key={draft.key}
+                draft={draft}
+                projects={projects}
+                people={people}
+                removable={drafts.length > 1}
+                onChange={handleChange}
+                onRemove={handleRemove}
+              />
             ))}
             <Button type="button" variant="outline" size="sm" className="self-start" onClick={handleAdd}>
               <Plus />

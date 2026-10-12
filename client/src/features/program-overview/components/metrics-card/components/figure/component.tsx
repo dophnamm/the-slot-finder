@@ -9,7 +9,9 @@ export function Figure({ label, hours, warning = false }: FigureProps) {
   return (
     <div className="flex flex-col gap-0.5">
       <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className={cn('text-lg font-semibold tabular-nums', warning && 'text-destructive')}>{t('{hours} h', { hours: Math.round(hours) })}</dd>
+      <dd className={cn('text-lg font-semibold tabular-nums', warning && 'text-destructive')}>
+        {t('{hours} h', { hours: Math.round(hours) })}
+      </dd>
     </div>
   )
 }

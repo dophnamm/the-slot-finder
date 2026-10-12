@@ -47,10 +47,13 @@ export function ScenarioReview({ scenarioId }: ScenarioReviewProps) {
         }
         description={
           scenario.stale
-            ? t('Built on baseline version {base}; version {current} is in force now. Run it again to see today’s effect.', {
-                base: scenario.base_version,
-                current: scenario.current_version,
-              })
+            ? t(
+                'Built on baseline version {base}; version {current} is in force now. Run it again to see today’s effect.',
+                {
+                  base: scenario.base_version,
+                  current: scenario.current_version,
+                },
+              )
             : t('Built on baseline version {version}.', { version: scenario.base_version })
         }
         action={
@@ -95,7 +98,11 @@ export function ScenarioReview({ scenarioId }: ScenarioReviewProps) {
           </dl>
         </div>
         <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-          <p>{t('Nothing real has changed. To make it real, move the phases on the project’s page or add the leave on the People page; a re-plan draft follows.')}</p>
+          <p>
+            {t(
+              'Nothing real has changed. To make it real, move the phases on the project’s page or add the leave on the People page; a re-plan draft follows.',
+            )}
+          </p>
           {scenario.projects.length > 0 && (
             <p className="flex flex-wrap gap-x-3">
               <span>{t('Planned again:')}</span>

@@ -3,7 +3,12 @@ import { ADD_ABSENCE, SCENARIO_MAX_SHIFT_WEEKS } from '@/shared/scenarios'
 import { canCreate, isComplete, newAssumption, toInput } from './utils'
 
 const shift = (weeks: string) => ({ ...newAssumption(), project_id: 'p1', weeks })
-const leave = (from: string, to: string) => ({ ...newAssumption(ADD_ABSENCE), person_id: 'u1', from_date: from, to_date: to })
+const leave = (from: string, to: string) => ({
+  ...newAssumption(ADD_ABSENCE),
+  person_id: 'u1',
+  from_date: from,
+  to_date: to,
+})
 
 describe('new scenario rows', () => {
   it('needs a project and a whole, non-zero shift within the limit', () => {

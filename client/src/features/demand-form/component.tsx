@@ -13,5 +13,12 @@ export function DemandForm({ projectId }: DemandFormProps) {
 
   if (!project) return null
 
-  return <DemandEditor key={demandsKey(project.demands)} project={project} expertises={expertises} editable={canEditProject(user, project)} />
+  return (
+    <DemandEditor
+      key={demandsKey(project.demands)}
+      project={project}
+      expertises={expertises}
+      editable={canEditProject(user, project)}
+    />
+  )
 }

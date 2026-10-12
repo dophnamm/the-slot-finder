@@ -28,7 +28,9 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
   return (
     <Section
       title={t('Assignments')}
-      description={t('Hours per ISO week. Locked hours stay as they are when a draft is generated again; stretch is always locked.')}
+      description={t(
+        'Hours per ISO week. Locked hours stay as they are when a draft is generated again; stretch is always locked.',
+      )}
     >
       <Table>
         <TableHeader>
@@ -47,11 +49,25 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
         <TableBody>
           {groups.map((group) => (
             <Fragment key={group.demand.id}>
-              <GroupHeaderRow group={group} weeks={draft.weeks} people={people} editable={editable}
-                busy={edit.isPending} onAdd={handleAdd} />
+              <GroupHeaderRow
+                group={group}
+                weeks={draft.weeks}
+                people={people}
+                editable={editable}
+                busy={edit.isPending}
+                onAdd={handleAdd}
+              />
               {group.assignments.map((assignment) => (
-                <AssignmentRow key={assignment.id} assignment={assignment} weeks={draft.weeks} editable={editable}
-                  busy={edit.isPending} onSetHours={handleSetHours} onToggleLock={handleToggleLock} onRemove={handleRemove} />
+                <AssignmentRow
+                  key={assignment.id}
+                  assignment={assignment}
+                  weeks={draft.weeks}
+                  editable={editable}
+                  busy={edit.isPending}
+                  onSetHours={handleSetHours}
+                  onToggleLock={handleToggleLock}
+                  onRemove={handleRemove}
+                />
               ))}
             </Fragment>
           ))}

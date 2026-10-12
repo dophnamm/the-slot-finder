@@ -30,7 +30,12 @@ function notifyError(error: ApiError) {
 }
 
 /** Like notifyError, except for the codes the mutation shows itself. */
-function notifyMutationError(error: ApiError, _variables: unknown, _context: unknown, mutation: Mutation<unknown, unknown, unknown>) {
+function notifyMutationError(
+  error: ApiError,
+  _variables: unknown,
+  _context: unknown,
+  mutation: Mutation<unknown, unknown, unknown>,
+) {
   if (mutation.meta?.quietErrorCodes?.includes(error.code)) return
   notifyError(error)
 }

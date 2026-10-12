@@ -12,7 +12,9 @@ export function DemandViewRow({ demand, phase }: DemandViewRowProps) {
       <TableCell>{t('Level {level}', { level: demand.min_level })}</TableCell>
       <TableCell>{demand.headcount}</TableCell>
       <TableCell>{demand.total_hours}</TableCell>
-      <TableCell className="text-sm text-muted-foreground">{t('{start} – {end}', { start: demand.from_week, end: demand.to_week })}</TableCell>
+      <TableCell className="text-sm text-muted-foreground">
+        {t('{start} – {end}', { start: demand.from_week, end: demand.to_week })}
+      </TableCell>
     </TableRow>
   )
 }

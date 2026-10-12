@@ -30,7 +30,9 @@ export function PlanChanges({ changes }: PlanChangesProps) {
           ))}
         </TableBody>
       </Table>
-      {changes.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">{t('No changes against the baseline.')}</p>}
+      {changes.length === 0 && (
+        <p className="py-6 text-center text-sm text-muted-foreground">{t('No changes against the baseline.')}</p>
+      )}
     </Section>
   )
 }

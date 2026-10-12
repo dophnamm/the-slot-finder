@@ -15,7 +15,9 @@ export function PersonAbsencesDialog({ person, canApprove, onClose }: PersonAbse
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{t('Absences of {name}', { name: person?.name ?? '' })}</DialogTitle>
-          <DialogDescription>{t('Approved absence always lowers capacity; planned absence does when the setting is on.')}</DialogDescription>
+          <DialogDescription>
+            {t('Approved absence always lowers capacity; planned absence does when the setting is on.')}
+          </DialogDescription>
         </DialogHeader>
         {person && <AbsenceList personId={person.id} canApprove={canApprove} />}
       </DialogContent>

@@ -15,8 +15,11 @@ export function MetricBar({ label, value, warning = false, compact = false }: Me
         <span className="text-muted-foreground">{label}</span>
         <span className={cn('font-medium tabular-nums', warning && 'text-destructive')}>{shown}</span>
       </div>
-      <Progress value={value === null ? 0 : Math.min(value, FULL_PERCENT)} variant={warning ? 'destructive' : 'default'}
-        aria-label={label} />
+      <Progress
+        value={value === null ? 0 : Math.min(value, FULL_PERCENT)}
+        variant={warning ? 'destructive' : 'default'}
+        aria-label={label}
+      />
     </div>
   )
 }

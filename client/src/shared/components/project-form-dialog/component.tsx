@@ -27,7 +27,8 @@ export function ProjectFormDialog({ open, programId, project, onOpenChange }: Pr
     const { value } = event.target
     setValues((current) => ({ ...current, [field]: value }))
   }
-  const handleDateChange = (value: string, name: string) => setValues((current) => ({ ...current, [name as ProjectTextField]: value }))
+  const handleDateChange = (value: string, name: string) =>
+    setValues((current) => ({ ...current, [name as ProjectTextField]: value }))
   const handleLeadChange = (leadId: string) => setValues((current) => ({ ...current, lead_id: leadId }))
   const handleSaved = () => {
     toast.success(t('Project saved.'))
@@ -45,7 +46,9 @@ export function ProjectFormDialog({ open, programId, project, onOpenChange }: Pr
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>{project ? t('Edit project') : t('Add project')}</DialogTitle>
-            <DialogDescription>{t('A new project starts as incoming until a staffing draft is accepted.')}</DialogDescription>
+            <DialogDescription>
+              {t('A new project starts as incoming until a staffing draft is accepted.')}
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2 sm:col-span-2">
@@ -54,7 +57,13 @@ export function ProjectFormDialog({ open, programId, project, onOpenChange }: Pr
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="project-priority">{t('Priority')}</Label>
-              <NativeSelect id="project-priority" name="priority" className="w-full" value={values.priority} onChange={handleChange}>
+              <NativeSelect
+                id="project-priority"
+                name="priority"
+                className="w-full"
+                value={values.priority}
+                onChange={handleChange}
+              >
                 {PRIORITIES.map((priority) => (
                   <NativeSelectOption key={priority} value={String(priority)}>
                     {t('Priority {priority}', { priority })}
@@ -70,19 +79,46 @@ export function ProjectFormDialog({ open, programId, project, onOpenChange }: Pr
             )}
             <div className="flex flex-col gap-2">
               <Label htmlFor="project-start">{t('Earliest start')}</Label>
-              <DatePicker id="project-start" name="start_earliest" value={values.start_earliest} onChange={handleDateChange} />
+              <DatePicker
+                id="project-start"
+                name="start_earliest"
+                value={values.start_earliest}
+                onChange={handleDateChange}
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="project-deadline">{t('Deadline')}</Label>
-              <DatePicker id="project-deadline" name="deadline" min={values.start_earliest} value={values.deadline} onChange={handleDateChange} />
+              <DatePicker
+                id="project-deadline"
+                name="deadline"
+                min={values.start_earliest}
+                value={values.deadline}
+                onChange={handleDateChange}
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="project-scope">{t('Scope points')}</Label>
-              <Input id="project-scope" name="scope_points" type="number" min={0} step="1" value={values.scope_points} onChange={handleChange} />
+              <Input
+                id="project-scope"
+                name="scope_points"
+                type="number"
+                min={0}
+                step="1"
+                value={values.scope_points}
+                onChange={handleChange}
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="project-done">{t('Done points')}</Label>
-              <Input id="project-done" name="done_points" type="number" min={0} step="1" value={values.done_points} onChange={handleChange} />
+              <Input
+                id="project-done"
+                name="done_points"
+                type="number"
+                min={0}
+                step="1"
+                value={values.done_points}
+                onChange={handleChange}
+              />
             </div>
           </div>
           <DialogFooter>

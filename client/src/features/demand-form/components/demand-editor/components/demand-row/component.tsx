@@ -16,13 +16,19 @@ export function DemandRow({ index, draft, expertises, phases, window, onChange, 
     const field = event.target.name as DemandTextField
     onChange(index, { ...draft, [field]: event.target.value })
   }
-  const handleLevelChange = (event: ChangeEvent<HTMLSelectElement>) => onChange(index, { ...draft, min_level: Number(event.target.value) })
+  const handleLevelChange = (event: ChangeEvent<HTMLSelectElement>) =>
+    onChange(index, { ...draft, min_level: Number(event.target.value) })
   const handleRemove = () => onRemove(index)
 
   return (
     <TableRow>
       <TableCell>
-        <NativeSelect name="expertise_id" aria-label={t('Expertise')} value={draft.expertise_id} onChange={handleChange}>
+        <NativeSelect
+          name="expertise_id"
+          aria-label={t('Expertise')}
+          value={draft.expertise_id}
+          onChange={handleChange}
+        >
           {expertises.map((expertise) => (
             <NativeSelectOption key={expertise.id} value={expertise.id}>
               {expertise.name}
@@ -50,14 +56,34 @@ export function DemandRow({ index, draft, expertises, phases, window, onChange, 
         </NativeSelect>
       </TableCell>
       <TableCell>
-        <Input name="headcount" type="number" className="w-20" aria-label={t('Headcount')} min={DEMAND_LIMITS.minHeadcount}
-          max={DEMAND_LIMITS.maxHeadcount} step="1" value={draft.headcount} onChange={handleChange} />
+        <Input
+          name="headcount"
+          type="number"
+          className="w-20"
+          aria-label={t('Headcount')}
+          min={DEMAND_LIMITS.minHeadcount}
+          max={DEMAND_LIMITS.maxHeadcount}
+          step="1"
+          value={draft.headcount}
+          onChange={handleChange}
+        />
       </TableCell>
       <TableCell>
-        <Input name="total_hours" type="number" className="w-28" aria-label={t('Budget hours')} min={0} max={DEMAND_LIMITS.maxHours}
-          step="any" value={draft.total_hours} onChange={handleChange} />
+        <Input
+          name="total_hours"
+          type="number"
+          className="w-28"
+          aria-label={t('Budget hours')}
+          min={0}
+          max={DEMAND_LIMITS.maxHours}
+          step="any"
+          value={draft.total_hours}
+          onChange={handleChange}
+        />
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground">{t('{start} – {end}', { start: window.from, end: window.to })}</TableCell>
+      <TableCell className="text-sm text-muted-foreground">
+        {t('{start} – {end}', { start: window.from, end: window.to })}
+      </TableCell>
       <TableCell>
         <Button type="button" variant="ghost" size="icon-sm" aria-label={t('Remove demand')} onClick={handleRemove}>
           <Trash2 />

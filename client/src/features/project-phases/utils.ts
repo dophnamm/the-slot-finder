@@ -43,7 +43,11 @@ export function previewPhases(phases: Phase[], draft: PhaseDraft | null): PhaseD
   return phases.map((phase, index) => {
     if (phase.id === draft.id) return draft
     if (slip.weeks > 0 && edited && phase.sequence > edited.sequence) {
-      return { ...saved[index], start_week: addIsoWeeks(phase.start_week, slip.weeks), end_week: addIsoWeeks(phase.end_week, slip.weeks) }
+      return {
+        ...saved[index],
+        start_week: addIsoWeeks(phase.start_week, slip.weeks),
+        end_week: addIsoWeeks(phase.end_week, slip.weeks),
+      }
     }
     return saved[index]
   })
@@ -81,7 +85,11 @@ export function timelineRows(phases: Phase[], spans: PhaseDraft[], weeks: string
   return spans.map((span) => {
     const before = phases.find((phase) => phase.id === span.id)
     const moved = !before || before.start_week !== span.start_week || before.end_week !== span.end_week
-    return { key: span.id ?? NEW_PHASE_KEY, name: span.name, cells: weeks.map((week) => cellState(week, span, before, moved)) }
+    return {
+      key: span.id ?? NEW_PHASE_KEY,
+      name: span.name,
+      cells: weeks.map((week) => cellState(week, span, before, moved)),
+    }
   })
 }
 

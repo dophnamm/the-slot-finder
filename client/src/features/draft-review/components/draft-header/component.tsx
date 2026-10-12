@@ -10,7 +10,8 @@ import { TextLink } from '@/shared/components/text-link'
 import { useTranslation } from '@/shared/i18n'
 import {
   type Draft,
-  PLAN_STATUS_BADGE, PLAN_STATUS_LABELS,
+  PLAN_STATUS_BADGE,
+  PLAN_STATUS_LABELS,
   PUBLISHED_PLAN_STATUS,
   useAcceptDraft,
   useGenerateDraft,
@@ -38,14 +39,26 @@ export function DraftHeader({ draft, editable }: DraftHeaderProps) {
   const handleAccept = () => {
     if (!window.confirm(t('Accept this staffing draft? It becomes the baseline everyone plans against.'))) return
     const confirmStretch = draft.has_stretch
-    if (confirmStretch && !window.confirm(t('This draft has stretch assignments: people below the minimum level or without the skill. Accept them anyway?'))) return
+    if (
+      confirmStretch &&
+      !window.confirm(
+        t(
+          'This draft has stretch assignments: people below the minimum level or without the skill. Accept them anyway?',
+        ),
+      )
+    )
+      return
     accept.mutate({ base_version: draft.base_version, confirm_stretch: confirmStretch }, { onSuccess: handleAccepted })
   }
   const handleReject = () => {
     if (!window.confirm(t('Reject this staffing draft?'))) return
     reject.mutate(undefined, { onSuccess: handleRejected })
   }
-  const handleRegenerate = () => generate.mutate(draft.projects.map((project) => project.id), { onSuccess: handleOpen })
+  const handleRegenerate = () =>
+    generate.mutate(
+      draft.projects.map((project) => project.id),
+      { onSuccess: handleOpen },
+    )
 
   return (
     <Section
@@ -82,7 +95,10 @@ export function DraftHeader({ draft, editable }: DraftHeaderProps) {
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
         <span className="text-muted-foreground">{t('Covers')}</span>
         {draft.projects.map((project) => (
-          <TextLink key={project.id} to={generatePath(ROUTES.projectDetail, { programId: project.program_id, id: project.id })}>
+          <TextLink
+            key={project.id}
+            to={generatePath(ROUTES.projectDetail, { programId: project.program_id, id: project.id })}
+          >
             {t('{project} ({program})', { project: project.name, program: project.program })}
           </TextLink>
         ))}
@@ -90,7 +106,12 @@ export function DraftHeader({ draft, editable }: DraftHeaderProps) {
       {draft.superseded_by && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-warning p-3">
           <p className="text-sm">{t('A change produced a newer version of this draft.')}</p>
-          <Button variant="outline" size="sm" nativeButton={false} render={<Link to={generatePath(ROUTES.staffingDraft, { id: draft.superseded_by })} />}>
+          <Button
+            variant="outline"
+            size="sm"
+            nativeButton={false}
+            render={<Link to={generatePath(ROUTES.staffingDraft, { id: draft.superseded_by })} />}
+          >
             {t('Open the latest version')}
           </Button>
         </div>
@@ -111,9 +132,12 @@ export function DraftHeader({ draft, editable }: DraftHeaderProps) {
       {draft.stale && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-destructive/40 p-3">
           <p className="text-sm text-destructive">
-            {t('The baseline changed to version {version} since this draft was made, so it can no longer be accepted.', {
-              version: draft.current_version,
-            })}
+            {t(
+              'The baseline changed to version {version} since this draft was made, so it can no longer be accepted.',
+              {
+                version: draft.current_version,
+              },
+            )}
           </p>
           {canRegenerate && (
             <Button variant="outline" size="sm" disabled={busy} onClick={handleRegenerate}>

@@ -10,14 +10,30 @@ vi.mock('@/shared/programs', async (importOriginal) => ({
   useProgramOverview: () => ({ data: undefined }),
   useProgramProjects: () => ({ data: [], isPending: false }),
   useProgramMembers: () => ({
-    data: [{ person: { id: 'u1', name: 'Bo' }, total_hours: 80, from_week: '2026-W44', to_week: '2026-W48',
-      expertises: [{ expertise_id: 'eng', expertise: 'Engineer', kind: 'primary', hours: 80 }], projects: [{ id: 'p1', name: 'Checkout' }] }],
+    data: [
+      {
+        person: { id: 'u1', name: 'Bo' },
+        total_hours: 80,
+        from_week: '2026-W44',
+        to_week: '2026-W48',
+        expertises: [{ expertise_id: 'eng', expertise: 'Engineer', kind: 'primary', hours: 80 }],
+        projects: [{ id: 'p1', name: 'Checkout' }],
+      },
+    ],
     isPending: false,
   }),
 }))
 vi.mock('@/shared/expertises', () => ({ useExpertiseBadge: () => () => 'blue' }))
 
-const program = { id: 'g1', name: 'Acme', client: 'Acme Retail', status: 'open', start_week: '2026-W40', end_week: '2026-W51', lead: null } as unknown as Program
+const program = {
+  id: 'g1',
+  name: 'Acme',
+  client: 'Acme Retail',
+  status: 'open',
+  start_week: '2026-W40',
+  end_week: '2026-W51',
+  lead: null,
+} as unknown as Program
 
 afterEach(cleanup)
 

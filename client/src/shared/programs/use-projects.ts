@@ -21,7 +21,15 @@ import {
   projectQueryKey,
   projectsQueryKey,
 } from './constants'
-import type { DemandInput, PhaseChanges, PhaseInput, Project, ProjectAction, ProjectInput, ProjectStatus } from './types'
+import type {
+  DemandInput,
+  PhaseChanges,
+  PhaseInput,
+  Project,
+  ProjectAction,
+  ProjectInput,
+  ProjectStatus,
+} from './types'
 
 function openOnly(page: { data: Project[] }): Project[] {
   return page.data.filter((project) => !FINAL_STATUSES.includes(project.status))
@@ -91,5 +99,8 @@ export function useUpdatePhase() {
 
 export function useReplaceDemands(projectId: string) {
   const invalidate = useInvalidateProjects()
-  return useMutation({ mutationFn: (demands: DemandInput[]) => replaceDemands(projectId, demands), onSuccess: invalidate })
+  return useMutation({
+    mutationFn: (demands: DemandInput[]) => replaceDemands(projectId, demands),
+    onSuccess: invalidate,
+  })
 }

@@ -4,7 +4,17 @@ import { SECTION_BODY_CLASS, SECTION_TITLE_CLASS } from './constants'
 import type { SectionProps } from './types'
 
 /** A heading with its description and actions, above the body: a table, or other content in a card. */
-export function Section({ title, description, action, children, footer, card = false, variant = 'section', className, contentClassName }: SectionProps) {
+export function Section({
+  title,
+  description,
+  action,
+  children,
+  footer,
+  card = false,
+  variant = 'section',
+  className,
+  contentClassName,
+}: SectionProps) {
   const hasBody = Boolean(children || footer)
 
   return (

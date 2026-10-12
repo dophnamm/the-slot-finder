@@ -20,10 +20,24 @@ export function PhaseRow({ phase, editable, disabled, onEdit, onRemove }: PhaseR
       <TableCell>
         {editable && (
           <div className="flex justify-end gap-1">
-            <Button type="button" variant="ghost" size="icon-sm" aria-label={t('Edit phase')} disabled={disabled} onClick={handleEdit}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label={t('Edit phase')}
+              disabled={disabled}
+              onClick={handleEdit}
+            >
               <Pencil />
             </Button>
-            <Button type="button" variant="ghost" size="icon-sm" aria-label={t('Remove phase')} disabled={disabled} onClick={handleRemove}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label={t('Remove phase')}
+              disabled={disabled}
+              onClick={handleRemove}
+            >
               <Trash2 />
             </Button>
           </div>

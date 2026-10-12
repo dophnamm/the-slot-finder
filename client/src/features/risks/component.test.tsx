@@ -25,12 +25,28 @@ const metrics = (flags: Partial<ProgressMetrics>): ProgressMetrics => ({
 
 const data: RisksData = {
   projects: [
-    { id: 'p1', name: 'Records Integration', program_id: 'g1', program: 'Beta', status: 'incoming', deadline_week: '2027-W08',
-      metrics: metrics({ at_risk: true, understaffed: true }) },
-    { id: 'p2', name: 'Checkout', program_id: 'g2', program: 'Acme', status: 'planned', deadline_week: '2026-W50',
-      metrics: metrics({ behind_on_delivery: true, gap_hours: 0 }) },
+    {
+      id: 'p1',
+      name: 'Records Integration',
+      program_id: 'g1',
+      program: 'Beta',
+      status: 'incoming',
+      deadline_week: '2027-W08',
+      metrics: metrics({ at_risk: true, understaffed: true }),
+    },
+    {
+      id: 'p2',
+      name: 'Checkout',
+      program_id: 'g2',
+      program: 'Acme',
+      status: 'planned',
+      deadline_week: '2026-W50',
+      metrics: metrics({ behind_on_delivery: true, gap_hours: 0 }),
+    },
   ],
-  people: [{ person: { id: 'u1', name: 'Bo' }, weeks: [{ week: '2026-W47', load: 44, capacity: 36, utilization: 1.22 }] }],
+  people: [
+    { person: { id: 'u1', name: 'Bo' }, weeks: [{ week: '2026-W47', load: 44, capacity: 36, utilization: 1.22 }] },
+  ],
 }
 
 vi.mock('./use-risks', () => ({ useRisks: () => ({ data, isPending: false }) }))

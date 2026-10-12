@@ -22,10 +22,10 @@ export function ProjectRow({ project }: ProjectRowProps) {
     <LinkRow to={detailPath}>
       <TableCell>
         <div className="flex flex-col">
-          <TextLink to={detailPath}>
-            {project.name}
-          </TextLink>
-          <span className="text-xs text-muted-foreground">{t('Priority {priority}', { priority: project.priority })}</span>
+          <TextLink to={detailPath}>{project.name}</TextLink>
+          <span className="text-xs text-muted-foreground">
+            {t('Priority {priority}', { priority: project.priority })}
+          </span>
         </div>
       </TableCell>
       <TableCell>
@@ -43,14 +43,18 @@ export function ProjectRow({ project }: ProjectRowProps) {
       <TableCell className="text-sm">
         <div className="flex flex-col">
           <span>{t('{start} – {end}', { start: project.start_week, end: project.deadline_week })}</span>
-          <span className="text-xs text-muted-foreground">{formatIsoWeekSpan(project.start_week, project.deadline_week)}</span>
+          <span className="text-xs text-muted-foreground">
+            {formatIsoWeekSpan(project.start_week, project.deadline_week)}
+          </span>
         </div>
       </TableCell>
       <TableCell className="text-sm">
         {phase ? (
           <div className="flex flex-col">
             <span>{phase.name}</span>
-            <span className="text-xs text-muted-foreground">{t('{start} – {end}', { start: phase.start_week, end: phase.end_week })}</span>
+            <span className="text-xs text-muted-foreground">
+              {t('{start} – {end}', { start: phase.start_week, end: phase.end_week })}
+            </span>
           </div>
         ) : (
           <span className="text-muted-foreground">{t('No phases yet')}</span>

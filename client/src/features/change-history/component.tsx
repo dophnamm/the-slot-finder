@@ -17,9 +17,13 @@ export function ChangeHistory() {
   return (
     <Section
       title={t('Change history')}
-      description={t('Leave, holidays and slipped phases or deadlines. Each change is checked against the baseline; a conflict produces a staffing draft.')}
+      description={t(
+        'Leave, holidays and slipped phases or deadlines. Each change is checked against the baseline; a conflict produces a staffing draft.',
+      )}
     >
-      <Table footer={<Pager page={page} total={data?.meta.total} pageSize={HISTORY_PAGE_SIZE} onPageChange={setPage} />}>
+      <Table
+        footer={<Pager page={page} total={data?.meta.total} pageSize={HISTORY_PAGE_SIZE} onPageChange={setPage} />}
+      >
         <TableHeader>
           <TableRow>
             <TableHead>{t('When')}</TableHead>
@@ -35,7 +39,9 @@ export function ChangeHistory() {
         </TableBody>
       </Table>
       {isPending && <p className="py-6 text-center text-sm text-muted-foreground">{t('Loading…')}</p>}
-      {!isPending && events.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">{t('No changes yet.')}</p>}
+      {!isPending && events.length === 0 && (
+        <p className="py-6 text-center text-sm text-muted-foreground">{t('No changes yet.')}</p>
+      )}
     </Section>
   )
 }

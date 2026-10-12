@@ -4,7 +4,10 @@ import type { Assignment } from '@/shared/staffing'
 import type { HeatmapData, HeatmapQuery } from './types'
 
 export function getHeatmap({ from, to, expertise }: HeatmapQuery) {
-  return request<HeatmapData>({ url: INSIGHTS_ENDPOINTS.heatmap, params: { from, to, expertise: expertise || undefined } })
+  return request<HeatmapData>({
+    url: INSIGHTS_ENDPOINTS.heatmap,
+    params: { from, to, expertise: expertise || undefined },
+  })
 }
 
 /** A person's baseline assignments with their hours in one week. */

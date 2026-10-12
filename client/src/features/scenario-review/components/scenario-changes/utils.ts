@@ -7,7 +7,8 @@ import { MOVED_BADGE, MOVED_LABEL } from './constants'
 
 /** A change with the same hours in other weeks is "Moved"; the rest are added, removed or changed. */
 export function changeBadge(change: ScenarioChange): { label: PlainKey; variant: BadgeVariant } {
-  if (change.change === 'changed' && change.before_hours === change.after_hours) return { label: MOVED_LABEL, variant: MOVED_BADGE }
+  if (change.change === 'changed' && change.before_hours === change.after_hours)
+    return { label: MOVED_LABEL, variant: MOVED_BADGE }
   return { label: PLAN_CHANGE_LABELS[change.change], variant: PLAN_CHANGE_BADGE[change.change] }
 }
 

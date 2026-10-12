@@ -17,10 +17,7 @@ export function MySchedulePage() {
         description={t('Your assignments by week appear here once a staffing draft that includes you is accepted.')}
       />
       {user?.person_id ? (
-        <Section
-          title={t('My absences')}
-          description={t('Report leave or training. A planner approves it.')}
-        >
+        <Section title={t('My absences')} description={t('Report leave or training. A planner approves it.')}>
           <AbsenceList personId={user.person_id} canApprove={false} />
         </Section>
       ) : (

@@ -3,7 +3,14 @@ import { Fragment } from 'react'
 import { Link } from 'react-router'
 import { ROUTES } from '@/resources/routes'
 import { useTranslation } from '@/shared/i18n'
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/shared/ui/breadcrumb'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/shared/ui/breadcrumb'
 import type { TrailProps } from './types'
 
 /** Renders a trail after a home icon: links up to the current page, which is plain text. */

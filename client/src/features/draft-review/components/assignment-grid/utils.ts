@@ -12,7 +12,12 @@ export function groupByDemand(draft: Draft): DemandGroup[] {
 /** Locks every week of the assignment, or unlocks them when all are locked. */
 export function lockChanges(assignment: Assignment): NonNullable<DraftEdit['set']> {
   const locked = assignment.allocations.every((alloc) => alloc.locked)
-  return assignment.allocations.map((alloc) => ({ assignment_id: assignment.id, week: alloc.week, hours: alloc.hours, locked: !locked }))
+  return assignment.allocations.map((alloc) => ({
+    assignment_id: assignment.id,
+    week: alloc.week,
+    hours: alloc.hours,
+    locked: !locked,
+  }))
 }
 
 /** ISO week labels have a fixed width, so text order is week order. */

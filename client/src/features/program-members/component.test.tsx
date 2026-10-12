@@ -6,12 +6,19 @@ import { ProgramMembers } from './component'
 vi.mock('@/shared/programs', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/shared/programs')>()),
   useProgramMembers: () => ({
-    data: [{ person: { id: 'u1', name: 'Bo' }, total_hours: 80, from_week: '2026-W44', to_week: '2026-W48',
-      expertises: [
-        { expertise_id: 'eng', expertise: 'Engineer', kind: 'primary', hours: 60 },
-        { expertise_id: 'qa', expertise: 'QA', kind: 'cross_expertise', hours: 20 },
-      ],
-      projects: [{ id: 'p1', name: 'Checkout' }] }],
+    data: [
+      {
+        person: { id: 'u1', name: 'Bo' },
+        total_hours: 80,
+        from_week: '2026-W44',
+        to_week: '2026-W48',
+        expertises: [
+          { expertise_id: 'eng', expertise: 'Engineer', kind: 'primary', hours: 60 },
+          { expertise_id: 'qa', expertise: 'QA', kind: 'cross_expertise', hours: 20 },
+        ],
+        projects: [{ id: 'p1', name: 'Checkout' }],
+      },
+    ],
     isPending: false,
   }),
 }))

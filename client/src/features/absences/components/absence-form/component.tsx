@@ -24,7 +24,8 @@ export function AbsenceForm({ personId, canApprove }: AbsenceFormProps) {
     const { value } = event.target
     setValues((current) => ({ ...current, [field]: value }))
   }
-  const handleDateChange = (value: string, name: string) => setValues((current) => ({ ...current, [name as AbsenceTextField]: value }))
+  const handleDateChange = (value: string, name: string) =>
+    setValues((current) => ({ ...current, [name as AbsenceTextField]: value }))
   const handleTypeChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const { value } = event.target
     if (isAbsenceType(value)) setValues((current) => ({ ...current, type: value }))
@@ -46,20 +47,45 @@ export function AbsenceForm({ personId, canApprove }: AbsenceFormProps) {
     <form className="grid items-end gap-3 sm:grid-cols-6" onSubmit={handleSubmit}>
       <div className="flex flex-col gap-2 sm:col-span-2">
         <Label htmlFor={`absence-from-${personId}`}>{t('From')}</Label>
-        <DatePicker id={`absence-from-${personId}`} name="from_date" value={values.from_date} onChange={handleDateChange} />
+        <DatePicker
+          id={`absence-from-${personId}`}
+          name="from_date"
+          value={values.from_date}
+          onChange={handleDateChange}
+        />
       </div>
       <div className="flex flex-col gap-2 sm:col-span-2">
         <Label htmlFor={`absence-to-${personId}`}>{t('To')}</Label>
-        <DatePicker id={`absence-to-${personId}`} name="to_date" min={values.from_date} value={values.to_date} onChange={handleDateChange} />
+        <DatePicker
+          id={`absence-to-${personId}`}
+          name="to_date"
+          min={values.from_date}
+          value={values.to_date}
+          onChange={handleDateChange}
+        />
       </div>
       <div className="flex flex-col gap-2 sm:col-span-2">
         <Label htmlFor={`absence-hours-${personId}`}>{t('Hours per day')}</Label>
-        <Input id={`absence-hours-${personId}`} name="hours_per_day" type="number" min={0.5} max={MAX_HOURS_PER_DAY} step="0.5"
-          value={values.hours_per_day} onChange={handleTextChange} required />
+        <Input
+          id={`absence-hours-${personId}`}
+          name="hours_per_day"
+          type="number"
+          min={0.5}
+          max={MAX_HOURS_PER_DAY}
+          step="0.5"
+          value={values.hours_per_day}
+          onChange={handleTextChange}
+          required
+        />
       </div>
       <div className="flex flex-col gap-2 sm:col-span-2">
         <Label htmlFor={`absence-type-${personId}`}>{t('Type')}</Label>
-        <NativeSelect id={`absence-type-${personId}`} className="w-full" value={values.type} onChange={handleTypeChange}>
+        <NativeSelect
+          id={`absence-type-${personId}`}
+          className="w-full"
+          value={values.type}
+          onChange={handleTypeChange}
+        >
           {PERSONAL_ABSENCE_TYPES.map((type) => (
             <NativeSelectOption key={type} value={type}>
               {t(ABSENCE_TYPE_LABELS[type])}
@@ -70,7 +96,12 @@ export function AbsenceForm({ personId, canApprove }: AbsenceFormProps) {
       {canApprove && (
         <div className="flex flex-col gap-2 sm:col-span-2">
           <Label htmlFor={`absence-status-${personId}`}>{t('Status')}</Label>
-          <NativeSelect id={`absence-status-${personId}`} className="w-full" value={values.status} onChange={handleStatusChange}>
+          <NativeSelect
+            id={`absence-status-${personId}`}
+            className="w-full"
+            value={values.status}
+            onChange={handleStatusChange}
+          >
             {ABSENCE_STATUSES.map((status) => (
               <NativeSelectOption key={status} value={status}>
                 {t(ABSENCE_STATUS_LABELS[status])}

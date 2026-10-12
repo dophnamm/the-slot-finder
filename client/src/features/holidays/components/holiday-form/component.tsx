@@ -40,12 +40,27 @@ export function HolidayForm() {
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="holiday-to">{t('To')}</Label>
-        <DatePicker id="holiday-to" name="to_date" min={values.from_date} value={values.to_date} onChange={handleDateChange} />
+        <DatePicker
+          id="holiday-to"
+          name="to_date"
+          min={values.from_date}
+          value={values.to_date}
+          onChange={handleDateChange}
+        />
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="holiday-hours">{t('Hours per day')}</Label>
-        <Input id="holiday-hours" name="hours_per_day" type="number" min={0.5} max={MAX_HOURS_PER_DAY} step="0.5"
-          value={values.hours_per_day} onChange={handleChange} required />
+        <Input
+          id="holiday-hours"
+          name="hours_per_day"
+          type="number"
+          min={0.5}
+          max={MAX_HOURS_PER_DAY}
+          step="0.5"
+          value={values.hours_per_day}
+          onChange={handleChange}
+          required
+        />
       </div>
       <Button type="submit" disabled={!canSubmit(values) || create.isPending}>
         {t('Add holiday')}

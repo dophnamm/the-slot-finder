@@ -12,9 +12,21 @@ export function AssumptionText({ assumption }: AssumptionTextProps) {
     const project = assumption.project || t('A project')
     const weeks = shiftSize(assumption)
     if (isLater(assumption)) {
-      return <span>{weeks === 1 ? t('{project} 1 week later', { project }) : t('{project} {weeks} weeks later', { project, weeks })}</span>
+      return (
+        <span>
+          {weeks === 1
+            ? t('{project} 1 week later', { project })
+            : t('{project} {weeks} weeks later', { project, weeks })}
+        </span>
+      )
     }
-    return <span>{weeks === 1 ? t('{project} 1 week earlier', { project }) : t('{project} {weeks} weeks earlier', { project, weeks })}</span>
+    return (
+      <span>
+        {weeks === 1
+          ? t('{project} 1 week earlier', { project })
+          : t('{project} {weeks} weeks earlier', { project, weeks })}
+      </span>
+    )
   }
   return (
     <span>

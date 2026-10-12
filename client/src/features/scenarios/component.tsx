@@ -19,7 +19,9 @@ export function Scenarios() {
   return (
     <Section
       title={t('What-if scenarios')}
-      description={t('Try a change, such as a project slipping or someone on leave, and see what it does to the plan. Nothing real changes.')}
+      description={t(
+        'Try a change, such as a project slipping or someone on leave, and see what it does to the plan. Nothing real changes.',
+      )}
       action={
         <Button onClick={handleNew}>
           <Plus />
@@ -46,7 +48,9 @@ export function Scenarios() {
       </Table>
       {isPending && <p className="py-6 text-center text-sm text-muted-foreground">{t('Loading…')}</p>}
       {!isPending && scenarios.length === 0 && (
-        <p className="py-6 text-center text-sm text-muted-foreground">{t('No scenarios yet. Create one to try a change.')}</p>
+        <p className="py-6 text-center text-sm text-muted-foreground">
+          {t('No scenarios yet. Create one to try a change.')}
+        </p>
       )}
       {creating && <NewScenarioDialog open={creating} onOpenChange={setCreating} />}
     </Section>
