@@ -335,8 +335,19 @@ func parseWeekdays(value string) ([]time.Weekday, error) {
 }
 
 // getEnv gets an environment variable with a fallback value
+// envValue reads an environment variable without the quotes around it. The Makefile exports
+// cmd/server/.env as it is, so a line like TIMEZONE="UTC" reaches the process with its quotes;
+// godotenv strips them only for variables it sets itself.
+func envValue(key string) string {
+	value := os.Getenv(key)
+	if len(value) >= 2 && (value[0] == '"' || value[0] == '\'') && value[len(value)-1] == value[0] {
+		return value[1 : len(value)-1]
+	}
+	return value
+}
+
 func getEnv(key, fallback string) string {
-	if value := os.Getenv(key); value != "" {
+	if value := envValue(key); value != "" {
 		return value
 	}
 	return fallback
@@ -344,7 +355,7 @@ func getEnv(key, fallback string) string {
 
 // getEnvAsInt gets an environment variable as integer with a fallback value
 func getEnvAsInt(key string, fallback int) int {
-	if value := os.Getenv(key); value != "" {
+	if value := envValue(key); value != "" {
 		if intValue, err := strconv.Atoi(value); err == nil {
 			return intValue
 		}
@@ -354,7 +365,7 @@ func getEnvAsInt(key string, fallback int) int {
 
 // getEnvAsBool gets an environment variable as boolean with a fallback value
 func getEnvAsFloat(key string, fallback float64) float64 {
-	if value := os.Getenv(key); value != "" {
+	if value := envValue(key); value != "" {
 		if floatValue, err := strconv.ParseFloat(value, 64); err == nil {
 			return floatValue
 		}
@@ -363,7 +374,7 @@ func getEnvAsFloat(key string, fallback float64) float64 {
 }
 
 func getEnvAsBool(key string, fallback bool) bool {
-	if value := os.Getenv(key); value != "" {
+	if value := envValue(key); value != "" {
 		if boolValue, err := strconv.ParseBool(value); err == nil {
 			return boolValue
 		}
@@ -373,7 +384,7 @@ func getEnvAsBool(key string, fallback bool) bool {
 
 // getEnvAsDuration gets an environment variable as duration with a fallback value
 func getEnvAsDuration(key string, fallback time.Duration) time.Duration {
-	if value := os.Getenv(key); value != "" {
+	if value := envValue(key); value != "" {
 		if duration, err := time.ParseDuration(value); err == nil {
 			return duration
 		}
