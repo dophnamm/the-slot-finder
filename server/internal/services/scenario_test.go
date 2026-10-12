@@ -147,15 +147,14 @@ func TestScenarioService_Create(t *testing.T) {
 		assert.Equal(t, baselineID, *scenario.ParentID)
 		assert.Equal(t, []string{projectID}, scenario.ProjectIDs)
 		weeks := weeksOf(t, scenario)
-		assert.Zero(t, weeks["2026-W46"]+weeks["2026-W47"], "nothing before the moved Test phase")
-		total := 0.0
-		for _, hours := range weeks {
-			total += hours
+		for _, week := range []string{"2026-W48", "2026-W49", "2026-W50", "2026-W51", "2026-W52", "2026-W53"} {
+			assert.InDelta(t, 10, weeks[week], hoursEpsilon, "Quinn keeps 10 h a week, two weeks later: %s", week)
 		}
-		assert.InDelta(t, 60, total, hoursEpsilon, "all 60 h are still placed")
+		assert.Zero(t, weeks["2026-W46"]+weeks["2026-W47"], "nothing before the moved Test phase")
+		require.Len(t, scenario.Assignments, 1, "the same person, nobody new")
 		require.NotNil(t, scenario.Summary)
 		assert.Equal(t, 1, scenario.Summary.PeopleChanged)
-		assert.Positive(t, scenario.Summary.HoursMoved)
+		assert.InDelta(t, 20, scenario.Summary.HoursMoved, hoursEpsilon, "W52 and W53 are new weeks")
 
 		assert.False(t, view.Stale)
 		require.Len(t, view.Changes, 1)
