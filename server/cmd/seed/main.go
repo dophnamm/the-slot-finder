@@ -1,5 +1,6 @@
-// Command seed loads the demo data into the database. Running it again adds nothing new:
-// every row is matched by its natural key first. Rows leave their id empty so that
+// Command seed loads the demo data into the database, then a demo baseline and what-if
+// scenarios (plans.go). Running it again adds nothing new: every row is matched by its natural
+// key first. Rows leave their id empty so that
 // FirstOrCreate matches on the key only; BaseModel.BeforeCreate fills the id on insert.
 //
 //	make seed   (runs from cmd/server, so cmd/server/.env is read)
@@ -38,6 +39,15 @@ func main() {
 	}
 	logger.Sugar.Infof("Seed data loaded: %d expertises, %d people, %d absences, %d holidays, %d programs",
 		len(expertises), len(people), len(absences), len(holidays), len(programs))
+
+	plan, err := seedPlans(database, cfg)
+	if err != nil {
+		logger.Sugar.Fatalf("seed plans: %v", err)
+	}
+	if plan.staffed {
+		logger.Sugar.Infof("Baseline staffed: %v", staffedProjects)
+	}
+	logger.Sugar.Infof("Scenarios added: %d", plan.scenarios)
 }
 
 func seed(tx *gorm.DB) error {
