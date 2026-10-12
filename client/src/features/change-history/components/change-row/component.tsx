@@ -1,6 +1,7 @@
-import { generatePath, Link } from 'react-router'
+import { generatePath } from 'react-router'
 import { ROUTES } from '@/resources/routes'
 import { EventSummary } from '@/shared/components/event-summary'
+import { TextLink } from '@/shared/components/text-link'
 import { EVENT_STATUS_BADGE, EVENT_STATUS_LABELS } from '@/shared/events'
 import { useTranslation } from '@/shared/i18n'
 import { type PlanStatus, PLAN_STATUS_LABELS } from '@/shared/staffing'
@@ -30,9 +31,9 @@ export function ChangeRow({ event }: ChangeRowProps) {
       </TableCell>
       <TableCell>
         {event.draft && (
-          <Link className="text-sm font-medium hover:underline" to={generatePath(ROUTES.staffingDraft, { id: event.draft.id })}>
+          <TextLink className="text-sm" to={generatePath(ROUTES.staffingDraft, { id: event.draft.id })}>
             {t('Open draft ({status})', { status: t(PLAN_STATUS_LABELS[event.draft.status as PlanStatus]) })}
-          </Link>
+          </TextLink>
         )}
       </TableCell>
     </TableRow>

@@ -1,9 +1,10 @@
 import { ChevronRight } from 'lucide-react'
 import { useState } from 'react'
-import { generatePath, Link } from 'react-router'
+import { generatePath } from 'react-router'
 import { ROUTES } from '@/resources/routes'
 import { LinkRow } from '@/shared/components/link-row'
 import { StatusBadge } from '@/shared/components/status-badge'
+import { TextLink } from '@/shared/components/text-link'
 import { useTranslation } from '@/shared/i18n'
 import { weekSpan } from '@/shared/programs'
 import { Button } from '@/shared/ui/button'
@@ -31,9 +32,9 @@ export function ProgramRow({ program }: ProgramRowProps) {
               <ChevronRight className={cn('transition-transform', expanded && 'rotate-90')} />
             </Button>
             <div className="flex flex-col">
-              <Link className="font-medium hover:underline" to={detailPath}>
+              <TextLink to={detailPath}>
                 {program.name}
-              </Link>
+              </TextLink>
               <span className="text-xs text-muted-foreground">{program.client}</span>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
-import { generatePath, Link } from 'react-router'
+import { generatePath } from 'react-router'
 import { ROUTES } from '@/resources/routes'
+import { TextLink } from '@/shared/components/text-link'
 import { useExpertiseBadge } from '@/shared/expertises'
 import { useTranslation } from '@/shared/i18n'
 import { ASSIGNMENT_KIND_BADGE, ASSIGNMENT_KIND_LABELS, PRIMARY_KIND } from '@/shared/staffing'
@@ -32,9 +33,9 @@ export function MemberRow({ member, programId }: MemberRowProps) {
       <TableCell>
         <div className="flex flex-wrap gap-x-3 gap-y-1">
           {member.projects.map((project) => (
-            <Link key={project.id} className="text-sm hover:underline" to={generatePath(ROUTES.projectDetail, { programId, id: project.id })}>
+            <TextLink key={project.id} className="text-sm" to={generatePath(ROUTES.projectDetail, { programId, id: project.id })}>
               {project.name}
-            </Link>
+            </TextLink>
           ))}
         </div>
       </TableCell>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { generatePath, Link } from 'react-router'
+import { generatePath } from 'react-router'
 import { toast } from 'sonner'
 import { ROUTES } from '@/resources/routes'
 import { useCurrentUser } from '@/shared/auth'
@@ -8,6 +8,7 @@ import { PagePlaceholder } from '@/shared/components/page-placeholder'
 import { ProjectFormDialog } from '@/shared/components/project-form-dialog'
 import { StatusBadge } from '@/shared/components/status-badge'
 import { Section } from '@/shared/components/section'
+import { TextLink } from '@/shared/components/text-link'
 import {
   availableActions,
   canEdit,
@@ -81,9 +82,9 @@ export function ProjectSummary({ projectId }: ProjectSummaryProps) {
     >
       <dl className="grid gap-4 sm:grid-cols-3">
         <Fact label={t('Program')}>
-          <Link className="font-medium hover:underline" to={generatePath(ROUTES.programDetail, { id: project.program_id })}>
+          <TextLink to={generatePath(ROUTES.programDetail, { id: project.program_id })}>
             {project.program_name ?? t('Program')}
-          </Link>
+          </TextLink>
         </Fact>
         <Fact label={t('Lead')}>{project.lead?.name ?? t('No lead')}</Fact>
         <Fact label={t('Scope')}>

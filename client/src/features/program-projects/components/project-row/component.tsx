@@ -1,9 +1,10 @@
-import { generatePath, Link } from 'react-router'
+import { generatePath } from 'react-router'
 import { ROUTES } from '@/resources/routes'
 import { LinkRow } from '@/shared/components/link-row'
 import { MetricBar } from '@/shared/components/metric-bar'
 import { ProposeSquadButton } from '@/shared/components/propose-squad-button'
 import { StatusBadge } from '@/shared/components/status-badge'
+import { TextLink } from '@/shared/components/text-link'
 import { activeWarnings } from '@/shared/programs'
 import { useTranslation } from '@/shared/i18n'
 import { Badge } from '@/shared/ui/badge'
@@ -21,9 +22,9 @@ export function ProjectRow({ project }: ProjectRowProps) {
     <LinkRow to={detailPath}>
       <TableCell>
         <div className="flex flex-col">
-          <Link className="font-medium hover:underline" to={detailPath}>
+          <TextLink to={detailPath}>
             {project.name}
-          </Link>
+          </TextLink>
           <span className="text-xs text-muted-foreground">{t('Priority {priority}', { priority: project.priority })}</span>
         </div>
       </TableCell>

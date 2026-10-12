@@ -1,4 +1,5 @@
 import { Section } from '@/shared/components/section'
+import { TextLink } from '@/shared/components/text-link'
 import { useTranslation } from '@/shared/i18n'
 import type { BriefCardProps } from './types'
 
@@ -20,9 +21,9 @@ export function BriefCard({ program }: BriefCardProps) {
         </ol>
       )}
       {program.charter_url && (
-        <a className="text-sm text-primary hover:underline" href={program.charter_url} target="_blank" rel="noreferrer">
+        <TextLink className="text-sm" to={program.charter_url} external>
           {t('Open the charter')}
-        </a>
+        </TextLink>
       )}
     </Section>
   )

@@ -1,8 +1,9 @@
 import { RefreshCw, Trash2 } from 'lucide-react'
-import { Link, useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
 import { ROUTES } from '@/resources/routes'
 import { AssumptionText } from '@/shared/components/assumption-text'
 import { Section } from '@/shared/components/section'
+import { TextLink } from '@/shared/components/text-link'
 import { useTranslation } from '@/shared/i18n'
 import { useDeleteScenario, useRerunScenario, useScenario } from '@/shared/scenarios'
 import { Badge } from '@/shared/ui/badge'
@@ -99,9 +100,9 @@ export function ScenarioReview({ scenarioId }: ScenarioReviewProps) {
             <p className="flex flex-wrap gap-x-3">
               <span>{t('Planned again:')}</span>
               {scenario.projects.map((project) => (
-                <Link key={project.id} className="font-medium text-foreground hover:underline" to={projectPath(project)}>
+                <TextLink key={project.id} to={projectPath(project)}>
                   {project.name}
-                </Link>
+                </TextLink>
               ))}
             </p>
           )}
