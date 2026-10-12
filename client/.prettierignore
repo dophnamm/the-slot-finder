@@ -1,0 +1,7 @@
+# Formatting covers the code; docs and generated files keep their own layout.
+dist
+coverage
+node_modules
+package-lock.json
+*.md
+public
