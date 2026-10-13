@@ -1,4 +1,4 @@
-export const PEOPLE_QUERY_KEY = ['people'] as const
+export { PEOPLE_QUERY_KEY } from '@/shared/people'
 
 /** People shown per page of the list. */
 export const PEOPLE_PAGE_SIZE = 20

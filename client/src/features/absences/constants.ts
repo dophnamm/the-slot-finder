@@ -1,5 +1,6 @@
-import type { PlainKey } from '@/shared/i18n'
 import type { AbsenceStatus, AbsenceType } from './types'
+
+export { ABSENCE_STATUS_LABELS, ABSENCE_TYPE_LABELS } from '@/shared/people'
 
 export const absencesQueryKey = (personId: string) => ['absences', personId] as const
 
@@ -7,17 +8,6 @@ export const absencesQueryKey = (personId: string) => ['absences', personId] as 
 export const PERSONAL_ABSENCE_TYPES = ['leave', 'training'] as const satisfies readonly AbsenceType[]
 
 export const ABSENCE_STATUSES = ['planned', 'approved'] as const satisfies readonly AbsenceStatus[]
-
-export const ABSENCE_TYPE_LABELS: Record<AbsenceType, PlainKey> = {
-  leave: 'Leave',
-  training: 'Training',
-  holiday: 'Holiday',
-}
-
-export const ABSENCE_STATUS_LABELS: Record<AbsenceStatus, PlainKey> = {
-  planned: 'Planned',
-  approved: 'Approved',
-}
 
 /** Columns of the table; the loading and empty rows span them all. */
 export const ABSENCE_TABLE_COLUMNS = 5

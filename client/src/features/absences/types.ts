@@ -1,6 +1,6 @@
-/** Absence types and statuses; they match the server's constants/absence.go. */
-export type AbsenceType = 'leave' | 'training' | 'holiday'
-export type AbsenceStatus = 'planned' | 'approved'
+import type { AbsenceStatus, AbsenceType } from '@/shared/people'
+
+export type { AbsenceStatus, AbsenceType }
 
 /** An absence as the server returns it; dates are inclusive, e.g. `2026-10-19`. */
 export interface Absence {
