@@ -186,8 +186,7 @@ func (s *availabilityService) Approve(ctx context.Context, absenceID string) (*m
 			WithOperation(opApproveAbsence).WithResource(resourceAbsence)
 	}
 	if absence.PersonID == nil || absence.Status != constants.AbsenceStatusPlanned {
-		return nil, errors.NewAppError(constants.AbsenceNotPlanned, constants.MsgAbsenceNotPlanned, errors.ErrorTypeConflict,
-			http.StatusConflict).WithOperation(opApproveAbsence).WithResource(resourceAbsence)
+		return nil, absenceNotPlanned()
 	}
 
 	name := ""
@@ -195,14 +194,34 @@ func (s *availabilityService) Approve(ctx context.Context, absenceID string) (*m
 		name = person.Name
 	}
 	absence.Status = constants.AbsenceStatusApproved
-	update := func(ctx context.Context) error { return s.repo.Updates(ctx, absence) }
+	// The write only approves a still-planned absence, so of two approvals that both read
+	// "planned", one wins and the other records nothing.
+	update := func(ctx context.Context) error {
+		changed, err := s.repo.ApprovePlanned(ctx, absence.ID)
+		if err == nil && !changed {
+			return errAbsenceNoLongerPlanned
+		}
+		return err
+	}
 	// The constants have only AbsenceAdded and AbsenceRemoved; an approval is the absence
 	// again with its new status, so the re-plan runner sees it like any absence change.
 	event := ChangeInput{Type: constants.EventAbsenceAdded, Payload: absenceChange(absence, name)}
 	if err := s.saveWithEvent(ctx, update, event); err != nil {
+		if stderrors.Is(err, errAbsenceNoLongerPlanned) {
+			return nil, absenceNotPlanned()
+		}
 		return nil, asAppError(err, constants.MsgAbsenceApproveFailed, opApproveAbsence, resourceAbsence)
 	}
 	return absence, nil
+}
+
+// errAbsenceNoLongerPlanned means another request approved the absence first.
+var errAbsenceNoLongerPlanned = stderrors.New("absence is no longer planned")
+
+// absenceNotPlanned is the 409 for approving an absence that is approved already or a holiday.
+func absenceNotPlanned() error {
+	return errors.NewAppError(constants.AbsenceNotPlanned, constants.MsgAbsenceNotPlanned, errors.ErrorTypeConflict,
+		http.StatusConflict).WithOperation(opApproveAbsence).WithResource(resourceAbsence)
 }
 
 func (s *availabilityService) ListHolidays(ctx context.Context) ([]models.Absence, error) {

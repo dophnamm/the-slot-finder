@@ -240,10 +240,13 @@ func TestAvailabilityService_Approve(t *testing.T) {
 		ctx        context.Context
 		absence    *models.Absence
 		findErr    error
-		wantStatus int // 0 means approved
+		lostRace   bool // another planner approved it between the read and the write
+		wantStatus int  // 0 means approved
 		wantCode   string
 	}{
 		{name: "a planner approves planned leave", ctx: planner, absence: planned()},
+		{name: "approved by someone else meanwhile", ctx: planner, absence: planned(), lostRace: true,
+			wantStatus: http.StatusConflict, wantCode: constants.AbsenceNotPlanned},
 		{name: "already approved", ctx: planner, absence: approved, wantStatus: http.StatusConflict, wantCode: constants.AbsenceNotPlanned},
 		{name: "a holiday", ctx: planner, absence: holiday, wantStatus: http.StatusConflict, wantCode: constants.AbsenceNotPlanned},
 		{name: "not found", ctx: planner, findErr: gorm.ErrRecordNotFound, wantStatus: http.StatusNotFound, wantCode: constants.AbsenceNotFound},
@@ -259,9 +262,7 @@ func TestAvailabilityService_Approve(t *testing.T) {
 			} else {
 				repo.On("FindOneByID", mock.Anything, absenceID).Return(tt.absence, nil)
 			}
-			repo.On("Updates", mock.Anything, mock.MatchedBy(func(a *models.Absence) bool {
-				return a.Status == constants.AbsenceStatusApproved
-			})).Return(nil)
+			repo.On("ApprovePlanned", mock.Anything, absenceID).Return(!tt.lostRace, nil)
 			events := &recordedEvents{}
 			people := stubPeople{self: &models.Person{BaseModel: models.BaseModel{ID: selfPersonID}}}
 			service := ProvideAvailabilityService(repo, people, ProvideAuthzService(people), passthroughTx{}, events)
@@ -273,7 +274,9 @@ func TestAvailabilityService_Approve(t *testing.T) {
 				} else {
 					requireStatus(t, err, tt.wantStatus)
 				}
-				repo.AssertNotCalled(t, "Updates", mock.Anything, mock.Anything)
+				if !tt.lostRace {
+					repo.AssertNotCalled(t, "ApprovePlanned", mock.Anything, mock.Anything)
+				}
 				assert.Empty(t, events.events, "a refused approve records no change event")
 				return
 			}
@@ -287,4 +290,9 @@ func TestAvailabilityService_Approve(t *testing.T) {
 			assert.Equal(t, &self, change.PersonID)
 		})
 	}
+}
+
+func (m *MockAbsenceRepository) ApprovePlanned(ctx context.Context, id string) (bool, error) {
+	args := m.Called(ctx, id)
+	return args.Bool(0), args.Error(1)
 }

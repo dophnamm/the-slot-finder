@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/db"
 	"the-slot-finder/server/internal/models"
 )
@@ -18,6 +19,10 @@ type AbsenceRepository interface {
 	// ListOverlapping returns every absence, personal or holiday, that touches the dates
 	// from through to.
 	ListOverlapping(ctx context.Context, from, to time.Time) ([]models.Absence, error)
+	// ApprovePlanned approves a person's absence only while it is still planned, in one
+	// statement, so two approvals at the same time cannot both succeed. It reports whether the
+	// absence changed.
+	ApprovePlanned(ctx context.Context, id string) (bool, error)
 }
 
 type absenceRepository struct {
@@ -54,4 +59,11 @@ func (r *absenceRepository) ListOverlapping(ctx context.Context, from, to time.T
 		Order("from_date ASC").Order("id ASC").
 		Find(&absences).Error
 	return absences, err
+}
+
+func (r *absenceRepository) ApprovePlanned(ctx context.Context, id string) (bool, error) {
+	result := r.db.From(ctx).Model(&models.Absence{}).
+		Where("id = ? AND status = ? AND person_id IS NOT NULL", id, constants.AbsenceStatusPlanned).
+		Update("status", constants.AbsenceStatusApproved)
+	return result.RowsAffected > 0, result.Error
 }
