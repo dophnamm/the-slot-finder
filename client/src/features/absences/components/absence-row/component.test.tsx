@@ -12,6 +12,7 @@ const planned: Absence = {
   hours_per_day: 8,
   type: 'leave',
   status: 'planned',
+  source: 'manual',
 }
 const approved: Absence = { ...planned, status: 'approved' }
 const onDelete = vi.fn()
@@ -43,6 +44,11 @@ describe('AbsenceRow', () => {
     expect(button.disabled).toBe(true)
     fireEvent.click(button)
     expect(onApprove).not.toHaveBeenCalled()
+  })
+
+  it('marks an absence read from a calendar', () => {
+    renderRow({ ...planned, source: 'calendar' })
+    expect(screen.getByText('From calendar')).toBeTruthy()
   })
 
   it('offers no Approve on an approved absence', () => {

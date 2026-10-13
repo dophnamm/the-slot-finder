@@ -1,4 +1,5 @@
 import { Trash2 } from 'lucide-react'
+import { AbsenceSourceBadge } from '@/shared/components/absence-source-badge'
 import { useTranslation } from '@/shared/i18n'
 import { PLANNED_ABSENCE_STATUS } from '@/shared/people'
 import { Badge } from '@/shared/ui/badge'
@@ -17,7 +18,12 @@ export function AbsenceRow({ absence, onDelete, onApprove, approving = false }: 
   return (
     <TableRow>
       <TableCell>{formatDateRange(absence.from_date, absence.to_date)}</TableCell>
-      <TableCell>{t(ABSENCE_TYPE_LABELS[absence.type])}</TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          {t(ABSENCE_TYPE_LABELS[absence.type])}
+          <AbsenceSourceBadge source={absence.source} />
+        </div>
+      </TableCell>
       <TableCell>{t('{hours} h per day', { hours: absence.hours_per_day })}</TableCell>
       <TableCell>
         <Badge variant={absence.status === 'approved' ? 'green' : 'amber'}>

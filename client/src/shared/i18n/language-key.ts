@@ -130,6 +130,7 @@ export type LanguageKey = {
   Failed: string
   Forecast: string
   From: string
+  'From calendar': string
   'From week': string
   'From {date}': string
   Gap: string

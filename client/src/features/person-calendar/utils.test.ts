@@ -4,7 +4,7 @@ import { daysByDate, findWeek, orderedWeekdays, weekCells } from './utils'
 
 const leave: ScheduleDay = {
   date: '2026-10-14',
-  absences: [{ id: 'a1', type: 'leave', status: 'approved', hours_per_day: 8 }],
+  absences: [{ id: 'a1', type: 'leave', status: 'approved', hours_per_day: 8, source: 'manual' }],
   holidays: [],
 }
 
