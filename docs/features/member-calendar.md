@@ -34,6 +34,9 @@
 - Approving records `AbsenceAdded` with the new status; there is no separate event type. Approving twice, or approving a holiday, gets `409 ABSENCE_NOT_PLANNED`.
 - The band classes and labels moved to `shared/utilization`. The person and absence types, their labels and `PLANNED_ABSENCE_STATUS` moved to `shared/people`.
 - The breadcrumb `Trail` shows a middle step without a link as plain text. It is used for "People" when the user cannot open the list.
+- Names on the dashboard heatmap open the person page. This is how leads reach it, because the People list is planner-only.
+- The week detail names projects as plain text for viewers who cannot open project pages (a specialist on My schedule).
+- Approving only changes an absence that is still planned, in the same statement. Of two approvals at the same time, one wins and the other gets `409`. The Approve button is disabled while it runs, and the list refreshes after a refusal.
 - Checked on the local stack as planner, lead and specialist. The load of every week equals the heatmap's, and November 2026 has six rows. Planned leave shows as tentative. Approve updates the calendar without a reload and records `AbsenceAdded`. A specialist gets `403` on someone else's schedule.
 
 ## Server
