@@ -85,12 +85,13 @@ Files per module follow the pattern `handlers/<module>.go`, `services/<module>.g
 |---|---|---|---|
 | **identity** | Local Keycloak token verification (cached JWKS), roles, mapping the token to a PERSON (`keycloak_id`), the `authz` service with named permission checks (including assistant read access) | none (accounts live in Keycloak) | |
 | **people** | People, expertise, levels, skill tags, contracted and non-project hours, start and end dates, location | PERSON, EXPERTISE, PERSON_SKILL, TAG, PERSON_TAG | `PersonJoined`, `PersonLeft`, `SkillChanged` (also for tags) |
-| **availability** | Leave, holidays per location, effective-dated weekly hours; computes `capacity(person, week)` | ABSENCE, CAPACITY_CHANGE | `AbsenceAdded`, `AbsenceRemoved`, `CapacityChanged` |
+| **availability** | Leave (entered by hand or read from a calendar feed), holidays per location, effective-dated weekly hours; computes `capacity(person, week)` | ABSENCE, CAPACITY_CHANGE | `AbsenceAdded`, `AbsenceRemoved`, `CapacityChanged` |
 | **programs** | Programs, projects, phases (and their slip propagation), staffing demand (budget hours, profile, tags, preferred person), forecast overrides, scope points, confidence, milestones, assistants, program and project lifecycles (including `staffed_at`) | PROGRAM, PROJECT, PROJECT_PHASE, DEMAND, DEMAND_TAG, MILESTONE, PROGRAM_ASSISTANT | `ProgramSlipped`, `ProgramCancelled`, `ProjectCreated`, `ProjectSlipped`, `PhaseSlipped`, `DemandChanged` |
 | **planning** | Baseline, staffing drafts, scenarios; assignments and their kind (primary / cross-expertise / stretch) and alternatives; calls the engine; accept and publish | PLAN, ASSIGNMENT, ALLOCATION | `PlanPublished` |
 | **insights** | Heatmap, utilization, program and project metrics, at-risk lists, capacity forecast, bench list, sustained overload, plan churn, hours per point (read-only) | none (read-only) | |
 | **events** | Records ChangeEvents, debounces them, assesses impact, creates re-plan jobs (one open auto draft per baseline) | CHANGE_EVENT | |
-| **integrations** | Imports (CSV, HR), notifications (Email/Slack) to members and assistants, the LLM provider client (later) | import_job | |
+| **integrations** | Imports (CSV, HR), calendar feeds (secret ICS links and the sync runner, which writes leave through **availability**), notifications (Email/Slack) to members and assistants, the LLM provider client (later) | import_job, CALENDAR_FEED | |
+| **timesheets** | The timesheet template and import; actual hours per person, project and ISO week | ACTUAL_HOURS | |
 | **ai** (later) | The AI assistant: intake extraction, what-if chat, draft summaries, Q&A. Runs the function-calling loop with the LLM; each tool wraps another module's service and runs with the caller's identity (section 9) | none | |
 
 ## 3. API (REST/JSON)
@@ -103,13 +104,18 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 |---|---|---|---|
 | GET | `/me` | Current user, role, programs they assist, enabled features (e.g. the AI assistant) | everyone |
 | GET, POST | `/people` | List or create people (start and end dates, location, timezone, non-project hours) | planner |
+| GET | `/people/{id}` | One person with their expertise, for the person page | planner, lead |
 | PATCH | `/people/{id}` | Edit a person: only the sent fields; `start_date` and `end_date` accept null to clear them | planner |
 | PUT | `/people/{id}/skills` | Replace expertise and levels (exactly one primary) | planner |
 | PUT | `/people/{id}/tags` | Replace a person's skill tags | planner |
 | GET, POST | `/people/{id}/capacity-changes` | Effective-dated weekly hours (`from_week`, `weekly_hours`) | planner |
-| GET, POST | `/people/{id}/absences` | Leave calendar. A person's own absence is always `planned`; planners choose the status | planner, the person themselves |
+| GET, POST | `/people/{id}/absences` | Leave calendar. A person's own absence is always `planned`; planners choose the status. Leave read from a calendar feed has `source = calendar` | planner, the person themselves |
 | DELETE | `/absences/{id}` | Remove an absence, or a holiday (planner) | planner, the person themselves |
+| POST | `/absences/{id}/approve` | Approve a planned absence; records a change event | planner |
 | GET | `/people/{id}/assignments?from=&to=` | Everything a person owns in the baseline: project, demand, **expertise**, kind, hours per week | planner, lead, the person themselves |
+| GET | `/people/{id}/schedule?from=&to=` | One person's calendar: per week capacity, load, band, tentative flag, hours per project and actual hours; per day absences and holidays; the working weekdays | planner, lead, the person themselves |
+| GET, PUT, DELETE | `/people/{id}/calendar-feed` | A person's calendar link: its status (never the link itself), connect or replace (`{ url }`, checked and synced once), disconnect. `503 CALENDAR_SYNC_DISABLED` without `CALENDAR_FEED_KEY` | planner, the person themselves |
+| POST | `/people/{id}/calendar-feed/sync` | Sync that calendar now | planner, the person themselves |
 | GET | `/expertises` | Expertise catalogue | everyone |
 | GET, POST | `/tags` | Tag catalogue (`name`, `category`: technology / domain / language / client) | GET everyone, POST planner |
 | GET, POST | `/holidays` | Holidays per `location` (no location = company-wide) | GET everyone, POST planner |
@@ -122,9 +128,9 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | GET | `/programs/{id}` | Program record: brief, timeline, status | planner, lead, internal assistant |
 | PATCH | `/programs/{id}` | Edit a program. Moving the end date emits `ProgramSlipped` | planner, lead (own) |
 | POST | `/programs/{id}/actions/{hold\|resume\|start-closing\|close\|cancel}` | Change program state through an action. `cancel` also cancels the program's open projects | planner, lead (own) |
-| GET | `/programs/{id}/overview` | Header metrics (Time, Scope, Planned burn, Staffing with warnings), cost figures (budget, planned, planned to date, forecast, gap; EAC hours later), staffing by expertise | planner, lead, internal assistant |
+| GET | `/programs/{id}/overview` | Header metrics (Time, Scope, Planned burn, Burn from actual hours, Staffing with warnings), cost figures (budget, planned, planned to date, actual, forecast, gap; EAC hours later), staffing by expertise | planner, lead, internal assistant |
 | PATCH | `/programs/{id}/forecast` | Set or clear `forecast_override_hours` per demand | planner, lead (own) |
-| GET | `/programs/{id}/projects` | Projects tab: rows with a `metrics` object (Time / Scope / Planned burn / Staffing and warnings); next milestone later | planner, lead, internal assistant |
+| GET | `/programs/{id}/projects` | Projects tab: rows with a `metrics` object (Time / Scope / Planned burn / Burn / Staffing and warnings); next milestone later | planner, lead, internal assistant |
 | POST | `/programs/{id}/projects` | Add a project to the program | planner, lead (own) |
 | GET | `/programs/{id}/members` | Members tab and the Programs list preview: everyone with baseline hours on the program's projects, most hours first, with hours per expertise and kind, first and last week, and projects (overall utilization later) | planner, lead |
 | GET, POST | `/programs/{id}/assistants` | List or add assistants (`kind`: internal or external) | planner, lead (own); internal assistants may list |
@@ -160,6 +166,8 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | GET | `/insights/churn?from=&to=` | Plan churn per accepted draft: people changed, hours moved | planner |
 | GET | `/events?program_id=` | Change history and processing status; the program page uses it for the re-plan banner | planner, lead |
 | POST | `/imports/{csv\|hr}` | Import data (runs in the background) | planner |
+| GET | `/timesheets/template?from=&to=` | CSV template: person × project × week with baseline hours in a range of past weeks, with planned hours and any actual hours already recorded | planner |
+| POST | `/timesheets/import` | Upload a filled-in template (multipart `file`). Every row is checked first; any failure gets `400 TIMESHEET_INVALID` with line, column and code, and nothing is saved | planner |
 
 **AI assistant** (later). While `AI_ENABLED` is false, these return `503` with `AI_DISABLED`.
 
@@ -280,11 +288,12 @@ The **insights** module computes these for `/programs/{id}/overview`, `/programs
 
 | Rule | Detail |
 |---|---|
-| Source data | `PROGRAM`, `PROJECT`, `DEMAND`, `MILESTONE` from **programs**; baseline allocations from **planning**; capacity from **availability** |
+| Source data | `PROGRAM`, `PROJECT`, `DEMAND`, `MILESTONE` from **programs**; baseline allocations from **planning**; capacity from **availability**; actual hours from **timesheets** |
 | Program values | Sums over the program's projects that are not cancelled |
 | "Today" | The organization's current date, in its timezone. Week-based metrics use the current ISO week |
 | Division by zero | A ratio with a zero denominator returns `null`. The Client shows "—" |
-| Planned burn % in the MVP | Planned hours in weeks up to and including the current week ÷ budget hours. Phase 2 swaps in actual hours from a timesheet import. No "behind plan" warning until then |
+| Planned burn % | Planned hours in weeks up to and including the current week ÷ budget hours. No "behind plan" warning |
+| Actual hours and Burn % | Σ actual hours from timesheet imports, and actual ÷ budget hours. Burn % is `null` until the project has actual hours |
 | Delivery warning | Scope % lower than Time % by more than `SCOPE_LAG_THRESHOLD` |
 | EAC hours | Hours used to date ÷ Scope %. Returned as `null` while Scope % < `EAC_MIN_SCOPE_PERCENT`. EAC > budget sets **likely over budget** |
 | Gap and Staffing % | Returned side by side; they show the same shortfall unless a forecast override is set |
@@ -306,6 +315,7 @@ Jobs are rows in Postgres, run by a runner inside the server process, started an
 |---|---|---|
 | `replan` | ChangeEvents, batched over `REPLAN_DEBOUNCE` | Assesses impact. If there is a conflict, calls the engine, saves a staffing draft and alerts the Planner. If an auto draft is already open for the baseline, it regenerates that draft instead (see below) |
 | `import` | `POST /imports/*` | Reads the source, validates it, writes through each module's public interface |
+| `calendar-sync` | Every `CALENDAR_SYNC_INTERVAL`, or `POST /people/{id}/calendar-feed/sync` | Fetches each due calendar feed, keeps its out-of-office events, and creates, moves or deletes the matching planned leave through **availability**, which records the change events. Claims feeds with `FOR UPDATE SKIP LOCKED`. A failed fetch changes nothing and stores an error code |
 | `notify` | `PlanPublished`, alerts | Sends Email/Slack messages to the affected members and to the program's assistants (internal and external) |
 
 **One open auto draft per baseline.** A draft is "auto" when change events link to it. When a new event arrives while one is open, `replan` regenerates it from the current baseline plus every linked event. Assignments the Planner added by hand and locked allocations are carried over. The old draft version becomes `superseded` and all events point to the new one. The worker saves the new version only if the old one has not changed since it read it; otherwise it regenerates again, so a Planner's edit is never dropped silently. An edit, accept or reject that reaches the old version afterwards gets `409 DRAFT_SUPERSEDED`.
@@ -361,6 +371,16 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `REPLAN_POLL_INTERVAL` · `REPLAN_BATCH_SIZE` | How often the runner looks for pending events, and how many it claims at once | 10s · 50 |
 | `REPLAN_MAX_ATTEMPTS` · `REPLAN_RETRY_BACKOFF` | Retries before an event is `failed`, and the delay step between them | 5 · 30s |
 | `SCENARIO_MAX_SHIFT_WEEKS` · `SCENARIO_MAX_ASSUMPTIONS` | The most weeks a scenario may move a project, and the most assumptions in one scenario | 12 · 10 |
+| `SCHEDULE_MAX_WEEKS` | Largest range of one person's schedule (a month grid needs at most 6 weeks) | 8 |
+| `TIMESHEET_TEMPLATE_WEEKS` · `TIMESHEET_MAX_WEEKS` | Past weeks in the timesheet template by default, and the largest range | 4 · 12 |
+| `TIMESHEET_MAX_WEEK_HOURS` | Most actual hours one row may hold | 80 |
+| `TIMESHEET_MAX_BYTES` · `TIMESHEET_MAX_ROWS` | Largest timesheet file accepted | 1MB · 5000 |
+| `CALENDAR_FEED_KEY` | 32-byte key (base64) that encrypts calendar links. A secret: never logged. Empty turns calendar sync off | empty |
+| `CALENDAR_ALLOWED_HOSTS` | Hosts a calendar link may point to | calendar.google.com, outlook.office365.com, outlook.live.com |
+| `CALENDAR_SYNC_INTERVAL` · `CALENDAR_SYNC_BATCH_SIZE` | How often the runner syncs each calendar, and how many it claims at once | 15m · 20 |
+| `CALENDAR_SYNC_WEEKS` | How far ahead calendar events are read | 26 |
+| `CALENDAR_LEAVE_KEYWORDS` | Title words that mark an event as out of office, ignoring case | OOO, Out of office, Vacation, Annual leave, Nghỉ phép |
+| `CALENDAR_FETCH_TIMEOUT` · `CALENDAR_MAX_BYTES` | Limits on one calendar fetch | 10s · 5MB |
 | `WORKING_WEEKDAYS` | Days that count when absence hours are computed | Mon–Fri |
 | `HEATMAP_DEFAULT_WEEKS` · `HEATMAP_MAX_WEEKS` | Weeks shown by default on the heatmap, and the largest range allowed | 12 · 52 |
 | `ALERT_HORIZON_WEEKS` | A deadline this close turns a gap into **at risk** | 4 |

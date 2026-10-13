@@ -2,7 +2,7 @@
 
 > **Status:** design v0.4. The server and client skeletons exist; no feature code yet.
 > **Technology:** Go server (Echo, Uber FX, GORM, PostgreSQL, Redis, Keycloak) and React client (Vite, Tailwind, shadcn/ui, TanStack Query, Zustand, Axios). See [section 12](#12-tech-stack). Sections 1–11 and 15 describe the design independently of the stack.
-> **Diagrams:** rendered inline below (Mermaid). The same set is in [`docs/architecture.drawio`](docs/architecture.drawio) for draw.io (7 pages).
+> **Diagrams:** rendered inline below (Mermaid). The same set is in [`docs/architecture.drawio`](docs/architecture.drawio) for draw.io (9 pages).
 
 Details per part:
 - [`server/README.md`](server/README.md): modules, API, planning engine, data rules
@@ -23,7 +23,7 @@ Details per part:
 
 **Out of scope for the MVP:**
 - Task and sprint management inside a project
-- Work logging. Actual hours become an optional CSV timesheet import in phase 2.
+- Work logging inside the app. Actual hours come in through a CSV timesheet import, per person, project and ISO week.
 - Billing, money and financial scores. Cost is measured **in hours only**.
 
 **Later (not in the MVP):** a level-based productivity factor (a senior's hour counting for more than a junior's), person-level soft booking of pipeline projects, and an **AI assistant** ([section 15](#15-ai-assistant-later)).
@@ -47,6 +47,8 @@ Details per part:
 | **Baseline** | The plan currently in force |
 | **Scenario** | A what-if plan built from hypothetical changes |
 | **Assignment** | A person owning part of one demand in a plan, with weekly hours under it. A person can hold several assignments in the same week, in different projects **and different expertises** |
+| **Actual hours** | Hours a person really worked on a project in one ISO week, imported from a timesheet CSV. Planned hours come from the baseline |
+| **Calendar feed** | A person's secret ICS link from Google Calendar or Outlook. Out-of-office events in it become planned leave |
 | **Cross-expertise** | An assignment whose expertise is not the person's primary one, e.g. an Engineer covering QA. Allowed when the person has that skill at the demand's minimum level |
 | **Stretch** | An assignment below the demand's minimum level (or without the skill), for cover or cross-training. Only a Planner can create one, by hand, and it is always flagged |
 | **Member** | A person with at least one assignment in a program's projects |
@@ -66,24 +68,28 @@ flowchart LR
   sf(["<b>The Slot Finder</b><br/>assigns projects to cross-functional squads"])
   intake["Incoming projects<br/>Sales/CRM, CSV"]
   hr["HR / Leave system"]
+  cal["Google / Outlook calendar<br/>secret ICS link"]
+  timesheet["Timesheet CSV<br/>actual hours"]
   notify["Email / Slack / Teams"]
   llm["LLM API (later)<br/>function calling · Gemini planned"]
 
-  planner -->|"reviews drafts, runs what-ifs"| sf
+  planner -->|"reviews drafts, runs what-ifs, imports timesheets"| sf
   lead -->|"manages programs, demand, deadlines"| sf
-  spec -->|"views schedule, reports leave"| sf
+  spec -->|"views schedule, reports leave, connects calendar"| sf
   assistant -.->|"views program (internal only)"| sf
   intake -->|"new projects"| sf
   hr -->|"leave calendar"| sf
+  cal -->|"out-of-office events"| sf
+  timesheet -->|"actual hours"| sf
   sf -->|"assignments, alerts"| notify
   sf -.->|"AI assistant: text ↔ structured data"| llm
 ```
 
 | Actor | What they do |
 |---|---|
-| **Resource Planner** | Sees team-wide load, generates staffing drafts, edits by hand, approves, builds what-if scenarios |
+| **Resource Planner** | Sees team-wide load and each person's schedule, generates staffing drafts, edits by hand, approves, builds what-if scenarios, imports timesheets |
 | **Program / Project Lead** | Creates programs and projects, declares demand (budget hours per expertise), milestones and scope points, manages assistants |
-| **Specialist** | Sees which projects they work on, which weeks and for how many hours; reports leave |
+| **Specialist** | Sees which projects they work on, which weeks and for how many hours; reports leave; connects their calendar so out-of-office time becomes leave |
 | **Assistant** | Internal: read-only view of one program. External: no login, receives notifications only |
 
 ---
@@ -103,11 +109,11 @@ flowchart TB
     api["<b>Server API</b><br/>modular monolith · REST/JSON"]
     engine["<b>Planning Engine</b><br/>pure library, no I/O"]
     queue[["Job queue"]]
-    worker["<b>Background Worker</b><br/>re-plan · import · notify"]
+    worker["<b>Background Worker</b><br/>re-plan · calendar sync · import · notify"]
     db[("<b>Database</b><br/>relational")]
   end
 
-  ext["External systems<br/>CSV · HR · Email/Slack"]
+  ext["External systems<br/>CSV · HR · calendars (ICS) · Email/Slack"]
   llm["LLM API (later)<br/>function calling · Gemini planned"]
 
   users --> client
@@ -118,7 +124,7 @@ flowchart TB
   queue --> worker
   worker --> engine
   worker -->|"read / write"| db
-  worker <-->|"import / notify"| ext
+  worker <-->|"import · calendar sync · notify"| ext
   api -.->|"AI assistant (later)"| llm
 ```
 
@@ -127,9 +133,9 @@ flowchart TB
 | **Client** | Shows heatmaps, program pages, forms, drafts and diffs; calls the API | Computing plans or metrics, deciding permissions |
 | **Server API** | Source of truth: data, permissions, state transitions, transactions, metrics | The scheduling algorithm (that lives in the Engine) |
 | **Planning Engine** | The pure function `propose(snapshot, policy) → result` | Database or network access |
-| **Background Worker** | Heavy or asynchronous jobs: re-planning after changes, imports, notifications. In the MVP these run inside the server process; a separate worker process comes later | Serving user requests |
+| **Background Worker** | Heavy or asynchronous jobs: re-planning after changes, calendar sync, imports, notifications. In the MVP these run inside the server process; a separate worker process comes later | Serving user requests |
 | **Job queue** | Passes jobs from the API to the Worker: rows in Postgres (change events as a transactional outbox), claimed with `FOR UPDATE SKIP LOCKED`. No separate queue service | |
-| **Database** | Stores people, skills, tags, absences and holidays, capacity changes, programs, projects, demand, milestones, plans, allocations, events and audit records | |
+| **Database** | Stores people, skills, tags, absences and holidays, calendar feeds, capacity changes, programs, projects, demand, milestones, plans, allocations, actual hours, events and audit records | |
 
 The `server/` folder holds the Server API, the Background Worker and the Planning Engine in one Go codebase. The `client/` folder holds the web SPA.
 
@@ -139,7 +145,7 @@ The `server/` folder holds the Server API, the Background Worker and the Plannin
 
 ```mermaid
 flowchart TB
-  integ["<b>Integrations</b><br/>importers (CSV, HR) · notifier · LLM client"]
+  integ["<b>Integrations</b><br/>importers (CSV, HR) · calendar feeds (ICS)<br/>notifier · LLM client"]
   ai["<b>AI assistant</b> (later)<br/>intake extraction · what-if chat<br/>draft summary · Q&A"]
 
   subgraph data["Data modules"]
@@ -147,6 +153,7 @@ flowchart TB
     people["<b>People & Skills</b><br/>people, expertise, level, tags"]
     avail["<b>Availability</b><br/>leave, holidays, capacity changes"]
     programs["<b>Programs & Projects</b><br/>programs, projects, demand,<br/>milestones, assistants"]
+    timesheets["<b>Timesheets</b><br/>actual hours per person,<br/>project and week"]
   end
 
   subgraph core["Planning core"]
@@ -160,10 +167,12 @@ flowchart TB
   iam["<b>Identity & Access</b><br/>login, roles · used by every API route"]
 
   integ -->|"import"| data
+  integ -->|"calendar sync: out-of-office → planned leave"| avail
   data -.->|"domain events: PersonLeft, SkillChanged, AbsenceAdded, CapacityChanged,<br/>ProgramSlipped, ProjectSlipped, PhaseSlipped, DemandChanged"| events
   events -->|"triggers re-plan"| planning
   planning -->|"reads snapshot"| data
   insights -->|"reads plan + capacity + programs"| planning
+  insights -->|"reads actual hours"| timesheets
   planning -->|"propose / replan"| engine
   planning -.->|"PlanPublished → notify members + assistants"| integ
   ai -->|"LLM API"| integ
@@ -216,6 +225,9 @@ erDiagram
   TAG ||--o{ PERSON_TAG : labels
   PERSON ||--o{ CAPACITY_CHANGE : "weekly hours over time"
   PERSON |o--o{ ABSENCE : takes
+  PERSON ||--o| CALENDAR_FEED : "leave from"
+  PERSON ||--o{ ACTUAL_HOURS : worked
+  PROJECT ||--o{ ACTUAL_HOURS : "worked on"
   PROGRAM ||--o{ PROJECT : contains
   PROGRAM ||--o{ MILESTONE : has
   PROJECT |o--o{ MILESTONE : "scoped to"
@@ -283,6 +295,26 @@ erDiagram
     decimal hours_per_day
     string type "leave / holiday / training"
     string status "planned / approved"
+    string source "manual / calendar"
+    string external_uid "calendar event UID; null when manual"
+  }
+  CALENDAR_FEED {
+    uuid id PK
+    uuid person_id FK "one per person"
+    string url_ciphertext "secret ICS link, encrypted"
+    string host
+    datetime last_synced_at
+    datetime next_sync_at "when the runner may claim it again"
+    string last_error "error code"
+    int events_found
+  }
+  ACTUAL_HOURS {
+    uuid id PK
+    uuid person_id FK
+    uuid project_id FK
+    string week "ISO week, unique with person and project"
+    decimal hours "from a timesheet import"
+    string updated_by "Keycloak subject of the planner who imported it last"
   }
   PROGRAM {
     uuid id PK
@@ -401,6 +433,10 @@ erDiagram
 
 **Derived values for programs and projects** are defined in [section 7](#7-metrics).
 
+**Leave from calendars:** an out-of-office event in a person's calendar feed becomes `planned` leave with `source = calendar` and the event's UID. Each sync makes these absences match the calendar (create, move, delete) and records their change events. Absences entered by hand are never touched. The Planner approves calendar leave like any reported leave.
+
+**Actual hours** are recorded per person × project × ISO week from a timesheet CSV. They feed Actual hours and Burn % (section 7). Planning and capacity never read them.
+
 **Skill tags** narrow who fits beyond expertise and level: a technology, a domain, a language or a client. A demand's `required` tags are a hard constraint; its `preferred` tags only raise the score. With no person carrying the required tags, the demand goes to `unmet` with `NO_TAG_MATCH`.
 
 **Pipeline:** an `incoming` project with no accepted assignments does not book anyone. Its demand only shows in the **capacity forecast** (section 7), weighted by `confidence`. There is no person-level soft booking in the MVP.
@@ -431,7 +467,7 @@ Test         W46 ──── W51   →   Test moves +2 weeks: W48 ──── 
 
 ## 7. Metrics
 
-Programs and projects are the **demand side** of the system: what each program needs, how well it is staffed and how it is progressing. People and their capacity are the **supply side**. The engine connects the two. Screens and layouts are in [`client/README.md`](client/README.md).
+Programs and projects are the **demand side** of the system: what each program needs, how well it is staffed and how it is progressing. People and their capacity are the **supply side**. The engine connects the two. Screens are in [`client/README.md`](client/README.md).
 
 ```mermaid
 flowchart LR
@@ -455,8 +491,10 @@ flowchart LR
 | **Forecast hours** | per demand: `forecast_override_hours` if set, else planned hours | |
 | **Gap hours** | budget − forecast | Gap > 0 = **understaffed**. Also **at risk** if the deadline is within the alert horizon |
 | **Staffing %** | planned ÷ budget | Under 100% with unmet demand |
-| **Planned burn %** | planned hours in weeks up to the current week ÷ budget. Phase 2: actual hours ÷ budget | None until actual hours exist (phase 2). The progress warning is on Scope % |
-| **EAC hours** (estimate at completion) | hours used to date ÷ Scope %. Hours used = planned hours up to the current week in the MVP, actual hours in phase 2 | Shown only when Scope % ≥ `eac_min_scope_percent` (config, e.g. 10 %). EAC > budget = **likely over budget** |
+| **Planned burn %** | planned hours in weeks up to the current week ÷ budget | None. The progress warning is on Scope % |
+| **Actual hours** | Σ `ACTUAL_HOURS.hours` | |
+| **Burn %** | actual hours ÷ budget. `null` until the project has actual hours | None. The progress warning is on Scope % |
+| **EAC hours** (estimate at completion) | hours used to date ÷ Scope %. Hours used = actual hours when the project has them, else planned hours up to the current week | Shown only when Scope % ≥ `eac_min_scope_percent` (config, e.g. 10 %). EAC > budget = **likely over budget** |
 | **Contribution %** | budget hours of one expertise ÷ program budget hours | |
 | **Next milestone** | earliest milestone not yet delivered | Due date passed = **overdue** |
 | **Cross-expertise share** | hours in `cross_expertise` + `stretch` assignments ÷ planned hours | High share = the team leans on people outside their primary expertise; any stretch is listed |
@@ -580,6 +618,53 @@ stateDiagram-v2
 - Only the Server changes a program's or project's state. The Client sends **actions** (e.g. `hold`, `close`), never a new `status`.
 - When a program is cancelled, its open projects are cancelled too, and their future allocations are removed in a new baseline.
 
+### 8.4 Out of office in a calendar → planned leave
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor S as Specialist
+  participant CAL as Google / Outlook
+  participant API as Server API
+  participant W as Worker
+  actor P as Planner
+
+  S->>API: Connect a calendar (secret ICS link)
+  API->>API: Check https, allowed host and public IP, then encrypt and save
+  loop Every CALENDAR_SYNC_INTERVAL, or on request
+    W->>CAL: Fetch the ICS feed (timeout, size cap)
+    CAL-->>W: Events
+    W->>W: Keep out-of-office events from today to CALENDAR_SYNC_WEEKS ahead
+    W->>API: Create, move or delete the matching planned leave + record ChangeEvents
+  end
+  P->>API: Approve the leave
+  Note over API,W: From here the re-plan flow (8.2) runs as for any leave
+```
+
+- An event counts when Outlook marks it out of office (`OOF`) or its title holds a keyword from `CALENDAR_LEAVE_KEYWORDS`.
+- A failed fetch changes nothing and stores an error code. The link itself is never logged or returned.
+
+### 8.5 Timesheet import
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor P as Planner
+  participant API as Server API
+
+  P->>API: Download the template for a range of past weeks
+  API-->>P: CSV: person × project × week with planned hours
+  P->>P: Fill in actual hours
+  P->>API: Upload the file
+  API->>API: Check every row
+  alt Any row fails
+    API-->>P: 400 TIMESHEET_INVALID with line, column and problem
+  else All rows pass
+    API->>API: Save in one transaction (overwrite person × project × week)
+    API-->>P: Created, updated and skipped counts
+  end
+```
+
 ---
 
 ## 9. Cross-cutting concerns
@@ -593,6 +678,7 @@ stateDiagram-v2
 | **Errors** | Every response, success or error, uses one envelope: `{ meta: { error_code, message, code, page, page_size, total }, data }`, with a meaningful HTTP status. Field errors go in `data` |
 | **Audit** | Accept, publish, edit and lock of allocations, budget and forecast changes, assistant changes: who, when, value before and after. An action taken through the AI assistant (later) records the user as the actor and `via = ai_assistant` |
 | **Time** | Stored in UTC. Weeks follow ISO-8601. The organization's timezone is configuration |
+| **Links from users** | A calendar link is a secret and a fetch target. It is stored encrypted and never logged or returned. The Server fetches it over https from allowed hosts only, never to a private IP, with a timeout and a size cap |
 | **Observability** | Structured logs with a request id; metrics for engine run time and `unmet` count |
 
 ---
@@ -693,6 +779,9 @@ the-slot-finder/
 | ADR-19 | Pipeline demand shows in a **capacity forecast by expertise**, weighted by confidence; **no person-level soft booking** in the MVP | Hiring signals without reserving people for work that may never come | Nobody is held for a likely win; the Planner acts on the forecast |
 | ADR-20 | **Skill tags** are hard (required) or soft (preferred) constraints on a demand | Finer matching (technology, domain, language, client) without more expertise types | Tags must be kept current on people; a wrong required tag leaves demand unmet |
 | ADR-21 | The **AI assistant** (later) translates language ↔ structured data; the deterministic engine decides; its tools run **with the caller's permissions** | Faster intake and easier questions without giving up explainable, repeatable plans or the permission model | Depends on an external LLM provider and data-policy approval; extraction can be wrong, so the lead always reviews before saving |
+| ADR-22 | Calendars come in through each person's **secret ICS link**, not OAuth | Works for Google and Outlook with one code path, without app registration or admin consent | The link is a secret to protect; out-of-office is found from Outlook's `OOF` flag or title keywords; recurring events are skipped |
+| ADR-23 | Calendar out-of-office becomes **planned** leave that a Planner approves | A mislabelled event never becomes approved leave on its own (ADR-5) | One more approval for the Planner |
+| ADR-24 | **Actual hours** are kept per person × project × ISO week and imported from a **template CSV** built from the baseline | Matches how timesheets are kept; matching by project id never picks the wrong project; burn shows real hours | No actual hours per demand or per day; the template is filled in by hand or by a script |
 
 ---
 
