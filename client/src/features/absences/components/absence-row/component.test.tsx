@@ -16,11 +16,11 @@ const planned: Absence = {
 const approved: Absence = { ...planned, status: 'approved' }
 const onDelete = vi.fn()
 
-function renderRow(absence: Absence, onApprove?: (id: string) => void) {
+function renderRow(absence: Absence, onApprove?: (id: string) => void, approving = false) {
   render(
     <Table>
       <TableBody>
-        <AbsenceRow absence={absence} onDelete={onDelete} onApprove={onApprove} />
+        <AbsenceRow absence={absence} onDelete={onDelete} onApprove={onApprove} approving={approving} />
       </TableBody>
     </Table>,
   )
@@ -34,6 +34,15 @@ describe('AbsenceRow', () => {
     renderRow(planned, onApprove)
     fireEvent.click(screen.getByRole('button', { name: 'Approve' }))
     expect(onApprove).toHaveBeenCalledWith('a1')
+  })
+
+  it('locks Approve while the approval runs, so a double click sends one request', () => {
+    const onApprove = vi.fn()
+    renderRow(planned, onApprove, true)
+    const button = screen.getByRole('button', { name: 'Approve' }) as HTMLButtonElement
+    expect(button.disabled).toBe(true)
+    fireEvent.click(button)
+    expect(onApprove).not.toHaveBeenCalled()
   })
 
   it('offers no Approve on an approved absence', () => {

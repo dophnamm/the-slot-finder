@@ -8,7 +8,7 @@ import { formatDateRange } from '@/utils/functions'
 import { ABSENCE_STATUS_LABELS, ABSENCE_TYPE_LABELS } from '../../constants'
 import type { AbsenceRowProps } from './types'
 
-export function AbsenceRow({ absence, onDelete, onApprove }: AbsenceRowProps) {
+export function AbsenceRow({ absence, onDelete, onApprove, approving = false }: AbsenceRowProps) {
   const { t } = useTranslation()
 
   const handleDelete = () => onDelete(absence.id)
@@ -27,7 +27,7 @@ export function AbsenceRow({ absence, onDelete, onApprove }: AbsenceRowProps) {
       <TableCell>
         <div className="flex justify-end gap-2">
           {onApprove && absence.status === PLANNED_ABSENCE_STATUS && (
-            <Button variant="outline" size="sm" onClick={handleApprove}>
+            <Button variant="outline" size="sm" disabled={approving} onClick={handleApprove}>
               {t('Approve')}
             </Button>
           )}

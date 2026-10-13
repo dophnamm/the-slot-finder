@@ -30,14 +30,15 @@ export function useDeleteAbsence(personId: string) {
   })
 }
 
-/** Approves a planned absence, then refreshes the list and the insights (heatmap and schedule). */
+/**
+ * Approves a planned absence, then refreshes the insights (heatmap and schedule). The list is
+ * refreshed even when the server refuses, so an absence approved elsewhere stops offering Approve.
+ */
 export function useApproveAbsence(personId: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => approveAbsence(id),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: absencesQueryKey(personId) })
-      await queryClient.invalidateQueries({ queryKey: INSIGHTS_QUERY_KEY })
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: INSIGHTS_QUERY_KEY }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: absencesQueryKey(personId) }),
   })
 }
