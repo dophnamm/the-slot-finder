@@ -34,6 +34,24 @@ describe('TimesheetImport', () => {
     expect(hooks.upload).toHaveBeenCalledWith(file, expect.anything())
   })
 
+  it('empties the file field after a refused import, so the fixed file can be picked again', async () => {
+    const refused = new ApiError({ status: 400, code: 'TIMESHEET_INVALID', message: 'TIMESHEET_INVALID' })
+    hooks.upload.mockImplementation((_file: File, options: { onError: (error: ApiError) => void }) =>
+      options.onError(refused),
+    )
+    render(<TimesheetImport />)
+    fireEvent.click(screen.getByRole('button', { name: 'Import timesheet' }))
+    const file = new File([CSV], FILE_NAME, { type: 'text/csv' })
+    const field = await screen.findByLabelText('Timesheet file')
+    fireEvent.change(field, { target: { files: [file] } })
+    fireEvent.click(screen.getByRole('button', { name: 'Import' }))
+
+    expect(screen.getByLabelText('Timesheet file')).not.toBe(field)
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Import' }).disabled).toBe(true)
+    fireEvent.change(screen.getByLabelText('Timesheet file'), { target: { files: [file] } })
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Import' }).disabled).toBe(false)
+  })
+
   it('downloads the template for the chosen weeks', async () => {
     render(<TimesheetImport />)
     fireEvent.click(screen.getByRole('button', { name: 'Import timesheet' }))

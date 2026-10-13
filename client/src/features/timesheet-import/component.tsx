@@ -19,6 +19,8 @@ export function TimesheetImport() {
   const [open, setOpen] = useState(false)
   const [range, setRange] = useState<WeekRange>(defaultRange)
   const [file, setFile] = useState<File | null>(null)
+  // A new key gives an empty file field, so picking the same (fixed) file again fires a change.
+  const [fileFieldKey, setFileFieldKey] = useState(0)
   const download = useDownloadTemplate()
   const upload = useImportTimesheet()
   const problems = rowProblems(upload.error)
@@ -39,9 +41,13 @@ export function TimesheetImport() {
     toast.success(t('{created} rows added, {updated} updated, {skipped} skipped.', { created, updated, skipped }))
     handleOpenChange(false)
   }
+  const handleRefused = () => {
+    setFile(null)
+    setFileFieldKey((key) => key + 1)
+  }
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (file) upload.mutate(file, { onSuccess: handleImported })
+    if (file) upload.mutate(file, { onSuccess: handleImported, onError: handleRefused })
   }
 
   return (
@@ -85,7 +91,13 @@ export function TimesheetImport() {
             <section className="flex flex-col gap-2">
               <h3 className="text-sm font-medium">{t('Import the filled-in file')}</h3>
               <Label htmlFor={FIELD_IDS.file}>{t('Timesheet file')}</Label>
-              <Input id={FIELD_IDS.file} type="file" accept={TIMESHEET_FILE_ACCEPT} onChange={handleFileChange} />
+              <Input
+                key={fileFieldKey}
+                id={FIELD_IDS.file}
+                type="file"
+                accept={TIMESHEET_FILE_ACCEPT}
+                onChange={handleFileChange}
+              />
             </section>
             {problems.length > 0 && (
               <div className="flex max-h-64 min-h-0 flex-col gap-2">
