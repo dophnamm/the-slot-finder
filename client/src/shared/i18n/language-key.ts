@@ -62,6 +62,9 @@ export type LanguageKey = {
   'Built on baseline version {base}; version {current} is in force now. Run it again to see today’s effect.': string
   'Built on baseline version {version}.': string
   Burn: string
+  Calendar: string
+  'Calendar connected.': string
+  'Calendar sync is turned off on this server.': string
   Cancel: string
   'Cancel program': string
   'Cancel project': string
@@ -82,6 +85,8 @@ export type LanguageKey = {
   'Company holiday {dates} removed': string
   'Company holidays': string
   'Computing…': string
+  'Connect calendar': string
+  'Connected to': string
   'Could not finish signing in.': string
   'Could not reach the sign-in service.': string
   Coverage: string
@@ -101,6 +106,8 @@ export type LanguageKey = {
   'Delete this scenario? The real plan is not affected.': string
   Demand: string
   'Demand saved.': string
+  Disconnect: string
+  'Disconnect this calendar? Leave it already added stays.': string
   Done: string
   'Done points': string
   'Download template': string
@@ -138,6 +145,7 @@ export type LanguageKey = {
   'Go to your home page': string
   Goal: string
   'Goal: {goal}': string
+  'Google: Settings and sharing → Integrate calendar → Secret address in iCal format.': string
   'Has stretch': string
   Headcount: string
   Healthy: string
@@ -163,6 +171,7 @@ export type LanguageKey = {
   'Incoming projects across programs, highest priority and earliest deadline first.': string
   Intake: string
   'Intake queue': string
+  'Last sync': string
   Lead: string
   Leave: string
   'Leave, holidays and moved phases or deadlines appear here.': string
@@ -224,6 +233,7 @@ export type LanguageKey = {
   'None this week': string
   'Not an ISO week such as 2026-W41.': string
   'Not primary': string
+  'Not yet': string
   'Nothing real has changed. To make it real, move the phases on the project’s page or add the leave on the People page; a re-plan draft follows.': string
   'Nothing was saved. Fix these rows and import again.': string
   'Objectives, one per line': string
@@ -233,6 +243,9 @@ export type LanguageKey = {
   'Open the charter': string
   'Open the latest version': string
   'Ordered by priority, then deadline.': string
+  'Out-of-office events': string
+  'Out-of-office events in a Google or Outlook calendar become planned leave for a planner to approve.': string
+  'Outlook: Settings → Calendar → Shared calendars → Publish a calendar → ICS link.': string
   'Over-planned': string
   Overloaded: string
   'Overloaded people ({count})': string
@@ -318,6 +331,7 @@ export type LanguageKey = {
   Scope: string
   'Scope points': string
   Search: string
+  'Secret iCal address': string
   'Short {hours} h': string
   'Show details': string
   'Sign in': string
@@ -343,13 +357,17 @@ export type LanguageKey = {
   'Summed over {count} project that is not cancelled.': string
   'Summed over {count} projects that are not cancelled.': string
   Superseded: string
+  'Sync now': string
   'Team heatmap': string
   'The baseline changed to version {version} since this draft was made, so it can no longer be accepted.': string
+  'The calendar could not be fetched. Your organization may block secret calendar links.': string
+  'The calendar is too large to read.': string
   'The file is not valid CSV from this line.': string
   'The free hours are held by locked allocations': string
   'The header lacks this column.': string
   'The last phase ends after the deadline week. Move the deadline or shorten a phase.': string
   'The last phase would end after the deadline week.': string
+  'The link does not return a calendar. Your organization may block secret calendar links.': string
   'The same person, project and week appear more than once.': string
   'The server is unreachable.': string
   'The server keeps rejecting your sign-in. Try again, or ask an admin to check the sign-in settings.': string
@@ -382,6 +400,7 @@ export type LanguageKey = {
   Unmet: string
   'Unmet demand': string
   'Until {date}': string
+  'Use the secret iCal address from Google Calendar or Outlook. It starts with https://.': string
   'Version {version}': string
   Waiting: string
   Week: string

@@ -18,6 +18,7 @@ export const PERMISSIONS = {
   'people:manage': [ROLES.PLANNER],
   'timesheets:import': [ROLES.PLANNER],
   'absences:approve': [ROLES.PLANNER],
+  'calendar-feeds:manage': [ROLES.PLANNER],
   'holidays:manage': [ROLES.PLANNER],
   'events:view': [ROLES.PLANNER],
   'my-schedule:view': [ROLES.SPECIALIST],

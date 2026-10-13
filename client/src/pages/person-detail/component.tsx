@@ -1,5 +1,6 @@
 import { useParams } from 'react-router'
 import { AbsenceList } from '@/features/absences'
+import { CalendarFeed } from '@/features/calendar-feed'
 import { PersonCalendar } from '@/features/person-calendar'
 import { can } from '@/resources/rbac'
 import { useCurrentUser } from '@/shared/auth'
@@ -7,7 +8,7 @@ import { Section } from '@/shared/components/section'
 import { useTranslation } from '@/shared/i18n'
 import { usePerson } from '@/shared/people'
 
-/** One person: their month calendar and, for planners, their absences. */
+/** One person: their month calendar and, for planners, their absences and calendar. */
 export function PersonDetailPage() {
   const { t } = useTranslation()
   const { id = '' } = useParams()
@@ -38,6 +39,7 @@ export function PersonDetailPage() {
           <AbsenceList personId={id} canApprove />
         </Section>
       )}
+      {can(user?.role, 'calendar-feeds:manage') && <CalendarFeed personId={id} />}
     </div>
   )
 }

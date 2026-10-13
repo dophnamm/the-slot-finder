@@ -9,3 +9,6 @@ export const MAX_PAGE_SIZE = 100
 
 /** Prefix of every insights query (heatmap, a person's week), refreshed when the baseline changes. */
 export const INSIGHTS_QUERY_KEY = ['insights'] as const
+
+/** Prefix of every person's absence list, refreshed when a calendar sync changes absences. */
+export const ABSENCES_QUERY_KEY = ['absences'] as const
