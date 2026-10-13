@@ -47,6 +47,8 @@ var (
 	PersonScheduleRoles = []string{RolePlanner, RoleLead, RoleSpecialist}
 	// ScenarioRoles may create, read, run again and delete what-if scenarios.
 	ScenarioRoles = []string{RolePlanner}
+	// TimesheetRoles may download the timesheet template and import actual hours.
+	TimesheetRoles = []string{RolePlanner}
 	// InsightRoles may read the heatmap and other insights.
 	InsightRoles = []string{RolePlanner, RoleLead}
 	// EventViewRoles may read the change history.

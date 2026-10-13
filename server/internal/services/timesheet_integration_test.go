@@ -4,9 +4,11 @@ package services
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
+	"the-slot-finder/server/internal/clock"
 	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/db"
 	"the-slot-finder/server/internal/db/dbtest"
@@ -73,4 +75,38 @@ func TestActualHoursRepository_Postgres(t *testing.T) {
 	require.Len(t, rows, 1)
 	assert.Equal(t, "Ada", rows[0].Person.Name)
 	assert.Equal(t, "Acme", rows[0].Project.Program.Name)
+}
+
+func TestTimesheetImport_Postgres(t *testing.T) {
+	pdb := dbtest.NewPostgres(t)
+	dbtest.ApplyMigrations(t, pdb)
+	_, project := timesheetFixture(t, pdb)
+	planner := asRole("kc-planner", constants.RolePlanner)
+	svc := ProvideTimesheetService(repositories.ProvideActualHoursRepository(pdb), repositories.ProvidePersonRepository(pdb),
+		repositories.ProvideProjectRepository(pdb), ProvideAuthzService(leadPeople{}), db.ProvideTxManager(pdb),
+		clock.NewFixed(tsNow), timesheetConfig())
+	good := "person_email,project_id,week,actual_hours\nada@example.test," + project.ID + ",2026-W41,30\n"
+	bad := good + "nobody@example.test," + project.ID + ",2026-W42,8\n"
+	count := func() int64 {
+		var n int64
+		require.NoError(t, pdb.Model(&models.ActualHours{}).Count(&n).Error)
+		return n
+	}
+
+	_, err := svc.Import(planner, importFile(bad))
+	requireAppError(t, err, constants.TimesheetInvalid, http.StatusBadRequest)
+	assert.Zero(t, count(), "one bad row saves nothing")
+
+	result, err := svc.Import(planner, importFile(good))
+	require.NoError(t, err)
+	assert.Equal(t, models.ImportResult{Created: 1}, *result)
+
+	result, err = svc.Import(planner, importFile(good))
+	require.NoError(t, err)
+	assert.Equal(t, models.ImportResult{Updated: 1}, *result, "importing again overwrites")
+	assert.Equal(t, int64(1), count())
+
+	var events int64
+	require.NoError(t, pdb.Model(&models.ChangeEvent{}).Count(&events).Error)
+	assert.Zero(t, events, "an import records no change event")
 }

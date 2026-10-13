@@ -25,6 +25,8 @@ const (
 // module with ProgramRepository.
 type ProjectRepository interface {
 	AbstractRepository[models.Project]
+	// ListByIDs returns the projects with these ids, cancelled ones included.
+	ListByIDs(ctx context.Context, ids []string) ([]models.Project, error)
 	// ListByProgram returns a program's projects by priority, then deadline, with lead and phases.
 	ListByProgram(ctx context.Context, programID string) ([]models.Project, error)
 	// ListByStatus returns projects across programs, e.g. the intake queue; empty status means all.
@@ -168,4 +170,13 @@ func (r *projectRepository) CancelOpen(ctx context.Context, programID string) er
 	return r.db.From(ctx).Model(&models.Project{}).
 		Where("program_id = ? AND status NOT IN ?", programID, []string{constants.ProjectStatusDone, constants.ProjectStatusCancelled}).
 		Update("status", constants.ProjectStatusCancelled).Error
+}
+
+func (r *projectRepository) ListByIDs(ctx context.Context, ids []string) ([]models.Project, error) {
+	var projects []models.Project
+	if len(ids) == 0 {
+		return projects, nil
+	}
+	err := r.db.From(ctx).Where("id IN ?", ids).Order("id ASC").Find(&projects).Error
+	return projects, err
 }

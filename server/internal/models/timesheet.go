@@ -20,3 +20,11 @@ type ActualHours struct {
 
 // TableName keeps the table name "actual_hours" as it reads, without another plural "s".
 func (ActualHours) TableName() string { return "actual_hours" }
+
+// ImportResult counts what a timesheet import did: rows saved as new, rows that replaced a
+// value, and rows skipped because actual_hours was empty. It is not a table.
+type ImportResult struct {
+	Created int
+	Updated int
+	Skipped int
+}

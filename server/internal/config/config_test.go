@@ -293,3 +293,18 @@ func TestLoad_CapacitySettings(t *testing.T) {
 	_, err = Load()
 	require.Error(t, err)
 }
+
+func TestLoad_TimesheetSettings(t *testing.T) {
+	cfg, err := Load()
+	require.NoError(t, err)
+	assert.Equal(t, 4, cfg.TimesheetTemplateWeeks)
+	assert.Equal(t, 12, cfg.TimesheetMaxWeeks)
+	assert.InDelta(t, 80, cfg.TimesheetMaxWeekHours, 1e-9)
+	assert.Equal(t, int64(1<<20), cfg.TimesheetMaxBytes)
+	assert.Equal(t, 5000, cfg.TimesheetMaxRows)
+
+	t.Setenv("TIMESHEET_MAX_ROWS", "200")
+	cfg, err = Load()
+	require.NoError(t, err)
+	assert.Equal(t, 200, cfg.TimesheetMaxRows)
+}

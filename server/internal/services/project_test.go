@@ -381,3 +381,8 @@ func TestProgramService_CancelCascades(t *testing.T) {
 	require.NoError(t, err)
 	projects.AssertExpectations(t)
 }
+
+func (m *MockProjectRepository) ListByIDs(ctx context.Context, ids []string) ([]models.Project, error) {
+	args := m.Called(ctx, ids)
+	return args.Get(0).([]models.Project), args.Error(1)
+}

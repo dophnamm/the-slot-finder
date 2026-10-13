@@ -51,4 +51,7 @@ const (
 	PathScenarios     = "/scenarios"
 	PathScenario      = "/scenarios/:id"
 	PathScenarioRerun = "/scenarios/:id/rerun"
+
+	PathTimesheetTemplate = "/timesheets/template"
+	PathTimesheetImport   = "/timesheets/import"
 )

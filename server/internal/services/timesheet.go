@@ -2,18 +2,186 @@ package services
 
 import (
 	"bytes"
+	"cmp"
+	"context"
 	"encoding/csv"
 	stderrors "errors"
+	"fmt"
 	"io"
+	"maps"
 	"math"
+	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 
+	"the-slot-finder/server/internal/clock"
+	"the-slot-finder/server/internal/config"
 	"the-slot-finder/server/internal/constants"
+	"the-slot-finder/server/internal/db"
+	"the-slot-finder/server/internal/errors"
 	"the-slot-finder/server/internal/isoweek"
+	"the-slot-finder/server/internal/models"
+	"the-slot-finder/server/internal/repositories"
 
 	"github.com/google/uuid"
 )
+
+const (
+	opImportTimesheet = "import_timesheet"
+	resourceTimesheet = "timesheet"
+)
+
+// ImportInput is an uploaded timesheet: its content and the size the client declared.
+type ImportInput struct {
+	File io.Reader
+	Size int64
+}
+
+// TimesheetService builds the timesheet template and imports actual hours.
+type TimesheetService interface {
+	// Import checks every row of a filled-in template and saves the actual hours in one
+	// transaction. Any problem saves nothing and returns TIMESHEET_INVALID with the problems;
+	// a file over TIMESHEET_MAX_BYTES or TIMESHEET_MAX_ROWS returns TIMESHEET_TOO_LARGE.
+	Import(ctx context.Context, in ImportInput) (*models.ImportResult, error)
+}
+
+type timesheetService struct {
+	actuals  repositories.ActualHoursRepository
+	people   repositories.PersonRepository
+	projects repositories.ProjectRepository
+	authz    AuthzService
+	tx       db.TxManager
+	clock    clock.Clock
+	cfg      *config.Config
+}
+
+// ProvideTimesheetService creates the timesheet service.
+func ProvideTimesheetService(actuals repositories.ActualHoursRepository, people repositories.PersonRepository,
+	projects repositories.ProjectRepository, authz AuthzService, tx db.TxManager, clk clock.Clock, cfg *config.Config,
+) TimesheetService {
+	return &timesheetService{actuals: actuals, people: people, projects: projects, authz: authz, tx: tx, clock: clk, cfg: cfg}
+}
+
+func (s *timesheetService) Import(ctx context.Context, in ImportInput) (*models.ImportResult, error) {
+	principal, err := s.authz.Require(ctx, CanImportTimesheets)
+	if err != nil {
+		return nil, err
+	}
+	data, err := s.readFile(in)
+	if err != nil {
+		return nil, err
+	}
+	rows, problems, err := parseTimesheet(data, timesheetLimits{Current: s.currentWeek(),
+		MaxHours: s.cfg.TimesheetMaxWeekHours, MaxRows: s.cfg.TimesheetMaxRows})
+	if err != nil {
+		return nil, s.tooLarge(opImportTimesheet)
+	}
+	personIDs, projects, err := s.lookups(ctx, rows)
+	if err != nil {
+		return nil, err
+	}
+	problems = append(problems, unknownReferences(rows, personIDs, projects)...)
+	if len(problems) > 0 {
+		slices.SortStableFunc(problems, func(a, b RowProblem) int { return cmp.Compare(a.Line, b.Line) })
+		return nil, errors.NewAppError(constants.TimesheetInvalid, constants.MsgTimesheetInvalid, errors.ErrorTypeValidation,
+			http.StatusBadRequest).WithContext(constants.TimesheetProblemsKey, problems).
+			WithOperation(opImportTimesheet).WithResource(resourceTimesheet)
+	}
+	saved := make([]models.ActualHours, 0, len(rows))
+	for _, row := range rows {
+		if row.Hours != nil {
+			saved = append(saved, models.ActualHours{PersonID: personIDs[row.Email], ProjectID: row.ProjectID, Week: row.Week,
+				Hours: *row.Hours, UpdatedBy: principal.Subject})
+		}
+	}
+	result := &models.ImportResult{Skipped: len(rows) - len(saved)}
+	err = s.tx.Do(ctx, func(ctx context.Context) error {
+		created, updated, err := s.actuals.Upsert(ctx, saved)
+		result.Created, result.Updated = created, updated
+		return err
+	})
+	if err != nil {
+		return nil, errors.DatabaseError(constants.MsgTimesheetSaveFailed, err).WithOperation(opImportTimesheet).WithResource(resourceTimesheet)
+	}
+	return result, nil
+}
+
+// readFile reads the upload, refusing more than TIMESHEET_MAX_BYTES whatever size the client
+// declared.
+func (s *timesheetService) readFile(in ImportInput) ([]byte, error) {
+	if in.Size > s.cfg.TimesheetMaxBytes {
+		return nil, s.tooLarge(opImportTimesheet)
+	}
+	data, err := io.ReadAll(io.LimitReader(in.File, s.cfg.TimesheetMaxBytes+1))
+	if err != nil {
+		return nil, errors.ValidationError(constants.MsgTimesheetUnreadable, err).WithOperation(opImportTimesheet).WithResource(resourceTimesheet)
+	}
+	if int64(len(data)) > s.cfg.TimesheetMaxBytes {
+		return nil, s.tooLarge(opImportTimesheet)
+	}
+	return data, nil
+}
+
+// tooLarge is the 413 for a file over TIMESHEET_MAX_BYTES or TIMESHEET_MAX_ROWS.
+func (s *timesheetService) tooLarge(op string) error {
+	return errors.NewAppError(constants.TimesheetTooLarge,
+		fmt.Sprintf(constants.MsgTimesheetTooLargeFormat, s.cfg.TimesheetMaxBytes, s.cfg.TimesheetMaxRows),
+		errors.ErrorTypeValidation, http.StatusRequestEntityTooLarge).WithOperation(op).WithResource(resourceTimesheet)
+}
+
+// currentWeek is the organization's current ISO week.
+func (s *timesheetService) currentWeek() isoweek.Week {
+	return isoweek.Of(s.clock.Now().In(s.clock.Location()))
+}
+
+// lookups loads the people the rows name by email and the projects they name by id. It returns
+// person ids by lower-case email, and the ids of the projects that exist.
+func (s *timesheetService) lookups(ctx context.Context, rows []timesheetRow) (map[string]string, map[string]bool, error) {
+	emails, projectIDs := map[string]bool{}, map[string]bool{}
+	for _, row := range rows {
+		if row.Email != "" {
+			emails[row.Email] = true
+		}
+		if row.ProjectID != "" {
+			projectIDs[row.ProjectID] = true
+		}
+	}
+	people, err := s.people.ListByEmails(ctx, slices.Sorted(maps.Keys(emails)))
+	if err != nil {
+		return nil, nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opImportTimesheet).WithResource(resourceTimesheet)
+	}
+	projects, err := s.projects.ListByIDs(ctx, slices.Sorted(maps.Keys(projectIDs)))
+	if err != nil {
+		return nil, nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opImportTimesheet).WithResource(resourceTimesheet)
+	}
+	personIDs := make(map[string]string, len(people))
+	for _, p := range people {
+		personIDs[strings.ToLower(p.Email)] = p.ID
+	}
+	known := make(map[string]bool, len(projects))
+	for _, p := range projects {
+		known[p.ID] = true
+	}
+	return personIDs, known, nil
+}
+
+// unknownReferences reports rows whose email or project id matches nothing. Rows whose cell
+// was already empty or malformed are reported by parseTimesheet instead.
+func unknownReferences(rows []timesheetRow, personIDs map[string]string, projects map[string]bool) []RowProblem {
+	var problems []RowProblem
+	for _, row := range rows {
+		if _, ok := personIDs[row.Email]; row.Email != "" && !ok {
+			problems = append(problems, RowProblem{Line: row.Line, Column: constants.TimesheetColumnPersonEmail,
+				Code: constants.TimesheetPersonUnknown})
+		}
+		if row.ProjectID != "" && !projects[row.ProjectID] {
+			problems = append(problems, RowProblem{Line: row.Line, Column: constants.TimesheetColumnProjectID,
+				Code: constants.TimesheetProjectUnknown})
+		}
+	}
+	return problems
+}
 
 // utf8BOM starts a CSV file that Excel saves as UTF-8; it is dropped before reading.
 const utf8BOM = "\ufeff"

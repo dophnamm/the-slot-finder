@@ -2,10 +2,15 @@ package services
 
 import (
 	"context"
+	"net/http"
 	"strings"
 	"testing"
+	"time"
 
+	"the-slot-finder/server/internal/clock"
+	"the-slot-finder/server/internal/config"
 	"the-slot-finder/server/internal/constants"
+	"the-slot-finder/server/internal/errors"
 	"the-slot-finder/server/internal/isoweek"
 	"the-slot-finder/server/internal/models"
 
@@ -177,4 +182,114 @@ func TestParseTimesheet_TooManyRows(t *testing.T) {
 	file := tsHeader + tsLine("2026-W38", "1") + tsLine("2026-W39", "1") + tsLine("2026-W40", "1") + tsLine("2026-W41", "1")
 	_, _, err := parseTimesheet([]byte(file), tsLimits(t))
 	assert.ErrorIs(t, err, errTooManyRows)
+}
+
+const tsPersonID = "0192f3a4-0000-7000-8000-00000000e201"
+
+// tsNow is a Wednesday in 2026-W42.
+var tsNow = time.Date(2026, time.October, 14, 9, 0, 0, 0, time.UTC)
+
+func timesheetConfig() *config.Config {
+	return &config.Config{TimesheetTemplateWeeks: 4, TimesheetMaxWeeks: 12, TimesheetMaxWeekHours: 80,
+		TimesheetMaxBytes: 1 << 10, TimesheetMaxRows: 3}
+}
+
+func newTimesheetService(actuals *MockActualHoursRepository, people *MockPersonRepository, projects *MockProjectRepository) TimesheetService {
+	return ProvideTimesheetService(actuals, people, projects, ProvideAuthzService(leadPeople{}), passthroughTx{},
+		clock.NewFixed(tsNow), timesheetConfig())
+}
+
+func importFile(file string) ImportInput {
+	return ImportInput{File: strings.NewReader(file), Size: int64(len(file))}
+}
+
+func TestTimesheetService_Import(t *testing.T) {
+	planner := asRole("kc-planner", constants.RolePlanner)
+	ada := models.Person{BaseModel: models.BaseModel{ID: tsPersonID}, Email: "ada@example.test"}
+	project := models.Project{BaseModel: models.BaseModel{ID: tsProjectID}}
+	known := func() (*MockActualHoursRepository, *MockPersonRepository, *MockProjectRepository) {
+		actuals, people, projects := new(MockActualHoursRepository), new(MockPersonRepository), new(MockProjectRepository)
+		people.On("ListByEmails", mock.Anything, []string{"ada@example.test"}).Return([]models.Person{ada}, nil)
+		projects.On("ListByIDs", mock.Anything, []string{tsProjectID}).Return([]models.Project{project}, nil)
+		return actuals, people, projects
+	}
+
+	t.Run("saves filled-in rows and skips empty ones", func(t *testing.T) {
+		actuals, people, projects := known()
+		actuals.On("Upsert", mock.Anything, []models.ActualHours{{PersonID: tsPersonID, ProjectID: tsProjectID,
+			Week: mustWeek(t, "2026-W41"), Hours: 18.5, UpdatedBy: "kc-planner"}}).Return(1, 0, nil)
+
+		result, err := newTimesheetService(actuals, people, projects).Import(planner,
+			importFile(tsHeader+tsLine("2026-W41", "18.5")+tsLine("2026-W42", "")))
+		require.NoError(t, err)
+		assert.Equal(t, models.ImportResult{Created: 1, Skipped: 1}, *result)
+		actuals.AssertExpectations(t)
+	})
+
+	t.Run("an email in another case and with spaces finds the person", func(t *testing.T) {
+		actuals, people, projects := known()
+		actuals.On("Upsert", mock.Anything, mock.Anything).Return(0, 1, nil)
+		file := tsHeader + strings.Replace(tsLine("2026-W41", "8"), "ada@example.test", " Ada@Example.TEST ", 1)
+
+		result, err := newTimesheetService(actuals, people, projects).Import(planner, importFile(file))
+		require.NoError(t, err)
+		assert.Equal(t, models.ImportResult{Updated: 1}, *result)
+		people.AssertExpectations(t)
+	})
+
+	t.Run("an unknown person or project saves nothing", func(t *testing.T) {
+		actuals, people, projects := new(MockActualHoursRepository), new(MockPersonRepository), new(MockProjectRepository)
+		people.On("ListByEmails", mock.Anything, mock.Anything).Return([]models.Person{}, nil)
+		projects.On("ListByIDs", mock.Anything, mock.Anything).Return([]models.Project{}, nil)
+
+		_, err := newTimesheetService(actuals, people, projects).Import(planner, importFile(tsHeader+tsLine("2026-W41", "8")))
+		requireAppError(t, err, constants.TimesheetInvalid, http.StatusBadRequest)
+		assert.Equal(t, []RowProblem{
+			{Line: 2, Column: constants.TimesheetColumnPersonEmail, Code: constants.TimesheetPersonUnknown},
+			{Line: 2, Column: constants.TimesheetColumnProjectID, Code: constants.TimesheetProjectUnknown},
+		}, errors.GetAppError(err).Context[constants.TimesheetProblemsKey])
+		actuals.AssertNotCalled(t, "Upsert", mock.Anything, mock.Anything)
+	})
+
+	t.Run("problems from the file and the lookups come in line order", func(t *testing.T) {
+		actuals, people, projects := new(MockActualHoursRepository), new(MockPersonRepository), new(MockProjectRepository)
+		people.On("ListByEmails", mock.Anything, mock.Anything).Return([]models.Person{}, nil)
+		projects.On("ListByIDs", mock.Anything, mock.Anything).Return([]models.Project{project}, nil)
+		file := tsHeader + tsLine("2026-W43", "8") + strings.Replace(tsLine("2026-W41", "8"), "ada@", "bo@", 1)
+
+		_, err := newTimesheetService(actuals, people, projects).Import(planner, importFile(file))
+		requireAppError(t, err, constants.TimesheetInvalid, http.StatusBadRequest)
+		assert.Equal(t, []RowProblem{
+			{Line: 2, Column: constants.TimesheetColumnWeek, Code: constants.TimesheetWeekFuture},
+			{Line: 2, Column: constants.TimesheetColumnPersonEmail, Code: constants.TimesheetPersonUnknown},
+			{Line: 3, Column: constants.TimesheetColumnPersonEmail, Code: constants.TimesheetPersonUnknown},
+		}, errors.GetAppError(err).Context[constants.TimesheetProblemsKey])
+	})
+
+	t.Run("a file over the size limit, declared or not", func(t *testing.T) {
+		svc := newTimesheetService(nil, nil, nil)
+		big := tsHeader + strings.Repeat(" ", 1<<10)
+		_, err := svc.Import(planner, importFile(big))
+		requireAppError(t, err, constants.TimesheetTooLarge, http.StatusRequestEntityTooLarge)
+		_, err = svc.Import(planner, ImportInput{File: strings.NewReader(big)})
+		requireAppError(t, err, constants.TimesheetTooLarge, http.StatusRequestEntityTooLarge)
+	})
+
+	t.Run("more rows than allowed", func(t *testing.T) {
+		file := tsHeader + tsLine("2026-W38", "1") + tsLine("2026-W39", "1") + tsLine("2026-W40", "1") + tsLine("2026-W41", "1")
+		_, err := newTimesheetService(nil, nil, nil).Import(planner, importFile(file))
+		requireAppError(t, err, constants.TimesheetTooLarge, http.StatusRequestEntityTooLarge)
+	})
+
+	t.Run("a database failure", func(t *testing.T) {
+		actuals, people, projects := known()
+		actuals.On("Upsert", mock.Anything, mock.Anything).Return(0, 0, assert.AnError)
+		_, err := newTimesheetService(actuals, people, projects).Import(planner, importFile(tsHeader+tsLine("2026-W41", "8")))
+		requireAppError(t, err, constants.DatabaseError, http.StatusInternalServerError)
+	})
+
+	t.Run("only planners import", func(t *testing.T) {
+		_, err := newTimesheetService(nil, nil, nil).Import(asRole("kc-lead", constants.RoleLead), importFile(tsHeader))
+		requireStatus(t, err, http.StatusForbidden)
+	})
 }
