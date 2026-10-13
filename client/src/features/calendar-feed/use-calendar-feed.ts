@@ -3,7 +3,7 @@ import { ABSENCES_QUERY_KEY, INSIGHTS_QUERY_KEY } from '@/utils/constants'
 import { connectCalendarFeed, disconnectCalendarFeed, getCalendarFeed, syncCalendarFeed } from './api'
 import { CALENDAR_FEED_ERROR_CODES, calendarFeedQueryKey } from './constants'
 
-/** A sync changes absences, so the panel, the absence lists and the calendar refresh together. */
+/** A sync or a disconnect changes absences, so the panel, the absence lists and the calendar refresh together. */
 function refreshAfterSync(queryClient: QueryClient, personId: string) {
   return Promise.all([
     queryClient.invalidateQueries({ queryKey: calendarFeedQueryKey(personId) }),
@@ -37,6 +37,7 @@ export function useDisconnectCalendarFeed(personId: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: () => disconnectCalendarFeed(personId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: calendarFeedQueryKey(personId) }),
+    // The leave the calendar added becomes ordinary absences: their marks go away.
+    onSuccess: () => refreshAfterSync(queryClient, personId),
   })
 }
