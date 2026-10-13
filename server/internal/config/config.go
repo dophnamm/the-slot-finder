@@ -185,6 +185,14 @@ type Config struct {
 	ScenarioMaxShiftWeeks         int
 	ScenarioMaxAssumptions        int
 
+	// Timesheet import (docs/features/timesheet-import.md): the template's default and largest
+	// range in weeks, the most actual hours one row may hold, and the largest file.
+	TimesheetTemplateWeeks int
+	TimesheetMaxWeeks      int
+	TimesheetMaxWeekHours  float64
+	TimesheetMaxBytes      int64
+	TimesheetMaxRows       int
+
 	// Program metrics (root README §7): how far Scope % may trail Time %, in percentage
 	// points, and how close a deadline turns a gap into at risk.
 	ScopeLagThreshold float64
@@ -299,6 +307,12 @@ func Load() (*Config, error) {
 		PlanningReplanStabilityWeight: getEnvAsFloat("PLANNING_REPLAN_STABILITY_WEIGHT", 2.0),
 		ScenarioMaxShiftWeeks:         getEnvAsInt("SCENARIO_MAX_SHIFT_WEEKS", 12),
 		ScenarioMaxAssumptions:        getEnvAsInt("SCENARIO_MAX_ASSUMPTIONS", 10),
+
+		TimesheetTemplateWeeks: getEnvAsInt("TIMESHEET_TEMPLATE_WEEKS", 4),
+		TimesheetMaxWeeks:      getEnvAsInt("TIMESHEET_MAX_WEEKS", 12),
+		TimesheetMaxWeekHours:  getEnvAsFloat("TIMESHEET_MAX_WEEK_HOURS", 80),
+		TimesheetMaxBytes:      int64(getEnvAsInt("TIMESHEET_MAX_BYTES", 1<<20)),
+		TimesheetMaxRows:       getEnvAsInt("TIMESHEET_MAX_ROWS", 5000),
 
 		ScopeLagThreshold: getEnvAsFloat("SCOPE_LAG_THRESHOLD", 20),
 		AlertHorizonWeeks: getEnvAsInt("ALERT_HORIZON_WEEKS", 4),

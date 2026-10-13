@@ -150,3 +150,15 @@ const (
 	MsgClientIdentifierMissing = "Could not identify the client"
 	MsgPayloadTooLarge         = "Request body is too large"
 )
+
+// Timesheet import messages.
+const (
+	MsgTimesheetImported       = "Timesheet imported"
+	MsgTimesheetInvalid        = "Some rows of the timesheet have problems; nothing was saved"
+	MsgTimesheetTooLargeFormat = "A timesheet may hold at most %d bytes and %d rows"
+	MsgTimesheetUnreadable     = "Could not read the timesheet file"
+	MsgTimesheetFileMissing    = "Choose a CSV file to import"
+	MsgTimesheetSaveFailed     = "Could not save the actual hours"
+	MsgTimesheetWeekInFuture   = "The template cannot cover weeks after the current one"
+	MsgTimesheetTemplateFailed = "Could not build the timesheet template"
+)

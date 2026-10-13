@@ -202,6 +202,7 @@ func appOptions(cfg *config.Config) []fx.Option {
 			services.ProvideEventRecorder,
 			services.ProvideReplanService,
 			services.ProvideScenarioService,
+			services.ProvideTimesheetService,
 			services.ProvideScheduleService,
 			handlers.ProvideHealthHandler,
 			handlers.ProvideIdentityHandler,

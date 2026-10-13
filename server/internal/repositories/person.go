@@ -15,6 +15,9 @@ const personSkillsPreload = "Skills.Expertise"
 // PersonRepository stores people, the expertise catalogue and people's skills.
 type PersonRepository interface {
 	AbstractRepository[models.Person]
+	// ListByEmails returns the people with these emails, active or not. Emails are stored in
+	// lower case, so callers pass them in lower case.
+	ListByEmails(ctx context.Context, emails []string) ([]models.Person, error)
 	// List returns people ordered by name, with their skills.
 	List(ctx context.Context, page *dtos.PageableRequest) (*dtos.DataResponse[models.Person], error)
 	// FindWithSkills returns one person with their skills.
@@ -97,4 +100,13 @@ func (r *personRepository) CountExpertises(ctx context.Context, ids []string) (i
 	var count int64
 	err := r.db.From(ctx).Model(&models.Expertise{}).Where("id IN ?", ids).Count(&count).Error
 	return count, err
+}
+
+func (r *personRepository) ListByEmails(ctx context.Context, emails []string) ([]models.Person, error) {
+	var people []models.Person
+	if len(emails) == 0 {
+		return people, nil
+	}
+	err := r.db.From(ctx).Where("email IN ?", emails).Order("id ASC").Find(&people).Error
+	return people, err
 }

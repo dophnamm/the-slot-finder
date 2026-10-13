@@ -78,6 +78,11 @@ func CanViewEvents(principal request.Principal) bool {
 	return principal.HasAnyRole(constants.EventViewRoles...)
 }
 
+// CanImportTimesheets allows planners to download the timesheet template and import actual hours.
+func CanImportTimesheets(principal request.Principal) bool {
+	return principal.HasAnyRole(constants.TimesheetRoles...)
+}
+
 // AuthzService answers who is signed in and what they may do.
 type AuthzService interface {
 	// Principal returns the signed-in user, or a 401 error when there is none.

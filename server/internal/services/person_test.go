@@ -294,3 +294,8 @@ func TestPeopleService_ReplaceSkills(t *testing.T) {
 	require.NoError(t, err)
 	repo.AssertExpectations(t)
 }
+
+func (m *MockPersonRepository) ListByEmails(ctx context.Context, emails []string) ([]models.Person, error) {
+	args := m.Called(ctx, emails)
+	return args.Get(0).([]models.Person), args.Error(1)
+}

@@ -56,6 +56,12 @@ const (
 	ScenarioNotFound       = "SCENARIO_NOT_FOUND"
 	AssumptionInvalid      = "ASSUMPTION_INVALID"
 
+	// Timesheet errors
+	TimesheetInvalid      = "TIMESHEET_INVALID"
+	TimesheetTooLarge     = "TIMESHEET_TOO_LARGE"
+	TimesheetWeekInFuture = "TIMESHEET_WEEK_IN_FUTURE"
+	TimesheetFileMissing  = "TIMESHEET_FILE_MISSING"
+
 	// Email errors
 	EmailSendError = "EMAIL_SEND_ERROR"
 
