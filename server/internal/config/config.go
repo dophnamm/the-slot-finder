@@ -193,6 +193,18 @@ type Config struct {
 	TimesheetMaxBytes      int64
 	TimesheetMaxRows       int
 
+	// Calendar sync (docs/features/calendar-sync.md): the key that encrypts calendar links (empty
+	// turns the feature off), where a link may point, how often and how far ahead the runner
+	// reads, which titles mean out of office, and the limits on one fetch.
+	CalendarFeedKey       string
+	CalendarAllowedHosts  []string
+	CalendarSyncInterval  time.Duration
+	CalendarSyncBatchSize int
+	CalendarSyncWeeks     int
+	CalendarLeaveKeywords []string
+	CalendarFetchTimeout  time.Duration
+	CalendarMaxBytes      int64
+
 	// Program metrics (root README §7): how far Scope % may trail Time %, in percentage
 	// points, and how close a deadline turns a gap into at risk.
 	ScopeLagThreshold float64
@@ -314,6 +326,15 @@ func Load() (*Config, error) {
 		TimesheetMaxBytes:      int64(getEnvAsInt("TIMESHEET_MAX_BYTES", 1<<20)),
 		TimesheetMaxRows:       getEnvAsInt("TIMESHEET_MAX_ROWS", 5000),
 
+		CalendarFeedKey:       getEnv("CALENDAR_FEED_KEY", ""),
+		CalendarAllowedHosts:  getEnvAsList("CALENDAR_ALLOWED_HOSTS", defaultCalendarAllowedHosts),
+		CalendarSyncInterval:  getEnvAsDuration("CALENDAR_SYNC_INTERVAL", 15*time.Minute),
+		CalendarSyncBatchSize: getEnvAsInt("CALENDAR_SYNC_BATCH_SIZE", 20),
+		CalendarSyncWeeks:     getEnvAsInt("CALENDAR_SYNC_WEEKS", 26),
+		CalendarLeaveKeywords: getEnvAsList("CALENDAR_LEAVE_KEYWORDS", defaultCalendarLeaveKeywords),
+		CalendarFetchTimeout:  getEnvAsDuration("CALENDAR_FETCH_TIMEOUT", 10*time.Second),
+		CalendarMaxBytes:      getEnvAsInt64("CALENDAR_MAX_BYTES", 5<<20),
+
 		ScopeLagThreshold: getEnvAsFloat("SCOPE_LAG_THRESHOLD", 20),
 		AlertHorizonWeeks: getEnvAsInt("ALERT_HORIZON_WEEKS", 4),
 	}
@@ -326,6 +347,12 @@ func Load() (*Config, error) {
 
 	return cfg, nil
 }
+
+// defaultCalendarAllowedHosts are the hosts that serve Google and Outlook calendar links.
+const defaultCalendarAllowedHosts = "calendar.google.com,outlook.office365.com,outlook.live.com"
+
+// defaultCalendarLeaveKeywords are title words that mark an event as out of office.
+const defaultCalendarLeaveKeywords = "OOO,Out of office,Vacation,Annual leave,Nghỉ phép"
 
 // defaultWorkingWeekdays is Monday to Friday, in the WORKING_WEEKDAYS format.
 const defaultWorkingWeekdays = "Mon,Tue,Wed,Thu,Fri"
@@ -378,6 +405,27 @@ func getEnvAsInt(key string, fallback int) int {
 		}
 	}
 	return fallback
+}
+
+// getEnvAsInt64 gets an environment variable as a 64-bit integer with a fallback value.
+func getEnvAsInt64(key string, fallback int64) int64 {
+	if value := envValue(key); value != "" {
+		if intValue, err := strconv.ParseInt(value, 10, 64); err == nil {
+			return intValue
+		}
+	}
+	return fallback
+}
+
+// getEnvAsList reads a comma-separated list, trimming each item and dropping empty ones.
+func getEnvAsList(key, fallback string) []string {
+	var items []string
+	for _, item := range strings.Split(getEnv(key, fallback), ",") {
+		if item = strings.TrimSpace(item); item != "" {
+			items = append(items, item)
+		}
+	}
+	return items
 }
 
 // getEnvAsBool gets an environment variable as boolean with a fallback value

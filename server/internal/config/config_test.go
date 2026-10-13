@@ -308,3 +308,18 @@ func TestLoad_TimesheetSettings(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 200, cfg.TimesheetMaxRows)
 }
+
+func TestLoad_CalendarSettings(t *testing.T) {
+	t.Setenv("CALENDAR_FEED_KEY", "")
+	t.Setenv("CALENDAR_ALLOWED_HOSTS", "")
+	t.Setenv("CALENDAR_LEAVE_KEYWORDS", " OOO , Out of office ,, ")
+	t.Setenv("CALENDAR_MAX_BYTES", "1048576")
+	cfg, err := Load()
+	require.NoError(t, err)
+	assert.Empty(t, cfg.CalendarFeedKey, "no key: calendar sync is off")
+	assert.Equal(t, []string{"calendar.google.com", "outlook.office365.com", "outlook.live.com"}, cfg.CalendarAllowedHosts)
+	assert.Equal(t, []string{"OOO", "Out of office"}, cfg.CalendarLeaveKeywords)
+	assert.Equal(t, int64(1048576), cfg.CalendarMaxBytes)
+	assert.Equal(t, 15*time.Minute, cfg.CalendarSyncInterval)
+	assert.Equal(t, 26, cfg.CalendarSyncWeeks)
+}
