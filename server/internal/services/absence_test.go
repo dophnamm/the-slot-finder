@@ -220,3 +220,71 @@ func TestAvailabilityService_ListForPerson(t *testing.T) {
 	_, err = newAvailability(new(MockAbsenceRepository)).ListForPerson(asRole("kc-specialist", constants.RoleSpecialist), otherPersonID)
 	requireStatus(t, err, http.StatusForbidden)
 }
+
+func TestAvailabilityService_Approve(t *testing.T) {
+	self := selfPersonID
+	planned := func() *models.Absence {
+		return &models.Absence{BaseModel: models.BaseModel{ID: absenceID}, PersonID: &self, HoursPerDay: 8,
+			FromDate: time.Date(2026, time.October, 22, 0, 0, 0, 0, time.UTC), ToDate: time.Date(2026, time.October, 23, 0, 0, 0, 0, time.UTC),
+			Type: constants.AbsenceTypeLeave, Status: constants.AbsenceStatusPlanned}
+	}
+	approved := planned()
+	approved.Status = constants.AbsenceStatusApproved
+	// A holiday is never a person's; keep it planned so only the holiday rule can refuse it.
+	holiday := &models.Absence{BaseModel: models.BaseModel{ID: absenceID}, Type: constants.AbsenceTypeHoliday,
+		Status: constants.AbsenceStatusPlanned}
+	planner := asRole("kc-planner", constants.RolePlanner)
+
+	tests := []struct {
+		name       string
+		ctx        context.Context
+		absence    *models.Absence
+		findErr    error
+		wantStatus int // 0 means approved
+		wantCode   string
+	}{
+		{name: "a planner approves planned leave", ctx: planner, absence: planned()},
+		{name: "already approved", ctx: planner, absence: approved, wantStatus: http.StatusConflict, wantCode: constants.AbsenceNotPlanned},
+		{name: "a holiday", ctx: planner, absence: holiday, wantStatus: http.StatusConflict, wantCode: constants.AbsenceNotPlanned},
+		{name: "not found", ctx: planner, findErr: gorm.ErrRecordNotFound, wantStatus: http.StatusNotFound, wantCode: constants.AbsenceNotFound},
+		{name: "a lead cannot approve", ctx: asRole("kc-lead", constants.RoleLead), absence: planned(), wantStatus: http.StatusForbidden},
+		{name: "a specialist cannot approve their own", ctx: asRole("kc-specialist", constants.RoleSpecialist), absence: planned(),
+			wantStatus: http.StatusForbidden},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := new(MockAbsenceRepository)
+			if tt.findErr != nil {
+				repo.On("FindOneByID", mock.Anything, absenceID).Return(nil, tt.findErr)
+			} else {
+				repo.On("FindOneByID", mock.Anything, absenceID).Return(tt.absence, nil)
+			}
+			repo.On("Updates", mock.Anything, mock.MatchedBy(func(a *models.Absence) bool {
+				return a.Status == constants.AbsenceStatusApproved
+			})).Return(nil)
+			events := &recordedEvents{}
+			people := stubPeople{self: &models.Person{BaseModel: models.BaseModel{ID: selfPersonID}}}
+			service := ProvideAvailabilityService(repo, people, ProvideAuthzService(people), passthroughTx{}, events)
+
+			absence, err := service.Approve(tt.ctx, absenceID)
+			if tt.wantStatus != 0 {
+				if tt.wantCode != "" {
+					requireAppError(t, err, tt.wantCode, tt.wantStatus)
+				} else {
+					requireStatus(t, err, tt.wantStatus)
+				}
+				repo.AssertNotCalled(t, "Updates", mock.Anything, mock.Anything)
+				assert.Empty(t, events.events, "a refused approve records no change event")
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, constants.AbsenceStatusApproved, absence.Status)
+			require.Len(t, events.events, 1)
+			assert.Equal(t, constants.EventAbsenceAdded, events.events[0].Type)
+			change, ok := events.events[0].Payload.(AbsenceChange)
+			require.True(t, ok)
+			assert.Equal(t, constants.AbsenceStatusApproved, change.Status, "the event carries the new status")
+			assert.Equal(t, &self, change.PersonID)
+		})
+	}
+}

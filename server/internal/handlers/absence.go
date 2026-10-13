@@ -106,6 +106,30 @@ func (h *AbsenceHandler) Delete(c *echo.Context) error {
 	return h.SuccessResponse(c, constants.MsgAbsenceDeleted, nil, nil)
 }
 
+// Approve godoc
+// @Summary Approve a planned absence
+// @Description Turns a person's planned absence into an approved one and records an AbsenceAdded change event with the new status. An approved absence or a holiday gets ABSENCE_NOT_PLANNED.
+// @Tags Availability
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Absence id"
+// @Success 200 {object} object{meta=dtos.Meta,data=dtos.AbsenceResponse}
+// @Failure 403 {object} object{meta=dtos.Meta}
+// @Failure 404 {object} object{meta=dtos.Meta}
+// @Failure 409 {object} object{meta=dtos.Meta}
+// @Router /absences/{id}/approve [post]
+func (h *AbsenceHandler) Approve(c *echo.Context) error {
+	absenceID, ok := h.pathID(c)
+	if !ok {
+		return nil
+	}
+	absence, err := h.availability.Approve(c.Request().Context(), absenceID)
+	if err != nil {
+		return h.HandleError(c, err)
+	}
+	return h.SuccessResponse(c, constants.MsgAbsenceApproved, dtos.NewAbsenceResponse(*absence), nil)
+}
+
 // ListHolidays godoc
 // @Summary Company-wide holidays
 // @Tags Availability

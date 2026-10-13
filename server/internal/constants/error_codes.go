@@ -20,6 +20,8 @@ const (
 	// Absence errors
 	AbsenceNotFound     = "ABSENCE_NOT_FOUND"
 	AbsenceDatesInvalid = "ABSENCE_DATES_INVALID"
+	// AbsenceNotPlanned: only a person's planned absence can be approved (not an approved one, not a holiday).
+	AbsenceNotPlanned = "ABSENCE_NOT_PLANNED"
 
 	// Program and project errors
 	ProgramNotFound        = "PROGRAM_NOT_FOUND"

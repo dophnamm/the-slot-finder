@@ -194,6 +194,7 @@ func registerPeopleRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc,
 	v1.GET(constants.PathPersonAbsences, absenceHandler.ListForPerson, authenticated, middlewares.RequireRole(constants.AbsenceRoles...))
 	v1.POST(constants.PathPersonAbsences, absenceHandler.Create, authenticated, middlewares.RequireRole(constants.AbsenceRoles...))
 	v1.DELETE(constants.PathAbsence, absenceHandler.Delete, authenticated, middlewares.RequireRole(constants.AbsenceRoles...))
+	v1.POST(constants.PathAbsenceApprove, absenceHandler.Approve, authenticated, middlewares.RequireRole(constants.AbsenceManageRoles...))
 	v1.GET(constants.PathHolidays, absenceHandler.ListHolidays, authenticated, middlewares.RequireRole(constants.HolidayViewRoles...))
 	v1.POST(constants.PathHolidays, absenceHandler.CreateHoliday, authenticated, middlewares.RequireRole(constants.HolidayManageRoles...))
 }

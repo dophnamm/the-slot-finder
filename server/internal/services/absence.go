@@ -18,12 +18,13 @@ import (
 )
 
 const (
-	opListAbsences  = "list_absences"
-	opCreateAbsence = "create_absence"
-	opDeleteAbsence = "delete_absence"
-	opListHolidays  = "list_holidays"
-	opCreateHoliday = "create_holiday"
-	resourceAbsence = "absence"
+	opListAbsences   = "list_absences"
+	opCreateAbsence  = "create_absence"
+	opDeleteAbsence  = "delete_absence"
+	opApproveAbsence = "approve_absence"
+	opListHolidays   = "list_holidays"
+	opCreateHoliday  = "create_holiday"
+	resourceAbsence  = "absence"
 )
 
 // CreateAbsenceInput is a person's leave or training. An empty Status means planned.
@@ -49,6 +50,9 @@ type AvailabilityService interface {
 	ListForPerson(ctx context.Context, personID string) ([]models.Absence, error)
 	Create(ctx context.Context, in CreateAbsenceInput) (*models.Absence, error)
 	Delete(ctx context.Context, absenceID string) error
+	// Approve turns a person's planned absence into an approved one and records the change.
+	// Only planners may; an approved absence or a holiday gets 409.
+	Approve(ctx context.Context, absenceID string) (*models.Absence, error)
 	ListHolidays(ctx context.Context) ([]models.Absence, error)
 	CreateHoliday(ctx context.Context, in CreateHolidayInput) (*models.Absence, error)
 }
@@ -166,6 +170,39 @@ func (s *availabilityService) Delete(ctx context.Context, absenceID string) erro
 		return asAppError(err, constants.MsgAbsenceDeleteFailed, opDeleteAbsence, resourceAbsence)
 	}
 	return nil
+}
+
+func (s *availabilityService) Approve(ctx context.Context, absenceID string) (*models.Absence, error) {
+	if _, err := s.authz.Require(ctx, CanManageAbsences); err != nil {
+		return nil, err
+	}
+	absence, err := s.repo.FindOneByID(ctx, absenceID)
+	if err != nil {
+		if stderrors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.WrapError(err, constants.AbsenceNotFound, constants.MsgAbsenceNotFound,
+				errors.ErrorTypeNotFound, http.StatusNotFound).WithOperation(opApproveAbsence).WithResource(resourceAbsence)
+		}
+		return nil, errors.DatabaseError(constants.MsgAbsenceApproveFailed, err).
+			WithOperation(opApproveAbsence).WithResource(resourceAbsence)
+	}
+	if absence.PersonID == nil || absence.Status != constants.AbsenceStatusPlanned {
+		return nil, errors.NewAppError(constants.AbsenceNotPlanned, constants.MsgAbsenceNotPlanned, errors.ErrorTypeConflict,
+			http.StatusConflict).WithOperation(opApproveAbsence).WithResource(resourceAbsence)
+	}
+
+	name := ""
+	if person, err := s.people.Get(ctx, *absence.PersonID); err == nil {
+		name = person.Name
+	}
+	absence.Status = constants.AbsenceStatusApproved
+	update := func(ctx context.Context) error { return s.repo.Updates(ctx, absence) }
+	// The constants have only AbsenceAdded and AbsenceRemoved; an approval is the absence
+	// again with its new status, so the re-plan runner sees it like any absence change.
+	event := ChangeInput{Type: constants.EventAbsenceAdded, Payload: absenceChange(absence, name)}
+	if err := s.saveWithEvent(ctx, update, event); err != nil {
+		return nil, asAppError(err, constants.MsgAbsenceApproveFailed, opApproveAbsence, resourceAbsence)
+	}
+	return absence, nil
 }
 
 func (s *availabilityService) ListHolidays(ctx context.Context) ([]models.Absence, error) {
