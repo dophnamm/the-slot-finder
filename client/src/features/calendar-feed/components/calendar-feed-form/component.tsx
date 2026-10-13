@@ -29,6 +29,7 @@ export function CalendarFeedForm({ personId, onConnect, pending, error }: Calend
           type="url"
           value={link}
           onChange={handleChange}
+          placeholder={t('e.g. https://calendar.google.com/calendar/ical/…/private-…/basic.ics')}
           autoComplete="off"
           aria-invalid={problem !== null}
           required

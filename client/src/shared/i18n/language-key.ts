@@ -118,6 +118,7 @@ export type LanguageKey = {
   'Draft created': string
   'Draft rejected.': string
   'e.g. Checkout slips two weeks': string
+  'e.g. https://calendar.google.com/calendar/ical/…/private-…/basic.ics': string
   'Each assumption is applied to a copy of the baseline. Nothing real changes.': string
   'Each person and demand whose hours or weeks differ in this scenario.': string
   'Earliest start': string
