@@ -171,6 +171,8 @@ type Config struct {
 	HeatmapMaxWeeks           int
 	UtilizationUnderusedBelow float64
 	UtilizationNearFullFrom   float64
+	// ScheduleMaxWeeks is the widest range of one person's schedule (a month grid needs 6).
+	ScheduleMaxWeeks int
 
 	// Re-plan runner (server/README §6): debounce, polling, batch size, retries, and the raised
 	// stability weight that keeps a re-plan close to the baseline.
@@ -287,6 +289,7 @@ func Load() (*Config, error) {
 		HeatmapMaxWeeks:           getEnvAsInt("HEATMAP_MAX_WEEKS", 52),
 		UtilizationUnderusedBelow: getEnvAsFloat("UTILIZATION_UNDERUSED_BELOW", 0.5),
 		UtilizationNearFullFrom:   getEnvAsFloat("UTILIZATION_NEAR_FULL_FROM", 0.85),
+		ScheduleMaxWeeks:          getEnvAsInt("SCHEDULE_MAX_WEEKS", 8),
 
 		ReplanDebounce:                getEnvAsDuration("REPLAN_DEBOUNCE", 5*time.Minute),
 		ReplanPollInterval:            getEnvAsDuration("REPLAN_POLL_INTERVAL", 10*time.Second),
