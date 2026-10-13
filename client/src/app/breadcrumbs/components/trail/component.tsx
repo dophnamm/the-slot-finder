@@ -29,10 +29,12 @@ export function Trail({ crumbs }: TrailProps) {
           <Fragment key={`${index}:${crumb.label}`}>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              {crumb.to && index < crumbs.length - 1 ? (
+              {index === crumbs.length - 1 ? (
+                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+              ) : crumb.to ? (
                 <BreadcrumbLink render={<Link to={crumb.to} />}>{crumb.label}</BreadcrumbLink>
               ) : (
-                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                <span>{crumb.label}</span>
               )}
             </BreadcrumbItem>
           </Fragment>

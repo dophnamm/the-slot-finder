@@ -9,12 +9,16 @@ vi.mock('@/shared/programs', () => ({
   useProgram: () => ({ data: { name: 'Acme Commerce Platform' } }),
   useProject: () => ({ data: { name: 'Checkout Revamp', program_id: 'g1', program_name: 'Acme Commerce Platform' } }),
 }))
+vi.mock('@/shared/people', () => ({ usePerson: () => ({ data: { name: 'Alex Nguyen' } }) }))
+const { useCurrentUser } = vi.hoisted(() => ({ useCurrentUser: vi.fn() }))
+vi.mock('@/shared/auth', () => ({ useCurrentUser }))
 
 function renderAt(path: string) {
   const handle = (breadcrumb: BreadcrumbHandle['breadcrumb']): BreadcrumbHandle => ({ breadcrumb })
   const router = createMemoryRouter(
     [
       { path: ROUTES.people, element: <Breadcrumbs />, handle: handle('people') },
+      { path: ROUTES.personDetail, element: <Breadcrumbs />, handle: handle('personDetail') },
       { path: ROUTES.projectDetail, element: <Breadcrumbs />, handle: handle('projectDetail') },
       { path: ROUTES.staffingDraft, element: <Breadcrumbs />, handle: handle('staffingDraft') },
     ],
@@ -43,5 +47,20 @@ describe('Breadcrumbs', () => {
     renderAt('/intake/staffing-drafts/d1')
     expect(screen.getByRole('link', { name: 'Intake' }).getAttribute('href')).toBe(ROUTES.intake)
     expect(screen.getByText('Staffing draft')).toBeTruthy()
+  })
+
+  it('walks a planner from People to the person', () => {
+    useCurrentUser.mockReturnValue({ data: { role: 'planner' } })
+    renderAt('/people/u1')
+    expect(screen.getByRole('link', { name: 'People' }).getAttribute('href')).toBe(ROUTES.people)
+    expect(screen.getByText('Alex Nguyen').getAttribute('aria-current')).toBe('page')
+  })
+
+  it('shows People as plain text to a lead, who cannot open the People list', () => {
+    useCurrentUser.mockReturnValue({ data: { role: 'lead' } })
+    renderAt('/people/u1')
+    expect(screen.queryByRole('link', { name: 'People' })).toBeNull()
+    expect(screen.getByText('People').getAttribute('aria-current')).toBeNull()
+    expect(screen.getByText('Alex Nguyen').getAttribute('aria-current')).toBe('page')
   })
 })

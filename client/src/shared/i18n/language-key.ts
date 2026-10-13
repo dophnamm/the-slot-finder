@@ -385,6 +385,7 @@ export type LanguageKey = {
   '{expertise} · level {level}': string
   '{expertise} · {hours} h': string
   '{expertise} · {program}': string
+  '{expertise}, {hours} h per week, {nonProject} h of them non-project': string
   '{gap} h short of {budget} h': string
   '{hours} h': string
   '{hours} h non-project': string

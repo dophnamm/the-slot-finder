@@ -14,6 +14,7 @@ export const PERMISSIONS = {
   'staffing-drafts:view': [ROLES.PLANNER, ROLES.LEAD],
   'staffing-drafts:manage': [ROLES.PLANNER],
   'scenarios:view': [ROLES.PLANNER],
+  'people:view': [ROLES.PLANNER, ROLES.LEAD],
   'people:manage': [ROLES.PLANNER],
   'absences:approve': [ROLES.PLANNER],
   'holidays:manage': [ROLES.PLANNER],
