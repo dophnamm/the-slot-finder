@@ -3,9 +3,11 @@ package routes
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -23,6 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 func TestMain(m *testing.M) {
@@ -262,6 +265,47 @@ type approvingAvailability struct {
 
 func (approvingAvailability) Approve(_ context.Context, id string) (*models.Absence, error) {
 	return &models.Absence{BaseModel: models.BaseModel{ID: id}, Status: constants.AbsenceStatusApproved}, nil
+}
+
+// TestRouter_CalendarLinkNeverLogged sends a calendar link that the chain turns away before the
+// handler; the request log must still not hold it.
+func TestRouter_CalendarLinkNeverLogged(t *testing.T) {
+	const link = "https://calendar.google.com/calendar/ical/a/private-x/basic.ics"
+	core, logs := observer.New(zap.InfoLevel)
+	previous := logger.Log
+	logger.Log = zap.New(core)
+	t.Cleanup(func() { logger.Log = previous })
+	e := newTestRouter(baseConfig())
+
+	tests := []struct {
+		name       string
+		sameOrigin bool
+		wantStatus int
+	}{
+		{name: "cross-site request stopped by CSRF", wantStatus: http.StatusBadRequest},
+		{name: "same-origin request without a token", sameOrigin: true, wantStatus: http.StatusUnauthorized},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPut, constants.PathAPIBase+"/people/0192f3a4-0000-7000-8000-0000000000aa/calendar-feed",
+				strings.NewReader(`{"url":"`+link+`"}`))
+			req.RemoteAddr = "192.0.2.10:5000"
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			if tt.sameOrigin {
+				req.Header.Set("Sec-Fetch-Site", "same-origin")
+			}
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+			require.Equal(t, tt.wantStatus, rec.Code)
+		})
+	}
+
+	require.NotZero(t, logs.Len(), "the requests were logged")
+	for _, entry := range logs.All() {
+		for key, value := range entry.ContextMap() {
+			assert.NotContains(t, fmt.Sprint(value), link, "log field %q holds the link", key)
+		}
+	}
 }
 
 func TestRouter_ApproveAbsence_RBAC(t *testing.T) {
