@@ -25,8 +25,8 @@ const (
 type LeaveRules struct {
 	// Keywords are matched inside the event title, ignoring case.
 	Keywords []string
-	// From and To are the first and last date kept (inclusive, UTC midnight). An event that
-	// touches the range is kept whole.
+	// From and To are the first and last date kept (inclusive, UTC midnight); a zero From keeps
+	// every past event. An event that touches the range is kept whole.
 	From time.Time
 	To   time.Time
 }

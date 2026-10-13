@@ -62,3 +62,31 @@ func TestAvailabilityService_ApplyCalendarLeave(t *testing.T) {
 	assert.Equal(t, []string{constants.EventAbsenceRemoved, constants.EventAbsenceAdded, constants.EventAbsenceAdded,
 		constants.EventAbsenceRemoved}, types, "moved: removed + added; new: added; gone: removed")
 }
+
+func TestAvailabilityService_ApplyCalendarLeave_PastAndHours(t *testing.T) {
+	day := func(d int) time.Time { return time.Date(2026, time.October, d, 0, 0, 0, 0, time.UTC) }
+	approved := calendarAbsence("hours", day(19), day(20), 8, constants.AbsenceStatusApproved)
+	repo := new(MockAbsenceRepository)
+	repo.On("ListCalendarLeave", mock.Anything, otherPersonID).Return([]models.Absence{approved}, nil)
+	repo.On("Save", mock.Anything, mock.MatchedBy(func(a *models.Absence) bool {
+		return a.ID == approved.ID && a.HoursPerDay == 6.4 && a.Status == constants.AbsenceStatusApproved
+	})).Return(nil)
+	people := stubPeople{self: &models.Person{BaseModel: models.BaseModel{ID: selfPersonID}}}
+	service := ProvideAvailabilityService(repo, people, ProvideAuthzService(people), passthroughTx{}, &recordedEvents{})
+
+	result, err := service.ApplyCalendarLeave(context.Background(), ApplyCalendarLeaveInput{
+		PersonID: otherPersonID, From: day(13), To: day(13).AddDate(0, 0, 182),
+		Leave: []CalendarLeave{
+			// Last month's trip was never synced: past leave is not added.
+			{UID: "old-trip", FromDate: time.Date(2026, time.September, 1, 0, 0, 0, 0, time.UTC),
+				ToDate: time.Date(2026, time.September, 2, 0, 0, 0, 0, time.UTC), HoursPerDay: 8},
+			// The person's weekly hours changed: same days, fewer hours, still approved.
+			{UID: "hours", FromDate: day(19), ToDate: day(20), HoursPerDay: 6.4},
+		},
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, CalendarLeaveResult{Updated: 1}, result)
+	repo.AssertExpectations(t)
+	repo.AssertNotCalled(t, "Create", mock.Anything, mock.Anything)
+}

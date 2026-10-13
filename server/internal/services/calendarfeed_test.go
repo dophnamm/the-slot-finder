@@ -93,10 +93,16 @@ func (f *fakeFetcher) Fetch(_ context.Context, link string) ([]byte, error) {
 	return []byte(f.body), f.err
 }
 
-// fakeLeave records the leave a sync applies.
+// fakeLeave records the leave a sync applies, and the people whose calendar leave was detached.
 type fakeLeave struct {
 	AvailabilityService
-	applied []ApplyCalendarLeaveInput
+	applied  []ApplyCalendarLeaveInput
+	detached []string
+}
+
+func (f *fakeLeave) DetachCalendarLeave(_ context.Context, personID string) error {
+	f.detached = append(f.detached, personID)
+	return nil
 }
 
 func (f *fakeLeave) ApplyCalendarLeave(_ context.Context, in ApplyCalendarLeaveInput) (CalendarLeaveResult, error) {
@@ -262,7 +268,8 @@ func TestCalendarFeedService_RunOnce(t *testing.T) {
 
 func TestCalendarFeedService_GetAndDisconnect(t *testing.T) {
 	feeds := &fakeFeeds{byPerson: map[string]*models.CalendarFeed{}}
-	service := newFeedService(t, testFeedKey, feeds, &fakeFetcher{body: allDayOOO}, &fakeLeave{})
+	leave := &fakeLeave{}
+	service := newFeedService(t, testFeedKey, feeds, &fakeFetcher{body: allDayOOO}, leave)
 	specialist := asRole("kc-specialist", constants.RoleSpecialist)
 
 	_, err := service.Get(specialist, selfPersonID)
@@ -275,6 +282,28 @@ func TestCalendarFeedService_GetAndDisconnect(t *testing.T) {
 
 	require.NoError(t, service.Disconnect(specialist, selfPersonID))
 	assert.Empty(t, feeds.byPerson)
+	assert.Equal(t, []string{selfPersonID}, leave.detached, "the leave it added stays, as ordinary absences")
+}
+
+// TestCalendarFeedService_SeesLeaveShortenedBeforeToday: leave running since last week whose
+// event now ends before today must still reach the availability service, so the absence is
+// shortened rather than deleted. It is not counted as an event found in the sync window.
+func TestCalendarFeedService_SeesLeaveShortenedBeforeToday(t *testing.T) {
+	const trimmed = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:trimmed\r\nSUMMARY:OOO\r\nDTSTART;VALUE=DATE:20261009\r\n" +
+		"DTEND;VALUE=DATE:20261013\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+	feeds := &fakeFeeds{byPerson: map[string]*models.CalendarFeed{}}
+	leave := &fakeLeave{}
+	service := newFeedService(t, testFeedKey, feeds, &fakeFetcher{body: trimmed}, leave)
+
+	feed, err := service.Connect(asRole("kc-planner", constants.RolePlanner), ConnectFeedInput{PersonID: selfPersonID, URL: googleLink})
+
+	require.NoError(t, err)
+	require.Len(t, leave.applied, 1)
+	require.Len(t, leave.applied[0].Leave, 1)
+	got := leave.applied[0].Leave[0]
+	assert.Equal(t, "trimmed", got.UID)
+	assert.Equal(t, time.Date(2026, time.October, 12, 0, 0, 0, 0, time.UTC), got.ToDate)
+	assert.Equal(t, 0, feed.EventsFound)
 }
 
 func TestCalendarFeedService_LeaveHours(t *testing.T) {

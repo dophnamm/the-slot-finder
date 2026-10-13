@@ -19,14 +19,15 @@ import (
 )
 
 const (
-	opListAbsences       = "list_absences"
-	opCreateAbsence      = "create_absence"
-	opDeleteAbsence      = "delete_absence"
-	opApproveAbsence     = "approve_absence"
-	opApplyCalendarLeave = "apply_calendar_leave"
-	opListHolidays       = "list_holidays"
-	opCreateHoliday      = "create_holiday"
-	resourceAbsence      = "absence"
+	opListAbsences        = "list_absences"
+	opCreateAbsence       = "create_absence"
+	opDeleteAbsence       = "delete_absence"
+	opApproveAbsence      = "approve_absence"
+	opApplyCalendarLeave  = "apply_calendar_leave"
+	opDetachCalendarLeave = "detach_calendar_leave"
+	opListHolidays        = "list_holidays"
+	opCreateHoliday       = "create_holiday"
+	resourceAbsence       = "absence"
 )
 
 // CreateAbsenceInput is a person's leave or training. An empty Status means planned.
@@ -81,11 +82,15 @@ type AvailabilityService interface {
 	ListHolidays(ctx context.Context) ([]models.Absence, error)
 	CreateHoliday(ctx context.Context, in CreateHolidayInput) (*models.Absence, error)
 	// ApplyCalendarLeave makes the person's calendar absences match in.Leave, in one transaction:
-	// a new event creates planned leave, a changed one moves it and sets it back to planned, and
-	// one that is gone deletes it when it touches in.From to in.To. Each change records its
-	// events. Absences entered by hand are never touched. It checks no access: the calendar
-	// feed service does, and its runner acts for the system.
+	// a new event creates planned leave, one on new dates moves it and sets it back to planned,
+	// new hours alone update it and keep its status, and one that is gone deletes it when it
+	// touches in.From to in.To. Leave ending before in.From only shortens leave still running.
+	// Each change records its events. Absences entered by hand are never touched. It checks no
+	// access: the calendar feed service does, and its runner acts for the system.
 	ApplyCalendarLeave(ctx context.Context, in ApplyCalendarLeaveInput) (CalendarLeaveResult, error)
+	// DetachCalendarLeave makes a person's calendar leave ordinary absences, when their calendar
+	// is disconnected. It checks no access; the calendar feed service does.
+	DetachCalendarLeave(ctx context.Context, personID string) error
 }
 
 type availabilityService struct {
@@ -310,6 +315,9 @@ func (s *availabilityService) ApplyCalendarLeave(ctx context.Context, in ApplyCa
 		for _, leave := range in.Leave {
 			old, known := byUID[leave.UID]
 			delete(byUID, leave.UID)
+			if leave.ToDate.Before(in.From) && (!known || old.ToDate.Before(in.From)) {
+				continue // past leave matters only when it shortens leave that is still running
+			}
 			switch {
 			case !known:
 				err = s.createCalendarLeave(ctx, in.PersonID, person.Name, leave)
@@ -338,6 +346,14 @@ func (s *availabilityService) ApplyCalendarLeave(ctx context.Context, in ApplyCa
 	return result, nil
 }
 
+func (s *availabilityService) DetachCalendarLeave(ctx context.Context, personID string) error {
+	if err := s.repo.DetachCalendarLeave(ctx, personID); err != nil {
+		return errors.DatabaseError(constants.MsgCalendarFeedSaveFailed, err).
+			WithOperation(opDetachCalendarLeave).WithResource(resourceAbsence)
+	}
+	return nil
+}
+
 // createCalendarLeave saves a new calendar event as planned leave, with its event.
 func (s *availabilityService) createCalendarLeave(ctx context.Context, personID, name string, leave CalendarLeave) error {
 	uid := leave.UID
@@ -348,15 +364,18 @@ func (s *availabilityService) createCalendarLeave(ctx context.Context, personID,
 	return s.saveWithEvent(ctx, create, ChangeInput{Type: constants.EventAbsenceAdded, Payload: absenceChange(absence, name)})
 }
 
-// moveCalendarLeave moves calendar leave to the event's new dates and hours, back to planned.
-// It records the old dates as removed and the new ones as added, so the re-plan sees both weeks.
+// moveCalendarLeave moves calendar leave to the event's new dates and hours. New dates need
+// approval again; new hours alone (the person's weekly hours changed) keep the status. It
+// records the old leave as removed and the new as added, so the re-plan sees both weeks.
 func (s *availabilityService) moveCalendarLeave(ctx context.Context, old models.Absence, name string, leave CalendarLeave) error {
 	if err := s.events.Record(ctx, ChangeInput{Type: constants.EventAbsenceRemoved, Payload: absenceChange(&old, name)}); err != nil {
 		return err
 	}
 	moved := old
 	moved.FromDate, moved.ToDate, moved.HoursPerDay = leave.FromDate, leave.ToDate, leave.HoursPerDay
-	moved.Status = constants.AbsenceStatusPlanned
+	if !sameDate(old.FromDate, leave.FromDate) || !sameDate(old.ToDate, leave.ToDate) {
+		moved.Status = constants.AbsenceStatusPlanned
+	}
 	save := func(ctx context.Context) error { return s.repo.Save(ctx, &moved) }
 	return s.saveWithEvent(ctx, save, ChangeInput{Type: constants.EventAbsenceAdded, Payload: absenceChange(&moved, name)})
 }
