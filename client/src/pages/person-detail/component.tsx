@@ -29,7 +29,7 @@ export function PersonDetailPage() {
           })
         }
       />
-      <PersonCalendar personId={id} />
+      <PersonCalendar personId={id} canOpenProjects={can(user?.role, 'programs:view')} />
       {can(user?.role, 'absences:approve') && (
         <Section
           title={t('Absences')}
