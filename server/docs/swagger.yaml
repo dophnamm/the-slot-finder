@@ -765,6 +765,18 @@ definitions:
       primary_expertise_id:
         type: string
     type: object
+  dtos.ImportResultResponse:
+    properties:
+      created:
+        example: 12
+        type: integer
+      skipped:
+        example: 5
+        type: integer
+      updated:
+        example: 3
+        type: integer
+    type: object
   dtos.MemberExpertiseResponse:
     properties:
       expertise:
@@ -1684,6 +1696,15 @@ definitions:
         type: number
       start_earliest:
         type: string
+    type: object
+  services.RowProblem:
+    properties:
+      code:
+        type: string
+      column:
+        type: string
+      line:
+        type: integer
     type: object
 info:
   contact: {}
@@ -3509,6 +3530,111 @@ paths:
       summary: Reject a staffing draft
       tags:
       - Staffing drafts
+  /timesheets/import:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 'Upload a filled-in template as the multipart field "file". Every
+        row is checked first: any problem saves nothing and returns 400 TIMESHEET_INVALID
+        with data.problems [{line, column, code}]. A row with an empty actual_hours
+        is skipped; importing again overwrites the same person, project and week.
+        A file over TIMESHEET_MAX_BYTES or TIMESHEET_MAX_ROWS gets 413 TIMESHEET_TOO_LARGE.
+        Records no change event.'
+      parameters:
+      - description: Filled-in timesheet template (CSV)
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.ImportResultResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              data:
+                properties:
+                  problems:
+                    items:
+                      $ref: '#/definitions/services.RowProblem'
+                    type: array
+                type: object
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "413":
+          description: Request Entity Too Large
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Import a timesheet
+      tags:
+      - Timesheets
+  /timesheets/template:
+    get:
+      description: A CSV with one row per person × project × week that has baseline
+        or actual hours in the range, with planned hours and any actual hours already
+        recorded. Weeks default to the TIMESHEET_TEMPLATE_WEEKS up to the current
+        week; a week after the current one gets TIMESHEET_WEEK_IN_FUTURE and a range
+        over TIMESHEET_MAX_WEEKS gets WEEK_RANGE_TOO_LONG.
+      parameters:
+      - description: First week
+        example: 2026-W39
+        in: query
+        name: from
+        type: string
+      - description: Last week
+        example: 2026-W42
+        in: query
+        name: to
+        type: string
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Timesheet template
+      tags:
+      - Timesheets
 schemes:
 - http
 - https

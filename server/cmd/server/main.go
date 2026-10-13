@@ -46,11 +46,12 @@ func NewHTTPServer(lc fx.Lifecycle,
 	eventHandler *handlers.EventHandler,
 	scenarioHandler *handlers.ScenarioHandler,
 	scheduleHandler *handlers.ScheduleHandler,
+	timesheetHandler *handlers.TimesheetHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 	db *db.PostgresDB,
 ) *http.Server {
-	handler := routes.Router(healthHandler, identityHandler, personHandler, absenceHandler, programHandler, projectHandler, planHandler, staffingHandler, insightsHandler, eventHandler, scenarioHandler, scheduleHandler, verifier, cfg)
+	handler := routes.Router(healthHandler, identityHandler, personHandler, absenceHandler, programHandler, projectHandler, planHandler, staffingHandler, insightsHandler, eventHandler, scenarioHandler, scheduleHandler, timesheetHandler, verifier, cfg)
 
 	srv := &http.Server{
 		Addr:              cfg.AppHTTPServer,
@@ -216,6 +217,7 @@ func appOptions(cfg *config.Config) []fx.Option {
 			handlers.ProvideEventHandler,
 			handlers.ProvideScenarioHandler,
 			handlers.ProvideScheduleHandler,
+			handlers.ProvideTimesheetHandler,
 		),
 		fx.Invoke(func(*http.Server) {}),
 		fx.Invoke(registerBaselineHook),
