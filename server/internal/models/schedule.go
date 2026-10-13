@@ -56,4 +56,6 @@ type ScheduleAbsence struct {
 	Type        string
 	Status      string
 	HoursPerDay float64
+	// Source is manual, or calendar for leave read from the person's calendar feed.
+	Source string
 }

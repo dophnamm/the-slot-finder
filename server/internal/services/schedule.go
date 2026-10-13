@@ -212,7 +212,7 @@ func (s *scheduleService) scheduleDays(personID string, weeks []isoweek.Week, ab
 				case a.PersonID == nil:
 					day.Holidays = append(day.Holidays, a.ID)
 				case *a.PersonID == personID:
-					day.Absences = append(day.Absences, ScheduleAbsence{ID: a.ID, Type: a.Type, Status: a.Status, HoursPerDay: a.HoursPerDay})
+					day.Absences = append(day.Absences, ScheduleAbsence{ID: a.ID, Type: a.Type, Status: a.Status, HoursPerDay: a.HoursPerDay, Source: a.Source})
 				}
 			}
 			if len(day.Absences) > 0 || len(day.Holidays) > 0 {
