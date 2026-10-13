@@ -4,6 +4,7 @@ import (
 	"context"
 	stderrors "errors"
 	"net/http"
+	"slices"
 	"time"
 
 	"the-slot-finder/server/internal/capacity"
@@ -18,13 +19,14 @@ import (
 )
 
 const (
-	opListAbsences   = "list_absences"
-	opCreateAbsence  = "create_absence"
-	opDeleteAbsence  = "delete_absence"
-	opApproveAbsence = "approve_absence"
-	opListHolidays   = "list_holidays"
-	opCreateHoliday  = "create_holiday"
-	resourceAbsence  = "absence"
+	opListAbsences       = "list_absences"
+	opCreateAbsence      = "create_absence"
+	opDeleteAbsence      = "delete_absence"
+	opApproveAbsence     = "approve_absence"
+	opApplyCalendarLeave = "apply_calendar_leave"
+	opListHolidays       = "list_holidays"
+	opCreateHoliday      = "create_holiday"
+	resourceAbsence      = "absence"
 )
 
 // CreateAbsenceInput is a person's leave or training. An empty Status means planned.
@@ -44,6 +46,29 @@ type CreateHolidayInput struct {
 	HoursPerDay float64
 }
 
+// CalendarLeave is one out-of-office event as leave: dates inclusive, hours per day resolved.
+type CalendarLeave struct {
+	UID         string
+	FromDate    time.Time
+	ToDate      time.Time
+	HoursPerDay float64
+}
+
+// ApplyCalendarLeaveInput is the leave read from one person's calendar for the dates From to To.
+type ApplyCalendarLeaveInput struct {
+	PersonID string
+	From     time.Time
+	To       time.Time
+	Leave    []CalendarLeave
+}
+
+// CalendarLeaveResult counts what one sync changed.
+type CalendarLeaveResult struct {
+	Created int
+	Updated int
+	Deleted int
+}
+
 // AvailabilityService manages absences and holidays. A person may manage their own
 // absences; planners may manage anyone's, approve them, and manage holidays.
 type AvailabilityService interface {
@@ -55,6 +80,12 @@ type AvailabilityService interface {
 	Approve(ctx context.Context, absenceID string) (*models.Absence, error)
 	ListHolidays(ctx context.Context) ([]models.Absence, error)
 	CreateHoliday(ctx context.Context, in CreateHolidayInput) (*models.Absence, error)
+	// ApplyCalendarLeave makes the person's calendar absences match in.Leave, in one transaction:
+	// a new event creates planned leave, a changed one moves it and sets it back to planned, and
+	// one that is gone deletes it when it touches in.From to in.To. Each change records its
+	// events. Absences entered by hand are never touched. It checks no access: the calendar
+	// feed service does, and its runner acts for the system.
+	ApplyCalendarLeave(ctx context.Context, in ApplyCalendarLeaveInput) (CalendarLeaveResult, error)
 }
 
 type availabilityService struct {
@@ -256,6 +287,100 @@ func (s *availabilityService) CreateHoliday(ctx context.Context, in CreateHolida
 		return nil, asAppError(err, constants.MsgAbsenceCreateFailed, opCreateHoliday, resourceAbsence)
 	}
 	return holiday, nil
+}
+
+func (s *availabilityService) ApplyCalendarLeave(ctx context.Context, in ApplyCalendarLeaveInput) (CalendarLeaveResult, error) {
+	person, err := s.people.Get(ctx, in.PersonID)
+	if err != nil {
+		return CalendarLeaveResult{}, err
+	}
+	var result CalendarLeaveResult
+	err = s.tx.Do(ctx, func(ctx context.Context) error {
+		result = CalendarLeaveResult{}
+		existing, err := s.repo.ListCalendarLeave(ctx, in.PersonID)
+		if err != nil {
+			return err
+		}
+		byUID := make(map[string]models.Absence, len(existing))
+		for _, a := range existing {
+			if a.ExternalUID != nil {
+				byUID[*a.ExternalUID] = a
+			}
+		}
+		for _, leave := range in.Leave {
+			old, known := byUID[leave.UID]
+			delete(byUID, leave.UID)
+			switch {
+			case !known:
+				err = s.createCalendarLeave(ctx, in.PersonID, person.Name, leave)
+				result.Created++
+			case !sameLeave(old, leave):
+				err = s.moveCalendarLeave(ctx, old, person.Name, leave)
+				result.Updated++
+			}
+			if err != nil {
+				return err
+			}
+		}
+		for _, gone := range goneInRange(byUID, in.From, in.To) {
+			remove := func(ctx context.Context) error { return s.repo.Delete(ctx, &gone) }
+			event := ChangeInput{Type: constants.EventAbsenceRemoved, Payload: absenceChange(&gone, person.Name)}
+			if err := s.saveWithEvent(ctx, remove, event); err != nil {
+				return err
+			}
+			result.Deleted++
+		}
+		return nil
+	})
+	if err != nil {
+		return CalendarLeaveResult{}, asAppError(err, constants.MsgAbsenceCreateFailed, opApplyCalendarLeave, resourceAbsence)
+	}
+	return result, nil
+}
+
+// createCalendarLeave saves a new calendar event as planned leave, with its event.
+func (s *availabilityService) createCalendarLeave(ctx context.Context, personID, name string, leave CalendarLeave) error {
+	uid := leave.UID
+	absence := &models.Absence{BaseModel: models.NewBaseModel(), PersonID: &personID, FromDate: leave.FromDate,
+		ToDate: leave.ToDate, HoursPerDay: leave.HoursPerDay, Type: constants.AbsenceTypeLeave,
+		Status: constants.AbsenceStatusPlanned, Source: constants.AbsenceSourceCalendar, ExternalUID: &uid}
+	create := func(ctx context.Context) error { return s.repo.Create(ctx, absence) }
+	return s.saveWithEvent(ctx, create, ChangeInput{Type: constants.EventAbsenceAdded, Payload: absenceChange(absence, name)})
+}
+
+// moveCalendarLeave moves calendar leave to the event's new dates and hours, back to planned.
+// It records the old dates as removed and the new ones as added, so the re-plan sees both weeks.
+func (s *availabilityService) moveCalendarLeave(ctx context.Context, old models.Absence, name string, leave CalendarLeave) error {
+	if err := s.events.Record(ctx, ChangeInput{Type: constants.EventAbsenceRemoved, Payload: absenceChange(&old, name)}); err != nil {
+		return err
+	}
+	moved := old
+	moved.FromDate, moved.ToDate, moved.HoursPerDay = leave.FromDate, leave.ToDate, leave.HoursPerDay
+	moved.Status = constants.AbsenceStatusPlanned
+	save := func(ctx context.Context) error { return s.repo.Save(ctx, &moved) }
+	return s.saveWithEvent(ctx, save, ChangeInput{Type: constants.EventAbsenceAdded, Payload: absenceChange(&moved, name)})
+}
+
+// sameLeave reports calendar leave that already matches the event (status is not compared).
+func sameLeave(a models.Absence, leave CalendarLeave) bool {
+	return sameDate(a.FromDate, leave.FromDate) && sameDate(a.ToDate, leave.ToDate) &&
+		a.HoursPerDay-leave.HoursPerDay < hoursEpsilon && leave.HoursPerDay-a.HoursPerDay < hoursEpsilon
+}
+
+func sameDate(a, b time.Time) bool {
+	return a.Year() == b.Year() && a.Month() == b.Month() && a.Day() == b.Day()
+}
+
+// goneInRange is the calendar leave whose event is gone and that touches from to to, oldest first.
+func goneInRange(gone map[string]models.Absence, from, to time.Time) []models.Absence {
+	var out []models.Absence
+	for _, a := range gone {
+		if !a.ToDate.Before(from) && !a.FromDate.After(to) {
+			out = append(out, a)
+		}
+	}
+	slices.SortFunc(out, func(a, b models.Absence) int { return a.FromDate.Compare(b.FromDate) })
+	return out
 }
 
 func checkAbsenceDates(from, to time.Time, op string) error {
