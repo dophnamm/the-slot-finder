@@ -1,7 +1,7 @@
 import type { PersonRef } from '@/shared/programs'
+import type { UtilizationBand } from '@/shared/utilization'
 
-/** They match the server's constants/insights.go. */
-export type UtilizationBand = 'unavailable' | 'underused' | 'healthy' | 'near_full' | 'overloaded'
+export type { UtilizationBand }
 
 /** The part of a week's load on one expertise. */
 export interface ExpertiseHours {
