@@ -23,6 +23,14 @@ const (
 	// AbsenceNotPlanned: only a person's planned absence can be approved (not an approved one, not a holiday).
 	AbsenceNotPlanned = "ABSENCE_NOT_PLANNED"
 
+	// Calendar feed errors. The link is a secret, so a problem is only ever stored as one of these.
+	CalendarSyncDisabled       = "CALENDAR_SYNC_DISABLED"
+	CalendarFeedNotFound       = "CALENDAR_FEED_NOT_FOUND"
+	CalendarFeedHostNotAllowed = "CALENDAR_FEED_HOST_NOT_ALLOWED"
+	CalendarFeedUnreachable    = "CALENDAR_FEED_UNREACHABLE"
+	CalendarFeedNotICS         = "CALENDAR_FEED_NOT_ICS"
+	CalendarFeedTooLarge       = "CALENDAR_FEED_TOO_LARGE"
+
 	// Program and project errors
 	ProgramNotFound        = "PROGRAM_NOT_FOUND"
 	ProgramDatesInvalid    = "PROGRAM_DATES_INVALID"
