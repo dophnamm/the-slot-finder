@@ -33,9 +33,10 @@ Sign in with a demo user (`planner`, `lead` or `specialist`; see [`server/README
 | `/intake/staffing-drafts/:id` | **Staffing draft review**: assignment grid, reasons, alternatives with one-click swap, diff with plan churn, manual edits, lock, accept, AI summary (later) | planner | `/staffing-drafts/:id`, `/staffing-drafts/:id/assignments`, `/staffing-drafts/:id/summary` |
 | `/scenarios` | **What-if scenarios**: the list (assumptions, baseline version with Stale, people changed, hours moved, unmet) and **New scenario** (move a project, add leave) | planner | `/scenarios`, `/projects`, `/people` |
 | `/scenarios/:id` | **Scenario**: assumptions and figures, Run again, Delete, changes week by week (Moved / Added / Removed / Changed), unmet demand, links to the projects planned again | planner | `/scenarios/:id`, `/scenarios/:id/rerun` |
-| `/people` | **People**: expertise and level matrix, skill tags, start and end dates, location, leave and holidays, capacity changes | planner | `/people`, `/people/:id/absences`, `/people/:id/tags`, `/people/:id/capacity-changes`, `/tags`, `/holidays` |
+| `/people` | **People**: expertise and level matrix, skill tags, start and end dates, location, leave and holidays, capacity changes, **Import timesheet**; each row opens the person | planner | `/people`, `/people/:id/absences`, `/people/:id/tags`, `/people/:id/capacity-changes`, `/tags`, `/holidays`, `/timesheets/template`, `/timesheets/import` |
+| `/people/:id` | **Person**: month calendar (absences, holidays, weekly load against capacity, hours per project, worked hours), absences with Approve, the calendar link and its status | planner, lead (read only) | `/people/:id/schedule`, `/people/:id/absences`, `/people/:id/calendar-feed` |
 | `/insights` | **Insights**: capacity forecast by expertise (with pipeline × confidence and shortfall signals), bench list, plan churn over time | planner, lead (forecast only) | `/insights/capacity-forecast`, `/insights/bench`, `/insights/churn` |
-| `/me` | **My schedule**: my assignments by week, grouped by expertise (primary first, cross-expertise and stretch marked), report leave | specialist | `/me`, `/people/:id/assignments`, `/people/:id/absences` (id from `/me`) |
+| `/me` | **My schedule**: my month calendar (hours per project each week, leave, holidays), report leave, connect my calendar | specialist | `/me`, `/people/:id/schedule`, `/people/:id/absences`, `/people/:id/calendar-feed` (id from `/me`) |
 | `/events` | **Change history** and re-plan status | planner | `/events` |
 
 ```mermaid
@@ -50,6 +51,7 @@ flowchart LR
   dash --> intake["/intake"]
   dash --> scenarios["/scenarios"]
   dash --> people["/people"]
+  people --> person["/people/:id"]
   dash --> events["/events"]
   dash --> insights["/insights"]
   insights -->|"Bench: stretch assignment"| draft
@@ -63,37 +65,6 @@ flowchart LR
 ```
 
 ## 2. Program detail page
-
-Layout:
-
-```text
-┌───────────────────────────────────────────────────────────────────────────────┐
-│ HEADER  Program name [Open]   Brief · Charter   Members: ◯◯◯                   │
-│         Timeline: start – end · Next milestone (⚠ overdue)                     │
-│         Progress:  Time ▇▇▇ %  Scope ▇▇ %  Planned burn ▇▇ %  Staffing ▇▇▇ %    │
-├───────────────────────────────────────────────────────────────────────────────┤
-│ ⚠ RE-PLAN BANNER  "A change produced a staffing draft for this program → View" │
-├───────────────────────────────────────────────────────────────────────────────┤
-│ PROGRAM BRIEF   Goal · Objectives 1..n                                         │
-├──────────────────────────────────────┬────────────────────────────────────────┤
-│ SCOPE (points)                       │ COST (hours)                           │
-│ Total · Done · Done %                │ Budget · Planned · Planned to date ·   │
-│                                      │ Gap · EAC ⚠  (Actual: phase 2)         │
-├──────────────────────────────────────┴────────────────────────────────────────┤
-│ STAFFING BY EXPERTISE                                                          │
-│  chart: budget vs forecast hours per expertise                                 │
-│  table: Expertise | Budget | Planned | Forecast ✎ | Gap | Staffing % | Contr.% │
-├───────────────────────────────────────────────────────────────────────────────┤
-│ [ PROJECTS ] [ MEMBERS ]                                                        │
-│  Projects: Squad | Project + status | Start–End + next milestone | Phase |     │
-│            Time/Scope/Burn bars | Staffing % · gap ⚠ | [Propose squad]          │
-│  Members:  [ Member ] [ Assistant ]                                             │
-│            Member:    Person | Squad role | Expertise chips (hours, ↔ cross,   │
-│                       ⚠ stretch) | Overall utilization (4 wks) ⚠              │
-│            Assistant: Internal  → Person | Email | Remove                      │
-│                       External  → Name | Email | Description | Remove          │
-└───────────────────────────────────────────────────────────────────────────────┘
-```
 
 **Behaviour:**
 - **Header bars** come straight from `/programs/:id/overview`. Each bar shows ⚠ when the Server flags it (over 100% time, behind on delivery, over-planned, understaffed). Planned burn has no warning in the MVP.
