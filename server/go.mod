@@ -6,6 +6,7 @@ require (
 	ariga.io/atlas-provider-gorm v0.6.1
 	github.com/MicahParks/keyfunc/v3 v3.8.2
 	github.com/Nerzal/gocloak/v13 v13.9.0
+	github.com/arran4/golang-ical v0.3.6
 	github.com/aws/aws-sdk-go-v2 v1.45.1
 	github.com/aws/aws-sdk-go-v2/config v1.33.2
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.2
