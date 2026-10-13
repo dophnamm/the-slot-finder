@@ -3,7 +3,7 @@
 **Goal:** record the hours people actually worked, so burn shows real hours instead of planned ones. A planner downloads a CSV template built from the baseline, fills in the actual hours, and uploads it. This replaces the "work logging" line in the [root README](../../README.md#1-problem-and-scope).
 
 **Roles:** planner.
-**Target:** 14–15 Oct · **Depends on:** [program-metrics](program-metrics.md), [member-calendar](member-calendar.md) · **Branch:** `feat/timesheet-import` · **Status:** Planned
+**Target:** 14–15 Oct · **Depends on:** [program-metrics](program-metrics.md), [member-calendar](member-calendar.md) · **Branch:** `feat/timesheet-import` · **Status:** In review (PR #33)
 
 ## In scope
 
@@ -28,6 +28,16 @@
 - Hours per day.
 - People entering their own hours in the app.
 - Actual hours per demand or expertise. They are recorded per project.
+
+**As built**
+- `updated_by` holds the planner's Keycloak subject, not a person id: a planner may have no person record.
+- `ImportResult` lives in `models`, so `dtos` can map it.
+- The server names the download `timesheet.csv`; the client saves it as `timesheet-<from>-<to>.csv`.
+- Text cells that start with `= + - @` are written with a leading `'` in the template, so a spreadsheet shows them as text.
+- A file over `TIMESHEET_MAX_BYTES` or `TIMESHEET_MAX_ROWS` gets `413 TIMESHEET_TOO_LARGE`.
+- Files with `;` separators or `7,5` decimals are refused with clear problems (`COLUMN_MISSING`, `HOURS_INVALID`), not read.
+- The seed fills the template rows of Data Migration and Checkout Revamp that have no actual hours and imports them, so a second run adds nothing.
+- Checked on the seeded stack: the program shows Burn 10 % (89 of 920 h), a file with problems on lines 5 and 7 saves nothing, the same file twice gives 0 added and 4 updated, a lead and a specialist get `403`, and the calendar shows "Worked 27.5 h".
 
 ## Server
 
@@ -75,18 +85,18 @@
 ## Tasks
 
 **Server**
-- [ ] Model and migration, constants (paths, roles, messages, error codes, CSV columns), settings
-- [ ] Repository: upsert by person, project and week; sums per project and per person × week
-- [ ] Service: build the template; parse and check the file; save in one transaction
-- [ ] Handlers (CSV download, multipart upload), routes, Swagger
-- [ ] Metrics: Actual hours and Burn % per project and program; `actual_hours` per week in the schedule
-- [ ] Tests: each row check, all-or-nothing import against a real DB (integration), metrics, RBAC
-- [ ] Seed actual hours for Data Migration and Checkout Revamp through the import
+- [x] Model and migration, constants (paths, roles, messages, error codes, CSV columns), settings
+- [x] Repository: upsert by person, project and week; sums per project and per person × week
+- [x] Service: build the template; parse and check the file; save in one transaction
+- [x] Handlers (CSV download, multipart upload), routes, Swagger
+- [x] Metrics: Actual hours and Burn % per project and program; `actual_hours` per week in the schedule
+- [x] Tests: each row check, all-or-nothing import against a real DB (integration), metrics, RBAC
+- [x] Seed actual hours for Data Migration and Checkout Revamp through the import
 
 **Client**
-- [ ] Endpoints, types and hooks (file download and upload through `shared/api/http.ts`)
-- [ ] Import timesheet dialog with the error table
-- [ ] Burn and Actual hours on the program page and projects table; worked hours on the calendar
-- [ ] Tests: the dialog shows the counts or the error table; burn falls back to Planned burn
+- [x] Endpoints, types and hooks (file download and upload through `shared/api/http.ts`)
+- [x] Import timesheet dialog with the error table
+- [x] Burn and Actual hours on the program page and projects table; worked hours on the calendar
+- [x] Tests: the dialog shows the counts or the error table; burn falls back to Planned burn
 
 **Estimate:** about 9 hours (server 6, client 3).
