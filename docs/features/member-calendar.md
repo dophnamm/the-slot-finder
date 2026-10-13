@@ -3,7 +3,7 @@
 **Goal:** a planner opens one person and sees their month: the days they are away (leave, training, holidays), the hours they carry each week against their capacity, and the projects those hours go to. A specialist sees the same view of themselves on **My schedule**. Actual hours ([timesheet-import](timesheet-import.md)) and leave read from their own calendar ([calendar-sync](calendar-sync.md)) show up here too.
 
 **Roles:** planner and lead (any person), specialist (themselves only).
-**Target:** 13–14 Oct · **Depends on:** [people-and-skills](people-and-skills.md), [team-heatmap](team-heatmap.md) · **Branch:** `feat/member-calendar` · **Status:** Planned
+**Target:** 13–14 Oct · **Depends on:** [people-and-skills](people-and-skills.md), [team-heatmap](team-heatmap.md) · **Branch:** `feat/member-calendar` · **Status:** In review (PR #32)
 
 ## In scope
 
@@ -27,6 +27,14 @@
 - Editing hours from the calendar. Hours change through a staffing draft.
 - Hours per day. Hours stay per ISO week ([ADR-3](../../README.md#14-architecture-decisions)).
 - Several people in one calendar. The heatmap does that.
+
+**As built**
+- The absence list on the person page is for planners. The person sees and reports their own on My schedule. Leads see absences on the calendar only, because the absence routes let a non-planner read only their own.
+- The schedule types live in `models/schedule.go`, with aliases in `services`, because `dtos` cannot import `services`.
+- Approving records `AbsenceAdded` with the new status; there is no separate event type. Approving twice, or approving a holiday, gets `409 ABSENCE_NOT_PLANNED`.
+- The band classes and labels moved to `shared/utilization`. The person and absence types, their labels and `PLANNED_ABSENCE_STATUS` moved to `shared/people`.
+- The breadcrumb `Trail` shows a middle step without a link as plain text. It is used for "People" when the user cannot open the list.
+- Checked on the local stack as planner, lead and specialist. The load of every week equals the heatmap's, and November 2026 has six rows. Planned leave shows as tentative. Approve updates the calendar without a reload and records `AbsenceAdded`. A specialist gets `403` on someone else's schedule.
 
 ## Server
 
@@ -70,15 +78,15 @@
 ## Tasks
 
 **Server**
-- [ ] Constants (path, message, setting `SCHEDULE_MAX_WEEKS`), DTOs, handler, route with roles, Swagger
-- [ ] Schedule service: reuse the heatmap's capacity and load per week; hours per project; absences and holidays per day
-- [ ] `GET /people/{id}`; `POST /absences/{id}/approve` with its change event
-- [ ] Tests: service table tests (absences, holidays, tentative, range limit), RBAC through the router (planner, lead, self → 200; another specialist → 403)
+- [x] Constants (path, message, setting `SCHEDULE_MAX_WEEKS`), DTOs, handler, route with roles, Swagger
+- [x] Schedule service: reuse the heatmap's capacity and load per week; hours per project; absences and holidays per day
+- [x] `GET /people/{id}`; `POST /absences/{id}/approve` with its change event
+- [x] Tests: service table tests (absences, holidays, tentative, range limit), RBAC through the router (planner, lead, self → 200; another specialist → 403)
 
 **Client**
-- [ ] Endpoint, types and query hook in `shared/people`; route, permission and breadcrumb
-- [ ] `features/person-calendar`: month grid, week detail, month navigation
-- [ ] Person page, My schedule, People rows as `LinkRow`; Approve on planned absences
-- [ ] Tests: the grid builds the right weeks for a month, selecting a week lists its projects, tentative leave is marked
+- [x] Endpoint, types and query hook in `shared/people`; route, permission and breadcrumb
+- [x] `features/person-calendar`: month grid, week detail, month navigation
+- [x] Person page, My schedule, People rows as `LinkRow`; Approve on planned absences
+- [x] Tests: the grid builds the right weeks for a month, selecting a week lists its projects, tentative leave is marked
 
 **Estimate:** about 8 hours (server 4, client 4).
