@@ -1,25 +1,7 @@
 import type { Role } from '@/resources/rbac'
+import type { Person } from '@/shared/people'
 
-export interface PersonSkill {
-  expertise_id: string
-  expertise: string
-  level: number
-  primary: boolean
-}
-
-/** A person as `GET /people` returns it. Dates use the server format `2026-10-12`. */
-export interface Person {
-  id: string
-  name: string
-  email: string
-  role: Role
-  weekly_hours: number
-  non_project_hours: number
-  start_date: string | null
-  end_date: string | null
-  active: boolean
-  skills: PersonSkill[]
-}
+export type { Person, PersonSkill } from '@/shared/people'
 
 export type { Expertise } from '@/shared/expertises'
 

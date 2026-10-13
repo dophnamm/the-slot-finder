@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { INSIGHTS_QUERY_KEY } from '@/utils/constants'
 import { createHoliday, deleteHoliday, listHolidays } from './api'
 import { HOLIDAYS_QUERY_KEY } from './constants'
 
@@ -10,7 +11,10 @@ export function useCreateHoliday() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: createHoliday,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: HOLIDAYS_QUERY_KEY }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: HOLIDAYS_QUERY_KEY })
+      await queryClient.invalidateQueries({ queryKey: INSIGHTS_QUERY_KEY })
+    },
   })
 }
 
@@ -18,6 +22,9 @@ export function useDeleteHoliday() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: deleteHoliday,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: HOLIDAYS_QUERY_KEY }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: HOLIDAYS_QUERY_KEY })
+      await queryClient.invalidateQueries({ queryKey: INSIGHTS_QUERY_KEY })
+    },
   })
 }

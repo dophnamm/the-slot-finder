@@ -6,6 +6,7 @@ export const PEOPLE_ENDPOINTS = {
   skills: (id: string) => `${person(id)}/skills`,
   absences: (id: string) => `${person(id)}/absences`,
   assignments: (id: string) => `${person(id)}/assignments`,
+  schedule: (id: string) => `${person(id)}/schedule`,
 } as const
 
 export const EXPERTISE_ENDPOINTS = {
