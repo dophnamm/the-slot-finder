@@ -17,7 +17,7 @@ One spec per feature, in build order. Each spec holds the goal, scope, server an
 | 9 | [Program quick view](program-quick-view.md) | Expand a program in the list to see its figures, projects and members; Members tab | 16–17 Oct | program-metrics | Done |
 | 10 | [Scenarios](scenarios.md) | What-if: move a project or add leave, see the changes, churn and unmet demand without touching the baseline | 12–13 Oct | staffing-draft, replan-on-change | Done |
 | 11 | [Member calendar](member-calendar.md) | A person page and My schedule with a month calendar: absences, holidays, weekly load against capacity, hours per project | 13–14 Oct | people-and-skills, team-heatmap | In review |
-| 12 | [Timesheet import](timesheet-import.md) | CSV template from the baseline, import of actual hours, Actual hours and Burn % on programs and projects | 14–15 Oct | program-metrics, member-calendar | Planned |
+| 12 | [Timesheet import](timesheet-import.md) | CSV template from the baseline, import of actual hours, Actual hours and Burn % on programs and projects | 14–15 Oct | program-metrics, member-calendar | In review |
 | 13 | [Calendar sync](calendar-sync.md) | Secret ICS link from Google or Outlook; out-of-office events become planned leave and feed the re-plan flow | 15–16 Oct | member-calendar, replan-on-change | Planned |
 
 ## Schedule
