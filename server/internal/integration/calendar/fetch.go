@@ -88,8 +88,10 @@ func (f *httpFetcher) checkRedirect(req *http.Request, via []*http.Request) erro
 	if len(via) >= maxRedirects {
 		return ErrUnreachable
 	}
+	// A link the organization blocks redirects to a sign-in page. The link itself was right, so
+	// this is "unreachable", whose message names the block, not "host not allowed".
 	if _, err := CheckURL(req.URL.String(), f.policy.AllowedHosts); err != nil {
-		return err
+		return ErrUnreachable
 	}
 	return nil
 }
