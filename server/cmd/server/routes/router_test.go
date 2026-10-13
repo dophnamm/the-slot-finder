@@ -86,7 +86,8 @@ func newTestRouter(cfg *config.Config) *echo.Echo {
 	insights := handlers.ProvideInsightsHandler(nil, nil)
 	events := handlers.ProvideEventHandler(nil, nil)
 	scenarios := handlers.ProvideScenarioHandler(nil, nil)
-	return Router(health, identity, person, absence, program, project, plan, staffing, insights, events, scenarios, verifier, cfg)
+	schedule := handlers.ProvideScheduleHandler(nil, nil)
+	return Router(health, identity, person, absence, program, project, plan, staffing, insights, events, scenarios, schedule, verifier, cfg)
 }
 
 func baseConfig() *config.Config {
@@ -218,6 +219,8 @@ func TestRouter_People_RBAC(t *testing.T) {
 		{name: "specialist cannot read the heatmap", method: http.MethodGet, path: constants.PathHeatmap, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the baseline", method: http.MethodGet, path: constants.PathCurrentPlan, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no role cannot read assignments", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/assignments", token: "no-role-token", wantStatus: http.StatusForbidden},
+		{name: "no role cannot read a schedule", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/schedule", token: "no-role-token", wantStatus: http.StatusForbidden},
+		{name: "no token cannot read a schedule", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/schedule", wantStatus: http.StatusUnauthorized},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

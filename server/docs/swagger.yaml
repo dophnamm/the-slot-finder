@@ -1446,6 +1446,116 @@ definitions:
         - BLOCKED_BY_LOCKED
         type: string
     type: object
+  dtos.ScheduleAbsenceResponse:
+    properties:
+      hours_per_day:
+        example: 8
+        type: number
+      id:
+        type: string
+      status:
+        enum:
+        - planned
+        - approved
+        type: string
+      type:
+        enum:
+        - leave
+        - training
+        type: string
+    type: object
+  dtos.ScheduleDayResponse:
+    properties:
+      absences:
+        items:
+          $ref: '#/definitions/dtos.ScheduleAbsenceResponse'
+        type: array
+      date:
+        example: "2026-10-21"
+        type: string
+      holidays:
+        items:
+          $ref: '#/definitions/dtos.ScheduleHolidayResponse'
+        type: array
+    type: object
+  dtos.ScheduleHolidayResponse:
+    properties:
+      id:
+        type: string
+    type: object
+  dtos.ScheduleProjectResponse:
+    properties:
+      expertise:
+        example: Engineer
+        type: string
+      hours:
+        example: 20
+        type: number
+      program_id:
+        type: string
+      program_name:
+        example: Acme Commerce Platform
+        type: string
+      project_id:
+        type: string
+      project_name:
+        example: Checkout Revamp
+        type: string
+    type: object
+  dtos.ScheduleResponse:
+    properties:
+      days:
+        description: Days holds only the working days with an absence or a holiday.
+        items:
+          $ref: '#/definitions/dtos.ScheduleDayResponse'
+        type: array
+      weeks:
+        items:
+          $ref: '#/definitions/dtos.ScheduleWeekResponse'
+        type: array
+      working_weekdays:
+        description: 'WorkingWeekdays are ISO day numbers: 1 is Monday, 7 is Sunday.'
+        example:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        items:
+          type: integer
+        type: array
+    type: object
+  dtos.ScheduleWeekResponse:
+    properties:
+      band:
+        enum:
+        - unavailable
+        - underused
+        - healthy
+        - near_full
+        - overloaded
+        type: string
+      capacity:
+        example: 36
+        type: number
+      load:
+        example: 32
+        type: number
+      projects:
+        items:
+          $ref: '#/definitions/dtos.ScheduleProjectResponse'
+        type: array
+      tentative:
+        description: Tentative marks planned (not yet approved) absence in the week.
+        type: boolean
+      utilization:
+        description: Utilization is load ÷ capacity; null when capacity is 0.
+        example: 0.89
+        type: number
+      week:
+        example: 2026-W42
+        type: string
+    type: object
   dtos.SetAllocationRequest:
     properties:
       assignment_id:
@@ -2164,6 +2274,69 @@ paths:
       summary: A person's baseline assignments
       tags:
       - Planning
+  /people/{id}/schedule:
+    get:
+      description: 'Per ISO week: capacity, load, utilization band, tentative flag
+        and hours per project from the baseline, computed as on the heatmap. Per working
+        day: the person''s absences and the company-wide holidays. A range over SCHEDULE_MAX_WEEKS
+        gets WEEK_RANGE_TOO_LONG. Planners and leads may read anyone; others only
+        themselves.'
+      parameters:
+      - description: Person id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: First week
+        example: 2026-W40
+        in: query
+        name: from
+        required: true
+        type: string
+      - description: Last week
+        example: 2026-W44
+        in: query
+        name: to
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.ScheduleResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: A person's schedule
+      tags:
+      - People
   /people/{id}/skills:
     put:
       consumes:

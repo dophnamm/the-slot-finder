@@ -929,6 +929,97 @@
                 }
             }
         },
+        "/people/{id}/schedule": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Per ISO week: capacity, load, utilization band, tentative flag and hours per project from the baseline, computed as on the heatmap. Per working day: the person's absences and the company-wide holidays. A range over SCHEDULE_MAX_WEEKS gets WEEK_RANGE_TOO_LONG. Planners and leads may read anyone; others only themselves.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "People"
+                ],
+                "summary": "A person's schedule",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Person id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-W40",
+                        "description": "First week",
+                        "name": "from",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-W44",
+                        "description": "Last week",
+                        "name": "to",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.ScheduleResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/people/{id}/skills": {
             "put": {
                 "security": [
@@ -4585,6 +4676,162 @@
                         "NO_CAPACITY_BEFORE_DEADLINE",
                         "BLOCKED_BY_LOCKED"
                     ]
+                }
+            }
+        },
+        "dtos.ScheduleAbsenceResponse": {
+            "type": "object",
+            "properties": {
+                "hours_per_day": {
+                    "type": "number",
+                    "example": 8
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "planned",
+                        "approved"
+                    ]
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "leave",
+                        "training"
+                    ]
+                }
+            }
+        },
+        "dtos.ScheduleDayResponse": {
+            "type": "object",
+            "properties": {
+                "absences": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ScheduleAbsenceResponse"
+                    }
+                },
+                "date": {
+                    "type": "string",
+                    "example": "2026-10-21"
+                },
+                "holidays": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ScheduleHolidayResponse"
+                    }
+                }
+            }
+        },
+        "dtos.ScheduleHolidayResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ScheduleProjectResponse": {
+            "type": "object",
+            "properties": {
+                "expertise": {
+                    "type": "string",
+                    "example": "Engineer"
+                },
+                "hours": {
+                    "type": "number",
+                    "example": 20
+                },
+                "program_id": {
+                    "type": "string"
+                },
+                "program_name": {
+                    "type": "string",
+                    "example": "Acme Commerce Platform"
+                },
+                "project_id": {
+                    "type": "string"
+                },
+                "project_name": {
+                    "type": "string",
+                    "example": "Checkout Revamp"
+                }
+            }
+        },
+        "dtos.ScheduleResponse": {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "description": "Days holds only the working days with an absence or a holiday.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ScheduleDayResponse"
+                    }
+                },
+                "weeks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ScheduleWeekResponse"
+                    }
+                },
+                "working_weekdays": {
+                    "description": "WorkingWeekdays are ISO day numbers: 1 is Monday, 7 is Sunday.",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                    ]
+                }
+            }
+        },
+        "dtos.ScheduleWeekResponse": {
+            "type": "object",
+            "properties": {
+                "band": {
+                    "type": "string",
+                    "enum": [
+                        "unavailable",
+                        "underused",
+                        "healthy",
+                        "near_full",
+                        "overloaded"
+                    ]
+                },
+                "capacity": {
+                    "type": "number",
+                    "example": 36
+                },
+                "load": {
+                    "type": "number",
+                    "example": 32
+                },
+                "projects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ScheduleProjectResponse"
+                    }
+                },
+                "tentative": {
+                    "description": "Tentative marks planned (not yet approved) absence in the week.",
+                    "type": "boolean"
+                },
+                "utilization": {
+                    "description": "Utilization is load ÷ capacity; null when capacity is 0.",
+                    "type": "number",
+                    "example": 0.89
+                },
+                "week": {
+                    "type": "string",
+                    "example": "2026-W42"
                 }
             }
         },
