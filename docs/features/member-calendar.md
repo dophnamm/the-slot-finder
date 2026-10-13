@@ -3,7 +3,7 @@
 **Goal:** a planner opens one person and sees their month: the days they are away (leave, training, holidays), the hours they carry each week against their capacity, and the projects those hours go to. A specialist sees the same view of themselves on **My schedule**. Actual hours ([timesheet-import](timesheet-import.md)) and leave read from their own calendar ([calendar-sync](calendar-sync.md)) show up here too.
 
 **Roles:** planner and lead (any person), specialist (themselves only).
-**Target:** 13–14 Oct · **Depends on:** [people-and-skills](people-and-skills.md), [team-heatmap](team-heatmap.md) · **Branch:** `feat/member-calendar` · **Status:** In review (PR #32)
+**Target:** 13–14 Oct · **Depends on:** [people-and-skills](people-and-skills.md), [team-heatmap](team-heatmap.md) · **Branch:** `feat/member-calendar` · **Status:** Done (PR #32)
 
 ## In scope
 
