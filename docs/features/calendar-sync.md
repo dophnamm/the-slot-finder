@@ -3,7 +3,7 @@
 **Goal:** when someone blocks time as out of office in Google Calendar or Outlook, the Slot Finder picks it up as planned leave. The planner approves it, and the [re-plan flow](replan-on-change.md) runs as for any other leave, without anyone typing the leave twice.
 
 **Roles:** the person, whatever their role (connects their own calendar), planner (connects anyone's, sees the status, syncs now).
-**Target:** 15–16 Oct · **Depends on:** [member-calendar](member-calendar.md), [replan-on-change](replan-on-change.md) · **Branch:** `feat/calendar-sync` · **Status:** Planned
+**Target:** 15–16 Oct · **Depends on:** [member-calendar](member-calendar.md), [replan-on-change](replan-on-change.md) · **Branch:** `feat/calendar-sync` · **Status:** In review (PR #34)
 
 ## In scope
 
@@ -35,6 +35,20 @@
 - Meeting hours replacing non-project hours, and busy or free blocks on the member calendar.
 - Recurring out-of-office events (`RRULE`). They are skipped.
 - Writing anything back to a calendar.
+
+**As built**
+- `calendar_feeds.next_sync_at`: the runner claims a feed by moving it one interval ahead, so no lock is held while it fetches.
+- Leave hours are rounded to two decimals, as absences store them, so an unchanged event never looks moved.
+- A moved event records `AbsenceRemoved` and `AbsenceAdded`. Approving goes through member-calendar's `POST /absences/{id}/approve`.
+- ICS is read with `github.com/arran4/golang-ical` v0.3.6.
+- The request log and Sentry keep `[redacted]` instead of the body of `PUT /people/{id}/calendar-feed` (`constants.SecretBodyPaths`), even when CSRF or auth refuses the request.
+- The test fixtures are written from the Google and Outlook formats. A real link from the company tenant is still to be checked before the demo.
+- Checked on the seeded stack, with the repo's own fixture served from `raw.githubusercontent.com` (a host allowed only in the local `.env`):
+  - an `http` link and another host show the form's message, with no toast
+  - connecting shows "Calendar connected." and planned leave marked "From calendar" on 21 Oct (4 h) and 26–28 Oct
+  - approving it gives a re-plan draft after `REPLAN_DEBOUNCE`, and Sync now keeps it approved and leaves a hand-entered absence alone
+  - a lead sees no panel and gets `403`, and a specialist gets `403` on someone else's calendar
+  - no response and no log line holds the link
 
 ## Server
 
@@ -82,17 +96,17 @@
 ## Tasks
 
 **Server**
-- [ ] Migration (`calendar_feeds`, `absences.source`, `absences.external_uid`), constants, settings
-- [ ] Link encryption, and a fetcher with the host, IP, redirect, timeout and size checks
-- [ ] ICS parsing: which events count, all-day and timed events, time zones
-- [ ] Sync service: compare events with the calendar's absences and apply the changes through the absence service, in one transaction
-- [ ] Runner with an FX hook; handlers, routes, Swagger
-- [ ] Tests: event rules with ICS fixtures (Google and Outlook samples), the sync comparison, SSRF checks, RBAC, an integration test that a sync records change events
+- [x] Migration (`calendar_feeds`, `absences.source`, `absences.external_uid`), constants, settings
+- [x] Link encryption, and a fetcher with the host, IP, redirect, timeout and size checks
+- [x] ICS parsing: which events count, all-day and timed events, time zones
+- [x] Sync service: compare events with the calendar's absences and apply the changes through the absence service, in one transaction
+- [x] Runner with an FX hook; handlers, routes, Swagger
+- [x] Tests: event rules with ICS fixtures (Google and Outlook samples), the sync comparison, SSRF checks, RBAC, an integration test that a sync records change events
 
 **Client**
-- [ ] Endpoints, types and hooks; `features/calendar-feed` on My schedule and the person page
-- [ ] "From calendar" badge on the absence list and the calendar
-- [ ] Tests: connect, status with an error, disconnect
+- [x] Endpoints, types and hooks; `features/calendar-feed` on My schedule and the person page
+- [x] "From calendar" badge on the absence list and the calendar
+- [x] Tests: connect, status with an error, disconnect
 
 **Before building:** check a real Google and a real Outlook link from the company tenant. Look at how an out-of-office event appears in each, and keep both files as test fixtures, with personal details removed.
 
