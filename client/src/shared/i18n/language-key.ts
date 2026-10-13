@@ -23,6 +23,7 @@ export type LanguageKey = {
   Accepted: string
   'Accepted as baseline version {version}.': string
   Active: string
+  Actual: string
   'Add absence': string
   'Add assumption': string
   'Add at least one expertise.': string
@@ -60,6 +61,7 @@ export type LanguageKey = {
   'Build scenarios (move a project, add leave) and view the diff.': string
   'Built on baseline version {base}; version {current} is in force now. Run it again to see today’s effect.': string
   'Built on baseline version {version}.': string
+  Burn: string
   Cancel: string
   'Cancel program': string
   'Cancel project': string

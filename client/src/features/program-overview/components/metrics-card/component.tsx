@@ -1,16 +1,17 @@
 import { MetricBar } from '@/shared/components/metric-bar'
 import { Section } from '@/shared/components/section'
 import { useTranslation } from '@/shared/i18n'
-import { activeWarnings } from '@/shared/programs'
+import { activeWarnings, burnMetric } from '@/shared/programs'
 import { Badge } from '@/shared/ui/badge'
 import { Figure } from './components/figure'
 import type { MetricsCardProps } from './types'
 
-/** Time, Scope, Planned burn and Staffing with their warnings, and the cost figures. */
+/** Time, Scope, Burn and Staffing with their warnings, and the cost figures. */
 export function MetricsCard({ overview }: MetricsCardProps) {
   const { t } = useTranslation()
   const { metrics } = overview
   const warnings = activeWarnings(metrics)
+  const burn = burnMetric(metrics)
 
   return (
     <Section
@@ -26,7 +27,7 @@ export function MetricsCard({ overview }: MetricsCardProps) {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricBar label={t('Time')} value={metrics.time_percent} warning={metrics.past_end} />
         <MetricBar label={t('Scope')} value={metrics.scope_percent} warning={metrics.behind_on_delivery} />
-        <MetricBar label={t('Planned burn')} value={metrics.planned_burn_percent} />
+        <MetricBar label={t(burn.label)} value={burn.value} />
         <MetricBar label={t('Staffing')} value={metrics.staffing_percent} warning={metrics.understaffed} />
       </div>
       {warnings.length > 0 && (
@@ -38,10 +39,11 @@ export function MetricsCard({ overview }: MetricsCardProps) {
           ))}
         </div>
       )}
-      <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <Figure label={t('Budget')} hours={metrics.budget_hours} />
         <Figure label={t('Planned')} hours={metrics.planned_hours} warning={metrics.over_planned} />
         <Figure label={t('Planned to date')} hours={metrics.planned_to_date_hours} />
+        {metrics.actual_hours !== null && <Figure label={t('Actual')} hours={metrics.actual_hours} />}
         <Figure label={t('Forecast')} hours={metrics.forecast_hours} />
         <Figure label={t('Gap')} hours={metrics.gap_hours} warning={metrics.understaffed} />
       </dl>

@@ -1,4 +1,5 @@
 export {
+  BURN_LABELS,
   DEFAULT_PRIORITY,
   FINAL_STATUSES,
   PRIORITIES,
@@ -12,6 +13,7 @@ export {
   PROJECTS_QUERY_KEY,
 } from './constants'
 export type {
+  BurnMetric,
   Demand,
   ExpertiseStaffing,
   DemandInput,
@@ -36,7 +38,7 @@ export type {
   ProjectRef,
   ProjectStatus,
 } from './types'
-export { activeWarnings, availableActions, canEdit, canEditProject, isOpenStatus, weekSpan } from './utils'
+export { activeWarnings, availableActions, burnMetric, canEdit, canEditProject, isOpenStatus, weekSpan } from './utils'
 export {
   useLeadOptions,
   useProgram,
