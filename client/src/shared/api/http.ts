@@ -11,6 +11,7 @@ import {
   GATEWAY_STATUSES,
   SAFE_METHODS,
 } from './constants'
+import { readBlobEnvelope } from './blob'
 import { ApiError, type ApiEnvelope, type ApiResult } from './types'
 
 // Latest CSRF token exposed by the server; echoed back on state-changing requests.
@@ -34,13 +35,19 @@ http.interceptors.request.use((config) => {
 http.interceptors.response.use(
   (response) => {
     captureCsrfToken(response)
+    // A file download (responseType 'blob') has no envelope: the Blob itself is the data.
+    if (response.data instanceof Blob) return { data: response.data, meta: undefined } as unknown as AxiosResponse
     // `?? {}` covers empty bodies such as 204 No Content.
     const { data, meta } = (response.data ?? {}) as Partial<ApiEnvelope<unknown>>
     // Axios types expect an AxiosResponse here; `requestWithMeta` types the real shape.
     return { data, meta } as unknown as AxiosResponse
   },
-  (error: unknown) => {
-    if (axios.isAxiosError(error) && error.response) captureCsrfToken(error.response)
+  async (error: unknown) => {
+    if (axios.isAxiosError(error) && error.response) {
+      captureCsrfToken(error.response)
+      // A failed download carries its error envelope as a Blob.
+      error.response.data = await readBlobEnvelope(error.response.data)
+    }
     return Promise.reject(toApiError(error))
   },
 )

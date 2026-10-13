@@ -25,6 +25,7 @@ export {
   todayDateValue,
   toIsoWeek,
 } from './date'
+export { saveFile } from './file'
 export { pageCount } from './paging'
 export { toSearchText } from './text'
 export type { IsoWeekRange } from './types'
