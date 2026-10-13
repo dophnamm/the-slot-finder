@@ -2093,6 +2093,52 @@ paths:
       tags:
       - People
   /people/{id}:
+    get:
+      description: One person with their skills (primary first), for the person page.
+      parameters:
+      - description: Person id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.PersonResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: A person
+      tags:
+      - People
     patch:
       consumes:
       - application/json

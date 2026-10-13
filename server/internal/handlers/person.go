@@ -53,6 +53,34 @@ func (h *PersonHandler) List(c *echo.Context) error {
 	return h.SuccessResponse(c, constants.MsgPeopleListed, dtos.NewPersonResponses(page.Data), page.Pageable)
 }
 
+// Get godoc
+// @Summary A person
+// @Description One person with their skills (primary first), for the person page.
+// @Tags People
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Person id"
+// @Success 200 {object} object{meta=dtos.Meta,data=dtos.PersonResponse}
+// @Failure 400 {object} object{meta=dtos.Meta}
+// @Failure 403 {object} object{meta=dtos.Meta}
+// @Failure 404 {object} object{meta=dtos.Meta}
+// @Router /people/{id} [get]
+func (h *PersonHandler) Get(c *echo.Context) error {
+	ctx := c.Request().Context()
+	if _, err := h.authz.Require(ctx, services.CanViewPeople); err != nil {
+		return h.HandleError(c, err)
+	}
+	id, ok := h.pathID(c)
+	if !ok {
+		return nil
+	}
+	person, err := h.people.Get(ctx, id)
+	if err != nil {
+		return h.HandleError(c, err)
+	}
+	return h.SuccessResponse(c, constants.MsgPersonRetrieved, dtos.NewPersonResponse(*person), nil)
+}
+
 // Create godoc
 // @Summary Create a person
 // @Description Creates a person with their expertise and levels. Exactly one expertise must be primary.
