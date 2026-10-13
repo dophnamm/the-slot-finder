@@ -385,10 +385,16 @@ type timesheetLimits struct {
 	MaxRows  int
 }
 
+// blankRecord reports a row with only empty cells: a spreadsheet saves an empty row as a line of
+// commas. The CSV reader skips only lines with no characters at all.
+func blankRecord(record []string) bool {
+	return !slices.ContainsFunc(record, func(cell string) bool { return strings.TrimSpace(cell) != "" })
+}
+
 // parseTimesheet reads a timesheet CSV and checks its header and the format and limits of
 // each row. It returns every row it read and every problem it found; the caller saves nothing
 // when there is any. Excel's byte order mark is dropped, header names match in any order and
-// case, and the cells a short row lacks count as empty. errTooManyRows means the file holds
+// case, blank rows are skipped, and the cells a short row lacks count as empty. errTooManyRows means the file holds
 // more than limits.MaxRows rows.
 func parseTimesheet(data []byte, limits timesheetLimits) ([]timesheetRow, []RowProblem, error) {
 	reader := csv.NewReader(bytes.NewReader(bytes.TrimPrefix(data, []byte(utf8BOM))))
@@ -417,6 +423,9 @@ func parseTimesheet(data []byte, limits timesheetLimits) ([]timesheetRow, []RowP
 			// The reader cannot tell where a broken record ends, so the rest is not read.
 			problems = append(problems, malformedProblem(err))
 			break
+		}
+		if blankRecord(record) {
+			continue
 		}
 		if len(rows) == limits.MaxRows {
 			return nil, nil, errTooManyRows

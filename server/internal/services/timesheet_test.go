@@ -96,6 +96,16 @@ func TestParseTimesheet_Rows(t *testing.T) {
 			want: []timesheetRow{{Line: 2, Email: "ada@example.test", ProjectID: tsProjectID, Week: w41}},
 		},
 		{name: "a header only", file: tsHeader},
+		{
+			name: "blank rows a spreadsheet leaves are skipped and do not count toward the row limit",
+			file: tsHeader + tsLine("2026-W40", "1") + ",,,,,,,\r\n" + tsLine("2026-W41", "2") + " , ,,\n" +
+				tsLine("2026-W42", "3") + ",,,,,,,\n",
+			want: []timesheetRow{
+				{Line: 2, Email: "ada@example.test", ProjectID: tsProjectID, Week: w40, Hours: hoursOf(1)},
+				{Line: 4, Email: "ada@example.test", ProjectID: tsProjectID, Week: w41, Hours: hoursOf(2)},
+				{Line: 6, Email: "ada@example.test", ProjectID: tsProjectID, Week: w42, Hours: hoursOf(3)},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
