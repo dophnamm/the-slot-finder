@@ -36,6 +36,8 @@
 - Text cells that start with `= + - @` are written with a leading `'` in the template, so a spreadsheet shows them as text.
 - A file over `TIMESHEET_MAX_BYTES` or `TIMESHEET_MAX_ROWS` gets `413 TIMESHEET_TOO_LARGE`.
 - Files with `;` separators or `7,5` decimals are refused with clear problems (`COLUMN_MISSING`, `HOURS_INVALID`), not read.
+- Blank rows, which a spreadsheet saves as a line of commas, are skipped and do not count toward `TIMESHEET_MAX_ROWS`.
+- After a refused import the file field is emptied, so the fixed file (same name) can be picked again.
 - The seed fills the template rows of Data Migration and Checkout Revamp that have no actual hours and imports them, so a second run adds nothing.
 - Checked on the seeded stack: the program shows Burn 10 % (89 of 920 h), a file with problems on lines 5 and 7 saves nothing, the same file twice gives 0 added and 4 updated, a lead and a specialist get `403`, and the calendar shows "Worked 27.5 h".
 
