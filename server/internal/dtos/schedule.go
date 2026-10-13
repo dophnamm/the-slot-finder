@@ -42,8 +42,10 @@ type ScheduleWeekResponse struct {
 	Utilization *float64 `json:"utilization" example:"0.89"`
 	Band        string   `json:"band" enums:"unavailable,underused,healthy,near_full,overloaded"`
 	// Tentative marks planned (not yet approved) absence in the week.
-	Tentative bool                      `json:"tentative"`
-	Projects  []ScheduleProjectResponse `json:"projects"`
+	Tentative bool `json:"tentative"`
+	// ActualHours is null until a timesheet import recorded hours for the week.
+	ActualHours *float64                  `json:"actual_hours" example:"34"`
+	Projects    []ScheduleProjectResponse `json:"projects"`
 }
 
 // ScheduleAbsenceResponse is one of the person's absences on a day.
@@ -89,7 +91,7 @@ func NewScheduleResponse(s models.PersonSchedule) ScheduleResponse {
 				ProjectID: p.ProjectID, ProjectName: p.ProjectName, Expertise: p.Expertise, Hours: p.Hours})
 		}
 		weeks = append(weeks, ScheduleWeekResponse{Week: w.Week.String(), Capacity: w.Capacity, Load: w.Load,
-			Utilization: w.Utilization, Band: w.Band, Tentative: w.Tentative, Projects: projects})
+			Utilization: w.Utilization, Band: w.Band, Tentative: w.Tentative, ActualHours: w.ActualHours, Projects: projects})
 	}
 	days := make([]ScheduleDayResponse, 0, len(s.Days))
 	for _, d := range s.Days {

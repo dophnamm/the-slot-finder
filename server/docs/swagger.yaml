@@ -1547,6 +1547,11 @@ definitions:
     type: object
   dtos.ScheduleWeekResponse:
     properties:
+      actual_hours:
+        description: ActualHours is null until a timesheet import recorded hours for
+          the week.
+        example: 34
+        type: number
       band:
         enum:
         - unavailable

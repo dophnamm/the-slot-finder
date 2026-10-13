@@ -53,15 +53,16 @@ type scheduleService struct {
 	plans    repositories.PlanRepository
 	people   repositories.PersonRepository
 	absences repositories.AbsenceRepository
+	actuals  repositories.ActualHoursRepository
 	authz    AuthzService
 	cfg      *config.Config
 }
 
 // ProvideScheduleService creates the schedule service.
 func ProvideScheduleService(plans repositories.PlanRepository, people repositories.PersonRepository,
-	absences repositories.AbsenceRepository, authz AuthzService, cfg *config.Config,
+	absences repositories.AbsenceRepository, actuals repositories.ActualHoursRepository, authz AuthzService, cfg *config.Config,
 ) ScheduleService {
-	return &scheduleService{plans: plans, people: people, absences: absences, authz: authz, cfg: cfg}
+	return &scheduleService{plans: plans, people: people, absences: absences, actuals: actuals, authz: authz, cfg: cfg}
 }
 
 func (s *scheduleService) Get(ctx context.Context, in ScheduleInput) (*PersonSchedule, error) {
@@ -88,12 +89,27 @@ func (s *scheduleService) Get(ctx context.Context, in ScheduleInput) (*PersonSch
 		return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opPersonSchedule).WithResource(resourceSchedule)
 	}
 
+	worked, err := s.actuals.ByPersonWeeks(ctx, in.PersonID, in.From, in.To)
+	if err != nil {
+		return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opPersonSchedule).WithResource(resourceSchedule)
+	}
 	weeks := isoweek.Range(in.From, in.To)
+	scheduled := s.scheduleWeeks(*person, weeks, absences, assignments)
+	withActualHours(scheduled, worked)
 	return &PersonSchedule{
 		WorkingWeekdays: s.cfg.WorkingWeekdays,
-		Weeks:           s.scheduleWeeks(*person, weeks, absences, assignments),
+		Weeks:           scheduled,
 		Days:            s.scheduleDays(person.ID, weeks, absences),
 	}, nil
+}
+
+// withActualHours sets each week's actual hours from worked; the weeks it lacks stay nil.
+func withActualHours(weeks []ScheduleWeek, worked map[isoweek.Week]float64) {
+	for i := range weeks {
+		if hours, ok := worked[weeks[i].Week]; ok {
+			weeks[i].ActualHours = &hours
+		}
+	}
 }
 
 // checkRange refuses a range that runs backwards or is longer than SCHEDULE_MAX_WEEKS.

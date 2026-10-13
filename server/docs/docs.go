@@ -5125,6 +5125,11 @@ const docTemplate = `{
         "dtos.ScheduleWeekResponse": {
             "type": "object",
             "properties": {
+                "actual_hours": {
+                    "description": "ActualHours is null until a timesheet import recorded hours for the week.",
+                    "type": "number",
+                    "example": 34
+                },
                 "band": {
                     "type": "string",
                     "enum": [
