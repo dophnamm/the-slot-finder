@@ -1,0 +1,1 @@
+export { WorkedHours } from './component'

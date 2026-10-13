@@ -46,6 +46,8 @@ export interface ScheduleWeek {
   band: UtilizationBand
   /** Planned (not yet approved) absence this week. */
   tentative: boolean
+  /** Hours a timesheet import recorded for the week; null when none are recorded. */
+  actual_hours: number | null
   projects: ScheduleProject[]
 }
 

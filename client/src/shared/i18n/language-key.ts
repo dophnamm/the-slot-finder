@@ -391,6 +391,7 @@ export type LanguageKey = {
   When: string
   'Who gains or loses hours if this draft is accepted.': string
   'Whole project': string
+  'Worked {hours} h': string
   'You have signed out.': string
   'Your account is not linked to a person yet. Ask a planner to add you with the same email.': string
   'Your hours by week, leave and holidays.': string
