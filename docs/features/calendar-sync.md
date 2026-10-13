@@ -41,6 +41,10 @@
 - Leave hours are rounded to two decimals, as absences store them, so an unchanged event never looks moved.
 - A moved event records `AbsenceRemoved` and `AbsenceAdded`. Approving goes through member-calendar's `POST /absences/{id}/approve`.
 - ICS is read with `github.com/arran4/golang-ical` v0.3.6.
+- A redirect to a host outside the list, such as the sign-in page an organization shows for a blocked link, is reported as `CALENDAR_FEED_UNREACHABLE`, whose message names the block.
+- Leave running since before today whose event is shortened to end before today is shortened, not deleted. Past events are read only for that; they never add leave.
+- New weekly hours change the hours of calendar leave and keep its status. Only new dates need approval again.
+- Disconnecting turns the calendar's leave into ordinary absences (`source = manual`, no event UID), so a calendar connected later never removes it.
 - The request log and Sentry keep `[redacted]` instead of the body of `PUT /people/{id}/calendar-feed` (`constants.SecretBodyPaths`), even when CSRF or auth refuses the request.
 - The test fixtures are written from the Google and Outlook formats. A real link from the company tenant is still to be checked before the demo.
 - Checked on the seeded stack, with the repo's own fixture served from `raw.githubusercontent.com` (a host allowed only in the local `.env`):
