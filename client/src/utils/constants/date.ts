@@ -8,6 +8,14 @@ export const DATE_FORMAT = {
   longDay: 'MMM D, YYYY',
   /** Day and local time of a timestamp, e.g. "Sep 28, 14:05". */
   dateTime: 'MMM D, HH:mm',
+  /** A month as the calendar keeps it, e.g. "2026-10". */
+  isoMonth: 'YYYY-MM',
+  /** A month heading, e.g. "October 2026". */
+  monthTitle: 'MMMM YYYY',
+  /** Day of the month in a calendar cell, e.g. "14". */
+  dayOfMonth: 'D',
+  /** Short weekday in a column header, e.g. "Mon". */
+  weekdayShort: 'ddd',
 } as const
 
 /** ISO week label, e.g. "2026-W42". */
