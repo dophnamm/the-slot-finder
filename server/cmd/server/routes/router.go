@@ -33,6 +33,7 @@ func Router(
 	scenarioHandler *handlers.ScenarioHandler,
 	scheduleHandler *handlers.ScheduleHandler,
 	timesheetHandler *handlers.TimesheetHandler,
+	calendarFeedHandler *handlers.CalendarFeedHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 ) *echo.Echo {
@@ -141,6 +142,7 @@ func Router(
 	v1.GET(constants.PathMe, identityHandler.Me, authenticated, middlewares.RequireRole(constants.CurrentUserViewRoles...))
 
 	registerPeopleRoutes(v1, authenticated, personHandler, absenceHandler)
+	registerCalendarFeedRoutes(v1, authenticated, calendarFeedHandler)
 	// A specialist reads only their own schedule (checked in the service).
 	v1.GET(constants.PathPersonSchedule, scheduleHandler.Get, authenticated, middlewares.RequireRole(constants.PersonScheduleRoles...))
 	registerProgramRoutes(v1, authenticated, programHandler, projectHandler)
@@ -203,6 +205,15 @@ func registerPeopleRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc,
 	v1.POST(constants.PathAbsenceApprove, absenceHandler.Approve, authenticated, middlewares.RequireRole(constants.AbsenceManageRoles...))
 	v1.GET(constants.PathHolidays, absenceHandler.ListHolidays, authenticated, middlewares.RequireRole(constants.HolidayViewRoles...))
 	v1.POST(constants.PathHolidays, absenceHandler.CreateHoliday, authenticated, middlewares.RequireRole(constants.HolidayManageRoles...))
+}
+
+// registerCalendarFeedRoutes adds a person's calendar link (self or planner, checked in the service).
+func registerCalendarFeedRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc, h *handlers.CalendarFeedHandler) {
+	roles := middlewares.RequireRole(constants.CalendarFeedRoles...)
+	v1.GET(constants.PathPersonCalendarFeed, h.Get, authenticated, roles)
+	v1.PUT(constants.PathPersonCalendarFeed, h.Connect, authenticated, roles)
+	v1.DELETE(constants.PathPersonCalendarFeed, h.Disconnect, authenticated, roles)
+	v1.POST(constants.PathPersonCalendarFeedSync, h.Sync, authenticated, roles)
 }
 
 // registerProgramRoutes adds programs, projects, phases and demand.

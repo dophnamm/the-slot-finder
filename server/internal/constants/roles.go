@@ -26,6 +26,9 @@ var (
 	AbsenceRoles = []string{RolePlanner, RoleLead, RoleSpecialist}
 	// AbsenceManageRoles may manage anyone's absences and approve them.
 	AbsenceManageRoles = []string{RolePlanner}
+	// CalendarFeedRoles may reach the calendar-feed routes; the service lets a person act only
+	// on their own calendar unless they hold AbsenceManageRoles.
+	CalendarFeedRoles = []string{RolePlanner, RoleLead, RoleSpecialist}
 	// HolidayViewRoles may read the company-wide holidays.
 	HolidayViewRoles = []string{RolePlanner, RoleLead, RoleSpecialist}
 	// HolidayManageRoles may add and remove holidays.
