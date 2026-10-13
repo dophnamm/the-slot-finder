@@ -39,6 +39,7 @@ export type LanguageKey = {
   Added: string
   After: string
   'All expertises': string
+  Approve: string
   Approved: string
   'Approved absence always lowers capacity; planned absence does when the setting is on.': string
   Assigned: string

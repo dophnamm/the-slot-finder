@@ -1,5 +1,6 @@
 import { Trash2 } from 'lucide-react'
 import { useTranslation } from '@/shared/i18n'
+import { PLANNED_ABSENCE_STATUS } from '@/shared/people'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { TableCell, TableRow } from '@/shared/ui/table'
@@ -7,10 +8,11 @@ import { formatDateRange } from '@/utils/functions'
 import { ABSENCE_STATUS_LABELS, ABSENCE_TYPE_LABELS } from '../../constants'
 import type { AbsenceRowProps } from './types'
 
-export function AbsenceRow({ absence, onDelete }: AbsenceRowProps) {
+export function AbsenceRow({ absence, onDelete, onApprove }: AbsenceRowProps) {
   const { t } = useTranslation()
 
   const handleDelete = () => onDelete(absence.id)
+  const handleApprove = () => onApprove?.(absence.id)
 
   return (
     <TableRow>
@@ -22,10 +24,17 @@ export function AbsenceRow({ absence, onDelete }: AbsenceRowProps) {
           {t(ABSENCE_STATUS_LABELS[absence.status])}
         </Badge>
       </TableCell>
-      <TableCell className="text-right">
-        <Button variant="ghost" size="icon-sm" aria-label={t('Remove absence')} onClick={handleDelete}>
-          <Trash2 />
-        </Button>
+      <TableCell>
+        <div className="flex justify-end gap-2">
+          {onApprove && absence.status === PLANNED_ABSENCE_STATUS && (
+            <Button variant="outline" size="sm" onClick={handleApprove}>
+              {t('Approve')}
+            </Button>
+          )}
+          <Button variant="ghost" size="icon-sm" aria-label={t('Remove absence')} onClick={handleDelete}>
+            <Trash2 />
+          </Button>
+        </div>
       </TableCell>
     </TableRow>
   )

@@ -7,15 +7,17 @@ import { ABSENCE_TABLE_COLUMNS } from './constants'
 import { AbsenceForm } from './components/absence-form'
 import { AbsenceRow } from './components/absence-row'
 import type { AbsenceListProps } from './types'
-import { useAbsences, useDeleteAbsence } from './use-absences'
+import { useAbsences, useApproveAbsence, useDeleteAbsence } from './use-absences'
 
 /** A person's leave and training, with a form to add more. */
 export function AbsenceList({ personId, canApprove }: AbsenceListProps) {
   const { t } = useTranslation()
   const { data: absences = [], isPending } = useAbsences(personId)
   const remove = useDeleteAbsence(personId)
+  const approve = useApproveAbsence(personId)
 
   const handleDelete = (id: string) => remove.mutate(id)
+  const handleApprove = (id: string) => approve.mutate(id)
 
   return (
     <div className="flex flex-col gap-4">
@@ -31,7 +33,12 @@ export function AbsenceList({ personId, canApprove }: AbsenceListProps) {
         </TableHeader>
         <TableBody>
           {absences.map((absence) => (
-            <AbsenceRow key={absence.id} absence={absence} onDelete={handleDelete} />
+            <AbsenceRow
+              key={absence.id}
+              absence={absence}
+              onDelete={handleDelete}
+              onApprove={canApprove ? handleApprove : undefined}
+            />
           ))}
           {isPending && <TableLoading columns={ABSENCE_TABLE_COLUMNS} />}
           {!isPending && absences.length === 0 && (
