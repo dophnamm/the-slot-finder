@@ -2815,6 +2815,158 @@
                     }
                 }
             }
+        },
+        "/timesheets/import": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Upload a filled-in template as the multipart field \"file\". Every row is checked first: any problem saves nothing and returns 400 TIMESHEET_INVALID with data.problems [{line, column, code}]. A row with an empty actual_hours is skipped; importing again overwrites the same person, project and week. A file over TIMESHEET_MAX_BYTES or TIMESHEET_MAX_ROWS gets 413 TIMESHEET_TOO_LARGE. Records no change event.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Timesheets"
+                ],
+                "summary": "Import a timesheet",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Filled-in timesheet template (CSV)",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.ImportResultResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "object",
+                                    "properties": {
+                                        "problems": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/services.RowProblem"
+                                            }
+                                        }
+                                    }
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/timesheets/template": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "A CSV with one row per person × project × week that has baseline or actual hours in the range, with planned hours and any actual hours already recorded. Weeks default to the TIMESHEET_TEMPLATE_WEEKS up to the current week; a week after the current one gets TIMESHEET_WEEK_IN_FUTURE and a range over TIMESHEET_MAX_WEEKS gets WEEK_RANGE_TOO_LONG.",
+                "produces": [
+                    "text/csv"
+                ],
+                "tags": [
+                    "Timesheets"
+                ],
+                "summary": "Timesheet template",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "2026-W39",
+                        "description": "First week",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-W42",
+                        "description": "Last week",
+                        "name": "to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -3872,6 +4024,23 @@
                 },
                 "primary_expertise_id": {
                     "type": "string"
+                }
+            }
+        },
+        "dtos.ImportResultResponse": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "skipped": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "updated": {
+                    "type": "integer",
+                    "example": 3
                 }
             }
         },
@@ -5158,6 +5327,20 @@
                 },
                 "start_earliest": {
                     "type": "string"
+                }
+            }
+        },
+        "services.RowProblem": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "column": {
+                    "type": "string"
+                },
+                "line": {
+                    "type": "integer"
                 }
             }
         }

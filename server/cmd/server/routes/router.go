@@ -32,6 +32,7 @@ func Router(
 	eventHandler *handlers.EventHandler,
 	scenarioHandler *handlers.ScenarioHandler,
 	scheduleHandler *handlers.ScheduleHandler,
+	timesheetHandler *handlers.TimesheetHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 ) *echo.Echo {
@@ -155,6 +156,11 @@ func Router(
 	v1.GET(constants.PathScenario, scenarioHandler.Get, authenticated, middlewares.RequireRole(constants.ScenarioRoles...))
 	v1.DELETE(constants.PathScenario, scenarioHandler.Delete, authenticated, middlewares.RequireRole(constants.ScenarioRoles...))
 	v1.POST(constants.PathScenarioRerun, scenarioHandler.Rerun, authenticated, middlewares.RequireRole(constants.ScenarioRoles...))
+
+	// Timesheets: planners download the template and import actual hours.
+	timesheetRoles := middlewares.RequireRole(constants.TimesheetRoles...)
+	v1.GET(constants.PathTimesheetTemplate, timesheetHandler.Template, authenticated, timesheetRoles)
+	v1.POST(constants.PathTimesheetImport, timesheetHandler.Import, authenticated, timesheetRoles)
 
 	return r
 }
