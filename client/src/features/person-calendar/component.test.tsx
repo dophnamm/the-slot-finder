@@ -17,6 +17,7 @@ const week = (label: string, overrides: Partial<ScheduleWeek> = {}): ScheduleWee
   utilization: 0,
   band: 'underused',
   tentative: false,
+  actual_hours: null,
   projects: [],
   ...overrides,
 })
