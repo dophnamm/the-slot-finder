@@ -61,6 +61,7 @@ type insightsService struct {
 	absences repositories.AbsenceRepository
 	programs repositories.ProgramRepository
 	projects repositories.ProjectRepository
+	actuals  repositories.ActualHoursRepository
 	authz    AuthzService
 	clock    clock.Clock
 	cfg      *config.Config
@@ -69,10 +70,10 @@ type insightsService struct {
 // ProvideInsightsService creates the insights service.
 func ProvideInsightsService(plans repositories.PlanRepository, people repositories.PersonRepository,
 	absences repositories.AbsenceRepository, programs repositories.ProgramRepository, projects repositories.ProjectRepository,
-	authz AuthzService, clk clock.Clock, cfg *config.Config,
+	actuals repositories.ActualHoursRepository, authz AuthzService, clk clock.Clock, cfg *config.Config,
 ) InsightsService {
 	return &insightsService{plans: plans, people: people, absences: absences, programs: programs, projects: projects,
-		authz: authz, clock: clk, cfg: cfg}
+		actuals: actuals, authz: authz, clock: clk, cfg: cfg}
 }
 
 func (s *insightsService) Heatmap(ctx context.Context, in HeatmapInput) (*models.Heatmap, error) {
@@ -278,8 +279,8 @@ func (s *insightsService) settings() metrics.Settings {
 	return metrics.Settings{ScopeLagThreshold: s.cfg.ScopeLagThreshold, AlertHorizonWeeks: s.cfg.AlertHorizonWeeks}
 }
 
-// projectInput is a project's metric input from its demand and the baseline.
-func (s *insightsService) projectInput(p models.Project, planned map[string]plannedHours, today time.Time) metrics.Input {
+// projectInput is a project's metric input from its demand, the baseline and its actual hours.
+func (s *insightsService) projectInput(p models.Project, planned map[string]plannedHours, actual map[string]float64, today time.Time) metrics.Input {
 	current := isoweek.Of(today)
 	in := metrics.Input{Start: p.StartEarliest, End: p.Deadline, Today: today, ScopePoints: p.ScopePoints, DonePoints: p.DonePoints,
 		WeeksToDeadline: isoweek.WeeksBetween(current, p.DeadlineWeek()), LastPhaseLate: p.AtRisk(),
@@ -289,21 +290,33 @@ func (s *insightsService) projectInput(p models.Project, planned map[string]plan
 		in.PlannedHours += planned[d.ID].total
 		in.PlannedToDateHours += planned[d.ID].toDate
 	}
+	if hours, ok := actual[p.ID]; ok {
+		in.ActualHours = &hours
+	}
 	return in
 }
 
-// metricsData loads the projects (one program, or all) and the baseline's planned hours.
-func (s *insightsService) metricsData(ctx context.Context, programID, op string) ([]models.Project, map[string]plannedHours, time.Time, error) {
+// metricsData loads the projects (one program, or all), the baseline's planned hours and the
+// actual hours of each project that has any.
+func (s *insightsService) metricsData(ctx context.Context, programID, op string) ([]models.Project, map[string]plannedHours, map[string]float64, time.Time, error) {
 	projects, err := s.projects.ListForMetrics(ctx, programID)
 	if err != nil {
-		return nil, nil, time.Time{}, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(op).WithResource(resourceMetrics)
+		return nil, nil, nil, time.Time{}, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(op).WithResource(resourceMetrics)
 	}
 	baseline, err := findBaseline(ctx, s.plans, op, true)
 	if err != nil {
-		return nil, nil, time.Time{}, err
+		return nil, nil, nil, time.Time{}, err
+	}
+	ids := make([]string, 0, len(projects))
+	for _, p := range projects {
+		ids = append(ids, p.ID)
+	}
+	actual, err := s.actuals.SumByProject(ctx, ids)
+	if err != nil {
+		return nil, nil, nil, time.Time{}, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(op).WithResource(resourceMetrics)
 	}
 	today := s.today()
-	return projects, plannedByDemand(baseline.Assignments, isoweek.Of(today)), today, nil
+	return projects, plannedByDemand(baseline.Assignments, isoweek.Of(today)), actual, today, nil
 }
 
 func (s *insightsService) ProgramOverview(ctx context.Context, programID string) (*models.ProgramOverview, error) {
@@ -314,7 +327,7 @@ func (s *insightsService) ProgramOverview(ctx context.Context, programID string)
 	if err != nil {
 		return nil, notFoundOrDatabase(err, constants.ProgramNotFound, constants.MsgProgramNotFound, resourceProgram, opProgramOverview)
 	}
-	projects, planned, today, err := s.metricsData(ctx, programID, opProgramOverview)
+	projects, planned, actual, today, err := s.metricsData(ctx, programID, opProgramOverview)
 	if err != nil {
 		return nil, err
 	}
@@ -324,12 +337,13 @@ func (s *insightsService) ProgramOverview(ctx context.Context, programID string)
 	byExpertise := map[string]*models.ExpertiseStaffing{}
 	var order []string
 	for _, p := range projects {
-		pin := s.projectInput(p, planned, today)
+		pin := s.projectInput(p, planned, actual, today)
 		in.ScopePoints += pin.ScopePoints
 		in.DonePoints += pin.DonePoints
 		in.BudgetHours += pin.BudgetHours
 		in.PlannedHours += pin.PlannedHours
 		in.PlannedToDateHours += pin.PlannedToDateHours
+		in.ActualHours = metrics.SumOptional(in.ActualHours, pin.ActualHours)
 		in.LastPhaseLate = in.LastPhaseLate || metrics.Compute(pin, s.settings()).AtRisk
 		for _, d := range p.Demands {
 			row, ok := byExpertise[d.ExpertiseID]
@@ -455,13 +469,13 @@ func (s *insightsService) ProjectMetrics(ctx context.Context, programID string) 
 	if _, err := s.authz.Require(ctx, CanUsePrograms); err != nil {
 		return nil, err
 	}
-	projects, planned, today, err := s.metricsData(ctx, programID, opProjectMetrics)
+	projects, planned, actual, today, err := s.metricsData(ctx, programID, opProjectMetrics)
 	if err != nil {
 		return nil, err
 	}
 	out := make(map[string]metrics.Progress, len(projects))
 	for _, p := range projects {
-		out[p.ID] = metrics.Compute(s.projectInput(p, planned, today), s.settings())
+		out[p.ID] = metrics.Compute(s.projectInput(p, planned, actual, today), s.settings())
 	}
 	return out, nil
 }
@@ -470,7 +484,7 @@ func (s *insightsService) Risks(ctx context.Context) (*models.Risks, error) {
 	if _, err := s.authz.Require(ctx, CanViewInsights); err != nil {
 		return nil, err
 	}
-	projects, planned, today, err := s.metricsData(ctx, "", opRisks)
+	projects, planned, actual, today, err := s.metricsData(ctx, "", opRisks)
 	if err != nil {
 		return nil, err
 	}
@@ -479,7 +493,7 @@ func (s *insightsService) Risks(ctx context.Context) (*models.Risks, error) {
 		if p.Status == constants.ProjectStatusDone {
 			continue
 		}
-		progress := metrics.Compute(s.projectInput(p, planned, today), s.settings())
+		progress := metrics.Compute(s.projectInput(p, planned, actual, today), s.settings())
 		if progress.AtRisk || progress.Understaffed || progress.BehindOnDelivery {
 			risks.Projects = append(risks.Projects, models.ProjectRisk{Project: p, Metrics: progress})
 		}
