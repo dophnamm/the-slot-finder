@@ -1,0 +1,1 @@
+export { PersonTrail } from './component'

@@ -12,6 +12,8 @@ export const ROUTES = {
   scenarios: '/scenarios',
   scenarioDetail: '/scenarios/:id',
   people: '/people',
+  // Nested under People, so the sidebar marks People on a person's page.
+  personDetail: '/people/:id',
   mySchedule: '/me',
   events: '/events',
   notFound: '*',

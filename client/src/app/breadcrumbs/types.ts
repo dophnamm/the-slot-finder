@@ -11,6 +11,7 @@ export type BreadcrumbKind =
   | 'scenarios'
   | 'scenarioDetail'
   | 'people'
+  | 'personDetail'
   | 'events'
   | 'mySchedule'
 

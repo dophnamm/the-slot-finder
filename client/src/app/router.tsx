@@ -6,6 +6,7 @@ import { IntakePage } from '@/pages/intake'
 import { MySchedulePage } from '@/pages/my-schedule'
 import { NotFoundPage } from '@/pages/not-found'
 import { PeoplePage } from '@/pages/people'
+import { PersonDetailPage } from '@/pages/person-detail'
 import { ProgramDetailPage } from '@/pages/program-detail'
 import { ProgramsPage } from '@/pages/programs'
 import { ProjectDetailPage } from '@/pages/project-detail'
@@ -59,6 +60,10 @@ export const router = createBrowserRouter([
           {
             element: <RequirePermission permission="people:manage" />,
             children: [{ path: ROUTES.people, Component: PeoplePage, handle: crumb('people') }],
+          },
+          {
+            element: <RequirePermission permission="people:view" />,
+            children: [{ path: ROUTES.personDetail, Component: PersonDetailPage, handle: crumb('personDetail') }],
           },
           {
             element: <RequirePermission permission="events:view" />,

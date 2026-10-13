@@ -1,5 +1,6 @@
 import { useMatches, useParams } from 'react-router'
 import { useTranslation } from '@/shared/i18n'
+import { PersonTrail } from './components/person-trail'
 import { ProgramTrail } from './components/program-trail'
 import { ProjectTrail } from './components/project-trail'
 import { ScenarioTrail } from './components/scenario-trail'
@@ -15,6 +16,7 @@ export function Breadcrumbs() {
 
   if (kind === 'programDetail') return <ProgramTrail programId={id} />
   if (kind === 'projectDetail') return <ProjectTrail projectId={id} />
+  if (kind === 'personDetail') return <PersonTrail personId={id} />
   if (kind === 'scenarioDetail') return <ScenarioTrail scenarioId={id} />
   const trail = kind ? STATIC_TRAILS[kind] : undefined
   if (!trail) return null
