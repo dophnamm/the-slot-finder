@@ -91,3 +91,44 @@ export function isoWeekList(from: string, to: string): string[] {
   const count = isoWeeksBetween(from, to)
   return Array.from({ length: Math.max(0, count) + 1 }, (_, i) => addIsoWeeks(from, i))
 }
+
+/** The month of today, in the browser's time zone: `'2026-10'`. */
+export function currentMonth(): string {
+  return dayjs().format(DATE_FORMAT.isoMonth)
+}
+
+/** The month `n` months after `month` (before it when `n` is negative): `('2026-12', 1)` → `'2027-01'`. */
+export function addMonths(month: string, n: number): string {
+  return dayjs(month).add(n, 'month').format(DATE_FORMAT.isoMonth)
+}
+
+/** Every ISO week with a day in the month, in order: `'2026-10'` → `'2026-W40'` … `'2026-W44'`. */
+export function monthIsoWeeks(month: string): string[] {
+  const first = dayjs(month).startOf('month')
+  return isoWeekList(toIsoWeek(first), toIsoWeek(first.endOf('month')))
+}
+
+/** A month for display: `'2026-10'` → `'October 2026'`. */
+export function formatMonth(month: string, format: string = DATE_FORMAT.monthTitle): string {
+  return dayjs(month).format(format)
+}
+
+/** Whether a date value (`'2026-10-31'`) falls in a month (`'2026-10'`). */
+export function isInMonth(date: string, month: string): boolean {
+  return dayjs(date).format(DATE_FORMAT.isoMonth) === month
+}
+
+/** The date of an ISO weekday (1 = Monday … 7 = Sunday) in a week: `('2026-W42', 3)` → `'2026-10-14'`. */
+export function isoWeekDate(week: string, isoWeekday: number): string {
+  return isoWeekRange(week).start.isoWeekday(isoWeekday).format(DATE_FORMAT.isoDate)
+}
+
+/** The short name of an ISO weekday for a column header: `1` → `'Mon'`. */
+export function formatIsoWeekday(isoWeekday: number, format: string = DATE_FORMAT.weekdayShort): string {
+  return dayjs().isoWeekday(isoWeekday).format(format)
+}
+
+/** Today as a date value (`'2026-10-14'`), in the browser's time zone. */
+export function todayDateValue(): string {
+  return dayjs().format(DATE_FORMAT.isoDate)
+}
