@@ -61,10 +61,17 @@ func metricsFixture(t *testing.T) (*MockPlanRepository, *MockProgramRepository, 
 }
 
 func newMetricsService(t *testing.T) InsightsService {
+	return newMetricsServiceWithActuals(t, map[string]float64{})
+}
+
+// newMetricsServiceWithActuals is newMetricsService with these actual hours per project id.
+func newMetricsServiceWithActuals(t *testing.T, actual map[string]float64) InsightsService {
 	plans, programs, projects, people, absences := metricsFixture(t)
+	actuals := new(MockActualHoursRepository)
+	actuals.On("SumByProject", mock.Anything, mock.Anything).Return(actual, nil)
 	cfg := heatmapConfig()
 	cfg.ScopeLagThreshold, cfg.AlertHorizonWeeks = 20, 4
-	return ProvideInsightsService(plans, people, absences, programs, projects, ProvideAuthzService(leadPeople{}),
+	return ProvideInsightsService(plans, people, absences, programs, projects, actuals, ProvideAuthzService(leadPeople{}),
 		clock.NewFixed(time.Date(2026, time.November, 15, 9, 0, 0, 0, time.UTC)), cfg)
 }
 
@@ -113,4 +120,30 @@ func TestInsightsService_Risks(t *testing.T) {
 
 	_, err = newMetricsService(t).Risks(asRole("kc-specialist", constants.RoleSpecialist))
 	requireStatus(t, err, http.StatusForbidden)
+}
+
+func TestInsightsService_ActualHours(t *testing.T) {
+	lead := asRole("kc-lead", constants.RoleLead)
+
+	t.Run("without actual hours, actual and burn stay unknown", func(t *testing.T) {
+		overview, err := newMetricsService(t).ProgramOverview(lead, metricsProgramID)
+		require.NoError(t, err)
+		assert.Nil(t, overview.Metrics.ActualHours)
+		assert.Nil(t, overview.Metrics.BurnPercent)
+	})
+
+	t.Run("a project's actual hours give its burn and the program's", func(t *testing.T) {
+		svc := newMetricsServiceWithActuals(t, map[string]float64{checkoutID: 100})
+		byID, err := svc.ProjectMetrics(lead, metricsProgramID)
+		require.NoError(t, err)
+		require.NotNil(t, byID[checkoutID].BurnPercent)
+		assert.InDelta(t, 25, *byID[checkoutID].BurnPercent, 1e-9, "100 of Checkout's 400 h")
+		assert.Nil(t, byID[loyaltyID].ActualHours, "Loyalty has no actual hours")
+
+		overview, err := svc.ProgramOverview(lead, metricsProgramID)
+		require.NoError(t, err)
+		require.NotNil(t, overview.Metrics.ActualHours)
+		assert.InDelta(t, 100, *overview.Metrics.ActualHours, 1e-9)
+		assert.InDelta(t, 25, *overview.Metrics.BurnPercent, 1e-9, "100 of the program's 400 h")
+	})
 }

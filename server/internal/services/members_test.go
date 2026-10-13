@@ -71,7 +71,7 @@ func TestInsightsService_ProgramMembers(t *testing.T) {
 		plans, programs := new(MockPlanRepository), new(MockProgramRepository)
 		plans.On("FindBaseline", mock.Anything).Return(baseline, nil)
 		programs.On("FindWithLead", mock.Anything, metricsProgramID).Return(&models.Program{BaseModel: models.BaseModel{ID: metricsProgramID}}, nil)
-		svc := ProvideInsightsService(plans, nil, nil, programs, nil, ProvideAuthzService(leadPeople{}), nil, heatmapConfig())
+		svc := ProvideInsightsService(plans, nil, nil, programs, nil, nil, ProvideAuthzService(leadPeople{}), nil, heatmapConfig())
 
 		members, err := svc.ProgramMembers(lead, metricsProgramID)
 		require.NoError(t, err)
@@ -83,7 +83,7 @@ func TestInsightsService_ProgramMembers(t *testing.T) {
 	t.Run("an unknown program", func(t *testing.T) {
 		programs := new(MockProgramRepository)
 		programs.On("FindWithLead", mock.Anything, otherProgramID).Return(nil, gorm.ErrRecordNotFound)
-		svc := ProvideInsightsService(new(MockPlanRepository), nil, nil, programs, nil, ProvideAuthzService(leadPeople{}), nil, heatmapConfig())
+		svc := ProvideInsightsService(new(MockPlanRepository), nil, nil, programs, nil, nil, ProvideAuthzService(leadPeople{}), nil, heatmapConfig())
 		_, err := svc.ProgramMembers(lead, otherProgramID)
 		requireAppError(t, err, constants.ProgramNotFound, http.StatusNotFound)
 	})
