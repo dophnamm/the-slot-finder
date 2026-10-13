@@ -298,6 +298,10 @@ func TestAvailabilityService_Approve(t *testing.T) {
 	}
 }
 
+func (m *MockAbsenceRepository) DetachCalendarLeave(ctx context.Context, personID string) error {
+	return m.Called(ctx, personID).Error(0)
+}
+
 func (m *MockAbsenceRepository) ApprovePlanned(ctx context.Context, id string) (bool, error) {
 	args := m.Called(ctx, id)
 	return args.Bool(0), args.Error(1)

@@ -110,3 +110,106 @@ func TestCalendarFeedService_Sync_Postgres(t *testing.T) {
 		assert.Equal(t, constants.AbsenceSourceManual, kept.Source)
 	})
 }
+
+const (
+	// runningLeave started last Friday and runs to this Friday (syncNow is Tue 13 Oct).
+	runningLeave = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:running@google.com\r\nSUMMARY:OOO\r\nDTSTART;VALUE=DATE:20261009\r\nDTEND;VALUE=DATE:20261017\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+	// trimmedLeave is the same event, shortened to end yesterday.
+	trimmedLeave = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:running@google.com\r\nSUMMARY:OOO\r\nDTSTART;VALUE=DATE:20261009\r\nDTEND;VALUE=DATE:20261013\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+)
+
+// TestCalendarFeedService_KeepsLeave_Postgres covers the ways a sync must not lose leave.
+func TestCalendarFeedService_KeepsLeave_Postgres(t *testing.T) {
+	pdb := dbtest.NewPostgres(t)
+	dbtest.ApplyMigrations(t, pdb)
+	tx := db.ProvideTxManager(pdb)
+	absences := repositories.ProvideAbsenceRepository(pdb)
+	feeds := repositories.ProvideCalendarFeedRepository(pdb)
+	planner := asRole("kc-planner", constants.RolePlanner)
+
+	// newService builds the services for people whose weekly hours are weeklyHours.
+	newService := func(t *testing.T, fetcher *fakeFetcher, weeklyHours float64) CalendarFeedService {
+		t.Helper()
+		people := hoursPeople{weeklyHours: weeklyHours}
+		authz := ProvideAuthzService(people)
+		recorder := ProvideEventService(repositories.ProvideChangeEventRepository(pdb), repositories.ProvideProjectRepository(pdb),
+			authz, clock.NewFixed(syncNow))
+		service, err := ProvideCalendarFeedService(feeds, people, ProvideAvailabilityService(absences, people, authz, tx, recorder),
+			authz, tx, clock.NewFixed(syncNow), feedConfig(testFeedKey), fetcher)
+		require.NoError(t, err)
+		return service
+	}
+	newPerson := func(t *testing.T, name string) models.Person {
+		t.Helper()
+		person := models.Person{BaseModel: models.NewBaseModel(), Name: name, Email: name + "@example.test",
+			Role: constants.RoleSpecialist, WeeklyHours: fullTime, Active: true}
+		require.NoError(t, pdb.Create(&person).Error)
+		return person
+	}
+	leaveOf := func(t *testing.T, personID string) []models.Absence {
+		t.Helper()
+		var found []models.Absence
+		require.NoError(t, pdb.Where("person_id = ?", personID).Order("from_date").Find(&found).Error)
+		return found
+	}
+	approveAll := func(t *testing.T, personID string) {
+		t.Helper()
+		require.NoError(t, pdb.Model(&models.Absence{}).Where("person_id = ?", personID).
+			Update("status", constants.AbsenceStatusApproved).Error)
+	}
+
+	t.Run("running leave shortened to end yesterday is shortened, not deleted", func(t *testing.T) {
+		cam := newPerson(t, "cam")
+		fetcher := &fakeFetcher{body: runningLeave}
+		service := newService(t, fetcher, fullTime)
+		_, err := service.Connect(planner, ConnectFeedInput{PersonID: cam.ID, URL: googleLink})
+		require.NoError(t, err)
+		require.Len(t, leaveOf(t, cam.ID), 1)
+
+		fetcher.body = trimmedLeave
+		_, err = service.SyncNow(planner, cam.ID)
+		require.NoError(t, err)
+		leave := leaveOf(t, cam.ID)
+		require.Len(t, leave, 1, "the days already taken stay")
+		assert.Equal(t, 9, leave[0].FromDate.Day())
+		assert.Equal(t, 12, leave[0].ToDate.Day())
+	})
+
+	t.Run("new weekly hours change the leave hours and keep the approval", func(t *testing.T) {
+		dana := newPerson(t, "dana")
+		fetcher := &fakeFetcher{body: sharedOffsite}
+		_, err := newService(t, fetcher, fullTime).Connect(planner, ConnectFeedInput{PersonID: dana.ID, URL: googleLink})
+		require.NoError(t, err)
+		approveAll(t, dana.ID)
+
+		const partTime = 32
+		_, err = newService(t, fetcher, partTime).SyncNow(planner, dana.ID)
+		require.NoError(t, err)
+		leave := leaveOf(t, dana.ID)
+		require.Len(t, leave, 1)
+		assert.InDelta(t, 6.4, leave[0].HoursPerDay, 0.001)
+		assert.Equal(t, constants.AbsenceStatusApproved, leave[0].Status)
+	})
+
+	t.Run("disconnecting keeps the leave as ordinary absences, which another calendar leaves alone", func(t *testing.T) {
+		eve := newPerson(t, "eve")
+		fetcher := &fakeFetcher{body: sharedOffsite}
+		service := newService(t, fetcher, fullTime)
+		_, err := service.Connect(planner, ConnectFeedInput{PersonID: eve.ID, URL: googleLink})
+		require.NoError(t, err)
+		approveAll(t, eve.ID)
+
+		require.NoError(t, service.Disconnect(planner, eve.ID))
+		leave := leaveOf(t, eve.ID)
+		require.Len(t, leave, 1)
+		assert.Equal(t, constants.AbsenceSourceManual, leave[0].Source)
+		assert.Nil(t, leave[0].ExternalUID)
+
+		fetcher.body = emptyCalendar
+		_, err = service.Connect(planner, ConnectFeedInput{PersonID: eve.ID, URL: googleLink})
+		require.NoError(t, err)
+		leave = leaveOf(t, eve.ID)
+		require.Len(t, leave, 1, "connecting another calendar keeps the leave")
+		assert.Equal(t, constants.AbsenceStatusApproved, leave[0].Status)
+	})
+}

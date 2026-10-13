@@ -152,9 +152,16 @@ func (s *calendarFeedService) Disconnect(ctx context.Context, personID string) e
 	if _, err := s.find(ctx, personID, opDisconnectCalendarFeed); err != nil {
 		return err
 	}
-	if err := s.feeds.DeleteByPerson(ctx, personID); err != nil {
-		return errors.DatabaseError(constants.MsgCalendarFeedSaveFailed, err).
-			WithOperation(opDisconnectCalendarFeed).WithResource(resourceCalendarFeed)
+	err := s.tx.Do(ctx, func(ctx context.Context) error {
+		if err := s.feeds.DeleteByPerson(ctx, personID); err != nil {
+			return err
+		}
+		// The leave the calendar added stays, as ordinary absences, so a calendar connected
+		// later never removes it.
+		return s.availability.DetachCalendarLeave(ctx, personID)
+	})
+	if err != nil {
+		return asAppError(err, constants.MsgCalendarFeedSaveFailed, opDisconnectCalendarFeed, resourceCalendarFeed)
 	}
 	return nil
 }
@@ -266,22 +273,27 @@ func (s *calendarFeedService) recordFailure(ctx context.Context, feedID string, 
 	return s.feeds.RecordSync(ctx, feedID, at, 0, &code)
 }
 
-// read fetches a calendar and returns its out-of-office events from today to
-// CALENDAR_SYNC_WEEKS ahead as leave, and how many events it found.
+// read fetches a calendar and returns its out-of-office events up to CALENDAR_SYNC_WEEKS ahead
+// as leave, and how many of them touch the window from today. Past events are returned too:
+// leave running since before today whose event now ends before today must be seen, so it is
+// shortened instead of deleted. ApplyCalendarLeave ignores the other past events.
 func (s *calendarFeedService) read(ctx context.Context, link string, person *models.Person) ([]CalendarLeave, int, error) {
 	data, err := s.fetcher.Fetch(ctx, link)
 	if err != nil {
 		return nil, 0, err
 	}
 	from, to := s.window()
-	events, err := calendar.Parse(data, calendar.LeaveRules{Keywords: s.cfg.CalendarLeaveKeywords, From: from, To: to},
-		s.clock.Location())
+	events, err := calendar.Parse(data, calendar.LeaveRules{Keywords: s.cfg.CalendarLeaveKeywords, To: to}, s.clock.Location())
 	if err != nil {
 		return nil, 0, err
 	}
 	daily := dailyHours(person.WeeklyHours, s.cfg.WorkingWeekdays)
 	leave := make([]CalendarLeave, 0, len(events))
+	found := 0
 	for _, e := range events {
+		if !e.To.Before(from) {
+			found++
+		}
 		hours := daily
 		if e.HoursPerDay != nil {
 			hours = min(*e.HoursPerDay, daily)
@@ -291,7 +303,7 @@ func (s *calendarFeedService) read(ctx context.Context, link string, person *mod
 		}
 		leave = append(leave, CalendarLeave{UID: e.UID, FromDate: e.From, ToDate: e.To, HoursPerDay: hours})
 	}
-	return leave, len(events), nil
+	return leave, found, nil
 }
 
 func (s *calendarFeedService) apply(ctx context.Context, personID string, leave []CalendarLeave) error {

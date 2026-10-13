@@ -21,6 +21,9 @@ type AbsenceRepository interface {
 	ListOverlapping(ctx context.Context, from, to time.Time) ([]models.Absence, error)
 	// ListCalendarLeave returns a person's absences read from their calendar, oldest first.
 	ListCalendarLeave(ctx context.Context, personID string) ([]models.Absence, error)
+	// DetachCalendarLeave turns a person's calendar leave into ordinary absences: source manual,
+	// no event UID.
+	DetachCalendarLeave(ctx context.Context, personID string) error
 	// ApprovePlanned approves a person's absence only while it is still planned, in one
 	// statement, so two approvals at the same time cannot both succeed. It reports whether the
 	// absence changed.
@@ -68,6 +71,12 @@ func (r *absenceRepository) ApprovePlanned(ctx context.Context, id string) (bool
 		Where("id = ? AND status = ? AND person_id IS NOT NULL", id, constants.AbsenceStatusPlanned).
 		Update("status", constants.AbsenceStatusApproved)
 	return result.RowsAffected > 0, result.Error
+}
+
+func (r *absenceRepository) DetachCalendarLeave(ctx context.Context, personID string) error {
+	return r.db.From(ctx).Model(&models.Absence{}).
+		Where("person_id = ? AND source = ?", personID, constants.AbsenceSourceCalendar).
+		Updates(map[string]any{"source": constants.AbsenceSourceManual, "external_uid": nil}).Error
 }
 
 func (r *absenceRepository) ListCalendarLeave(ctx context.Context, personID string) ([]models.Absence, error) {
