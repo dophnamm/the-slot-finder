@@ -83,7 +83,8 @@ func TestTimesheetImport_Postgres(t *testing.T) {
 	_, project := timesheetFixture(t, pdb)
 	planner := asRole("kc-planner", constants.RolePlanner)
 	svc := ProvideTimesheetService(repositories.ProvideActualHoursRepository(pdb), repositories.ProvidePersonRepository(pdb),
-		repositories.ProvideProjectRepository(pdb), ProvideAuthzService(leadPeople{}), db.ProvideTxManager(pdb),
+		repositories.ProvideProjectRepository(pdb), repositories.ProvidePlanRepository(pdb), ProvideAuthzService(leadPeople{}),
+		db.ProvideTxManager(pdb),
 		clock.NewFixed(tsNow), timesheetConfig())
 	good := "person_email,project_id,week,actual_hours\nada@example.test," + project.ID + ",2026-W41,30\n"
 	bad := good + "nobody@example.test," + project.ID + ",2026-W42,8\n"
