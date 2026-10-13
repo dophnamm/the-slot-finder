@@ -27,3 +27,19 @@ describe('useApproveAbsence', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: INSIGHTS_QUERY_KEY })
   })
 })
+
+describe('useApproveAbsence after a refusal', () => {
+  it('refreshes the absences, so a row approved elsewhere stops offering Approve', async () => {
+    approveAbsence.mockRejectedValue(new Error('ABSENCE_NOT_PLANNED'))
+    const queryClient = new QueryClient()
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    )
+
+    const { result } = renderHook(() => useApproveAbsence('p1'), { wrapper })
+    await act(() => result.current.mutateAsync('a1').catch(() => undefined))
+
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: absencesQueryKey('p1') })
+  })
+})

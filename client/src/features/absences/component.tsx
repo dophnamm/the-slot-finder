@@ -38,6 +38,7 @@ export function AbsenceList({ personId, canApprove }: AbsenceListProps) {
               absence={absence}
               onDelete={handleDelete}
               onApprove={canApprove ? handleApprove : undefined}
+              approving={approve.isPending && approve.variables === absence.id}
             />
           ))}
           {isPending && <TableLoading columns={ABSENCE_TABLE_COLUMNS} />}
