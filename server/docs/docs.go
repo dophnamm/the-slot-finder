@@ -4280,6 +4280,11 @@ const docTemplate = `{
         "dtos.ProgressResponse": {
             "type": "object",
             "properties": {
+                "actual_hours": {
+                    "description": "ActualHours and BurnPercent are null until timesheets recorded actual hours.",
+                    "type": "number",
+                    "example": 100
+                },
                 "at_risk": {
                     "type": "boolean"
                 },
@@ -4289,6 +4294,10 @@ const docTemplate = `{
                 "budget_hours": {
                     "type": "number",
                     "example": 400
+                },
+                "burn_percent": {
+                    "type": "number",
+                    "example": 25
                 },
                 "forecast_hours": {
                     "type": "number",

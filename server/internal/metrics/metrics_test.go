@@ -132,3 +132,52 @@ func TestCompute(t *testing.T) {
 		assert.False(t, Compute(in, settings).PastEnd)
 	})
 }
+
+func TestCompute_ActualHours(t *testing.T) {
+	base := Input{BudgetHours: 400, PlannedHours: 320, PlannedToDateHours: 120}
+
+	t.Run("no actual hours leaves actual and burn unknown", func(t *testing.T) {
+		p := Compute(base, settings)
+		assert.Nil(t, p.ActualHours)
+		assert.Nil(t, p.BurnPercent)
+		assert.InDelta(t, 30, *p.PlannedBurnPercent, 1e-9, "planned burn is unchanged")
+	})
+
+	t.Run("actual hours give burn against the budget", func(t *testing.T) {
+		in := base
+		actual := 100.0
+		in.ActualHours = &actual
+		p := Compute(in, settings)
+		require.NotNil(t, p.ActualHours)
+		assert.InDelta(t, 100, *p.ActualHours, 1e-9)
+		require.NotNil(t, p.BurnPercent)
+		assert.InDelta(t, 25, *p.BurnPercent, 1e-9, "100 of 400 h")
+	})
+
+	t.Run("zero actual hours are known, so burn is 0 %", func(t *testing.T) {
+		in := base
+		zero := 0.0
+		in.ActualHours = &zero
+		p := Compute(in, settings)
+		require.NotNil(t, p.BurnPercent)
+		assert.InDelta(t, 0, *p.BurnPercent, 1e-9)
+	})
+
+	t.Run("actual hours without a budget have no burn", func(t *testing.T) {
+		in := base
+		in.BudgetHours = 0
+		actual := 8.0
+		in.ActualHours = &actual
+		p := Compute(in, settings)
+		assert.InDelta(t, 8, *p.ActualHours, 1e-9)
+		assert.Nil(t, p.BurnPercent)
+	})
+}
+
+func TestSumOptional(t *testing.T) {
+	five, three := 5.0, 3.0
+	assert.Nil(t, SumOptional(nil, nil))
+	assert.InDelta(t, 5, *SumOptional(&five, nil), 1e-9)
+	assert.InDelta(t, 3, *SumOptional(nil, &three), 1e-9)
+	assert.InDelta(t, 8, *SumOptional(&five, &three), 1e-9)
+}

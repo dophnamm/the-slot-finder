@@ -17,11 +17,14 @@ type ProgressResponse struct {
 	ForecastHours      float64  `json:"forecast_hours" example:"320"`
 	GapHours           float64  `json:"gap_hours" example:"80"`
 	PlannedToDateHours float64  `json:"planned_to_date_hours" example:"120"`
-	BehindOnDelivery   bool     `json:"behind_on_delivery"`
-	Understaffed       bool     `json:"understaffed"`
-	AtRisk             bool     `json:"at_risk"`
-	OverPlanned        bool     `json:"over_planned"`
-	PastEnd            bool     `json:"past_end"`
+	// ActualHours and BurnPercent are null until timesheets recorded actual hours.
+	ActualHours      *float64 `json:"actual_hours" example:"100"`
+	BurnPercent      *float64 `json:"burn_percent" example:"25"`
+	BehindOnDelivery bool     `json:"behind_on_delivery"`
+	Understaffed     bool     `json:"understaffed"`
+	AtRisk           bool     `json:"at_risk"`
+	OverPlanned      bool     `json:"over_planned"`
+	PastEnd          bool     `json:"past_end"`
 }
 
 // NewProgressResponse maps computed metrics.
@@ -29,6 +32,7 @@ func NewProgressResponse(p metrics.Progress) ProgressResponse {
 	return ProgressResponse{TimePercent: p.TimePercent, ScopePercent: p.ScopePercent, StaffingPercent: p.StaffingPercent,
 		PlannedBurnPercent: p.PlannedBurnPercent, BudgetHours: p.BudgetHours, PlannedHours: p.PlannedHours,
 		ForecastHours: p.ForecastHours, GapHours: p.GapHours, PlannedToDateHours: p.PlannedToDateHours,
+		ActualHours: p.ActualHours, BurnPercent: p.BurnPercent,
 		BehindOnDelivery: p.BehindOnDelivery, Understaffed: p.Understaffed, AtRisk: p.AtRisk, OverPlanned: p.OverPlanned,
 		PastEnd: p.PastEnd}
 }
