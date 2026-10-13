@@ -151,6 +151,21 @@ const (
 	MsgPayloadTooLarge         = "Request body is too large"
 )
 
+// Calendar feed messages. None of them may include the link.
+const (
+	MsgCalendarFeedRetrieved      = "Calendar retrieved"
+	MsgCalendarFeedConnected      = "Calendar connected"
+	MsgCalendarFeedDisconnected   = "Calendar disconnected"
+	MsgCalendarFeedSynced         = "Calendar synced"
+	MsgCalendarSyncDisabled       = "Calendar sync is turned off on this server"
+	MsgCalendarFeedNotFound       = "No calendar is connected"
+	MsgCalendarFeedHostNotAllowed = "Use the secret iCal (https) address from Google Calendar or Outlook"
+	MsgCalendarFeedUnreachable    = "The calendar could not be fetched"
+	MsgCalendarFeedNotICS         = "The link does not return an iCal calendar"
+	MsgCalendarFeedTooLarge       = "The calendar is larger than the limit"
+	MsgCalendarFeedSaveFailed     = "Could not save the calendar"
+)
+
 // Timesheet import messages.
 const (
 	MsgTimesheetImported       = "Timesheet imported"
