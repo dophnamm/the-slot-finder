@@ -1050,12 +1050,20 @@ definitions:
     type: object
   dtos.ProgressResponse:
     properties:
+      actual_hours:
+        description: ActualHours and BurnPercent are null until timesheets recorded
+          actual hours.
+        example: 100
+        type: number
       at_risk:
         type: boolean
       behind_on_delivery:
         type: boolean
       budget_hours:
         example: 400
+        type: number
+      burn_percent:
+        example: 25
         type: number
       forecast_hours:
         example: 320

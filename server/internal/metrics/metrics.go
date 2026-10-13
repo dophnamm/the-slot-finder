@@ -35,6 +35,8 @@ type Input struct {
 	BudgetHours        float64
 	PlannedHours       float64
 	PlannedToDateHours float64
+	// ActualHours is the sum of the hours imported from timesheets; nil while none exist.
+	ActualHours *float64
 	// WeeksToDeadline is from the current week to the deadline week; negative once past.
 	WeeksToDeadline int
 	// LastPhaseLate is true when the last phase ends after the deadline.
@@ -56,10 +58,13 @@ type Progress struct {
 	ForecastHours      float64
 	GapHours           float64
 	PlannedToDateHours float64
-	BehindOnDelivery   bool
-	Understaffed       bool
-	AtRisk             bool
-	OverPlanned        bool
+	// ActualHours and BurnPercent (actual ÷ budget) are nil until actual hours exist.
+	ActualHours      *float64
+	BurnPercent      *float64
+	BehindOnDelivery bool
+	Understaffed     bool
+	AtRisk           bool
+	OverPlanned      bool
 	// PastEnd is Time % over 100 while the work is not closed.
 	PastEnd bool
 }
@@ -84,6 +89,11 @@ func Compute(in Input, s Settings) Progress {
 		Understaffed:       gap > epsilon,
 		OverPlanned:        in.PlannedHours > in.BudgetHours+epsilon,
 	}
+	if in.ActualHours != nil {
+		actual := *in.ActualHours
+		p.ActualHours = &actual
+		p.BurnPercent = Percent(actual, in.BudgetHours)
+	}
 	p.BehindOnDelivery = BehindOnDelivery(p.ScopePercent, p.TimePercent, s.ScopeLagThreshold)
 	p.AtRisk = AtRisk(gap, in.WeeksToDeadline, s.AlertHorizonWeeks, in.LastPhaseLate)
 	p.PastEnd = !in.Closed && p.TimePercent != nil && *p.TimePercent > 100+epsilon
@@ -97,6 +107,22 @@ func Percent(part, whole float64) *float64 {
 	}
 	v := part / whole * 100
 	return &v
+}
+
+// SumOptional adds two hours that may be unknown (nil). The sum is nil only when both are,
+// so a program has actual hours as soon as one of its projects has.
+func SumOptional(a, b *float64) *float64 {
+	if a == nil && b == nil {
+		return nil
+	}
+	var sum float64
+	if a != nil {
+		sum += *a
+	}
+	if b != nil {
+		sum += *b
+	}
+	return &sum
 }
 
 // TimePercent is (today − start) ÷ (end − start) × 100, in days and never below 0; nil when
