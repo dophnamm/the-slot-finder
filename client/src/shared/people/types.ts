@@ -26,6 +26,9 @@ export interface Person {
 export type AbsenceType = 'leave' | 'training' | 'holiday'
 export type AbsenceStatus = 'planned' | 'approved'
 
+/** Where an absence comes from: entered by hand, or read from the person's calendar. */
+export type AbsenceSource = 'manual' | 'calendar'
+
 /** A person's baseline hours on one project and expertise in a week. */
 export interface ScheduleProject {
   program_id: string
@@ -57,6 +60,7 @@ export interface ScheduleAbsence {
   type: AbsenceType
   status: AbsenceStatus
   hours_per_day: number
+  source: AbsenceSource
 }
 
 /** A company-wide holiday on a day; holidays have no name. */

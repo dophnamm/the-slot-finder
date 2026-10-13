@@ -1,4 +1,4 @@
-import type { AbsenceStatus, AbsenceType } from '@/shared/people'
+import type { AbsenceSource, AbsenceStatus, AbsenceType } from '@/shared/people'
 
 export type { AbsenceStatus, AbsenceType }
 
@@ -11,6 +11,7 @@ export interface Absence {
   hours_per_day: number
   type: AbsenceType
   status: AbsenceStatus
+  source: AbsenceSource
 }
 
 export interface CreateAbsenceInput {

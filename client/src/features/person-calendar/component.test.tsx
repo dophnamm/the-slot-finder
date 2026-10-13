@@ -55,7 +55,11 @@ const october: PersonSchedule = {
   ],
   days: [
     { date: '2026-10-21', absences: [], holidays: [{ id: 'h1' }] },
-    { date: '2026-10-22', absences: [{ id: 'a1', type: 'leave', status: 'planned', hours_per_day: 8 }], holidays: [] },
+    {
+      date: '2026-10-22',
+      absences: [{ id: 'a1', type: 'leave', status: 'planned', hours_per_day: 8, source: 'manual' }],
+      holidays: [],
+    },
   ],
 }
 
@@ -105,6 +109,24 @@ describe('PersonCalendar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Hours in 2026-W42' }))
     expect(screen.queryByRole('link', { name: 'Checkout Revamp' })).toBeNull()
     expect(screen.getByText('Checkout Revamp')).toBeTruthy()
+  })
+
+  it('marks leave read from a calendar', () => {
+    useSchedule.mockReturnValue({
+      data: {
+        ...october,
+        days: [
+          {
+            date: '2026-10-22',
+            absences: [{ id: 'a1', type: 'leave', status: 'planned', hours_per_day: 8, source: 'calendar' }],
+            holidays: [],
+          },
+        ],
+      },
+      isPending: false,
+    })
+    renderCalendar()
+    expect(screen.getByRole('img', { name: 'From calendar' })).toBeTruthy()
   })
 
   it('moves to the next month, which spans six weeks', () => {

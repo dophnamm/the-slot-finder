@@ -1,6 +1,7 @@
 import type { PlainKey } from '@/shared/i18n'
+import type { BadgeVariant } from '@/shared/ui/badge'
 import { INSIGHTS_QUERY_KEY } from '@/utils/constants'
-import type { AbsenceStatus, AbsenceType } from './types'
+import type { AbsenceSource, AbsenceStatus, AbsenceType } from './types'
 
 export const PEOPLE_QUERY_KEY = ['people'] as const
 
@@ -24,3 +25,11 @@ export const ABSENCE_STATUS_LABELS: Record<AbsenceStatus, PlainKey> = {
 
 /** Reported or read from a calendar, not approved yet; a planner may approve it. */
 export const PLANNED_ABSENCE_STATUS: AbsenceStatus = 'planned'
+
+/** The source that gets a mark; it matches the server's constants/absence.go. */
+export const CALENDAR_SOURCE = 'calendar' satisfies AbsenceSource
+
+export const ABSENCE_SOURCE_BADGE: Record<AbsenceSource, BadgeVariant> = {
+  manual: 'gray',
+  calendar: 'teal',
+}

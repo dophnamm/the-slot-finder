@@ -1,3 +1,4 @@
+import { AbsenceSourceBadge } from '@/shared/components/absence-source-badge'
 import { useTranslation } from '@/shared/i18n'
 import { ABSENCE_TYPE_LABELS, PLANNED_ABSENCE_STATUS } from '@/shared/people'
 import { Badge } from '@/shared/ui/badge'
@@ -31,6 +32,7 @@ export function DayCell({ day, month }: DayCellProps) {
             key={absence.id}
             variant={absence.status === PLANNED_ABSENCE_STATUS ? PLANNED_ABSENCE_BADGE : ABSENCE_BADGE[absence.type]}
           >
+            <AbsenceSourceBadge source={absence.source} compact />
             {absence.status === PLANNED_ABSENCE_STATUS
               ? t('{type} (planned)', { type: t(ABSENCE_TYPE_LABELS[absence.type]) })
               : t(ABSENCE_TYPE_LABELS[absence.type])}
