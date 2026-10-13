@@ -27,7 +27,9 @@ type ScheduleWeek struct {
 	Band        string
 	// Tentative marks planned (not yet approved) absence in the week.
 	Tentative bool
-	Projects  []ScheduleProject
+	// ActualHours is what timesheets recorded for the week over all projects; nil when none.
+	ActualHours *float64
+	Projects    []ScheduleProject
 }
 
 // ScheduleProject is the person's baseline hours on one project and expertise in a week.

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"the-slot-finder/server/internal/constants"
+	"the-slot-finder/server/internal/isoweek"
 	"the-slot-finder/server/internal/models"
 
 	"github.com/stretchr/testify/assert"
@@ -68,6 +69,7 @@ type scheduleRepos struct {
 	plans    *MockPlanRepository
 	people   *MockPersonRepository
 	absences *MockAbsenceRepository
+	actuals  *MockActualHoursRepository
 }
 
 func scheduleFixture(t *testing.T, assignments []models.Assignment) scheduleRepos {
@@ -81,6 +83,8 @@ func scheduleFixture(t *testing.T, assignments []models.Assignment) scheduleRepo
 	repos.plans.On("ListPersonAssignments", mock.Anything, baselineID, schedPersonID, from, to).Return(assignments, nil)
 	repos.absences.On("ListOverlapping", mock.Anything, from.Monday(), to.Monday().AddDate(0, 0, daysInWeek-1)).
 		Return(scheduleAbsences(), nil)
+	repos.actuals = new(MockActualHoursRepository)
+	repos.actuals.On("ByPersonWeeks", mock.Anything, schedPersonID, from, to).Return(map[isoweek.Week]float64{from: 30}, nil)
 	return repos
 }
 
@@ -88,7 +92,7 @@ func newScheduleService(repos scheduleRepos) ScheduleService {
 	people := stubPeople{self: &models.Person{BaseModel: models.BaseModel{ID: schedPersonID}}}
 	cfg := heatmapConfig()
 	cfg.ScheduleMaxWeeks = schedMaxWeeks
-	return ProvideScheduleService(repos.plans, repos.people, repos.absences, ProvideAuthzService(people), cfg)
+	return ProvideScheduleService(repos.plans, repos.people, repos.absences, repos.actuals, ProvideAuthzService(people), cfg)
 }
 
 func TestScheduleService_Get(t *testing.T) {
@@ -136,6 +140,14 @@ func TestScheduleService_Get(t *testing.T) {
 		assert.Empty(t, schedule.Days[2].Absences)
 		require.Len(t, schedule.Days[3].Absences, 1)
 		assert.Equal(t, constants.AbsenceStatusPlanned, schedule.Days[3].Absences[0].Status)
+	})
+
+	t.Run("weeks carry the hours recorded by timesheets", func(t *testing.T) {
+		schedule, err := newScheduleService(scheduleFixture(t, scheduleAssignments(t))).Get(planner, sam)
+		require.NoError(t, err)
+		require.NotNil(t, schedule.Weeks[0].ActualHours)
+		assert.InDelta(t, 30, *schedule.Weeks[0].ActualHours, hoursEpsilon)
+		assert.Nil(t, schedule.Weeks[1].ActualHours, "W43 has no recorded hours")
 	})
 
 	t.Run("a person without baseline hours", func(t *testing.T) {
@@ -194,4 +206,13 @@ func TestScheduleService_Get(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestWithActualHours(t *testing.T) {
+	w41, w42 := mustWeek(t, "2026-W41"), mustWeek(t, "2026-W42")
+	weeks := []ScheduleWeek{{Week: w41}, {Week: w42}}
+	withActualHours(weeks, map[isoweek.Week]float64{w41: 34.5})
+	require.NotNil(t, weeks[0].ActualHours)
+	assert.InDelta(t, 34.5, *weeks[0].ActualHours, 1e-9)
+	assert.Nil(t, weeks[1].ActualHours, "a week without recorded hours stays null")
 }
