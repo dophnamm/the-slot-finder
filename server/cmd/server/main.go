@@ -16,6 +16,7 @@ import (
 	"the-slot-finder/server/internal/handlers"
 	"the-slot-finder/server/internal/httpclient"
 	"the-slot-finder/server/internal/integration/auth"
+	"the-slot-finder/server/internal/integration/calendar"
 	"the-slot-finder/server/internal/integration/email"
 	"the-slot-finder/server/internal/logger"
 	"the-slot-finder/server/internal/monitoring"
@@ -47,11 +48,12 @@ func NewHTTPServer(lc fx.Lifecycle,
 	scenarioHandler *handlers.ScenarioHandler,
 	scheduleHandler *handlers.ScheduleHandler,
 	timesheetHandler *handlers.TimesheetHandler,
+	calendarFeedHandler *handlers.CalendarFeedHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 	db *db.PostgresDB,
 ) *http.Server {
-	handler := routes.Router(healthHandler, identityHandler, personHandler, absenceHandler, programHandler, projectHandler, planHandler, staffingHandler, insightsHandler, eventHandler, scenarioHandler, scheduleHandler, timesheetHandler, verifier, cfg)
+	handler := routes.Router(healthHandler, identityHandler, personHandler, absenceHandler, programHandler, projectHandler, planHandler, staffingHandler, insightsHandler, eventHandler, scenarioHandler, scheduleHandler, timesheetHandler, calendarFeedHandler, verifier, cfg)
 
 	srv := &http.Server{
 		Addr:              cfg.AppHTTPServer,
@@ -191,6 +193,8 @@ func appOptions(cfg *config.Config) []fx.Option {
 			repositories.ProvideAuditRepository,
 			repositories.ProvideChangeEventRepository,
 			repositories.ProvideActualHoursRepository,
+			repositories.ProvideCalendarFeedRepository,
+			calendar.ProvideFetcher,
 			services.ProvidePeopleService,
 			services.ProvidePersonFinder,
 			services.ProvideAvailabilityService,
@@ -204,6 +208,7 @@ func appOptions(cfg *config.Config) []fx.Option {
 			services.ProvideReplanService,
 			services.ProvideScenarioService,
 			services.ProvideTimesheetService,
+			services.ProvideCalendarFeedService,
 			services.ProvideScheduleService,
 			handlers.ProvideHealthHandler,
 			handlers.ProvideIdentityHandler,
@@ -218,10 +223,12 @@ func appOptions(cfg *config.Config) []fx.Option {
 			handlers.ProvideScenarioHandler,
 			handlers.ProvideScheduleHandler,
 			handlers.ProvideTimesheetHandler,
+			handlers.ProvideCalendarFeedHandler,
 		),
 		fx.Invoke(func(*http.Server) {}),
 		fx.Invoke(registerBaselineHook),
 		fx.Invoke(registerReplanRunner),
+		fx.Invoke(registerCalendarSyncRunner),
 	}
 }
 
@@ -257,6 +264,30 @@ func registerReplanRunner(lc fx.Lifecycle, replan services.ReplanService) {
 			go func() {
 				defer close(done)
 				replan.Run(ctx)
+			}()
+			return nil
+		},
+		OnStop: func(stopCtx context.Context) error {
+			cancel()
+			select {
+			case <-done:
+			case <-stopCtx.Done():
+			}
+			return nil
+		},
+	})
+}
+
+// registerCalendarSyncRunner syncs people's calendars in the background from startup until
+// shutdown. While CALENDAR_FEED_KEY is empty the runner returns at once.
+func registerCalendarSyncRunner(lc fx.Lifecycle, feeds services.CalendarFeedService) {
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	lc.Append(fx.Hook{
+		OnStart: func(context.Context) error {
+			go func() {
+				defer close(done)
+				feeds.Run(ctx)
 			}()
 			return nil
 		},

@@ -12,6 +12,12 @@ definitions:
         type: string
       person_id:
         type: string
+      source:
+        enum:
+        - manual
+        - calendar
+        example: manual
+        type: string
       status:
         example: approved
         type: string
@@ -184,6 +190,20 @@ definitions:
         example: 2
         type: integer
     type: object
+  dtos.CalendarFeedResponse:
+    properties:
+      events_found:
+        example: 2
+        type: integer
+      host:
+        example: calendar.google.com
+        type: string
+      last_error:
+        example: CALENDAR_FEED_UNREACHABLE
+        type: string
+      last_synced_at:
+        type: string
+    type: object
   dtos.ChangeEventResponse:
     properties:
       attempts:
@@ -219,6 +239,15 @@ definitions:
         - PhaseSlipped
         - ProjectSlipped
         type: string
+    type: object
+  dtos.ConnectCalendarFeedRequest:
+    properties:
+      url:
+        example: https://calendar.google.com/calendar/ical/name%40example.com/private-abc/basic.ics
+        maxLength: 2048
+        type: string
+    required:
+    - url
     type: object
   dtos.CreateAbsenceRequest:
     properties:
@@ -1473,6 +1502,11 @@ definitions:
         type: number
       id:
         type: string
+      source:
+        enum:
+        - manual
+        - calendar
+        type: string
       status:
         enum:
         - planned
@@ -2403,6 +2437,187 @@ paths:
       summary: A person's baseline assignments
       tags:
       - Planning
+  /people/{id}/calendar-feed:
+    delete:
+      description: Removes the link. Absences it created stay, as ordinary absences.
+      parameters:
+      - description: Person id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Disconnect a calendar
+      tags:
+      - Availability
+    get:
+      description: 'The status of the person''s connected calendar: host, last sync,
+        last error and events found. Never the link.'
+      parameters:
+      - description: Person id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.CalendarFeedResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: A person's calendar
+      tags:
+      - Availability
+    put:
+      consumes:
+      - application/json
+      description: Checks the secret iCal link (https, allowed host), syncs it once
+        and stores it encrypted, replacing an earlier one.
+      parameters:
+      - description: Person id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Calendar link
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.ConnectCalendarFeedRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.CalendarFeedResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Connect a calendar
+      tags:
+      - Availability
+  /people/{id}/calendar-feed/sync:
+    post:
+      description: Reads the calendar at once. A calendar that cannot be read keeps
+        its absences and returns its error code in last_error.
+      parameters:
+      - description: Person id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.CalendarFeedResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Sync a calendar now
+      tags:
+      - Availability
   /people/{id}/schedule:
     get:
       description: 'Per ISO week: capacity, load, utilization band, tentative flag

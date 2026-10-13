@@ -15,11 +15,13 @@ const (
 	PathPersonSkills = "/people/:id/skills"
 	PathExpertises   = "/expertises"
 
-	PathPersonAbsences = "/people/:id/absences"
-	PathPersonSchedule = "/people/:id/schedule"
-	PathAbsence        = "/absences/:id"
-	PathAbsenceApprove = "/absences/:id/approve"
-	PathHolidays       = "/holidays"
+	PathPersonAbsences         = "/people/:id/absences"
+	PathPersonSchedule         = "/people/:id/schedule"
+	PathAbsence                = "/absences/:id"
+	PathAbsenceApprove         = "/absences/:id/approve"
+	PathPersonCalendarFeed     = "/people/:id/calendar-feed"
+	PathPersonCalendarFeedSync = "/people/:id/calendar-feed/sync"
+	PathHolidays               = "/holidays"
 
 	PathPrograms        = "/programs"
 	PathProgram         = "/programs/:id"
