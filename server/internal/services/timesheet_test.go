@@ -195,7 +195,7 @@ func timesheetConfig() *config.Config {
 }
 
 func newTimesheetService(actuals *MockActualHoursRepository, people *MockPersonRepository, projects *MockProjectRepository) TimesheetService {
-	return ProvideTimesheetService(actuals, people, projects, ProvideAuthzService(leadPeople{}), passthroughTx{},
+	return ProvideTimesheetService(actuals, people, projects, nil, ProvideAuthzService(leadPeople{}), passthroughTx{},
 		clock.NewFixed(tsNow), timesheetConfig())
 }
 
@@ -292,4 +292,95 @@ func TestTimesheetService_Import(t *testing.T) {
 		_, err := newTimesheetService(nil, nil, nil).Import(asRole("kc-lead", constants.RoleLead), importFile(tsHeader))
 		requireStatus(t, err, http.StatusForbidden)
 	})
+}
+
+const (
+	tsProgramID      = "0192f3a4-0000-7000-8000-00000000e301"
+	tsOtherProjectID = "0192f3a4-0000-7000-8000-00000000e102"
+)
+
+func newTemplateService(plans *MockPlanRepository, actuals *MockActualHoursRepository) TimesheetService {
+	return ProvideTimesheetService(actuals, nil, nil, plans, ProvideAuthzService(leadPeople{}), passthroughTx{},
+		clock.NewFixed(tsNow), timesheetConfig())
+}
+
+func TestTimesheetService_Template(t *testing.T) {
+	planner := asRole("kc-planner", constants.RolePlanner)
+	program := &models.Program{BaseModel: models.BaseModel{ID: tsProgramID}, Name: "Acme"}
+	checkout := &models.Project{BaseModel: models.BaseModel{ID: tsProjectID}, Name: "Checkout", Program: program}
+	loyalty := &models.Project{BaseModel: models.BaseModel{ID: tsOtherProjectID}, Name: "Loyalty", Program: program}
+	ada := &models.Person{BaseModel: models.BaseModel{ID: tsPersonID}, Name: "Ada", Email: "ada@example.test"}
+	baseline := publishedBaseline(1)
+	baseline.Assignments = []models.Assignment{{PersonID: tsPersonID, Person: ada,
+		Demand: &models.Demand{ProjectID: tsProjectID, Project: checkout},
+		Allocations: []models.Allocation{{Week: mustWeek(t, "2026-W38"), Hours: 40}, {Week: mustWeek(t, "2026-W41"), Hours: 20},
+			{Week: mustWeek(t, "2026-W42"), Hours: 16}}}}
+	recorded := []models.ActualHours{
+		{PersonID: tsPersonID, ProjectID: tsProjectID, Week: mustWeek(t, "2026-W41"), Hours: 18, Person: ada, Project: checkout},
+		{PersonID: tsPersonID, ProjectID: tsOtherProjectID, Week: mustWeek(t, "2026-W42"), Hours: 4.5, Person: ada, Project: loyalty},
+	}
+	fixture := func(from, to string) (*MockPlanRepository, *MockActualHoursRepository) {
+		plans, actuals := new(MockPlanRepository), new(MockActualHoursRepository)
+		plans.On("FindBaseline", mock.Anything).Return(baseline, nil)
+		actuals.On("ListInRange", mock.Anything, mustWeek(t, from), mustWeek(t, to)).Return(recorded, nil)
+		return plans, actuals
+	}
+
+	t.Run("the last weeks up to this one, from the baseline and the recorded hours", func(t *testing.T) {
+		plans, actuals := fixture("2026-W39", "2026-W42")
+		data, err := newTemplateService(plans, actuals).Template(planner, TemplateInput{})
+		require.NoError(t, err)
+		assert.Equal(t, tsHeader+
+			"ada@example.test,Ada,Acme,Checkout,"+tsProjectID+",2026-W41,20,18\n"+
+			"ada@example.test,Ada,Acme,Checkout,"+tsProjectID+",2026-W42,16,\n"+
+			"ada@example.test,Ada,Acme,Loyalty,"+tsOtherProjectID+",2026-W42,0,4.5\n", string(data),
+			"W38 is before the range; Loyalty has actual hours without baseline hours")
+		actuals.AssertExpectations(t)
+	})
+
+	t.Run("a chosen range", func(t *testing.T) {
+		plans, actuals := fixture("2026-W41", "2026-W41")
+		data, err := newTemplateService(plans, actuals).Template(planner,
+			TemplateInput{From: mustWeek(t, "2026-W41"), To: mustWeek(t, "2026-W41")})
+		require.NoError(t, err)
+		assert.Equal(t, tsHeader+"ada@example.test,Ada,Acme,Checkout,"+tsProjectID+",2026-W41,20,18\n", string(data))
+	})
+
+	ranges := []struct {
+		name string
+		in   TemplateInput
+		code string
+	}{
+		{name: "a week after the current one", in: TemplateInput{To: mustWeek(t, "2026-W43")}, code: constants.TimesheetWeekInFuture},
+		{name: "more weeks than allowed", in: TemplateInput{From: mustWeek(t, "2026-W20"), To: mustWeek(t, "2026-W42")},
+			code: constants.WeekRangeTooLong},
+		{name: "to before from", in: TemplateInput{From: mustWeek(t, "2026-W42"), To: mustWeek(t, "2026-W41")},
+			code: constants.WeekRangeInvalid},
+	}
+	for _, tt := range ranges {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := newTemplateService(nil, nil).Template(planner, tt.in)
+			requireAppError(t, err, tt.code, http.StatusBadRequest)
+		})
+	}
+
+	t.Run("only planners", func(t *testing.T) {
+		_, err := newTemplateService(nil, nil).Template(asRole("kc-lead", constants.RoleLead), TemplateInput{})
+		requireStatus(t, err, http.StatusForbidden)
+	})
+}
+
+func TestWriteTemplate_FormulaCells(t *testing.T) {
+	data, err := writeTemplate([]templateRow{{Email: "ada@example.test", Name: "+Ada", Program: "@Acme",
+		Project: `=HYPERLINK("http://example.test")`, ProjectID: tsProjectID, Week: mustWeek(t, "2026-W41"), Planned: 20}})
+	require.NoError(t, err)
+	assert.Equal(t, tsHeader+`ada@example.test,'+Ada,'@Acme,"'=HYPERLINK(""http://example.test"")",`+tsProjectID+
+		",2026-W41,20,\n", string(data))
+}
+
+func TestSafeCell(t *testing.T) {
+	tests := map[string]string{"=SUM(A1)": "'=SUM(A1)", "+1": "'+1", "-2": "'-2", "@x": "'@x", "\tx": "'\tx", "Acme": "Acme", "": ""}
+	for in, want := range tests {
+		assert.Equal(t, want, safeCell(in), in)
+	}
 }

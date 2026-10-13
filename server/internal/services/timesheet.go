@@ -28,9 +28,13 @@ import (
 )
 
 const (
-	opImportTimesheet = "import_timesheet"
-	resourceTimesheet = "timesheet"
+	opImportTimesheet   = "import_timesheet"
+	opTimesheetTemplate = "timesheet_template"
+	resourceTimesheet   = "timesheet"
 )
+
+// hourPrecision rounds hours in the template to hundredths, like the numeric(6,2) columns.
+const hourPrecision = 100
 
 // ImportInput is an uploaded timesheet: its content and the size the client declared.
 type ImportInput struct {
@@ -44,12 +48,16 @@ type TimesheetService interface {
 	// transaction. Any problem saves nothing and returns TIMESHEET_INVALID with the problems;
 	// a file over TIMESHEET_MAX_BYTES or TIMESHEET_MAX_ROWS returns TIMESHEET_TOO_LARGE.
 	Import(ctx context.Context, in ImportInput) (*models.ImportResult, error)
+	// Template is a CSV with one row per person × project × week that has baseline hours or
+	// actual hours in the range, with the planned and any recorded actual hours.
+	Template(ctx context.Context, in TemplateInput) ([]byte, error)
 }
 
 type timesheetService struct {
 	actuals  repositories.ActualHoursRepository
 	people   repositories.PersonRepository
 	projects repositories.ProjectRepository
+	plans    repositories.PlanRepository
 	authz    AuthzService
 	tx       db.TxManager
 	clock    clock.Clock
@@ -58,9 +66,162 @@ type timesheetService struct {
 
 // ProvideTimesheetService creates the timesheet service.
 func ProvideTimesheetService(actuals repositories.ActualHoursRepository, people repositories.PersonRepository,
-	projects repositories.ProjectRepository, authz AuthzService, tx db.TxManager, clk clock.Clock, cfg *config.Config,
+	projects repositories.ProjectRepository, plans repositories.PlanRepository, authz AuthzService, tx db.TxManager,
+	clk clock.Clock, cfg *config.Config,
 ) TimesheetService {
-	return &timesheetService{actuals: actuals, people: people, projects: projects, authz: authz, tx: tx, clock: clk, cfg: cfg}
+	return &timesheetService{actuals: actuals, people: people, projects: projects, plans: plans, authz: authz, tx: tx,
+		clock: clk, cfg: cfg}
+}
+
+// TemplateInput is the range of weeks of a timesheet template. A zero week takes its
+// default: To is the current week, and From the TIMESHEET_TEMPLATE_WEEKS up to To.
+type TemplateInput struct {
+	From isoweek.Week
+	To   isoweek.Week
+}
+
+func (s *timesheetService) Template(ctx context.Context, in TemplateInput) ([]byte, error) {
+	if _, err := s.authz.Require(ctx, CanImportTimesheets); err != nil {
+		return nil, err
+	}
+	from, to, err := s.templateRange(in)
+	if err != nil {
+		return nil, err
+	}
+	baseline, err := findBaseline(ctx, s.plans, opTimesheetTemplate, true)
+	if err != nil {
+		return nil, err
+	}
+	recorded, err := s.actuals.ListInRange(ctx, from, to)
+	if err != nil {
+		return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opTimesheetTemplate).WithResource(resourceTimesheet)
+	}
+	data, err := writeTemplate(templateRows(baseline.Assignments, recorded, from, to))
+	if err != nil {
+		return nil, errors.InternalError(constants.MsgTimesheetTemplateFailed, err).WithOperation(opTimesheetTemplate).WithResource(resourceTimesheet)
+	}
+	return data, nil
+}
+
+// templateRange applies the defaults and checks that the range is in order, not after the
+// current week, and not longer than TIMESHEET_MAX_WEEKS.
+func (s *timesheetService) templateRange(in TemplateInput) (from, to isoweek.Week, err error) {
+	current := s.currentWeek()
+	to = in.To
+	if to.IsZero() {
+		to = current
+	}
+	from = in.From
+	if from.IsZero() {
+		from = to.AddWeeks(1 - s.cfg.TimesheetTemplateWeeks)
+	}
+	switch {
+	case to.Before(from):
+		return from, to, errors.NewAppError(constants.WeekRangeInvalid, constants.MsgWeekRangeInvalid, errors.ErrorTypeValidation,
+			http.StatusBadRequest).WithOperation(opTimesheetTemplate).WithResource(resourceTimesheet)
+	case to.After(current):
+		return from, to, errors.NewAppError(constants.TimesheetWeekInFuture, constants.MsgTimesheetWeekInFuture,
+			errors.ErrorTypeValidation, http.StatusBadRequest).WithOperation(opTimesheetTemplate).WithResource(resourceTimesheet)
+	case isoweek.WeeksBetween(from, to)+1 > s.cfg.TimesheetMaxWeeks:
+		return from, to, errors.NewAppError(constants.WeekRangeTooLong, fmt.Sprintf(constants.MsgWeekRangeTooLongFormat,
+			s.cfg.TimesheetMaxWeeks), errors.ErrorTypeValidation, http.StatusBadRequest).
+			WithOperation(opTimesheetTemplate).WithResource(resourceTimesheet)
+	}
+	return from, to, nil
+}
+
+// templateRow is one line of the timesheet template; Actual is nil when nothing is recorded.
+type templateRow struct {
+	Email, Name, Program, Project, ProjectID string
+	Week                                     isoweek.Week
+	Planned                                  float64
+	Actual                                   *float64
+}
+
+// templateRows sums the baseline hours per person, project and week in the range, and adds
+// the recorded actual hours, also where there are no baseline hours. Rows are sorted by
+// person, program, project and week.
+func templateRows(assignments []models.Assignment, recorded []models.ActualHours, from, to isoweek.Week) []templateRow {
+	type key struct {
+		personID, projectID string
+		week                isoweek.Week
+	}
+	inRange := func(week isoweek.Week) bool { return !week.Before(from) && !week.After(to) }
+	rows := map[key]*templateRow{}
+	row := func(person models.Person, project models.Project, week isoweek.Week) *templateRow {
+		k := key{person.ID, project.ID, week}
+		if r, ok := rows[k]; ok {
+			return r
+		}
+		r := &templateRow{Email: person.Email, Name: person.Name, Project: project.Name, ProjectID: project.ID, Week: week}
+		if project.Program != nil {
+			r.Program = project.Program.Name
+		}
+		rows[k] = r
+		return r
+	}
+	for _, a := range assignments {
+		if a.Person == nil || a.Demand == nil || a.Demand.Project == nil {
+			continue
+		}
+		for _, alloc := range a.Allocations {
+			if inRange(alloc.Week) && alloc.Hours > hoursEpsilon {
+				row(*a.Person, *a.Demand.Project, alloc.Week).Planned += alloc.Hours
+			}
+		}
+	}
+	for _, r := range recorded {
+		if r.Person == nil || r.Project == nil || !inRange(r.Week) {
+			continue
+		}
+		hours := r.Hours
+		row(*r.Person, *r.Project, r.Week).Actual = &hours
+	}
+	out := make([]templateRow, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, *r)
+	}
+	slices.SortFunc(out, func(a, b templateRow) int {
+		return cmp.Or(cmp.Compare(a.Name, b.Name), cmp.Compare(a.Email, b.Email), cmp.Compare(a.Program, b.Program),
+			cmp.Compare(a.Project, b.Project), cmp.Compare(a.ProjectID, b.ProjectID), a.Week.Compare(b.Week))
+	})
+	return out
+}
+
+// writeTemplate writes the header and the rows as CSV.
+func writeTemplate(rows []templateRow) ([]byte, error) {
+	var buf bytes.Buffer
+	w := csv.NewWriter(&buf)
+	if err := w.Write(constants.TimesheetColumns); err != nil {
+		return nil, err
+	}
+	for _, r := range rows {
+		actual := ""
+		if r.Actual != nil {
+			actual = formatHours(*r.Actual)
+		}
+		record := []string{r.Email, safeCell(r.Name), safeCell(r.Program), safeCell(r.Project), r.ProjectID, r.Week.String(),
+			formatHours(r.Planned), actual}
+		if err := w.Write(record); err != nil {
+			return nil, err
+		}
+	}
+	w.Flush()
+	return buf.Bytes(), w.Error()
+}
+
+// formatHours writes hours rounded to hundredths, without trailing zeros: 20, 18.5.
+func formatHours(hours float64) string {
+	return strconv.FormatFloat(math.Round(hours*hourPrecision)/hourPrecision, 'f', -1, 64)
+}
+
+// safeCell puts TimesheetTextPrefix before text a spreadsheet would run as a formula, so it
+// shows as text. Names are free text typed by users; emails, ids and numbers never need it.
+func safeCell(text string) string {
+	if text != "" && strings.ContainsRune(constants.TimesheetFormulaPrefixes, rune(text[0])) {
+		return constants.TimesheetTextPrefix + text
+	}
+	return text
 }
 
 func (s *timesheetService) Import(ctx context.Context, in ImportInput) (*models.ImportResult, error) {
