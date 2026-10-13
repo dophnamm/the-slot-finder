@@ -54,6 +54,7 @@ type ScheduleAbsenceResponse struct {
 	Type        string  `json:"type" enums:"leave,training"`
 	Status      string  `json:"status" enums:"planned,approved"`
 	HoursPerDay float64 `json:"hours_per_day" example:"8"`
+	Source      string  `json:"source" enums:"manual,calendar"`
 }
 
 // ScheduleHolidayResponse is a company-wide holiday on a day.
@@ -97,7 +98,7 @@ func NewScheduleResponse(s models.PersonSchedule) ScheduleResponse {
 	for _, d := range s.Days {
 		absences := make([]ScheduleAbsenceResponse, 0, len(d.Absences))
 		for _, a := range d.Absences {
-			absences = append(absences, ScheduleAbsenceResponse{ID: a.ID, Type: a.Type, Status: a.Status, HoursPerDay: a.HoursPerDay})
+			absences = append(absences, ScheduleAbsenceResponse{ID: a.ID, Type: a.Type, Status: a.Status, HoursPerDay: a.HoursPerDay, Source: a.Source})
 		}
 		holidays := make([]ScheduleHolidayResponse, 0, len(d.Holidays))
 		for _, id := range d.Holidays {

@@ -28,6 +28,7 @@ type AbsenceResponse struct {
 	HoursPerDay float64 `json:"hours_per_day" example:"8"`
 	Type        string  `json:"type" example:"leave"`
 	Status      string  `json:"status" example:"approved"`
+	Source      string  `json:"source" example:"manual" enums:"manual,calendar"`
 }
 
 // NewAbsenceResponse maps an absence model.
@@ -40,6 +41,7 @@ func NewAbsenceResponse(a models.Absence) AbsenceResponse {
 		HoursPerDay: a.HoursPerDay,
 		Type:        a.Type,
 		Status:      a.Status,
+		Source:      a.Source,
 	}
 }
 

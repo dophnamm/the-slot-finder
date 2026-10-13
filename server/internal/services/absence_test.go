@@ -69,6 +69,11 @@ func (m *MockAbsenceRepository) ListOverlapping(ctx context.Context, from, to ti
 	return args.Get(0).([]models.Absence), args.Error(1)
 }
 
+func (m *MockAbsenceRepository) ListCalendarLeave(ctx context.Context, personID string) ([]models.Absence, error) {
+	args := m.Called(ctx, personID)
+	return args.Get(0).([]models.Absence), args.Error(1)
+}
+
 // stubPeople knows one person, linked to the signed-in specialist.
 type stubPeople struct {
 	PeopleService
@@ -135,7 +140,8 @@ func TestAvailabilityService_Create(t *testing.T) {
 			repo := new(MockAbsenceRepository)
 			if tt.wantErr == 0 {
 				repo.On("Create", mock.Anything, mock.MatchedBy(func(a *models.Absence) bool {
-					return a.Status == tt.wantStatus && *a.PersonID == tt.in.PersonID && a.Type == tt.in.Type
+					return a.Status == tt.wantStatus && *a.PersonID == tt.in.PersonID && a.Type == tt.in.Type &&
+						a.Source == constants.AbsenceSourceManual
 				})).Return(nil)
 			}
 			absence, err := newAvailability(repo).Create(tt.ctx, tt.in)

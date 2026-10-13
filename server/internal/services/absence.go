@@ -129,6 +129,7 @@ func (s *availabilityService) Create(ctx context.Context, in CreateAbsenceInput)
 		HoursPerDay: in.HoursPerDay,
 		Type:        in.Type,
 		Status:      status,
+		Source:      constants.AbsenceSourceManual,
 	}
 	create := func(ctx context.Context) error { return s.repo.Create(ctx, absence) }
 	event := ChangeInput{Type: constants.EventAbsenceAdded, Payload: absenceChange(absence, person.Name)}
@@ -247,6 +248,7 @@ func (s *availabilityService) CreateHoliday(ctx context.Context, in CreateHolida
 		HoursPerDay: in.HoursPerDay,
 		Type:        constants.AbsenceTypeHoliday,
 		Status:      constants.AbsenceStatusApproved,
+		Source:      constants.AbsenceSourceManual,
 	}
 	create := func(ctx context.Context) error { return s.repo.Create(ctx, holiday) }
 	event := ChangeInput{Type: constants.EventAbsenceAdded, Payload: absenceChange(holiday, "")}

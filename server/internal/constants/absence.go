@@ -13,6 +13,12 @@ const (
 	AbsenceStatusApproved = "approved"
 )
 
+// Absence sources: entered by hand, or read from the person's calendar feed.
+const (
+	AbsenceSourceManual   = "manual"
+	AbsenceSourceCalendar = "calendar"
+)
+
 // PersonalAbsenceTypes are the types a person's own absence may have.
 var PersonalAbsenceTypes = []string{AbsenceTypeLeave, AbsenceTypeTraining}
 
