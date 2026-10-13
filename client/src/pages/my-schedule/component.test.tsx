@@ -9,6 +9,7 @@ vi.mock('@/features/person-calendar', () => ({
     `${personId} ${canOpenProjects ? 'with project links' : 'without project links'}`,
 }))
 vi.mock('@/features/absences', () => ({ AbsenceList: () => null }))
+vi.mock('@/features/calendar-feed', () => ({ CalendarFeed: () => null }))
 
 afterEach(() => {
   cleanup()

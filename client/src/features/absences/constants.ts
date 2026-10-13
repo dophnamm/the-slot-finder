@@ -1,8 +1,9 @@
+import { ABSENCES_QUERY_KEY } from '@/utils/constants'
 import type { AbsenceStatus, AbsenceType } from './types'
 
 export { ABSENCE_STATUS_LABELS, ABSENCE_TYPE_LABELS } from '@/shared/people'
 
-export const absencesQueryKey = (personId: string) => ['absences', personId] as const
+export const absencesQueryKey = (personId: string) => [...ABSENCES_QUERY_KEY, personId] as const
 
 /** Types a person's own absence may have (holidays come from the holiday list). */
 export const PERSONAL_ABSENCE_TYPES = ['leave', 'training'] as const satisfies readonly AbsenceType[]

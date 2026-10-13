@@ -6,6 +6,8 @@ export const PEOPLE_ENDPOINTS = {
   skills: (id: string) => `${person(id)}/skills`,
   absences: (id: string) => `${person(id)}/absences`,
   assignments: (id: string) => `${person(id)}/assignments`,
+  calendarFeed: (id: string) => `${person(id)}/calendar-feed`,
+  calendarFeedSync: (id: string) => `${person(id)}/calendar-feed/sync`,
   schedule: (id: string) => `${person(id)}/schedule`,
 } as const
 

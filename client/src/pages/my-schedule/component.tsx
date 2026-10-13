@@ -1,4 +1,5 @@
 import { AbsenceList } from '@/features/absences'
+import { CalendarFeed } from '@/features/calendar-feed'
 import { PersonCalendar } from '@/features/person-calendar'
 import { can } from '@/resources/rbac'
 import { useCurrentUser } from '@/shared/auth'
@@ -21,6 +22,7 @@ export function MySchedulePage() {
           <Section title={t('My absences')} description={t('Report leave or training. A planner approves it.')}>
             <AbsenceList personId={user.person_id} canApprove={false} />
           </Section>
+          <CalendarFeed personId={user.person_id} />
         </>
       ) : (
         <PagePlaceholder

@@ -18,6 +18,9 @@ vi.mock('@/shared/people', () => ({
 }))
 vi.mock('@/features/person-calendar', () => ({ PersonCalendar: () => null }))
 vi.mock('@/features/absences', () => ({ AbsenceList: () => null }))
+vi.mock('@/features/calendar-feed', () => ({
+  CalendarFeed: ({ personId }: { personId: string }) => `calendar of ${personId}`,
+}))
 
 function renderPage(role: string) {
   useCurrentUser.mockReturnValue({ data: { role } })
@@ -48,5 +51,13 @@ describe('PersonDetailPage', () => {
     cleanup()
     renderPage('lead')
     expect(screen.queryByText('Absences')).toBeNull()
+  })
+
+  it('shows the calendar panel to a planner only', () => {
+    renderPage('planner')
+    expect(screen.getByText('calendar of u1')).toBeTruthy()
+    cleanup()
+    renderPage('lead')
+    expect(screen.queryByText('calendar of u1')).toBeNull()
   })
 })
