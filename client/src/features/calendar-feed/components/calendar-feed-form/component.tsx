@@ -1,30 +1,23 @@
 import { type ChangeEvent, type FormEvent, useState } from 'react'
-import { toast } from 'sonner'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { CALENDAR_FEED_ERROR_LABELS } from '../../constants'
-import { useConnectCalendarFeed } from '../../use-calendar-feed'
 import type { CalendarFeedFormProps } from './types'
 import { linkProblem } from './utils'
 
 /** Paste the secret iCal address; the server checks it and syncs it once. */
-export function CalendarFeedForm({ personId }: CalendarFeedFormProps) {
+export function CalendarFeedForm({ personId, onConnect, pending, error }: CalendarFeedFormProps) {
   const { t } = useTranslation()
   const [link, setLink] = useState('')
-  const connect = useConnectCalendarFeed(personId)
-  const problem = linkProblem(connect.error)
+  const problem = linkProblem(error)
   const inputId = `calendar-link-${personId}`
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => setLink(event.target.value)
-  const handleConnected = () => {
-    toast.success(t('Calendar connected.'))
-    setLink('')
-  }
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    connect.mutate(link.trim(), { onSuccess: handleConnected })
+    onConnect(link.trim())
   }
 
   return (
@@ -48,7 +41,7 @@ export function CalendarFeedForm({ personId }: CalendarFeedFormProps) {
         </p>
         {problem && <p className="text-sm text-destructive">{t(CALENDAR_FEED_ERROR_LABELS[problem])}</p>}
       </div>
-      <Button type="submit" className="self-start" disabled={connect.isPending}>
+      <Button type="submit" className="self-start" disabled={pending}>
         {t('Connect calendar')}
       </Button>
     </form>
