@@ -3,7 +3,7 @@
 **Goal:** a planner tries a what-if, such as "Checkout Revamp slips two weeks" or "Alex is on leave from 26 Oct to 6 Nov". They see who would gain or lose hours, which demand would go unmet and how much the plan would change, without touching the baseline or any real data. This is the **Scenario** of the [root README](../../README.md#6-data-model): a `PLAN` of kind `scenario` with `assumptions`.
 
 **Roles:** planner (create, view, run again, delete).
-**Target:** 12–13 Oct · **Depends on:** [staffing-draft](staffing-draft.md), [replan-on-change](replan-on-change.md) · **Branch:** `feat/scenarios` · **Status:** In review
+**Target:** 12–13 Oct · **Depends on:** [staffing-draft](staffing-draft.md), [replan-on-change](replan-on-change.md) · **Branch:** `feat/scenarios` · **Status:** Done (PR #24)
 
 ## In scope
 
