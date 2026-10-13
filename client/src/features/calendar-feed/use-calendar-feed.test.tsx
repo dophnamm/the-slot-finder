@@ -1,11 +1,12 @@
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { translate } from '@/shared/i18n'
-import { INSIGHTS_QUERY_KEY } from '@/utils/constants'
+import { ABSENCES_QUERY_KEY, INSIGHTS_QUERY_KEY } from '@/utils/constants'
 import { CalendarFeed } from './component'
 import type { CalendarFeedState, ConnectedCalendar } from './types'
+import { useDisconnectCalendarFeed } from './use-calendar-feed'
 
 const { getCalendarFeed, connectCalendarFeed, success } = vi.hoisted(() => ({
   getCalendarFeed: vi.fn(),
@@ -62,5 +63,21 @@ describe('connecting a calendar through the real hooks', () => {
 
     expect(await screen.findByText(CALENDAR.host)).toBeTruthy()
     await waitFor(() => expect(success).toHaveBeenCalledWith(translate('Calendar connected.')))
+  })
+})
+
+describe('useDisconnectCalendarFeed', () => {
+  it('refreshes the absences and the calendar, whose leave is no longer marked as from a calendar', async () => {
+    const queryClient = new QueryClient()
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    )
+
+    const { result } = renderHook(() => useDisconnectCalendarFeed('p1'), { wrapper })
+    await act(() => result.current.mutateAsync())
+
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ABSENCES_QUERY_KEY })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: INSIGHTS_QUERY_KEY })
   })
 })
