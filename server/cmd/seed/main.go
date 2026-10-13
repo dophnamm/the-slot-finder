@@ -48,6 +48,12 @@ func main() {
 		logger.Sugar.Infof("Baseline staffed: %v", staffedProjects)
 	}
 	logger.Sugar.Infof("Scenarios added: %d", plan.scenarios)
+
+	actuals, err := seedActuals(database, cfg)
+	if err != nil {
+		logger.Sugar.Fatalf("seed actual hours: %v", err)
+	}
+	logger.Sugar.Infof("Actual hours added: %d rows", actuals)
 }
 
 func seed(tx *gorm.DB) error {

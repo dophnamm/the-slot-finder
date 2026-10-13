@@ -33,6 +33,8 @@ func seedConfig() *config.Config {
 		PlanningMinHoursPerWeek: 8, PlanningHourStep: 1, PlanningWeightDeadline: 1, PlanningWeightPrimaryFit: 0.8,
 		PlanningWeightBalance: 0.6, PlanningWeightStability: 0.5, PlanningWeightContinuity: 0.3, PlanningReplanStabilityWeight: 2,
 		ScenarioMaxShiftWeeks: 12, ScenarioMaxAssumptions: 10,
+		TimesheetTemplateWeeks: 4, TimesheetMaxWeeks: 12, TimesheetMaxWeekHours: 80,
+		TimesheetMaxBytes: 1 << 20, TimesheetMaxRows: 5000,
 	}
 }
 
@@ -64,4 +66,33 @@ func TestSeedPlans_Postgres(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, again.staffed, "a staffed baseline is left alone")
 	assert.Zero(t, again.scenarios, "scenarios with the same name are not added twice")
+}
+
+func TestSeedActuals_Postgres(t *testing.T) {
+	pdb := dbtest.NewPostgres(t)
+	dbtest.ApplyMigrations(t, pdb)
+	require.NoError(t, pdb.Transaction(seed))
+	_, err := seedPlans(pdb, seedConfig())
+	require.NoError(t, err)
+
+	created, err := seedActuals(pdb, seedConfig())
+	require.NoError(t, err)
+
+	var saved []models.ActualHours
+	require.NoError(t, pdb.Find(&saved).Error)
+	assert.Len(t, saved, created)
+	allowed := map[string]bool{}
+	for name := range actualFactors {
+		id, err := projectID(pdb.DB, name)
+		require.NoError(t, err)
+		allowed[id] = true
+	}
+	for _, row := range saved {
+		assert.True(t, allowed[row.ProjectID], "only the seeded projects get actual hours")
+		assert.Positive(t, row.Hours)
+	}
+
+	again, err := seedActuals(pdb, seedConfig())
+	require.NoError(t, err)
+	assert.Zero(t, again, "running the seed again adds nothing")
 }
