@@ -189,6 +189,7 @@ func appOptions(cfg *config.Config) []fx.Option {
 			repositories.ProvidePlanRepository,
 			repositories.ProvideAuditRepository,
 			repositories.ProvideChangeEventRepository,
+			repositories.ProvideActualHoursRepository,
 			services.ProvidePeopleService,
 			services.ProvidePersonFinder,
 			services.ProvideAvailabilityService,
