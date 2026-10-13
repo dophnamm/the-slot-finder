@@ -13,3 +13,8 @@ export function createAbsence(personId: string, absence: CreateAbsenceInput) {
 export function deleteAbsence(id: string) {
   return request<null>({ url: ABSENCE_ENDPOINTS.detail(id), method: 'DELETE' })
 }
+
+/** Turns a planned absence into an approved one (planners only). */
+export function approveAbsence(id: string) {
+  return request<Absence>({ url: ABSENCE_ENDPOINTS.approve(id), method: 'POST' })
+}
