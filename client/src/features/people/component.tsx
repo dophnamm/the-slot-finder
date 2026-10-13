@@ -14,7 +14,7 @@ import type { PeopleTableProps, Person } from './types'
 import { usePeople } from './use-people'
 
 /** Everyone who can be staffed, with their skills; planners add and edit people here. */
-export function PeopleTable({ onShowAbsences }: PeopleTableProps) {
+export function PeopleTable({ onShowAbsences, actions }: PeopleTableProps) {
   const { t } = useTranslation()
   const [page, setPage] = useState(1)
   const [formOpen, setFormOpen] = useState(false)
@@ -35,7 +35,12 @@ export function PeopleTable({ onShowAbsences }: PeopleTableProps) {
     <Section
       title={t('People')}
       description={t('Expertise, levels and weekly hours of everyone who can be staffed.')}
-      action={<Button onClick={handleAdd}>{t('Add person')}</Button>}
+      action={
+        <div className="flex flex-wrap gap-2">
+          {actions}
+          <Button onClick={handleAdd}>{t('Add person')}</Button>
+        </div>
+      }
     >
       <Table footer={<Pager page={page} total={data?.meta.total} pageSize={PEOPLE_PAGE_SIZE} onPageChange={setPage} />}>
         <TableHeader>

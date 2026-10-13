@@ -16,6 +16,7 @@ export const PERMISSIONS = {
   'scenarios:view': [ROLES.PLANNER],
   'people:view': [ROLES.PLANNER, ROLES.LEAD],
   'people:manage': [ROLES.PLANNER],
+  'timesheets:import': [ROLES.PLANNER],
   'absences:approve': [ROLES.PLANNER],
   'holidays:manage': [ROLES.PLANNER],
   'events:view': [ROLES.PLANNER],

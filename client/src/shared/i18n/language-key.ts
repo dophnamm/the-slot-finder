@@ -77,6 +77,7 @@ export type LanguageKey = {
   Close: string
   Closed: string
   Closing: string
+  Column: string
   'Company holiday {dates}': string
   'Company holiday {dates} removed': string
   'Company holidays': string
@@ -102,6 +103,9 @@ export type LanguageKey = {
   'Demand saved.': string
   Done: string
   'Done points': string
+  'Download template': string
+  'Download the template': string
+  'Download the template for past weeks, fill in actual_hours, then import it. One row with a problem saves nothing.': string
   Draft: string
   'Draft accepted. It is now the baseline.': string
   'Draft created': string
@@ -145,9 +149,14 @@ export type LanguageKey = {
   'Hours by week against capacity, with leave and holidays by day.': string
   'Hours in {week}': string
   'Hours moved': string
+  'Hours must be a number from 0 to the weekly limit.': string
   'Hours per day': string
   'Hours per ISO week. Locked hours stay as they are when a draft is generated again; stretch is always locked.': string
   'Hours the planning engine could not place in this scenario.': string
+  Import: string
+  'Import the filled-in file': string
+  'Import timesheet': string
+  'Importing…': string
   Inactive: string
   Incoming: string
   'Incoming projects across programs, highest priority and earliest deadline first.': string
@@ -159,6 +168,7 @@ export type LanguageKey = {
   'Leave, holidays and slipped phases or deadlines. Each change is checked against the baseline; a conflict produces a staffing draft.': string
   Level: string
   'Level {level}': string
+  Line: string
   Load: string
   'Loading…': string
   'Lock hours': string
@@ -193,10 +203,12 @@ export type LanguageKey = {
   'No incoming projects.': string
   'No lead': string
   'No people yet.': string
+  'No person has this email.': string
   'No person record': string
   'No phases yet': string
   'No primary expertise': string
   'No programs yet.': string
+  'No project has this id.': string
   'No project needs attention.': string
   'No projects yet.': string
   'No scenarios yet. Create one to try a change.': string
@@ -209,8 +221,10 @@ export type LanguageKey = {
   'Nobody’s hours change in this scenario.': string
   'Non-project hours': string
   'None this week': string
+  'Not an ISO week such as 2026-W41.': string
   'Not primary': string
   'Nothing real has changed. To make it real, move the phases on the project’s page or add the leave on the People page; a re-plan draft follows.': string
+  'Nothing was saved. Fix these rows and import again.': string
   'Objectives, one per line': string
   'On hold': string
   Open: string
@@ -253,6 +267,7 @@ export type LanguageKey = {
   'Primary expertise': string
   Priority: string
   'Priority {priority}': string
+  Problem: string
   Program: string
   'Program brief': string
   'Program not found': string
@@ -329,12 +344,16 @@ export type LanguageKey = {
   Superseded: string
   'Team heatmap': string
   'The baseline changed to version {version} since this draft was made, so it can no longer be accepted.': string
+  'The file is not valid CSV from this line.': string
   'The free hours are held by locked allocations': string
+  'The header lacks this column.': string
   'The last phase ends after the deadline week. Move the deadline or shorten a phase.': string
   'The last phase would end after the deadline week.': string
+  'The same person, project and week appear more than once.': string
   'The server is unreachable.': string
   'The server keeps rejecting your sign-in. Try again, or ask an admin to check the sign-in settings.': string
   'The Slot Finder': string
+  'The week is after the current week.': string
   'There is no program at this address.': string
   'There is no project at this address.': string
   'There is no screen at this address.': string
@@ -344,7 +363,9 @@ export type LanguageKey = {
   'This draft has stretch assignments: people below the minimum level or without the expertise. Accept them anyway?': string
   Time: string
   Timeline: string
+  'Timesheet file': string
   To: string
+  'To week': string
   Today: string
   Training: string
   'Triggered by': string
@@ -380,6 +401,7 @@ export type LanguageKey = {
   '{count} change is waiting for review.': string
   '{count} changes are waiting for review.': string
   '{count} weeks': string
+  '{created} rows added, {updated} updated, {skipped} skipped.': string
   '{date} ({week})': string
   '{done} of {scope} points done': string
   '{expertise} (level {level}+)': string
