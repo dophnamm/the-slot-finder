@@ -5,7 +5,7 @@ import { MetricBar } from '@/shared/components/metric-bar'
 import { ProposeSquadButton } from '@/shared/components/propose-squad-button'
 import { StatusBadge } from '@/shared/components/status-badge'
 import { TextLink } from '@/shared/components/text-link'
-import { activeWarnings } from '@/shared/programs'
+import { activeWarnings, burnMetric } from '@/shared/programs'
 import { useTranslation } from '@/shared/i18n'
 import { Badge } from '@/shared/ui/badge'
 import { TableCell } from '@/shared/ui/table'
@@ -17,6 +17,7 @@ export function ProjectRow({ project }: ProjectRowProps) {
   const detailPath = generatePath(ROUTES.projectDetail, { programId: project.program_id, id: project.id })
   const phase = project.current_phase
   const { metrics } = project
+  const burn = metrics ? burnMetric(metrics) : null
 
   return (
     <LinkRow to={detailPath}>
@@ -61,11 +62,11 @@ export function ProjectRow({ project }: ProjectRowProps) {
         )}
       </TableCell>
       <TableCell>
-        {metrics && (
+        {metrics && burn && (
           <div className="grid min-w-56 grid-cols-2 gap-x-4 gap-y-1">
             <MetricBar compact label={t('Time')} value={metrics.time_percent} warning={metrics.past_end} />
             <MetricBar compact label={t('Scope')} value={metrics.scope_percent} warning={metrics.behind_on_delivery} />
-            <MetricBar compact label={t('Planned burn')} value={metrics.planned_burn_percent} />
+            <MetricBar compact label={t(burn.label)} value={burn.value} />
             <MetricBar compact label={t('Staffing')} value={metrics.staffing_percent} warning={metrics.understaffed} />
           </div>
         )}

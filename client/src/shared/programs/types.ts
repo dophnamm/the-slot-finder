@@ -1,4 +1,11 @@
+import type { PlainKey } from '@/shared/i18n'
 import type { AssignmentKind } from '@/shared/staffing'
+
+/** The burn a progress view shows, with its label. */
+export interface BurnMetric {
+  label: PlainKey
+  value: number | null
+}
 
 /** Statuses and actions; they match the server's constants/program.go. */
 export type ProgramStatus = 'open' | 'pending' | 'closing' | 'closed' | 'cancelled'
@@ -58,11 +65,15 @@ export interface ProgressMetrics {
   scope_percent: number | null
   staffing_percent: number | null
   planned_burn_percent: number | null
+  /** Actual hours ÷ budget; null until a timesheet import recorded actual hours. */
+  burn_percent: number | null
   budget_hours: number
   planned_hours: number
   forecast_hours: number
   gap_hours: number
   planned_to_date_hours: number
+  /** Σ actual hours from timesheet imports; null until any are recorded. */
+  actual_hours: number | null
   behind_on_delivery: boolean
   understaffed: boolean
   at_risk: boolean

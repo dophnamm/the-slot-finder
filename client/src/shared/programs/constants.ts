@@ -75,3 +75,9 @@ export const PROGRESS_WARNINGS: readonly {
   { flag: 'over_planned', label: 'Over-planned', badge: 'violet' },
   { flag: 'past_end', label: 'Past the end date', badge: 'red' },
 ]
+
+/** Labels of the two burns: from actual hours, or from planned hours until actual hours exist. */
+export const BURN_LABELS = {
+  actual: 'Burn',
+  planned: 'Planned burn',
+} as const satisfies Record<string, PlainKey>

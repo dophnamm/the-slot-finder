@@ -1,7 +1,7 @@
 import { can, type Role } from '@/resources/rbac'
 import { formatIsoWeekSpan } from '@/utils/functions'
-import { FINAL_STATUSES, PROGRESS_WARNINGS } from './constants'
-import type { EditorUser, PersonRef, ProgressMetrics, ProjectDetail } from './types'
+import { BURN_LABELS, FINAL_STATUSES, PROGRESS_WARNINGS } from './constants'
+import type { BurnMetric, EditorUser, PersonRef, ProgressMetrics, ProjectDetail } from './types'
 
 /** Planners edit everything; a lead edits what one of `leads` names them as lead of. */
 export function canEdit(user: EditorUser | undefined, leads: (PersonRef | null | undefined)[]): boolean {
@@ -36,4 +36,11 @@ export function availableActions<A extends string, S extends string>(
 /** The warnings the server raised on these metrics, in display order. */
 export function activeWarnings(metrics: ProgressMetrics) {
   return PROGRESS_WARNINGS.filter((warning) => metrics[warning.flag])
+}
+
+/** The burn to show: from actual hours once the project has any, else planned burn. */
+export function burnMetric(metrics: ProgressMetrics): BurnMetric {
+  return metrics.burn_percent === null
+    ? { label: BURN_LABELS.planned, value: metrics.planned_burn_percent }
+    : { label: BURN_LABELS.actual, value: metrics.burn_percent }
 }
