@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BAND_CLASSES } from '../../constants'
 import type { HeatmapCell, HeatmapData } from '../../types'
@@ -48,16 +49,29 @@ const data: HeatmapData = {
   ],
 }
 
+function renderGrid(expertiseId: string) {
+  render(
+    <MemoryRouter>
+      <HeatmapGrid data={data} expertiseId={expertiseId} />
+    </MemoryRouter>,
+  )
+}
+
 afterEach(() => {
   cleanup()
   vi.useRealTimers()
 })
 
 describe('HeatmapGrid', () => {
+  it("links each person's name to their page", () => {
+    renderGrid('')
+    expect(screen.getByRole('link', { name: 'Erin' }).getAttribute('href')).toBe('/people/e1')
+  })
+
   it("outlines the current week's column", () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-10-21T09:00:00'))
-    render(<HeatmapGrid data={data} expertiseId="" />)
+    renderGrid('')
 
     expect(screen.getByRole('button', { name: 'Erin in 2026-W43' }).closest('td')?.className).toContain(
       CURRENT_WEEK_CLASS,
@@ -68,7 +82,7 @@ describe('HeatmapGrid', () => {
   })
 
   it('groups people by primary expertise and colours each cell by its band', () => {
-    render(<HeatmapGrid data={data} expertiseId="" />)
+    renderGrid('')
 
     expect(screen.getByText('Engineer (1)')).toBeTruthy()
     expect(screen.getByText('QA (1)')).toBeTruthy()
@@ -81,12 +95,12 @@ describe('HeatmapGrid', () => {
   })
 
   it('hatches a week with planned leave', () => {
-    render(<HeatmapGrid data={data} expertiseId="" />)
+    renderGrid('')
     expect(screen.getByRole('button', { name: 'Quinn in 2026-W42' }).className).toContain('bg-hatched')
   })
 
   it('marks people whose primary expertise is not the filtered one', () => {
-    render(<HeatmapGrid data={data} expertiseId="qa" />)
+    renderGrid('qa')
     expect(screen.getAllByText('Not primary')).toHaveLength(1)
   })
 })
