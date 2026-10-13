@@ -8,10 +8,12 @@ import (
 	"log"
 	"mime"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
 	"the-slot-finder/server/internal/config"
+	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/request"
 
 	"the-slot-finder/server/internal/logger"
@@ -142,6 +144,9 @@ const LogBodyKey = "log_body"
 // truncatedSuffix marks a logged body that was cut at LOG_BODY_MAX_BYTES.
 const truncatedSuffix = "…[truncated]"
 
+// redactedBody stands in the log for the body of a route in constants.SecretBodyPaths.
+const redactedBody = "[redacted]"
+
 // multipartMediaTypePrefix matches multipart/form-data, multipart/mixed and the like.
 const multipartMediaTypePrefix = "multipart/"
 
@@ -152,10 +157,15 @@ func BodyLimit(cfg *config.Config) echo.MiddlewareFunc {
 }
 
 // LogBody keeps a copy of the request body for the request log, cut to LOG_BODY_MAX_BYTES.
-// Multipart bodies (file uploads) are not read.
+// Multipart bodies (file uploads) are not read, and a body that holds a secret is not kept.
+// Routing runs before global middleware, so c.Path() is the matched route here.
 func LogBody(cfg *config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
+			if slices.Contains(constants.SecretBodyPaths, c.Path()) {
+				c.Set(LogBodyKey, redactedBody)
+				return next(c)
+			}
 			req := c.Request()
 			if req.Body == nil || req.Body == http.NoBody || isMultipart(req) {
 				return next(c)

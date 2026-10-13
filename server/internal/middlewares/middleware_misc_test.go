@@ -340,6 +340,28 @@ func TestLogBody(t *testing.T) {
 		assert.Equal(t, "--x--", seen)
 	})
 
+	t.Run("a body that holds a secret is never kept", func(t *testing.T) {
+		e := echo.New()
+		var logged any
+		var seen string
+		e.Use(LogBody(&config.Config{LogBodyMaxBytes: 256}))
+		e.PUT(constants.PathAPIBase+constants.PathPersonCalendarFeed, func(c *echo.Context) error {
+			logged = c.Get(LogBodyKey)
+			data, err := io.ReadAll(c.Request().Body)
+			require.NoError(t, err)
+			seen = string(data)
+			return c.NoContent(http.StatusNoContent)
+		})
+		body := `{"url":"https://calendar.google.com/calendar/ical/a/private-x/basic.ics"}`
+		req := httptest.NewRequest(http.MethodPut, constants.PathAPIBase+"/people/p1/calendar-feed", strings.NewReader(body))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusNoContent, rec.Code)
+		assert.Equal(t, redactedBody, logged)
+		assert.Equal(t, body, seen)
+	})
+
 	t.Run("body over the limit gets 413", func(t *testing.T) {
 		_, _, code := capture(t, echo.MIMEApplicationJSON, strings.Repeat("x", 32))
 		assert.Equal(t, http.StatusRequestEntityTooLarge, code)
