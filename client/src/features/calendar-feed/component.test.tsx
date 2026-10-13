@@ -52,6 +52,14 @@ describe('CalendarFeed', () => {
     expect(screen.getByText(translate('Calendar sync is turned off on this server.'))).toBeTruthy()
   })
 
+  it('shows what a secret link looks like', () => {
+    showState({ kind: 'none' })
+    render(<CalendarFeed personId={PERSON_ID} />)
+    expect(screen.getByLabelText(translate('Secret iCal address')).getAttribute('placeholder')).toBe(
+      translate('e.g. https://calendar.google.com/calendar/ical/…/private-…/basic.ics'),
+    )
+  })
+
   it('connects a pasted link, trimmed', () => {
     showState({ kind: 'none' })
     render(<CalendarFeed personId={PERSON_ID} />)
