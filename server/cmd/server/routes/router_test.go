@@ -68,6 +68,11 @@ func (plannerOnlyPeople) LinkPrincipal(_ context.Context, principal request.Prin
 }
 
 func newTestRouter(cfg *config.Config) *echo.Echo {
+	return newTestRouterWith(cfg, nil)
+}
+
+// newTestRouterWith is newTestRouter with an availability service behind the absence routes.
+func newTestRouterWith(cfg *config.Config, availability services.AvailabilityService) *echo.Echo {
 	verifier := fakeVerifier{
 		"planner-token":    userClaims("planner", constants.RolePlanner, "offline_access"),
 		"lead-token":       userClaims("lead", constants.RoleLead),
@@ -78,7 +83,7 @@ func newTestRouter(cfg *config.Config) *echo.Echo {
 	identity := handlers.ProvideIdentityHandler(authz, plannerOnlyPeople{})
 	health := handlers.ProvideHealthHandler(cfg, nil)
 	person := handlers.ProvidePersonHandler(nil, authz, nil)
-	absence := handlers.ProvideAbsenceHandler(nil, nil)
+	absence := handlers.ProvideAbsenceHandler(availability, nil)
 	program := handlers.ProvideProgramHandler(nil, nil)
 	project := handlers.ProvideProjectHandler(nil, nil, nil, nil)
 	plan := handlers.ProvidePlanHandler(nil, nil)
@@ -228,6 +233,44 @@ func TestRouter_People_RBAC(t *testing.T) {
 			req := httptest.NewRequest(tt.method, constants.PathAPIBase+tt.path, nil)
 			req.RemoteAddr = "192.0.2.10:5000"
 			// CSRF runs before auth; unsafe methods from the same origin pass it.
+			req.Header.Set("Sec-Fetch-Site", "same-origin")
+			if tt.token != "" {
+				req.Header.Set(echo.HeaderAuthorization, "Bearer "+tt.token)
+			}
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+			assert.Equal(t, tt.wantStatus, rec.Code, rec.Body.String())
+		})
+	}
+}
+
+// approvingAvailability approves any absence, so a request that passes the role check gets 200.
+type approvingAvailability struct {
+	services.AvailabilityService
+}
+
+func (approvingAvailability) Approve(_ context.Context, id string) (*models.Absence, error) {
+	return &models.Absence{BaseModel: models.BaseModel{ID: id}, Status: constants.AbsenceStatusApproved}, nil
+}
+
+func TestRouter_ApproveAbsence_RBAC(t *testing.T) {
+	e := newTestRouterWith(baseConfig(), approvingAvailability{})
+	path := constants.PathAPIBase + "/absences/0192f3a4-0000-7000-8000-0000000000aa/approve"
+	tests := []struct {
+		name       string
+		token      string
+		wantStatus int
+	}{
+		{name: "a planner approves", token: "planner-token", wantStatus: http.StatusOK},
+		{name: "a lead cannot approve", token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "a specialist cannot approve", token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "no token", wantStatus: http.StatusUnauthorized},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, path, nil)
+			req.RemoteAddr = "192.0.2.10:5000"
+			// CSRF runs before auth; a same-origin POST passes it.
 			req.Header.Set("Sec-Fetch-Site", "same-origin")
 			if tt.token != "" {
 				req.Header.Set(echo.HeaderAuthorization, "Bearer "+tt.token)

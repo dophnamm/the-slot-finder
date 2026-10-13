@@ -1741,6 +1741,55 @@ paths:
       summary: Remove an absence or a holiday
       tags:
       - Availability
+  /absences/{id}/approve:
+    post:
+      description: Turns a person's planned absence into an approved one and records
+        an AbsenceAdded change event with the new status. An approved absence or a
+        holiday gets ABSENCE_NOT_PLANNED.
+      parameters:
+      - description: Absence id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.AbsenceResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Approve a planned absence
+      tags:
+      - Availability
   /events:
     get:
       description: Changes that may break the plan (absence, slipped phases and deadlines),
