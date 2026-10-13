@@ -1,3 +1,6 @@
+import { generatePath } from 'react-router'
+import { ROUTES } from '@/resources/routes'
+import { TextLink } from '@/shared/components/text-link'
 import { useTranslation } from '@/shared/i18n'
 import { Badge } from '@/shared/ui/badge'
 import { TableCell, TableRow } from '@/shared/ui/table'
@@ -14,7 +17,7 @@ export function HeatmapRow({ row, expertiseId, currentWeek }: HeatmapRowProps) {
     <TableRow>
       <TableCell className={PERSON_COLUMN_CLASS}>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-medium">{row.person.name}</span>
+          <TextLink to={generatePath(ROUTES.personDetail, { id: row.person.id })}>{row.person.name}</TextLink>
           {notPrimary && <Badge variant="amber">{t('Not primary')}</Badge>}
         </div>
       </TableCell>
