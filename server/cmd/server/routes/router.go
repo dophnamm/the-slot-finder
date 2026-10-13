@@ -31,6 +31,7 @@ func Router(
 	insightsHandler *handlers.InsightsHandler,
 	eventHandler *handlers.EventHandler,
 	scenarioHandler *handlers.ScenarioHandler,
+	scheduleHandler *handlers.ScheduleHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 ) *echo.Echo {
@@ -139,6 +140,8 @@ func Router(
 	v1.GET(constants.PathMe, identityHandler.Me, authenticated, middlewares.RequireRole(constants.CurrentUserViewRoles...))
 
 	registerPeopleRoutes(v1, authenticated, personHandler, absenceHandler)
+	// A specialist reads only their own schedule (checked in the service).
+	v1.GET(constants.PathPersonSchedule, scheduleHandler.Get, authenticated, middlewares.RequireRole(constants.PersonScheduleRoles...))
 	registerProgramRoutes(v1, authenticated, programHandler, projectHandler)
 	registerPlanRoutes(v1, authenticated, planHandler, staffingHandler)
 	v1.GET(constants.PathHeatmap, insightsHandler.Heatmap, authenticated, middlewares.RequireRole(constants.InsightRoles...))

@@ -31,6 +31,7 @@ const (
 	MsgPersonUpdated         = "Person updated"
 	MsgPersonSkillsUpdated   = "Expertise updated"
 	MsgExpertisesListed      = "Expertises retrieved"
+	MsgScheduleRetrieved     = "Schedule retrieved"
 	MsgPersonNotFound        = "Person not found"
 	MsgPersonEmailTaken      = "A person with this email already exists"
 	MsgPersonListFailed      = "Could not list people"
