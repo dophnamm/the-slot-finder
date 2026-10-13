@@ -37,7 +37,7 @@ func TestHTTPFetcher_Fetch(t *testing.T) {
 		case "/big":
 			_, _ = w.Write([]byte(strings.Repeat("x", testMaxBytes+1)))
 		case "/away":
-			http.Redirect(w, r, "https://evil.example/steal", http.StatusFound)
+			http.Redirect(w, r, "https://accounts.google.com/ServiceLogin", http.StatusFound)
 		default:
 			http.NotFound(w, r)
 		}
@@ -58,8 +58,10 @@ func TestHTTPFetcher_Fetch(t *testing.T) {
 			url: srv.URL + secretPath, wantErr: ErrHostNotAllowed},
 		{name: "an allowed name that resolves to loopback is refused when dialling", fetcher: testFetcher(srv, publicAddr, loopbackHost),
 			url: srv.URL + secretPath, wantErr: ErrHostNotAllowed},
-		{name: "a redirect to another host is refused", fetcher: testFetcher(srv, allowAll, loopbackHost),
-			url: srv.URL + "/away", wantErr: ErrHostNotAllowed},
+		// A link the organization blocks redirects to a sign-in page: the link was right, so the
+		// person is told the calendar could not be fetched, not to paste another link.
+		{name: "a redirect to another host, such as a sign-in page, is refused as unreachable",
+			fetcher: testFetcher(srv, allowAll, loopbackHost), url: srv.URL + "/away", wantErr: ErrUnreachable},
 		{name: "a body over the limit", fetcher: testFetcher(srv, allowAll, loopbackHost), url: srv.URL + "/big", wantErr: ErrTooLarge},
 		{name: "a missing calendar", fetcher: testFetcher(srv, allowAll, loopbackHost), url: srv.URL + "/gone", wantErr: ErrUnreachable},
 	}
