@@ -3,7 +3,7 @@
 **Goal:** when someone blocks time as out of office in Google Calendar or Outlook, the Slot Finder picks it up as planned leave. The planner approves it, and the [re-plan flow](replan-on-change.md) runs as for any other leave, without anyone typing the leave twice.
 
 **Roles:** the person, whatever their role (connects their own calendar), planner (connects anyone's, sees the status, syncs now).
-**Target:** 15–16 Oct · **Depends on:** [member-calendar](member-calendar.md), [replan-on-change](replan-on-change.md) · **Branch:** `feat/calendar-sync` · **Status:** In review (PR #34)
+**Target:** 15–16 Oct · **Depends on:** [member-calendar](member-calendar.md), [replan-on-change](replan-on-change.md) · **Branch:** `feat/calendar-sync` · **Status:** Done (PR #34)
 
 ## In scope
 

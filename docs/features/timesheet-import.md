@@ -3,7 +3,7 @@
 **Goal:** record the hours people actually worked, so burn shows real hours instead of planned ones. A planner downloads a CSV template built from the baseline, fills in the actual hours, and uploads it. This replaces the "work logging" line in the [root README](../../README.md#1-problem-and-scope).
 
 **Roles:** planner.
-**Target:** 14–15 Oct · **Depends on:** [program-metrics](program-metrics.md), [member-calendar](member-calendar.md) · **Branch:** `feat/timesheet-import` · **Status:** In review (PR #33)
+**Target:** 14–15 Oct · **Depends on:** [program-metrics](program-metrics.md), [member-calendar](member-calendar.md) · **Branch:** `feat/timesheet-import` · **Status:** Done (PR #33)
 
 ## In scope
 
