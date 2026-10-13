@@ -13,7 +13,7 @@ import type { PersonCalendarProps } from './types'
 import { daysByDate, findWeek, orderedWeekdays, weekCells } from './utils'
 
 /** One person's month: absences and holidays by day, load against capacity and hours per project by week. */
-export function PersonCalendar({ personId }: PersonCalendarProps) {
+export function PersonCalendar({ personId, canOpenProjects }: PersonCalendarProps) {
   const { t } = useTranslation()
   const [month, setMonth] = useState(currentMonth)
   const [selectedWeek, setSelectedWeek] = useState<string | null>(null)
@@ -58,7 +58,7 @@ export function PersonCalendar({ personId }: PersonCalendarProps) {
           {isPending && <TableLoading columns={weekdays.length + CALENDAR_LABEL_COLUMNS} />}
         </TableBody>
       </Table>
-      {selected && <WeekDetail week={selected} />}
+      {selected && <WeekDetail week={selected} canOpenProjects={canOpenProjects} />}
     </Section>
   )
 }

@@ -5,7 +5,8 @@ import { MySchedulePage } from './component'
 const { useCurrentUser } = vi.hoisted(() => ({ useCurrentUser: vi.fn() }))
 vi.mock('@/shared/auth', () => ({ useCurrentUser }))
 vi.mock('@/features/person-calendar', () => ({
-  PersonCalendar: ({ personId }: { personId: string }) => personId,
+  PersonCalendar: ({ personId, canOpenProjects }: { personId: string; canOpenProjects: boolean }) =>
+    `${personId} ${canOpenProjects ? 'with project links' : 'without project links'}`,
 }))
 vi.mock('@/features/absences', () => ({ AbsenceList: () => null }))
 
@@ -18,7 +19,8 @@ describe('MySchedulePage', () => {
   it('shows the calendar of the signed-in person', () => {
     useCurrentUser.mockReturnValue({ data: { role: 'specialist', person_id: 'u1' }, isPending: false })
     render(<MySchedulePage />)
-    expect(screen.getByText('u1')).toBeTruthy()
+    // A specialist cannot open project pages, so the calendar names projects without links.
+    expect(screen.getByText('u1 without project links')).toBeTruthy()
     expect(screen.getByText('My absences')).toBeTruthy()
   })
 

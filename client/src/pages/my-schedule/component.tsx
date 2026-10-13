@@ -1,5 +1,6 @@
 import { AbsenceList } from '@/features/absences'
 import { PersonCalendar } from '@/features/person-calendar'
+import { can } from '@/resources/rbac'
 import { useCurrentUser } from '@/shared/auth'
 import { PagePlaceholder } from '@/shared/components/page-placeholder'
 import { Section } from '@/shared/components/section'
@@ -16,7 +17,7 @@ export function MySchedulePage() {
       <Section variant="page" title={t('My schedule')} description={t('Your hours by week, leave and holidays.')} />
       {user?.person_id ? (
         <>
-          <PersonCalendar personId={user.person_id} />
+          <PersonCalendar personId={user.person_id} canOpenProjects={can(user.role, 'programs:view')} />
           <Section title={t('My absences')} description={t('Report leave or training. A planner approves it.')}>
             <AbsenceList personId={user.person_id} canApprove={false} />
           </Section>

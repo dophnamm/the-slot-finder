@@ -58,10 +58,10 @@ const october: PersonSchedule = {
   ],
 }
 
-function renderCalendar() {
+function renderCalendar(canOpenProjects = true) {
   render(
     <MemoryRouter>
-      <PersonCalendar personId="u1" />
+      <PersonCalendar personId="u1" canOpenProjects={canOpenProjects} />
     </MemoryRouter>,
   )
 }
@@ -97,6 +97,13 @@ describe('PersonCalendar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Hours in 2026-W42' }))
     expect(screen.getByRole('link', { name: 'Checkout Revamp' }).getAttribute('href')).toBe('/programs/g1/projects/p1')
     expect(screen.getAllByText('20 h')).toHaveLength(2)
+  })
+
+  it('names the projects as plain text for someone who cannot open project pages', () => {
+    renderCalendar(false)
+    fireEvent.click(screen.getByRole('button', { name: 'Hours in 2026-W42' }))
+    expect(screen.queryByRole('link', { name: 'Checkout Revamp' })).toBeNull()
+    expect(screen.getByText('Checkout Revamp')).toBeTruthy()
   })
 
   it('moves to the next month, which spans six weeks', () => {

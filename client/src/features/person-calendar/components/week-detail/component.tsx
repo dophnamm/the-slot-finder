@@ -6,7 +6,7 @@ import type { WeekDetailProps } from './types'
 import { projectPath } from './utils'
 
 /** The selected week: load against capacity, then the hours per project, each linking to its project. */
-export function WeekDetail({ week }: WeekDetailProps) {
+export function WeekDetail({ week, canOpenProjects }: WeekDetailProps) {
   const { t } = useTranslation()
 
   return (
@@ -31,7 +31,11 @@ export function WeekDetail({ week }: WeekDetailProps) {
         {week.projects.map((project) => (
           <li key={`${project.project_id}-${project.expertise}`} className="flex items-start justify-between gap-2">
             <div className="flex min-w-0 flex-col">
-              <TextLink to={projectPath(project)}>{project.project_name}</TextLink>
+              {canOpenProjects ? (
+                <TextLink to={projectPath(project)}>{project.project_name}</TextLink>
+              ) : (
+                <span className="font-medium">{project.project_name}</span>
+              )}
               <span className="text-xs text-muted-foreground">
                 {t('{expertise} · {program}', { expertise: project.expertise, program: project.program_name })}
               </span>
