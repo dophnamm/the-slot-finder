@@ -6,3 +6,4 @@ export { PHASE_ENDPOINTS, PROGRAM_ENDPOINTS, PROJECT_ENDPOINTS } from './program
 export { STAFFING_ENDPOINTS } from './staffing'
 export { EVENT_ENDPOINTS, INSIGHTS_ENDPOINTS } from './insights'
 export { SCENARIO_ENDPOINTS } from './scenarios'
+export { TIMESHEET_ENDPOINTS } from './timesheets'

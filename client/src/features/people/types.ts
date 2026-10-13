@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { Role } from '@/resources/rbac'
 import type { Person } from '@/shared/people'
 
@@ -41,4 +42,6 @@ export type SavePersonInput =
 export interface PeopleTableProps {
   /** Shows a person's absences; without it the row has no Absences button. */
   onShowAbsences?: (person: Person) => void
+  /** Buttons shown before Add person, e.g. Import timesheet. */
+  actions?: ReactNode
 }

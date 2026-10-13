@@ -1,0 +1,1 @@
+export { ProblemTable } from './component'
