@@ -140,6 +140,7 @@ export type LanguageKey = {
   'Holidays lower everyone’s capacity on those days.': string
   Home: string
   Hours: string
+  'Hours by week against capacity, with leave and holidays by day.': string
   'Hours in {week}': string
   'Hours moved': string
   'Hours per day': string
@@ -156,6 +157,7 @@ export type LanguageKey = {
   'Leave, holidays and slipped phases or deadlines. Each change is checked against the baseline; a conflict produces a staffing draft.': string
   Level: string
   'Level {level}': string
+  Load: string
   'Loading…': string
   'Lock hours': string
   'Mark done': string
@@ -175,6 +177,7 @@ export type LanguageKey = {
   'New program': string
   'New scenario': string
   Next: string
+  'Next month': string
   'No absences yet.': string
   'No access': string
   'No assignments this week.': string
@@ -243,6 +246,7 @@ export type LanguageKey = {
   'Planned to date': string
   Planner: string
   Previous: string
+  'Previous month': string
   Primary: string
   'Primary expertise': string
   Priority: string
@@ -339,6 +343,7 @@ export type LanguageKey = {
   Time: string
   Timeline: string
   To: string
+  Today: string
   Training: string
   'Triggered by': string
   'Try a change, such as a project slipping or someone on leave, and see what it does to the plan. Nothing real changes.': string
@@ -355,6 +360,7 @@ export type LanguageKey = {
   'Until {date}': string
   'Version {version}': string
   Waiting: string
+  Week: string
   'Weekly hours': string
   Weeks: string
   'Weeks (minus is earlier)': string
@@ -402,6 +408,7 @@ export type LanguageKey = {
   '{project}: {phase} now ends {week}, {weeks} weeks later': string
   '{start} – {end}': string
   '{start} – {end} · level {level}+ · {assigned} of {hours} h': string
+  '{type} (planned)': string
   '{week} ({dates})': string
   '{week} · {range}': string
   '{week}: {load}/{capacity} h': string
