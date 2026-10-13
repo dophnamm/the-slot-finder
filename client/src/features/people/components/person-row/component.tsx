@@ -1,25 +1,30 @@
 import { Star } from 'lucide-react'
+import { generatePath } from 'react-router'
 import { ROLE_LABELS } from '@/resources/rbac'
+import { ROUTES } from '@/resources/routes'
 import { useExpertiseBadge } from '@/shared/expertises'
+import { LinkRow } from '@/shared/components/link-row'
+import { TextLink } from '@/shared/components/text-link'
 import { useTranslation } from '@/shared/i18n'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
-import { TableCell, TableRow } from '@/shared/ui/table'
+import { TableCell } from '@/shared/ui/table'
 import { formatDate } from '@/utils/functions'
 import type { PersonRowProps } from './types'
 
 export function PersonRow({ person, onEdit, onShowAbsences }: PersonRowProps) {
   const { t } = useTranslation()
   const expertiseBadge = useExpertiseBadge()
+  const personPath = generatePath(ROUTES.personDetail, { id: person.id })
 
   const handleEdit = () => onEdit(person)
   const handleShowAbsences = () => onShowAbsences?.(person)
 
   return (
-    <TableRow>
+    <LinkRow to={personPath}>
       <TableCell>
         <div className="flex flex-col">
-          <span className="font-medium">{person.name}</span>
+          <TextLink to={personPath}>{person.name}</TextLink>
           <span className="text-xs text-muted-foreground">{person.email}</span>
         </div>
       </TableCell>
@@ -73,6 +78,6 @@ export function PersonRow({ person, onEdit, onShowAbsences }: PersonRowProps) {
           </Button>
         </div>
       </TableCell>
-    </TableRow>
+    </LinkRow>
   )
 }

@@ -1,4 +1,5 @@
 import { AbsenceList } from '@/features/absences'
+import { PersonCalendar } from '@/features/person-calendar'
 import { useCurrentUser } from '@/shared/auth'
 import { PagePlaceholder } from '@/shared/components/page-placeholder'
 import { Section } from '@/shared/components/section'
@@ -12,14 +13,14 @@ export function MySchedulePage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <PagePlaceholder
-        title={t('My schedule')}
-        description={t('Your assignments by week appear here once a staffing draft that includes you is accepted.')}
-      />
+      <Section variant="page" title={t('My schedule')} description={t('Your hours by week, leave and holidays.')} />
       {user?.person_id ? (
-        <Section title={t('My absences')} description={t('Report leave or training. A planner approves it.')}>
-          <AbsenceList personId={user.person_id} canApprove={false} />
-        </Section>
+        <>
+          <PersonCalendar personId={user.person_id} />
+          <Section title={t('My absences')} description={t('Report leave or training. A planner approves it.')}>
+            <AbsenceList personId={user.person_id} canApprove={false} />
+          </Section>
+        </>
       ) : (
         <PagePlaceholder
           title={t('No person record')}

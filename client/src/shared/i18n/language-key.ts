@@ -370,7 +370,7 @@ export type LanguageKey = {
   'Whole project': string
   'You have signed out.': string
   'Your account is not linked to a person yet. Ask a planner to add you with the same email.': string
-  'Your assignments by week appear here once a staffing draft that includes you is accepted.': string
+  'Your hours by week, leave and holidays.': string
   'Your role cannot open this page.': string
   'Your session has ended. Sign in again.': string
   '{client} · lead: {lead} · {timeline}': string
