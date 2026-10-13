@@ -55,6 +55,13 @@ func (f *fakePeople) List(_ context.Context, in services.ListPeopleInput) (*dtos
 	}, nil
 }
 
+func (f *fakePeople) Get(_ context.Context, id string) (*models.Person, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return &models.Person{BaseModel: models.BaseModel{ID: id}, Name: "Alex", WeeklyHours: 40, NonProjectHours: 4}, nil
+}
+
 func newTestValidator(t *testing.T) *validator.Validate {
 	t.Helper()
 	v := validator.New()
@@ -166,4 +173,31 @@ func TestPersonHandler_List(t *testing.T) {
 	require.Len(t, people, 1)
 	assert.Equal(t, "Alex", people[0].Name)
 	assert.NotNil(t, people[0].Skills) // an empty list is [], never null
+}
+
+func TestPersonHandler_Get(t *testing.T) {
+	tests := []struct {
+		name       string
+		target     string
+		serviceErr error
+		wantStatus int
+	}{
+		{name: "found", target: "/people/" + testPersonID, wantStatus: http.StatusOK},
+		{name: "not a uuid", target: "/people/abc", wantStatus: http.StatusBadRequest},
+		{name: "unknown person", target: "/people/" + testPersonID, wantStatus: http.StatusNotFound,
+			serviceErr: errors.NewAppError(constants.PersonNotFound, constants.MsgPersonNotFound, errors.ErrorTypeNotFound, http.StatusNotFound)},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := ProvidePersonHandler(&fakePeople{err: tt.serviceErr}, services.ProvideAuthzService(nil), newTestValidator(t))
+			rec, envelope := serve(t, constants.PathPerson, http.MethodGet, tt.target, "", h.Get)
+			require.Equal(t, tt.wantStatus, rec.Code, rec.Body.String())
+			if tt.wantStatus == http.StatusOK {
+				var person dtos.PersonResponse
+				require.NoError(t, json.Unmarshal(envelope.Data, &person))
+				assert.Equal(t, "Alex", person.Name)
+				assert.NotNil(t, person.Skills)
+			}
+		})
+	}
 }

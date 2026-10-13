@@ -27,6 +27,7 @@ const (
 // People and skills messages.
 const (
 	MsgPeopleListed          = "People retrieved"
+	MsgPersonRetrieved       = "Person retrieved"
 	MsgPersonCreated         = "Person created"
 	MsgPersonUpdated         = "Person updated"
 	MsgPersonSkillsUpdated   = "Expertise updated"

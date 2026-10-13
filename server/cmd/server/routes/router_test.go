@@ -219,6 +219,7 @@ func TestRouter_People_RBAC(t *testing.T) {
 		{name: "specialist cannot read the heatmap", method: http.MethodGet, path: constants.PathHeatmap, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the baseline", method: http.MethodGet, path: constants.PathCurrentPlan, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no role cannot read assignments", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/assignments", token: "no-role-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot read a person", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no role cannot read a schedule", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/schedule", token: "no-role-token", wantStatus: http.StatusForbidden},
 		{name: "no token cannot read a schedule", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/schedule", wantStatus: http.StatusUnauthorized},
 	}

@@ -184,6 +184,7 @@ func registerPeopleRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc,
 ) {
 	// People and skills
 	v1.GET(constants.PathPeople, personHandler.List, authenticated, middlewares.RequireRole(constants.PeopleViewRoles...))
+	v1.GET(constants.PathPerson, personHandler.Get, authenticated, middlewares.RequireRole(constants.PeopleViewRoles...))
 	v1.POST(constants.PathPeople, personHandler.Create, authenticated, middlewares.RequireRole(constants.PeopleManageRoles...))
 	v1.PATCH(constants.PathPerson, personHandler.Update, authenticated, middlewares.RequireRole(constants.PeopleManageRoles...))
 	v1.PUT(constants.PathPersonSkills, personHandler.ReplaceSkills, authenticated, middlewares.RequireRole(constants.PeopleManageRoles...))
