@@ -4,3 +4,7 @@ export interface HolidayFormValues {
   to_date: string
   hours_per_day: string
 }
+
+export interface HolidayFormProps {
+  onCreated?: () => void
+}

@@ -64,6 +64,7 @@ export type LanguageKey = {
   Burn: string
   Calendar: string
   'Calendar connected.': string
+  'Calendar sync': string
   'Calendar sync is turned off on this server.': string
   Cancel: string
   'Cancel program': string
@@ -153,6 +154,7 @@ export type LanguageKey = {
   'Hide details': string
   Holiday: string
   'Holiday added.': string
+  Holidays: string
   'Holidays lower everyone’s capacity on those days.': string
   Home: string
   Hours: string
@@ -333,6 +335,7 @@ export type LanguageKey = {
   'Saving moves every later phase by {weeks} weeks.': string
   Scenario: string
   Scenarios: string
+  Schedule: string
   Scope: string
   'Scope points': string
   Search: string

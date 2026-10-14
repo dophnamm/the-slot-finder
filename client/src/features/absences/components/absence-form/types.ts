@@ -3,6 +3,8 @@ import type { AbsenceStatus, AbsenceType } from '../../types'
 export interface AbsenceFormProps {
   personId: string
   canApprove: boolean
+  /** Called after the absence is saved, e.g. to close the dialog. */
+  onCreated?: () => void
 }
 
 /** Form fields as the inputs hold them. */

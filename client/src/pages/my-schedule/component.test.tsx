@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MySchedulePage } from './component'
 
@@ -8,7 +8,7 @@ vi.mock('@/features/person-calendar', () => ({
   PersonCalendar: ({ personId, canOpenProjects }: { personId: string; canOpenProjects: boolean }) =>
     `${personId} ${canOpenProjects ? 'with project links' : 'without project links'}`,
 }))
-vi.mock('@/features/absences', () => ({ AbsenceList: () => null }))
+vi.mock('@/features/absences', () => ({ AbsenceList: () => 'absence list', AddAbsence: () => null }))
 vi.mock('@/features/calendar-feed', () => ({ CalendarFeed: () => null }))
 
 afterEach(() => {
@@ -22,7 +22,8 @@ describe('MySchedulePage', () => {
     render(<MySchedulePage />)
     // A specialist cannot open project pages, so the calendar names projects without links.
     expect(screen.getByText('u1 without project links')).toBeTruthy()
-    expect(screen.getByText('My absences')).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: 'My absences' }))
+    expect(screen.getByText('absence list')).toBeTruthy()
   })
 
   it('explains a missing person record', () => {

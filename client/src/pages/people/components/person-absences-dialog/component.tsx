@@ -1,4 +1,4 @@
-import { AbsenceList } from '@/features/absences'
+import { AbsenceList, AddAbsence } from '@/features/absences'
 import { useTranslation } from '@/shared/i18n'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import type { PersonAbsencesDialogProps } from './types'
@@ -19,7 +19,14 @@ export function PersonAbsencesDialog({ person, canApprove, onClose }: PersonAbse
             {t('Approved absence always lowers capacity; planned absence does when the setting is on.')}
           </DialogDescription>
         </DialogHeader>
-        {person && <AbsenceList personId={person.id} canApprove={canApprove} />}
+        {person && (
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-end">
+              <AddAbsence personId={person.id} canApprove={canApprove} />
+            </div>
+            <AbsenceList personId={person.id} canApprove={canApprove} />
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )
