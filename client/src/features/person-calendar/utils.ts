@@ -1,21 +1,18 @@
 import type { ScheduleDay, ScheduleWeek } from '@/shared/people'
 import { isoWeekDate } from '@/utils/functions'
-
-/** The working weekdays in week order, Monday first. */
-export function orderedWeekdays(weekdays: number[]): number[] {
-  return [...weekdays].sort((a, b) => a - b)
-}
+import { CALENDAR_WEEKDAYS } from './constants'
+import type { CalendarCell } from './types'
 
 /** The schedule's days by date, for drawing the grid. */
 export function daysByDate(days: ScheduleDay[]): Map<string, ScheduleDay> {
   return new Map(days.map((day) => [day.date, day]))
 }
 
-/** One grid row: each working weekday of the week, with what is on that day. */
-export function weekCells(week: string, weekdays: number[], days: Map<string, ScheduleDay>): ScheduleDay[] {
-  return weekdays.map((weekday) => {
+/** One grid row: all seven days of the week, Monday first, with what is on each and whether it is worked. */
+export function weekCells(week: string, workingWeekdays: number[], days: Map<string, ScheduleDay>): CalendarCell[] {
+  return CALENDAR_WEEKDAYS.map((weekday) => {
     const date = isoWeekDate(week, weekday)
-    return days.get(date) ?? { date, absences: [], holidays: [] }
+    return { day: days.get(date) ?? { date, absences: [], holidays: [] }, working: workingWeekdays.includes(weekday) }
   })
 }
 

@@ -5,18 +5,19 @@ import { Badge } from '@/shared/ui/badge'
 import { TableCell } from '@/shared/ui/table'
 import { DATE_FORMAT } from '@/utils/constants'
 import { cn, formatDate, isInMonth, todayDateValue } from '@/utils/functions'
-import { DAY_COLUMN_CLASS } from '../../../../constants'
+import { DAY_COLUMN_CLASS, DAY_OFF_CLASS } from '../../../../constants'
 import { ABSENCE_BADGE, PLANNED_ABSENCE_BADGE, TODAY_CELL_CLASS } from './constants'
 import type { DayCellProps } from './types'
 
 /** One working day: its date, the holidays and the person's absences; planned absence is marked. */
-export function DayCell({ day, month }: DayCellProps) {
+export function DayCell({ day, working, month }: DayCellProps) {
   const { t } = useTranslation()
 
   return (
     <TableCell
       className={cn(
         DAY_COLUMN_CLASS,
+        !working && DAY_OFF_CLASS,
         'align-top',
         !isInMonth(day.date, month) && 'text-muted-foreground',
         day.date === todayDateValue() && TODAY_CELL_CLASS,
