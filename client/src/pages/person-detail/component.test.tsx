@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ROUTES } from '@/resources/routes'
@@ -17,7 +17,7 @@ vi.mock('@/shared/people', () => ({
   }),
 }))
 vi.mock('@/features/person-calendar', () => ({ PersonCalendar: () => null }))
-vi.mock('@/features/absences', () => ({ AbsenceList: () => null }))
+vi.mock('@/features/absences', () => ({ AbsenceList: () => 'absence list', AddAbsence: () => null }))
 vi.mock('@/features/calendar-feed', () => ({
   CalendarFeed: ({ personId }: { personId: string }) => `calendar of ${personId}`,
 }))
@@ -45,19 +45,18 @@ describe('PersonDetailPage', () => {
     expect(screen.getByText('Engineer, 40 h per week, 4 h of them non-project')).toBeTruthy()
   })
 
-  it('shows the absences to a planner only', () => {
+  it('gives a planner the absences and the calendar sync in their own tabs', () => {
     renderPage('planner')
-    expect(screen.getByText('Absences')).toBeTruthy()
-    cleanup()
-    renderPage('lead')
-    expect(screen.queryByText('Absences')).toBeNull()
+    fireEvent.click(screen.getByRole('tab', { name: 'Absences' }))
+    expect(screen.getByText('absence list')).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: 'Calendar sync' }))
+    expect(screen.getByText('calendar of u1')).toBeTruthy()
   })
 
-  it('shows the calendar panel to a planner only', () => {
-    renderPage('planner')
-    expect(screen.getByText('calendar of u1')).toBeTruthy()
-    cleanup()
+  it('shows a lead the schedule only, without tabs', () => {
     renderPage('lead')
+    expect(screen.queryByRole('tab')).toBeNull()
+    expect(screen.queryByText('absence list')).toBeNull()
     expect(screen.queryByText('calendar of u1')).toBeNull()
   })
 })

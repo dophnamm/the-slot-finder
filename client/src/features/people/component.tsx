@@ -33,6 +33,7 @@ export function PeopleTable({ onShowAbsences, actions }: PeopleTableProps) {
 
   return (
     <Section
+      className="min-h-0 flex-1"
       title={t('People')}
       description={t('Expertise, levels and weekly hours of everyone who can be staffed.')}
       action={
@@ -42,7 +43,10 @@ export function PeopleTable({ onShowAbsences, actions }: PeopleTableProps) {
         </div>
       }
     >
-      <Table footer={<Pager page={page} total={data?.meta.total} pageSize={PEOPLE_PAGE_SIZE} onPageChange={setPage} />}>
+      <Table
+        scroll="both"
+        footer={<Pager page={page} total={data?.meta.total} pageSize={PEOPLE_PAGE_SIZE} onPageChange={setPage} />}
+      >
         <TableHeader>
           <TableRow>
             <TableHead>{t('Person')}</TableHead>

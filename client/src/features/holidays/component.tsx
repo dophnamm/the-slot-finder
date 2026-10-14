@@ -7,7 +7,7 @@ import { TableLoading } from '@/shared/components/table-loading'
 import { useTranslation } from '@/shared/i18n'
 import { Table, TableBody } from '@/shared/ui/table'
 import { HOLIDAY_TABLE_COLUMNS } from './constants'
-import { HolidayForm } from './components/holiday-form'
+import { AddHoliday } from './components/add-holiday'
 import { HolidayRow } from './components/holiday-row'
 import { useDeleteHoliday, useHolidays } from './use-holidays'
 
@@ -22,8 +22,13 @@ export function HolidaysCard() {
   const handleDelete = (id: string) => remove.mutate(id)
 
   return (
-    <Section title={t('Company holidays')} description={t('Holidays lower everyone’s capacity on those days.')}>
-      <Table>
+    <Section
+      className="min-h-0 flex-1"
+      title={t('Company holidays')}
+      description={t('Holidays lower everyone’s capacity on those days.')}
+      action={canManage && <AddHoliday />}
+    >
+      <Table scroll="both">
         <TableBody>
           {holidays.map((holiday) => (
             <HolidayRow key={holiday.id} holiday={holiday} canDelete={canManage} onDelete={handleDelete} />
@@ -34,7 +39,6 @@ export function HolidaysCard() {
           )}
         </TableBody>
       </Table>
-      {canManage && <HolidayForm />}
     </Section>
   )
 }
