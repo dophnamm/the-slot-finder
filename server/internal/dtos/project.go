@@ -9,10 +9,11 @@ import (
 )
 
 // CreateProjectRequest is the body of POST /programs/{id}/projects. Dates use the 2026-10-12
-// format. lead_id is honoured for planners; a lead who adds a project becomes its lead.
+// format. lead_id is honoured for planners; a lead who adds a project becomes its lead. Without
+// priority the project goes after the program's last one.
 type CreateProjectRequest struct {
 	Name          string  `json:"name" validate:"required,max=200"`
-	Priority      int     `json:"priority" validate:"gte=1,lte=5" example:"2"`
+	Priority      *int    `json:"priority" validate:"omitempty,gte=1" example:"2"`
 	StartEarliest string  `json:"start_earliest" validate:"required,isodate" example:"2026-10-12"`
 	Deadline      string  `json:"deadline" validate:"required,isodate" example:"2026-12-18"`
 	ScopePoints   float64 `json:"scope_points" validate:"gte=0"`
@@ -27,7 +28,7 @@ func (r *CreateProjectRequest) Normalize() { r.Name = strings.TrimSpace(r.Name) 
 // status is rejected; use POST /projects/{id}/actions/{action}.
 type UpdateProjectRequest struct {
 	Name          *string          `json:"name" validate:"omitempty,min=1,max=200"`
-	Priority      *int             `json:"priority" validate:"omitempty,gte=1,lte=5"`
+	Priority      *int             `json:"priority" validate:"omitempty,gte=1"`
 	StartEarliest *string          `json:"start_earliest" validate:"omitempty,isodate"`
 	Deadline      *string          `json:"deadline" validate:"omitempty,isodate"`
 	ScopePoints   *float64         `json:"scope_points" validate:"omitempty,gte=0"`
@@ -38,6 +39,19 @@ type UpdateProjectRequest struct {
 
 // Normalize trims the name.
 func (r *UpdateProjectRequest) Normalize() { r.Name = trimPtr(r.Name) }
+
+// ReorderProjectsRequest is the body of PUT /programs/{id}/project-order: every project of the
+// program, top first. Their priorities become 1, 2, 3… in this order.
+type ReorderProjectsRequest struct {
+	ProjectIDs []string `json:"project_ids" validate:"required,min=1,max=200,dive,uuid"`
+}
+
+// Normalize trims the ids; the order is kept.
+func (r *ReorderProjectsRequest) Normalize() {
+	for i, id := range r.ProjectIDs {
+		r.ProjectIDs[i] = strings.TrimSpace(id)
+	}
+}
 
 // ListProjectsRequest filters and pages GET /projects, e.g. ?status=incoming.
 type ListProjectsRequest struct {

@@ -381,7 +381,6 @@ definitions:
         type: string
       priority:
         example: 2
-        maximum: 5
         minimum: 1
         type: integer
       scope_points:
@@ -1315,6 +1314,17 @@ definitions:
         example: incoming
         type: string
     type: object
+  dtos.ReorderProjectsRequest:
+    properties:
+      project_ids:
+        items:
+          type: string
+        maxItems: 200
+        minItems: 1
+        type: array
+    required:
+    - project_ids
+    type: object
   dtos.ReplaceDemandsRequest:
     properties:
       demands:
@@ -1792,7 +1802,6 @@ definitions:
         minLength: 1
         type: string
       priority:
-        maximum: 5
         minimum: 1
         type: integer
       scope_points:
@@ -3118,6 +3127,64 @@ paths:
       summary: A program's overview
       tags:
       - Programs
+  /programs/{id}/project-order:
+    put:
+      consumes:
+      - application/json
+      description: Planners and the program's manager. project_ids lists every project
+        of the program, top first; their priorities become 1, 2, 3… in that order.
+      parameters:
+      - description: Program id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Projects, top first
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.ReorderProjectsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/dtos.ProjectResponse'
+                type: array
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Set the order of a program's projects
+      tags:
+      - Projects
   /programs/{id}/projects:
     get:
       description: Projects by priority, then deadline, each with its current phase,

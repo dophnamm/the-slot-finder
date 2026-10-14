@@ -43,6 +43,10 @@ type ProjectRepository interface {
 	// SaveDemands inserts or updates demand rows in one statement.
 	SaveDemands(ctx context.Context, demands []models.Demand) error
 	DeleteDemands(ctx context.Context, ids []string) error
+	// MaxPriority is the largest priority among a program's projects; 0 when it has none.
+	MaxPriority(ctx context.Context, programID string) (int, error)
+	// SetPriorities sets the priority of each project id.
+	SetPriorities(ctx context.Context, priorities map[string]int) error
 	// CancelOpen cancels a program's projects that are not done or cancelled yet.
 	CancelOpen(ctx context.Context, programID string) error
 	// ListForMetrics returns the projects that are not cancelled, of one program or all when
@@ -164,6 +168,22 @@ func (r *projectRepository) DeleteDemands(ctx context.Context, ids []string) err
 		return nil
 	}
 	return r.db.From(ctx).Unscoped().Where("id IN ?", ids).Delete(&models.Demand{}).Error
+}
+
+func (r *projectRepository) MaxPriority(ctx context.Context, programID string) (int, error) {
+	var last int
+	err := r.db.From(ctx).Model(&models.Project{}).Where("program_id = ?", programID).
+		Select("COALESCE(MAX(priority), 0)").Scan(&last).Error
+	return last, err
+}
+
+func (r *projectRepository) SetPriorities(ctx context.Context, priorities map[string]int) error {
+	for id, priority := range priorities {
+		if err := r.db.From(ctx).Model(&models.Project{}).Where("id = ?", id).Update("priority", priority).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (r *projectRepository) CancelOpen(ctx context.Context, programID string) error {

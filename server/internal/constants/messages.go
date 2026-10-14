@@ -89,6 +89,8 @@ const (
 	MsgProjectNotFound         = "Project not found"
 	MsgProjectDatesInvalid     = "deadline must not be before start_earliest"
 	MsgProjectSaveFailed       = "Could not save the project"
+	MsgProjectsReordered       = "Projects reordered"
+	MsgProjectOrderMismatch    = "The order must list each of the program's projects exactly once"
 	MsgProjectListFailed       = "Could not list projects"
 	MsgProgramNotOpen          = "Projects can be added only while the program is open or pending"
 	MsgPhasesListed            = "Phases retrieved"
