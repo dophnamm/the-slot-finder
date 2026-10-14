@@ -70,9 +70,9 @@ func TestReplan_Postgres(t *testing.T) {
 	personRepo, absenceRepo := repositories.ProvidePersonRepository(pdb), repositories.ProvideAbsenceRepository(pdb)
 	events := ProvideEventService(eventRepo, projectRepo, authz, clk)
 	availability := ProvideAvailabilityService(absenceRepo, people, authz, tx, events)
-	replan := ProvideReplanService(plans, eventRepo, projectRepo, personRepo, absenceRepo, tx, clk, cfg)
+	replan := ProvideReplanService(plans, eventRepo, projectRepo, personRepo, absenceRepo, tx, clk, cfg, nil)
 	staffing := ProvideStaffingService(plans, projectRepo, personRepo, absenceRepo, repositories.ProvideAuditRepository(pdb), eventRepo,
-		leadPeople{}, ProvideAuthzService(leadPeople{}), tx, clk, cfg)
+		leadPeople{}, ProvideAuthzService(leadPeople{}), tx, clk, cfg, nil)
 	leave := func(person models.Person, from, to time.Time) {
 		t.Helper()
 		_, err := availability.Create(planner, CreateAbsenceInput{PersonID: person.ID, FromDate: from, ToDate: to, HoursPerDay: 8,

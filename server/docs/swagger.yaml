@@ -56,6 +56,14 @@ definitions:
     - demand_id
     - person_id
     type: object
+  dtos.AddTeamMemberRequest:
+    properties:
+      person_id:
+        example: 0192f3a4-0000-7000-8000-0000000000b1
+        type: string
+    required:
+    - person_id
+    type: object
   dtos.AllocationResponse:
     properties:
       hours:
@@ -518,6 +526,12 @@ definitions:
         type: string
       project_id:
         type: string
+      team_ids:
+        description: TeamIDs are the people of the program team who may staff the
+          demand; null puts no limit.
+        items:
+          type: string
+        type: array
       to_week:
         example: 2026-W50
         type: string
@@ -529,6 +543,7 @@ definitions:
         - LEVEL_TOO_LOW
         - NO_CAPACITY_BEFORE_DEADLINE
         - BLOCKED_BY_LOCKED
+        - NO_ONE_IN_TEAM
         type: string
     type: object
   dtos.DraftProjectResponse:
@@ -548,6 +563,10 @@ definitions:
         example: Acme Commerce Platform
         type: string
       program_id:
+        type: string
+      program_lead_id:
+        description: ProgramLeadID is the person who manages the program; they may
+          act on a draft of its projects.
         type: string
       staffed_at:
         type: string
@@ -1180,6 +1199,10 @@ definitions:
         type: string
       program_lead:
         $ref: '#/definitions/dtos.PersonRef'
+      program_lead_id:
+        description: ProgramLeadID is the person who manages the program, when the
+          program is loaded.
+        type: string
       program_name:
         example: Acme onboarding
         type: string
@@ -1246,6 +1269,10 @@ definitions:
         example: 2
         type: integer
       program_id:
+        type: string
+      program_lead_id:
+        description: ProgramLeadID is the person who manages the program, when the
+          program is loaded.
         type: string
       program_name:
         example: Acme onboarding
@@ -1493,6 +1520,7 @@ definitions:
         - LEVEL_TOO_LOW
         - NO_CAPACITY_BEFORE_DEADLINE
         - BLOCKED_BY_LOCKED
+        - NO_ONE_IN_TEAM
         type: string
     type: object
   dtos.ScheduleAbsenceResponse:
@@ -1646,6 +1674,28 @@ definitions:
         type: boolean
     required:
     - expertise_id
+    type: object
+  dtos.TeamMemberResponse:
+    properties:
+      expertises:
+        items:
+          $ref: '#/definitions/dtos.MemberExpertiseResponse'
+        type: array
+      from_week:
+        example: 2026-W44
+        type: string
+      person:
+        $ref: '#/definitions/dtos.PersonResponse'
+      projects:
+        items:
+          $ref: '#/definitions/dtos.ProjectRef'
+        type: array
+      to_week:
+        example: 2026-W48
+        type: string
+      total_hours:
+        example: 160
+        type: number
     type: object
   dtos.UpdatePersonRequest:
     properties:
@@ -3129,6 +3179,140 @@ paths:
       summary: Add a project to a program
       tags:
       - Projects
+  /programs/{id}/team:
+    get:
+      description: The people a planner gave the program, with their skills and their
+        hours, weeks and projects in its baseline. The planner and the program's manager
+        may read it.
+      parameters:
+      - description: Program id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/dtos.TeamMemberResponse'
+                type: array
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: A program's team
+      tags:
+      - Programs
+    post:
+      consumes:
+      - application/json
+      description: Puts a person in the program's team, so its manager may staff them
+        on its projects.
+      parameters:
+      - description: Program id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Person
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.AddTeamMemberRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add a team member
+      tags:
+      - Programs
+  /programs/{id}/team/{personId}:
+    delete:
+      description: Takes a person out of the program's team. Their baseline hours
+        stay; the next draft plans without them.
+      parameters:
+      - description: Program id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Person id
+        in: path
+        name: personId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Remove a team member
+      tags:
+      - Programs
   /projects:
     get:
       description: Filter by status, e.g. ?status=incoming for the intake queue.

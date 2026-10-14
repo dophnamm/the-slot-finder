@@ -40,13 +40,19 @@ func (h *PersonHandler) List(c *echo.Context) error {
 	if _, err := h.authz.Require(ctx, services.CanViewPeople); err != nil {
 		return h.HandleError(c, err)
 	}
+	scope, err := h.authz.VisiblePeople(ctx)
+	if err != nil {
+		return h.HandleError(c, err)
+	}
 	var req dtos.ListPeopleRequest
 	if err := echo.BindQueryParams(c, &req); err != nil {
 		return h.ValidationErrorResponse(c, constants.MsgInvalidRequest, errors.ParseValidationErrors(err))
 	}
 	req.Normalize()
 
-	page, err := h.people.List(ctx, services.ListPeopleInput{Page: req.Page, PageSize: req.PageSize})
+	page, err := h.people.List(ctx, services.ListPeopleInput{
+		Page: req.Page, PageSize: req.PageSize, Limited: !scope.All, Among: scope.IDs(),
+	})
 	if err != nil {
 		return h.HandleError(c, err)
 	}
@@ -73,6 +79,10 @@ func (h *PersonHandler) Get(c *echo.Context) error {
 	id, ok := h.pathID(c)
 	if !ok {
 		return nil
+	}
+	// A manager reads only the people of the teams of the programs they lead.
+	if _, err := h.authz.RequireVisiblePerson(ctx, id); err != nil {
+		return h.HandleError(c, err)
 	}
 	person, err := h.people.Get(ctx, id)
 	if err != nil {

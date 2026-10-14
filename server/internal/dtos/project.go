@@ -111,9 +111,11 @@ type DemandResponse struct {
 // ProjectResponse is a project row: program, lead, ISO weeks, the current phase and at_risk
 // (the last phase ends after the deadline week).
 type ProjectResponse struct {
-	ID            string     `json:"id"`
-	ProgramID     string     `json:"program_id"`
-	ProgramName   string     `json:"program_name,omitempty" example:"Acme onboarding"`
+	ID          string `json:"id"`
+	ProgramID   string `json:"program_id"`
+	ProgramName string `json:"program_name,omitempty" example:"Acme onboarding"`
+	// ProgramLeadID is the person who manages the program, when the program is loaded.
+	ProgramLeadID *string    `json:"program_lead_id,omitempty"`
 	Name          string     `json:"name" example:"Mobile app"`
 	Priority      int        `json:"priority" example:"2"`
 	Status        string     `json:"status" example:"incoming" enums:"incoming,planned,active,on_hold,done,cancelled"`
@@ -176,6 +178,7 @@ func NewProjectResponse(p models.Project, now isoweek.Week) ProjectResponse {
 	}
 	if p.Program != nil {
 		response.ProgramName = p.Program.Name
+		response.ProgramLeadID = p.Program.LeadID
 	}
 	if phase := p.CurrentPhase(now); phase != nil {
 		current := NewPhaseResponse(*phase)

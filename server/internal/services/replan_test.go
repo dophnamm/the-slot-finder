@@ -99,7 +99,7 @@ func replanConfig() *config.Config {
 
 func newReplanService(plans *MockPlanRepository, events *MockChangeEventRepository, projects *MockProjectRepository) ReplanService {
 	return ProvideReplanService(plans, events, projects, new(MockPersonRepository), new(MockAbsenceRepository), passthroughTx{},
-		clock.NewFixed(eventTime), replanConfig())
+		clock.NewFixed(eventTime), replanConfig(), nil)
 }
 
 func TestReplanService_RunOnce(t *testing.T) {

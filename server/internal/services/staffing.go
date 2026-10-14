@@ -19,6 +19,7 @@ import (
 	"the-slot-finder/server/internal/isoweek"
 	"the-slot-finder/server/internal/models"
 	"the-slot-finder/server/internal/repositories"
+	"the-slot-finder/server/internal/request"
 
 	"gorm.io/gorm"
 )
@@ -93,6 +94,8 @@ type DraftView struct {
 	Changes []models.PlanChange
 	// Events are the changes that triggered a re-plan draft; empty for a draft a Planner asked for.
 	Events []models.ChangeEvent
+	// Teams is each program's team, by program id; a program missing from it puts no limit on who staffs it.
+	Teams map[string]map[string]bool
 }
 
 // StaffingService generates staffing drafts with the planning engine and shows them for review.
@@ -118,7 +121,9 @@ type draftBuilder struct {
 	projects repositories.ProjectRepository
 	people   repositories.PersonRepository
 	absences repositories.AbsenceRepository
-	cfg      *config.Config
+	// teams limits each program's demand to its team; nil puts no limit (tests).
+	teams repositories.ProgramTeamRepository
+	cfg   *config.Config
 }
 
 type staffingService struct {
@@ -136,18 +141,18 @@ type staffingService struct {
 func ProvideStaffingService(plans repositories.PlanRepository, projects repositories.ProjectRepository,
 	people repositories.PersonRepository, absences repositories.AbsenceRepository, audit repositories.AuditRepository,
 	events repositories.ChangeEventRepository, finder PersonFinder, authz AuthzService, tx db.TxManager, clk clock.Clock,
-	cfg *config.Config,
+	cfg *config.Config, teams repositories.ProgramTeamRepository,
 ) StaffingService {
-	return &staffingService{draftBuilder: draftBuilder{projects: projects, people: people, absences: absences, cfg: cfg},
+	return &staffingService{draftBuilder: draftBuilder{projects: projects, people: people, absences: absences, teams: teams, cfg: cfg},
 		plans: plans, audit: audit, events: events, finder: finder, authz: authz, tx: tx, clock: clk}
 }
 
 func (s *staffingService) Generate(ctx context.Context, in GenerateDraftInput) (*DraftView, error) {
-	principal, err := s.authz.Require(ctx, CanManagePlans)
+	projects, err := s.loadProjects(ctx, in.ProjectIDs, opGenerateDraft)
 	if err != nil {
 		return nil, err
 	}
-	projects, err := s.loadProjects(ctx, in.ProjectIDs, opGenerateDraft)
+	principal, err := s.requireDraftRights(ctx, projects)
 	if err != nil {
 		return nil, err
 	}
@@ -227,6 +232,13 @@ func (s *draftBuilder) snapshot(ctx context.Context, projects []models.Project, 
 	absences, err := s.absences.ListOverlapping(ctx, from.Monday(), to.Monday().AddDate(0, 0, daysInWeek-1))
 	if err != nil {
 		return engine.Request{}, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opGenerateDraft).WithResource(resourceDraft)
+	}
+	teams, err := s.teamCandidates(ctx, projects, opGenerateDraft)
+	if err != nil {
+		return engine.Request{}, err
+	}
+	for i := range demands {
+		demands[i].Candidates = teams[demands[i].ProgramID]
 	}
 	return engine.Request{
 		Policy:   policy,
@@ -380,9 +392,13 @@ func (s *staffingService) view(ctx context.Context, id, op string) (*DraftView, 
 	if err != nil {
 		return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(op).WithResource(resourceDraft)
 	}
+	teams, err := s.teamCandidates(ctx, projects, op)
+	if err != nil {
+		return nil, err
+	}
 	_, from, to := engineDemands(projects)
 	return &DraftView{Plan: plan, Projects: projects, Weeks: isoweek.Range(from, to), BaselineVersion: baseline.Version,
-		Changes: diffPlans(baseline, plan), Events: events}, nil
+		Changes: diffPlans(baseline, plan), Events: events, Teams: teams}, nil
 }
 
 // diffPlans lists every person and demand whose hours differ between two plans, ordered by
@@ -498,7 +514,7 @@ func coveredDemand(projects []models.Project) map[string]demandInProject {
 	for _, p := range projects {
 		for _, d := range p.Demands {
 			from, to := p.DemandWindow(d)
-			out[d.ID] = demandInProject{demand: d, from: from, to: to}
+			out[d.ID] = demandInProject{demand: d, programID: p.ProgramID, from: from, to: to}
 		}
 	}
 	return out
@@ -506,9 +522,10 @@ func coveredDemand(projects []models.Project) map[string]demandInProject {
 
 // demandInProject is a covered demand with the window it may be staffed in.
 type demandInProject struct {
-	demand models.Demand
-	from   isoweek.Week
-	to     isoweek.Week
+	demand    models.Demand
+	programID string
+	from      isoweek.Week
+	to        isoweek.Week
 }
 
 func (d demandInProject) contains(week isoweek.Week) bool {
@@ -516,10 +533,6 @@ func (d demandInProject) contains(week isoweek.Week) bool {
 }
 
 func (s *staffingService) Edit(ctx context.Context, id string, in EditDraftInput) (*DraftView, error) {
-	principal, err := s.authz.Require(ctx, CanManagePlans)
-	if err != nil {
-		return nil, err
-	}
 	plan, err := s.openDraft(ctx, id, opEditDraft)
 	if err != nil {
 		return nil, err
@@ -528,11 +541,19 @@ func (s *staffingService) Edit(ctx context.Context, id string, in EditDraftInput
 	if err != nil {
 		return nil, err
 	}
+	principal, err := s.requireDraftRights(ctx, projects)
+	if err != nil {
+		return nil, err
+	}
+	teams, err := s.teamCandidates(ctx, projects, opEditDraft)
+	if err != nil {
+		return nil, err
+	}
 	actor, err := s.finder.FindForPrincipal(ctx, principal)
 	if err != nil {
 		return nil, errors.DatabaseError(constants.MsgDraftSaveFailed, err).WithOperation(opEditDraft).WithResource(resourceDraft)
 	}
-	added, err := s.newAssignments(ctx, plan, coveredDemand(projects), in.Add, personIDOf(actor))
+	added, err := s.newAssignments(ctx, plan, coveredDemand(projects), teams, in.Add, personIDOf(actor))
 	if err != nil {
 		return nil, err
 	}
@@ -559,7 +580,7 @@ func (s *staffingService) Edit(ctx context.Context, id string, in EditDraftInput
 // newAssignments checks and builds the assignments to add: a covered demand, a person not on
 // it yet, weeks inside its window. The kind comes from the person's skills; stretch is locked.
 func (s *staffingService) newAssignments(ctx context.Context, plan *models.Plan, covered map[string]demandInProject,
-	adds []AddAssignmentInput, actor *string,
+	teams map[string]map[string]bool, adds []AddAssignmentInput, actor *string,
 ) ([]models.Assignment, error) {
 	taken := map[[2]string]bool{}
 	for _, a := range plan.Assignments {
@@ -570,6 +591,9 @@ func (s *staffingService) newAssignments(ctx context.Context, plan *models.Plan,
 		demand, ok := covered[add.DemandID]
 		if !ok {
 			return nil, draftError(constants.DemandNotInDraft, constants.MsgDemandNotInDraft, http.StatusBadRequest, opEditDraft)
+		}
+		if team := teams[demand.programID]; team != nil && !team[add.PersonID] {
+			return nil, draftError(constants.PersonNotInTeam, constants.MsgPersonNotInTeam, http.StatusUnprocessableEntity, opEditDraft)
 		}
 		key := [2]string{add.PersonID, add.DemandID}
 		if taken[key] {
@@ -697,10 +721,6 @@ func draftError(code, message string, status int, op string) error {
 }
 
 func (s *staffingService) Accept(ctx context.Context, id string, in AcceptDraftInput) (*DraftView, error) {
-	principal, err := s.authz.Require(ctx, CanManagePlans)
-	if err != nil {
-		return nil, err
-	}
 	plan, err := s.openDraft(ctx, id, opAcceptDraft)
 	if err != nil {
 		return nil, err
@@ -709,6 +729,10 @@ func (s *staffingService) Accept(ctx context.Context, id string, in AcceptDraftI
 		return nil, versionConflict()
 	}
 	projects, err := s.loadProjects(ctx, plan.ProjectIDs, opAcceptDraft)
+	if err != nil {
+		return nil, err
+	}
+	principal, err := s.requireDraftRights(ctx, projects)
 	if err != nil {
 		return nil, err
 	}
@@ -801,14 +825,72 @@ func projectIDs(projects []models.Project) []string {
 }
 
 func (s *staffingService) Reject(ctx context.Context, id string) (*DraftView, error) {
-	if _, err := s.authz.Require(ctx, CanManagePlans); err != nil {
+	plan, err := s.openDraft(ctx, id, opRejectDraft)
+	if err != nil {
 		return nil, err
 	}
-	if _, err := s.openDraft(ctx, id, opRejectDraft); err != nil {
+	projects, err := s.loadProjects(ctx, plan.ProjectIDs, opRejectDraft)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := s.requireDraftRights(ctx, projects); err != nil {
 		return nil, err
 	}
 	if err := s.plans.SetStatus(ctx, id, constants.PlanStatusRejected); err != nil {
 		return nil, errors.DatabaseError(constants.MsgDraftSaveFailed, err).WithOperation(opRejectDraft).WithResource(resourceDraft)
 	}
 	return s.view(ctx, id, opRejectDraft)
+}
+
+// requireDraftRights lets a planner act on any draft, and a manager (lead) on a draft whose
+// projects all belong to programs they lead.
+func (s *staffingService) requireDraftRights(ctx context.Context, projects []models.Project) (request.Principal, error) {
+	principal, err := s.authz.Principal(ctx)
+	if err != nil {
+		return request.Principal{}, err
+	}
+	if CanManagePlans(principal) {
+		return principal, nil
+	}
+	forbidden := errors.ForbiddenError(constants.MsgInsufficientPermissions, nil).WithOperation(opAuthorize).WithResource(resourceDraft)
+	if !principal.HasAnyRole(constants.RoleLead) || len(projects) == 0 {
+		return request.Principal{}, forbidden
+	}
+	self, err := s.finder.FindForPrincipal(ctx, principal)
+	if err != nil {
+		return request.Principal{}, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opAuthorize).WithResource(resourceDraft)
+	}
+	for _, p := range projects {
+		if self == nil || p.Program == nil || p.Program.LeadID == nil || *p.Program.LeadID != self.ID {
+			return request.Principal{}, forbidden
+		}
+	}
+	return principal, nil
+}
+
+// teamCandidates is each program's team as the engine's candidate set; without a team
+// repository it is empty, which puts no limit on the engine.
+func (s *draftBuilder) teamCandidates(ctx context.Context, projects []models.Project, op string) (map[string]map[string]bool, error) {
+	out := map[string]map[string]bool{}
+	if s.teams == nil {
+		return out, nil
+	}
+	ids := make([]string, 0, len(projects))
+	for _, p := range projects {
+		if !slices.Contains(ids, p.ProgramID) {
+			ids = append(ids, p.ProgramID)
+		}
+	}
+	teams, err := s.teams.PersonIDsByProgram(ctx, ids)
+	if err != nil {
+		return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(op).WithResource(resourceDraft)
+	}
+	for programID, people := range teams {
+		team := make(map[string]bool, len(people))
+		for _, id := range people {
+			team[id] = true
+		}
+		out[programID] = team
+	}
+	return out, nil
 }

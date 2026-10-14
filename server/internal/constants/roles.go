@@ -42,6 +42,14 @@ var (
 	PlanViewRoles = []string{RolePlanner, RoleLead}
 	// PlanManageRoles may generate, edit, accept and reject staffing drafts.
 	PlanManageRoles = []string{RolePlanner}
+	// DraftRoles may reach the routes that generate, edit, accept and reject staffing drafts;
+	// a manager (lead) acts only on drafts whose projects all belong to programs they lead
+	// (checked in the staffing service).
+	DraftRoles = []string{RolePlanner, RoleLead}
+	// ProgramTeamViewRoles may read a program's team; a manager only for the programs they lead.
+	ProgramTeamViewRoles = []string{RolePlanner, RoleLead}
+	// ProgramTeamManageRoles may add and remove team members.
+	ProgramTeamManageRoles = []string{RolePlanner}
 	// PersonAssignmentRoles may reach a person's assignments; the service lets a specialist
 	// read only their own.
 	PersonAssignmentRoles = []string{RolePlanner, RoleLead, RoleSpecialist}

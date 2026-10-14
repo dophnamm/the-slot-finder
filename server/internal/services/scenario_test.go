@@ -39,7 +39,7 @@ func newScenarioMocks() scenarioMocks {
 
 func (m scenarioMocks) service() ScenarioService {
 	finder := leadPeople{}
-	return ProvideScenarioService(m.plans, m.projects, m.people, m.absences, finder, ProvideAuthzService(finder), passthroughTx{}, m.cfg)
+	return ProvideScenarioService(m.plans, m.projects, m.people, m.absences, finder, ProvideAuthzService(finder), passthroughTx{}, m.cfg, nil)
 }
 
 // staffedBaseline is version 2 with Quinn on the QA demand: 10 h in each Test week, W46–W51.

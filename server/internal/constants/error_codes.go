@@ -58,11 +58,16 @@ const (
 	AssignmentNotFound     = "ASSIGNMENT_NOT_FOUND"
 	AssignmentExists       = "ASSIGNMENT_EXISTS"
 	DemandNotInDraft       = "DEMAND_NOT_IN_DRAFT"
-	WeekOutsideWindow      = "WEEK_OUTSIDE_WINDOW"
-	WeekRangeTooLong       = "WEEK_RANGE_TOO_LONG"
-	DraftSuperseded        = "DRAFT_SUPERSEDED"
-	ScenarioNotFound       = "SCENARIO_NOT_FOUND"
-	AssumptionInvalid      = "ASSUMPTION_INVALID"
+
+	// Program team errors
+	TeamMemberExists   = "TEAM_MEMBER_EXISTS"
+	TeamMemberNotFound = "TEAM_MEMBER_NOT_FOUND"
+	PersonNotInTeam    = "PERSON_NOT_IN_TEAM"
+	WeekOutsideWindow  = "WEEK_OUTSIDE_WINDOW"
+	WeekRangeTooLong   = "WEEK_RANGE_TOO_LONG"
+	DraftSuperseded    = "DRAFT_SUPERSEDED"
+	ScenarioNotFound   = "SCENARIO_NOT_FOUND"
+	AssumptionInvalid  = "ASSUMPTION_INVALID"
 
 	// Timesheet errors
 	TimesheetInvalid      = "TIMESHEET_INVALID"

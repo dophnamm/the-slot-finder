@@ -42,7 +42,7 @@ Demo users, **for development only**. Their password is `KEYCLOAK_DEMO_PASSWORD`
 | User | Role | Lands on |
 |---|---|---|
 | `planner` | planner | Dashboard |
-| `lead` | lead | Dashboard |
+| `lead` | lead (shown as **Manager**; manages Acme Commerce Platform) | Dashboard |
 | `specialist` | specialist | My schedule |
 
 The server verifies access tokens locally against the realm's JWKS, cached and refreshed every `AUTH_JWKS_REFRESH_INTERVAL` (and on an unknown key id). It calls Keycloak only to fetch those keys, never per request. `KEYCLOAK_URL` is how the server reaches Keycloak; `KEYCLOAK_PUBLIC_URL` is the issuer in the tokens, as the browser sees it.
@@ -96,15 +96,16 @@ Files per module follow the pattern `handlers/<module>.go`, `services/<module>.g
 
 ## 3. API (REST/JSON)
 
-All paths below are under **`/api/v1`**. Every endpoint except health checks requires a Keycloak JWT (`Authorization: Bearer`); unsafe methods also need `X-CSRF-Token`. The Server checks permissions on every call: the role through `RequireRole` in the router, and per-program rules ("lead (own)", internal assistant) in the service.
+All paths below are under **`/api/v1`**. Every endpoint except health checks requires a Keycloak JWT (`Authorization: Bearer`); unsafe methods also need `X-CSRF-Token`. The Server checks permissions on every call: the role through `RequireRole` in the router, and per-program rules ("lead (own)", internal assistant) in the service. The `lead` role is shown as **Manager**: "lead (own)" means the manager of that program. A manager sees only the people in the teams of the programs they manage, plus themselves ("lead (team)" below); `AuthzService.VisiblePeople` answers that for the people list and detail, schedules, the heatmap and the risks.
 
 **Identity and people**
 
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
 | GET | `/me` | Current user, role, programs they assist, enabled features (e.g. the AI assistant) | everyone |
-| GET, POST | `/people` | List or create people (start and end dates, location, timezone, non-project hours) | planner |
-| GET | `/people/{id}` | One person with their expertise, for the person page | planner, lead |
+| GET | `/people` | List people with their skills | planner, lead (team) |
+| POST | `/people` | Create a person (start and end dates, location, timezone, non-project hours) | planner |
+| GET | `/people/{id}` | One person with their expertise, for the person page | planner, lead (team; else `403`) |
 | PATCH | `/people/{id}` | Edit a person: only the sent fields; `start_date` and `end_date` accept null to clear them | planner |
 | PUT | `/people/{id}/skills` | Replace expertise and levels (exactly one primary) | planner |
 | PUT | `/people/{id}/tags` | Replace a person's skill tags | planner |
@@ -113,7 +114,7 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | DELETE | `/absences/{id}` | Remove an absence, or a holiday (planner) | planner, the person themselves |
 | POST | `/absences/{id}/approve` | Approve a planned absence; records a change event | planner |
 | GET | `/people/{id}/assignments?from=&to=` | Everything a person owns in the baseline: project, demand, **expertise**, kind, hours per week | planner, lead, the person themselves |
-| GET | `/people/{id}/schedule?from=&to=` | One person's calendar: per week capacity, load, band, tentative flag, hours per project and actual hours; per day absences and holidays; the working weekdays | planner, lead, the person themselves |
+| GET | `/people/{id}/schedule?from=&to=` | One person's calendar: per week capacity, load, band, tentative flag, hours per project and actual hours; per day absences and holidays; the working weekdays | planner, lead (team), the person themselves |
 | GET, PUT, DELETE | `/people/{id}/calendar-feed` | A person's calendar link: its status (never the link itself), connect or replace (`{ url }`, checked and synced once), disconnect. `503 CALENDAR_SYNC_DISABLED` without `CALENDAR_FEED_KEY` | planner, the person themselves |
 | POST | `/people/{id}/calendar-feed/sync` | Sync that calendar now | planner, the person themselves |
 | GET | `/expertises` | Expertise catalogue | everyone |
@@ -132,7 +133,10 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | PATCH | `/programs/{id}/forecast` | Set or clear `forecast_override_hours` per demand | planner, lead (own) |
 | GET | `/programs/{id}/projects` | Projects tab: rows with a `metrics` object (Time / Scope / Planned burn / Burn / Staffing and warnings); next milestone later | planner, lead, internal assistant |
 | POST | `/programs/{id}/projects` | Add a project to the program | planner, lead (own) |
-| GET | `/programs/{id}/members` | Members tab and the Programs list preview: everyone with baseline hours on the program's projects, most hours first, with hours per expertise and kind, first and last week, and projects (overall utilization later) | planner, lead |
+| GET | `/programs/{id}/members` | The Programs list preview: everyone with baseline hours on the program's projects, most hours first, with hours per expertise and kind, first and last week, and projects (overall utilization later) | planner, lead |
+| GET | `/programs/{id}/team` | Team tab: the people the program's projects are staffed from, each with their skills and their hours, first and last week and projects in this program's baseline (0 h until a draft gives them some) | planner, lead (own) |
+| POST | `/programs/{id}/team` | Add a member: `{ person_id }`; `409 TEAM_MEMBER_EXISTS` when already in | planner |
+| DELETE | `/programs/{id}/team/{personId}` | Remove a member; their baseline hours stay, the next draft plans without them (`404 TEAM_MEMBER_NOT_FOUND`) | planner |
 | GET, POST | `/programs/{id}/assistants` | List or add assistants (`kind`: internal or external) | planner, lead (own); internal assistants may list |
 | DELETE | `/programs/{id}/assistants/{assistantId}` | Remove an assistant | planner, lead (own) |
 | GET, POST | `/programs/{id}/milestones` | List or add milestones | planner, lead (own); internal assistants may list |
@@ -151,16 +155,16 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
 | GET | `/plans/current` | The baseline | planner, lead |
-| POST | `/staffing-drafts` | Generate a draft: `{ projectIds }` or `{ changeEventId }` | planner |
-| GET | `/staffing-drafts/{id}` | Draft with diff against the baseline, plan churn, reasons and alternatives | planner, lead |
-| PATCH | `/staffing-drafts/{id}/assignments` | One batch `{ add, remove, set }`: add or remove an assignment (any person to a covered demand; the server sets `kind`), change weekly hours (0 removes the week), lock or unlock. Swap to an alternative comes later | planner |
-| POST | `/staffing-drafts/{id}/accept` | Publish (`{ baseVersion }`; `409 PLAN_VERSION_CONFLICT` if the baseline changed) | planner |
-| POST | `/staffing-drafts/{id}/reject` | Discard a draft | planner |
+| POST | `/staffing-drafts` | Generate a draft: `{ projectIds }` or `{ changeEventId }`. Each demand is staffed from its program's team only | planner, lead (every project's program is their own) |
+| GET | `/staffing-drafts/{id}` | Draft with diff against the baseline, plan churn, reasons and alternatives; each project carries `program_lead_id` and each demand its program team as `team_ids` (`null` puts no limit) | planner, lead |
+| PATCH | `/staffing-drafts/{id}/assignments` | One batch `{ add, remove, set }`: add or remove an assignment (any person to a covered demand; the server sets `kind`), change weekly hours (0 removes the week), lock or unlock; a person outside the demand's program team gets `422 PERSON_NOT_IN_TEAM`. Swap to an alternative comes later | planner, lead (own) |
+| POST | `/staffing-drafts/{id}/accept` | Publish (`{ baseVersion }`; `409 PLAN_VERSION_CONFLICT` if the baseline changed) | planner, lead (own) |
+| POST | `/staffing-drafts/{id}/reject` | Discard a draft | planner, lead (own) |
 | GET, POST | `/scenarios` | List scenarios (newest first, with stale flag and churn), or create one from `{ name, assumptions }` (`shift_project`, `add_absence`) and compute it on a copy of the baseline | planner |
 | GET, DELETE | `/scenarios/{id}` | A scenario with its changes against the baseline it was built on (week by week), churn, unmet demand and the projects planned again; or delete it | planner |
 | POST | `/scenarios/{id}/rerun` | Compute a scenario again, with the same assumptions, against the baseline in force | planner |
-| GET | `/insights/heatmap?from=&to=&expertise=` | Person × week matrix. Each cell holds total hours plus hours per expertise; `expertise=` (an expertise id) keeps people who hold that expertise or work on it in the range. Each cell also has capacity, utilization, its band and a tentative flag for planned leave | planner, lead |
-| GET | `/insights/risks` | Understaffed and at-risk projects, delivery behind time, overloaded people in the next `HEATMAP_DEFAULT_WEEKS` weeks; likely over budget, sustained overload and overdue milestones later | planner, lead |
+| GET | `/insights/heatmap?from=&to=&expertise=` | Person × week matrix. Each cell holds total hours plus hours per expertise; `expertise=` (an expertise id) keeps people who hold that expertise or work on it in the range. Each cell also has capacity, utilization, its band and a tentative flag for planned leave | planner, lead (team) |
+| GET | `/insights/risks` | Understaffed and at-risk projects, delivery behind time, overloaded people in the next `HEATMAP_DEFAULT_WEEKS` weeks (a manager sees only their team's); likely over budget, sustained overload and overdue milestones later | planner, lead |
 | GET | `/insights/capacity-forecast?from=&to=&expertise=` | Per expertise × week: free capacity, unmet confirmed demand, expected pipeline demand (× confidence), and shortfall signals | planner, lead |
 | GET | `/insights/bench` | People below the underused band for each of the next `bench_weeks`, with suggested actions | planner |
 | GET | `/insights/churn?from=&to=` | Plan churn per accepted draft: people changed, hours moved | planner |
@@ -265,10 +269,11 @@ Error example (HTTP 409):
 - `NO_TAG_MATCH`: nobody with the expertise and level has every required tag
 - `NO_CAPACITY_BEFORE_DEADLINE`
 - `BLOCKED_BY_LOCKED`
+- `NO_ONE_IN_TEAM`: nobody in the program's team can take it (the server fills `candidates` with the team)
 
 **Greedy strategy (MVP):**
 1. Sort demand by priority (high first), then deadline (earliest first), then scarcity of the expertise and its required tags.
-2. For each demand, keep candidates who have the demand's expertise, primary or secondary, at level ≥ `minLevel`, and every tag in `requiredTags`. They also need free capacity inside the demand's window and must stay within `maxExpertisesPerPersonWeek`.
+2. For each demand, keep candidates who are in the demand's `candidates` set (its program team; no set means anyone), have the demand's expertise, primary or secondary, at level ≥ `minLevel`, and every tag in `requiredTags`. They also need free capacity inside the demand's window and must stay within `maxExpertisesPerPersonWeek`.
 3. Score candidates using `weights`: primary-expertise match (`primaryFit`), preferred tags (`tagFit`), the preferred person (`preference`), free capacity, continuity (same project, then program, then client), load kept near `targetUtilization`. A cross-expertise person wins only when no primary person can cover the hours in time, or when using them clearly balances load. The reason says which. The next `maxAlternatives` candidates are kept as `alternatives`.
 4. Split `hours` into `headcount` seats of about `hours ÷ headcount`. Spread each seat's hours across the window by `profile` (`flat`, `front`, `back`). Keep one person per seat; split a seat between two people only when nobody has the capacity, and say so in the reason.
 5. Never allocate less than `minHoursPerWeek` in a week, except a demand's last remainder.

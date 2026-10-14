@@ -42,6 +42,9 @@ type SkillInput struct {
 type ListPeopleInput struct {
 	Page     int
 	PageSize int
+	// Limited keeps the list to Among: the people a manager may see.
+	Limited bool
+	Among   []string
 }
 
 // CreatePersonInput holds a new person. NonProjectHours nil means DEFAULT_NON_PROJECT_HOURS.
@@ -112,7 +115,14 @@ func ProvidePersonFinder(people PeopleService) PersonFinder {
 }
 
 func (s *peopleService) List(ctx context.Context, in ListPeopleInput) (*dtos.DataResponse[models.Person], error) {
-	page, err := s.repo.List(ctx, &dtos.PageableRequest{Page: in.Page, PageSize: in.PageSize})
+	pageable := &dtos.PageableRequest{Page: in.Page, PageSize: in.PageSize}
+	var page *dtos.DataResponse[models.Person]
+	var err error
+	if in.Limited {
+		page, err = s.repo.ListAmong(ctx, pageable, in.Among)
+	} else {
+		page, err = s.repo.List(ctx, pageable)
+	}
 	if err != nil {
 		return nil, errors.DatabaseError(constants.MsgPersonListFailed, err).
 			WithOperation(opListPeople).WithResource(resourcePerson)
