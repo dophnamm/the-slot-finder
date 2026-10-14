@@ -142,6 +142,7 @@ export type LanguageKey = {
   'e.g. https://calendar.google.com/calendar/ical/…/private-…/basic.ics': string
   'e.g. https://docs.example.com/charter': string
   'e.g. Move the online store to the new platform before the holidays.': string
+  'e.g. National Day': string
   'Each assumption is applied to a copy of the baseline. Nothing real changes.': string
   'Each person and demand whose hours or weeks differ in this scenario.': string
   'Earliest start': string

@@ -12,5 +12,10 @@ export function canSubmit(values: HolidayFormValues): boolean {
 }
 
 export function toInput(values: HolidayFormValues): CreateHolidayInput {
-  return { from_date: values.from_date, to_date: values.to_date, hours_per_day: Number(values.hours_per_day) }
+  return {
+    name: values.name.trim(),
+    from_date: values.from_date,
+    to_date: values.to_date,
+    hours_per_day: Number(values.hours_per_day),
+  }
 }

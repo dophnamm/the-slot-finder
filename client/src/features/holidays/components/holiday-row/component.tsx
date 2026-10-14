@@ -12,6 +12,9 @@ export function HolidayRow({ holiday, canDelete, onDelete }: HolidayRowProps) {
 
   return (
     <TableRow>
+      <TableCell className="font-medium">
+        {holiday.name || <span className="font-normal text-muted-foreground">{t('Holiday')}</span>}
+      </TableCell>
       <TableCell>{formatDateRange(holiday.from_date, holiday.to_date)}</TableCell>
       <TableCell>{t('{hours} h per day', { hours: holiday.hours_per_day })}</TableCell>
       <TableCell className="text-right">
