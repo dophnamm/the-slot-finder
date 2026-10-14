@@ -62,7 +62,7 @@ Details per part:
 ```mermaid
 flowchart LR
   planner["Resource Planner<br/>coordinates capacity"]
-  lead["Program / Project Lead"]
+  lead["Manager<br/>manages programs"]
   spec["Specialist<br/>PM · Analyst · Engineer · QA"]
   assistant["Assistant<br/>internal or external"]
   sf(["<b>The Slot Finder</b><br/>assigns projects to cross-functional squads"])
@@ -74,7 +74,7 @@ flowchart LR
   llm["LLM API (later)<br/>function calling · Gemini planned"]
 
   planner -->|"reviews drafts, runs what-ifs, imports timesheets"| sf
-  lead -->|"manages programs, demand, deadlines"| sf
+  lead -->|"manages programs, demand, deadlines; staffs from the program team"| sf
   spec -->|"views schedule, reports leave, connects calendar"| sf
   assistant -.->|"views program (internal only)"| sf
   intake -->|"new projects"| sf
@@ -87,8 +87,8 @@ flowchart LR
 
 | Actor | What they do |
 |---|---|
-| **Resource Planner** | Sees team-wide load and each person's schedule, generates staffing drafts, edits by hand, approves, builds what-if scenarios, imports timesheets |
-| **Program / Project Lead** | Creates programs and projects, declares demand (budget hours per expertise), milestones and scope points, manages assistants |
+| **Resource Planner** | Sees team-wide load and each person's schedule, gives each program its team, generates staffing drafts, edits by hand, approves, builds what-if scenarios, imports timesheets |
+| **Manager** (role `lead`) | Manages the programs they lead: creates projects, declares demand (budget hours per expertise), milestones and scope points, manages assistants. Sees only the people in the teams of those programs, and proposes, edits and accepts staffing drafts for their projects from those teams |
 | **Specialist** | Sees which projects they work on, which weeks and for how many hours; reports leave; connects their calendar so out-of-office time becomes leave |
 | **Assistant** | Internal: read-only view of one program. External: no login, receives notifications only |
 
@@ -100,7 +100,7 @@ flowchart LR
 flowchart TB
   subgraph users["Users"]
     planner["Resource Planner"]
-    lead["Program / Project Lead"]
+    lead["Manager<br/>manages programs"]
     spec["Specialist"]
   end
 
@@ -196,7 +196,7 @@ See [`server/README.md`](server/README.md) for details.
 
 | Kind | Rules |
 |---|---|
-| **Hard constraints** (never violated) | The person has the demand's expertise (primary **or secondary**) at level ≥ `min_level` · the person has **every required tag** of the demand · total weekly hours across **all** their assignments ≤ capacity × `max_utilization` · at most `max_expertises_per_person_week` different expertises per person per week · no allocation below `min_hours_per_week`, except the last remainder of a demand · only inside the demand's week window (its phase, or the whole project) · never changes a **locked** allocation · never proposes a stretch assignment · only **members** get hours (assistants are never in the snapshot) |
+| **Hard constraints** (never violated) | The person has the demand's expertise (primary **or secondary**) at level ≥ `min_level` · the person has **every required tag** of the demand · total weekly hours across **all** their assignments ≤ capacity × `max_utilization` · at most `max_expertises_per_person_week` different expertises per person per week · no allocation below `min_hours_per_week`, except the last remainder of a demand · only inside the demand's week window (its phase, or the whole project) · never changes a **locked** allocation · never proposes a stretch assignment · only **members** get hours (assistants are never in the snapshot) · only people in the **team of the demand's program** (else `unmet` with `NO_ONE_IN_TEAM`) |
 | **Soft objectives** (weighted) | Meet deadlines by priority · **prefer people whose primary expertise matches**, and use cross-expertise people only when that helps a deadline or the load balance · match the demand's **preferred tags** (`tag_fit`) · honour the **preferred person** (`preference`) · balance load near `target_utilization` · **change as little as possible** versus the baseline · **continuity**: keep people on the same project, then the same program, then the same client · limit how many projects one person holds per week |
 | **Required output** | Every assignment carries a **reason** and its kind (`primary` or `cross_expertise`), e.g. "QA cover: Engineer (primary) with QA level 3 ≥ 2". The reason says whether a preferred person was honoured, and why not. Each assignment also lists up to `max_alternatives` runner-up people with their score and the reason they lost. Demand that cannot be placed goes to `unmet` with a reason code. The engine never throws on an infeasible problem |
 
@@ -217,6 +217,32 @@ Sample input and output are in [`server/README.md#4-planning-engine`](server/REA
 
 ## 6. Data model
 
+The model has four layers on top of shared reference data. People and the work they can be given are kept apart; planning joins them; changes and actual hours come back from both and lead to re-plan drafts.
+
+```mermaid
+flowchart TB
+  ref["<b>Reference data</b><br/>EXPERTISE · TAG<br/><i>drawn in 6.1</i>"]
+  people["<b>6.1 People and capacity</b><br/>PERSON · PERSON_SKILL · PERSON_TAG<br/>CAPACITY_CHANGE · ABSENCE · CALENDAR_FEED"]
+  work["<b>6.2 Programs and demand</b><br/>PROGRAM · PROGRAM_TEAM_MEMBER · PROGRAM_ASSISTANT<br/>MILESTONE · PROJECT · PROJECT_PHASE · DEMAND · DEMAND_TAG"]
+  planning["<b>6.3 Planning</b><br/>PLAN · ASSIGNMENT · ALLOCATION"]
+  feedback["<b>6.4 Changes and actuals</b><br/>CHANGE_EVENT · ACTUAL_HOURS"]
+
+  ref -->|"expertise, tags"| people
+  ref -->|"expertise, tags"| work
+  people -->|"who: skills, capacity"| planning
+  work -->|"what: demand and its weeks"| planning
+  planning ~~~ feedback
+  feedback -.->|"re-plan drafts"| planning
+  people -.->|"leave, hours worked"| feedback
+  work -.->|"slips, demand changes"| feedback
+```
+
+Each layer below has its own diagram. An entity from another layer is drawn there without its attributes.
+
+### 6.1 People and capacity
+
+Who can work, with which expertise, level and tags, and how many hours each week. `EXPERTISE` and `TAG` are reference data that demand uses too.
+
 ```mermaid
 erDiagram
   PERSON ||--o{ PERSON_SKILL : has
@@ -226,26 +252,6 @@ erDiagram
   PERSON ||--o{ CAPACITY_CHANGE : "weekly hours over time"
   PERSON |o--o{ ABSENCE : takes
   PERSON ||--o| CALENDAR_FEED : "leave from"
-  PERSON ||--o{ ACTUAL_HOURS : worked
-  PROJECT ||--o{ ACTUAL_HOURS : "worked on"
-  PROGRAM ||--o{ PROJECT : contains
-  PROGRAM ||--o{ MILESTONE : has
-  PROJECT |o--o{ MILESTONE : "scoped to"
-  PROGRAM ||--o{ PROGRAM_ASSISTANT : has
-  PERSON |o--o{ PROGRAM_ASSISTANT : "acts as"
-  PROJECT ||--|{ DEMAND : requires
-  PROJECT ||--o{ PROJECT_PHASE : "split into"
-  PROJECT_PHASE |o--o{ DEMAND : "scheduled in"
-  EXPERTISE ||--o{ DEMAND : "needed in"
-  DEMAND ||--o{ DEMAND_TAG : "asks for"
-  TAG ||--o{ DEMAND_TAG : "required or preferred"
-  PERSON |o--o{ DEMAND : "preferred for"
-  PLAN ||--o{ ASSIGNMENT : contains
-  PERSON ||--o{ ASSIGNMENT : owns
-  DEMAND ||--o{ ASSIGNMENT : "fulfilled by"
-  ASSIGNMENT ||--|{ ALLOCATION : "hours per week"
-  PLAN ||--o{ PLAN : derives
-  CHANGE_EVENT }o--o| PLAN : "triggers draft"
 
   PERSON {
     uuid id PK
@@ -261,30 +267,30 @@ erDiagram
     string timezone
     bool active
   }
-  CAPACITY_CHANGE {
-    uuid id PK
+  PERSON_SKILL {
     uuid person_id FK
-    string from_week "ISO week the new hours start"
-    decimal weekly_hours
+    uuid expertise_id FK
+    int level "1 to 5"
+    bool is_primary "exactly one per person"
+  }
+  EXPERTISE {
+    uuid id PK
+    string name "PM / Analyst / Engineer / QA"
+  }
+  PERSON_TAG {
+    uuid person_id FK
+    uuid tag_id FK
   }
   TAG {
     uuid id PK
     string name "e.g. Go / Banking / Japanese / Acme"
     string category "technology / domain / language / client"
   }
-  PERSON_TAG {
-    uuid person_id FK
-    uuid tag_id FK
-  }
-  EXPERTISE {
+  CAPACITY_CHANGE {
     uuid id PK
-    string name "PM / Analyst / Engineer / QA"
-  }
-  PERSON_SKILL {
     uuid person_id FK
-    uuid expertise_id FK
-    int level "1 to 5"
-    bool is_primary "exactly one per person"
+    string from_week "ISO week the new hours start"
+    decimal weekly_hours
   }
   ABSENCE {
     uuid id PK
@@ -308,14 +314,29 @@ erDiagram
     string last_error "error code"
     int events_found
   }
-  ACTUAL_HOURS {
-    uuid id PK
-    uuid person_id FK
-    uuid project_id FK
-    string week "ISO week, unique with person and project"
-    decimal hours "from a timesheet import"
-    string updated_by "Keycloak subject of the planner who imported it last"
-  }
+```
+
+### 6.2 Programs and demand
+
+What has to be done: programs with their team and assistants, projects split into phases, and the demand per expertise.
+
+```mermaid
+erDiagram
+  PROGRAM ||--o{ PROJECT : contains
+  PROGRAM ||--o{ MILESTONE : has
+  PROJECT |o--o{ MILESTONE : "scoped to"
+  PROGRAM ||--o{ PROGRAM_TEAM_MEMBER : "staffed from"
+  PERSON ||--o{ PROGRAM_TEAM_MEMBER : "member of"
+  PROGRAM ||--o{ PROGRAM_ASSISTANT : has
+  PERSON |o--o{ PROGRAM_ASSISTANT : "acts as"
+  PROJECT ||--o{ PROJECT_PHASE : "split into"
+  PROJECT ||--|{ DEMAND : requires
+  PROJECT_PHASE |o--o{ DEMAND : "scheduled in"
+  EXPERTISE ||--o{ DEMAND : "needed in"
+  PERSON |o--o{ DEMAND : "preferred for"
+  DEMAND ||--o{ DEMAND_TAG : "asks for"
+  TAG ||--o{ DEMAND_TAG : "required or preferred"
+
   PROGRAM {
     uuid id PK
     string name
@@ -327,6 +348,28 @@ erDiagram
     json objectives "ordered list"
     string charter_url
     uuid lead_id FK
+  }
+  PROGRAM_TEAM_MEMBER {
+    uuid program_id PK, FK
+    uuid person_id PK, FK "a person may be in several teams, with one shared capacity"
+    timestamptz created_at
+  }
+  PROGRAM_ASSISTANT {
+    uuid id PK
+    uuid program_id FK
+    string kind "internal / external"
+    uuid person_id FK "internal only"
+    string name "external only"
+    string email
+    string description
+  }
+  MILESTONE {
+    uuid id PK
+    uuid program_id FK
+    uuid project_id FK "null = program-wide"
+    string name
+    date due_date
+    date delivered_on "null = not delivered"
   }
   PROJECT {
     uuid id PK
@@ -342,6 +385,14 @@ erDiagram
     uuid lead_id FK
     datetime created_at
     datetime staffed_at "first accepted draft covering the project"
+  }
+  PROJECT_PHASE {
+    uuid id PK
+    uuid project_id FK
+    string name "e.g. Discovery / Build / Test"
+    int sequence "order inside the project, 1 = first"
+    string start_week "ISO week"
+    string end_week "ISO week"
   }
   DEMAND {
     uuid id PK
@@ -360,31 +411,20 @@ erDiagram
     uuid tag_id FK
     string kind "required / preferred"
   }
-  PROJECT_PHASE {
-    uuid id PK
-    uuid project_id FK
-    string name "e.g. Discovery / Build / Test"
-    int sequence "order inside the project, 1 = first"
-    string start_week "ISO week"
-    string end_week "ISO week"
-  }
-  MILESTONE {
-    uuid id PK
-    uuid program_id FK
-    uuid project_id FK "null = program-wide"
-    string name
-    date due_date
-    date delivered_on "null = not delivered"
-  }
-  PROGRAM_ASSISTANT {
-    uuid id PK
-    uuid program_id FK
-    string kind "internal / external"
-    uuid person_id FK "internal only"
-    string name "external only"
-    string email
-    string description
-  }
+```
+
+### 6.3 Planning
+
+Planning joins the two layers above: an assignment gives one person one demand, with hours per ISO week, inside a versioned plan.
+
+```mermaid
+erDiagram
+  PLAN ||--o{ PLAN : derives
+  PLAN ||--o{ ASSIGNMENT : contains
+  PERSON ||--o{ ASSIGNMENT : owns
+  DEMAND ||--o{ ASSIGNMENT : "fulfilled by"
+  ASSIGNMENT ||--|{ ALLOCATION : "hours per week"
+
   PLAN {
     uuid id PK
     uuid parent_id FK "base plan"
@@ -412,6 +452,18 @@ erDiagram
     decimal hours
     bool locked "pinned by the Planner, the engine must not change it"
   }
+```
+
+### 6.4 Changes and actuals
+
+What happens after planning: change events that lead to re-plan drafts, and the hours people actually worked.
+
+```mermaid
+erDiagram
+  CHANGE_EVENT }o--o| PLAN : "triggers draft"
+  PERSON ||--o{ ACTUAL_HOURS : worked
+  PROJECT ||--o{ ACTUAL_HOURS : "worked on"
+
   CHANGE_EVENT {
     uuid id PK
     string type "ProgramSlipped / ProjectSlipped / PhaseSlipped / AbsenceAdded / CapacityChanged / DemandChanged / PersonLeft"
@@ -420,7 +472,17 @@ erDiagram
     string status "pending / no_impact / draft_created"
     uuid draft_id FK "many events may share one draft"
   }
+  ACTUAL_HOURS {
+    uuid id PK
+    uuid person_id FK
+    uuid project_id FK
+    string week "ISO week, unique with person and project"
+    decimal hours "from a timesheet import"
+    string updated_by "Keycloak subject of the planner who imported it last"
+  }
 ```
+
+### 6.5 Rules and derived values
 
 **Derived values for people (computed, not stored):**
 - `capacity(person, week) = weekly_hours(week) − non_project_hours − absence hours in that week`, and 0 before `start_date` or after `end_date`
@@ -672,7 +734,7 @@ sequenceDiagram
 | Topic | Decision |
 |---|---|
 | **Authentication** | Keycloak (OIDC) issues the JWT; the Client sends it as `Authorization: Bearer`. Unsafe requests also carry `X-CSRF-Token`. `/me` returns the user's role and the programs they assist |
-| **Authorization** | Keycloak roles: `planner` (everything), `lead` (own programs and projects), `specialist` (own schedule and leave), checked per route. Per-program rules (lead of this program, **internal assistant** read-only access) are checked in services against the database. **Everything is checked on the Server.** The Client uses roles only to show or hide controls |
+| **Authorization** | Keycloak roles: `planner` (everything), `lead` (shown as **Manager**: own programs and projects, the people of their program teams, drafts that cover only their programs), `specialist` (own schedule and leave), checked per route. Per-program rules (manager of this program, the people they may see, **internal assistant** read-only access) are checked in services against the database. **Everything is checked on the Server.** The Client uses roles only to show or hide controls |
 | **Concurrency** | `PLAN.version`. Accepting a draft requires `baseVersion`. If the baseline has changed, the Server returns `409` and the Client regenerates the draft |
 | **Transactions** | One business action is one transaction (accept = write all allocations + update plan states) |
 | **Errors** | Every response, success or error, uses one envelope: `{ meta: { error_code, message, code, page, page_size, total }, data }`, with a meaningful HTTP status. Field errors go in `data` |
