@@ -40,6 +40,8 @@ export type SavePersonInput =
   | { mode: 'update'; id: string; changes: UpdatePersonInput; skills: SkillInput[] | null }
 
 export interface PeopleTableProps {
+  /** Planners add and edit people; leads read the list only. */
+  canManage: boolean
   /** Shows a person's absences; without it the row has no Absences button. */
   onShowAbsences?: (person: Person) => void
   /** Buttons shown before Add person, e.g. Import timesheet. */

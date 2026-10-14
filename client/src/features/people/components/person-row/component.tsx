@@ -17,7 +17,7 @@ export function PersonRow({ person, onEdit, onShowAbsences }: PersonRowProps) {
   const expertiseBadge = useExpertiseBadge()
   const personPath = generatePath(ROUTES.personDetail, { id: person.id })
 
-  const handleEdit = () => onEdit(person)
+  const handleEdit = () => onEdit?.(person)
   const handleShowAbsences = () => onShowAbsences?.(person)
 
   return (
@@ -73,9 +73,11 @@ export function PersonRow({ person, onEdit, onShowAbsences }: PersonRowProps) {
               {t('Absences')}
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={handleEdit}>
-            {t('Edit')}
-          </Button>
+          {onEdit && (
+            <Button variant="outline" size="sm" onClick={handleEdit}>
+              {t('Edit')}
+            </Button>
+          )}
         </div>
       </TableCell>
     </LinkRow>

@@ -9,11 +9,12 @@ import { useTranslation } from '@/shared/i18n'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
 import { PersonAbsencesDialog } from './components/person-absences-dialog'
 
-/** People and company holidays, one tab each; each tab's table scrolls inside the page. */
+/** People and company holidays, one tab each; planners manage them, leads read them. */
 export function PeoplePage() {
   const { t } = useTranslation()
   const { data: user } = useCurrentUser()
   const [absencesOf, setAbsencesOf] = useState<Person | null>(null)
+  const canApprove = can(user?.role, 'absences:approve')
 
   const handleCloseAbsences = () => setAbsencesOf(null)
 
@@ -26,7 +27,8 @@ export function PeoplePage() {
         </TabsList>
         <TabsContent value="people" className="flex min-h-0 flex-col">
           <PeopleTable
-            onShowAbsences={setAbsencesOf}
+            canManage={can(user?.role, 'people:manage')}
+            onShowAbsences={canApprove ? setAbsencesOf : undefined}
             actions={can(user?.role, 'timesheets:import') && <TimesheetImport />}
           />
         </TabsContent>
@@ -34,11 +36,7 @@ export function PeoplePage() {
           <HolidaysCard />
         </TabsContent>
       </Tabs>
-      <PersonAbsencesDialog
-        person={absencesOf}
-        canApprove={can(user?.role, 'absences:approve')}
-        onClose={handleCloseAbsences}
-      />
+      <PersonAbsencesDialog person={absencesOf} canApprove={canApprove} onClose={handleCloseAbsences} />
     </PageFill>
   )
 }
