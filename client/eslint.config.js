@@ -8,6 +8,19 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 // Project conventions (see .claude/skills at the repo root). shadcn/ui files are exempt.
 const APP_CODE = ['src/{app,pages,features}/**/*.tsx', 'src/shared/components/**/*.tsx']
 
+const DAYJS_IMPORT = {
+  name: 'dayjs',
+  message: "Import dayjs and the date helpers from '@/utils/functions'.",
+  allowTypeImports: true,
+}
+
+const SPINNER_ICONS = {
+  name: 'lucide-react',
+  importNames: ['Loader', 'LoaderIcon', 'Loader2', 'Loader2Icon', 'LoaderCircle', 'LoaderCircleIcon', 'LoaderPinwheel'],
+  message:
+    'No spinner in place of data: use a skeleton (Skeleton, TableLoading, PageSkeleton), or isLoading on Button or NativeSelect.',
+}
+
 const NO_RAW_TEXT = [
   {
     selector: 'JSXText[value=/[A-Za-z]/]',
@@ -125,15 +138,16 @@ export default defineConfig([
       '@typescript-eslint/no-restricted-imports': [
         'error',
         {
-          paths: [
-            {
-              name: 'dayjs',
-              message: "Import dayjs and the date helpers from '@/utils/functions'.",
-              allowTypeImports: true,
-            },
-          ],
+          paths: [DAYJS_IMPORT],
         },
       ],
+    },
+  },
+  {
+    // Data that loads shows a skeleton; a spinner only sits inside a busy Button or NativeSelect.
+    files: APP_CODE,
+    rules: {
+      '@typescript-eslint/no-restricted-imports': ['error', { paths: [DAYJS_IMPORT, SPINNER_ICONS] }],
     },
   },
   {

@@ -26,6 +26,7 @@ export {
   toIsoWeek,
 } from './date'
 export { saveFile } from './file'
+export { range } from './list'
 export { pageCount } from './paging'
 export { toSearchText } from './text'
 export type { IsoWeekRange } from './types'

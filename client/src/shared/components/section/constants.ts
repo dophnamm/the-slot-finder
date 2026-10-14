@@ -11,7 +11,7 @@ export const SECTION_PADDED_BODY_CLASS = 'flex min-h-0 flex-1 flex-col gap-4 px-
  * card's inset, and a table at the bottom closes the card without a gap under it.
  */
 export const SECTION_FLUSH_BODY_CLASS =
-  'flex min-h-0 flex-1 flex-col gap-4 pb-5 *:not-data-[slot=table-frame]:mx-5 has-[>[data-slot=table-frame]:last-child]:pb-0'
+  'flex min-h-0 flex-1 flex-col gap-4 pb-5 *:not-data-[slot=table-frame]:not-data-[slot=loading-bar]:mx-5 has-[>[data-slot=table-frame]:last-child]:pb-0'
 
 /** A page header's body sits in a card under the heading. */
 export const PAGE_BODY_CLASS = 'flex min-h-0 flex-1 flex-col gap-4 p-5'

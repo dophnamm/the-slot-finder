@@ -18,4 +18,6 @@ export interface SectionProps {
   variant?: SectionVariant
   className?: string
   contentClassName?: string
+  /** The body's data is loading again (another page, filter or month): a thin bar runs along its top edge. */
+  refreshing?: boolean
 }
