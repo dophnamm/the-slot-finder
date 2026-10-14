@@ -10,6 +10,7 @@ import { useTranslation } from '@/shared/i18n'
 import { Badge } from '@/shared/ui/badge'
 import { TableCell } from '@/shared/ui/table'
 import { formatIsoWeekSpan } from '@/utils/functions'
+import { NO_UPCOMING_HOURS } from './constants'
 import type { ProjectRowProps } from './types'
 
 export function ProjectRow({ project }: ProjectRowProps) {
@@ -70,6 +71,16 @@ export function ProjectRow({ project }: ProjectRowProps) {
             <MetricBar compact label={t('Staffing')} value={metrics.staffing_percent} warning={metrics.understaffed} />
           </div>
         )}
+      </TableCell>
+      <TableCell className="text-right text-sm tabular-nums">
+        {metrics &&
+          (metrics.next_week_hours > 0 ? t('{hours} h', { hours: metrics.next_week_hours }) : NO_UPCOMING_HOURS)}
+      </TableCell>
+      <TableCell className="text-right text-sm tabular-nums">
+        {metrics &&
+          (metrics.next_three_weeks_hours > 0
+            ? t('{hours} h', { hours: metrics.next_three_weeks_hours })
+            : NO_UPCOMING_HOURS)}
       </TableCell>
       <TableCell>{project.lead?.name ?? t('No lead')}</TableCell>
       <TableCell className="text-right">

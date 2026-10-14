@@ -229,7 +229,9 @@ export type LanguageKey = {
   'New program': string
   'New scenario': string
   Next: string
+  'Next 3 weeks': string
   'Next month': string
+  'Next week': string
   'No absences yet.': string
   'No access': string
   'No assignments this week.': string
