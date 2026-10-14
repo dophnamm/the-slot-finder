@@ -33,10 +33,10 @@ Sign in with a demo user (`planner`, `lead` or `specialist`; see [`server/README
 | `/intake/staffing-drafts/:id` | **Staffing draft review**: assignment grid, reasons, alternatives with one-click swap, diff with plan churn, manual edits, lock, accept, AI summary (later) | planner | `/staffing-drafts/:id`, `/staffing-drafts/:id/assignments`, `/staffing-drafts/:id/summary` |
 | `/scenarios` | **What-if scenarios**: the list (assumptions, baseline version with Stale, people changed, hours moved, unmet) and **New scenario** (move a project, add leave) | planner | `/scenarios`, `/projects`, `/people` |
 | `/scenarios/:id` | **Scenario**: assumptions and figures, Run again, Delete, changes week by week (Moved / Added / Removed / Changed), unmet demand, links to the projects planned again | planner | `/scenarios/:id`, `/scenarios/:id/rerun` |
-| `/people` | **People**: expertise and level matrix, skill tags, start and end dates, location, leave and holidays, capacity changes, **Import timesheet**; each row opens the person | planner | `/people`, `/people/:id/absences`, `/people/:id/tags`, `/people/:id/capacity-changes`, `/tags`, `/holidays`, `/timesheets/template`, `/timesheets/import` |
-| `/people/:id` | **Person**: month calendar (absences, holidays, weekly load against capacity, hours per project, worked hours), absences with Approve, the calendar link and its status | planner, lead (read only) | `/people/:id/schedule`, `/people/:id/absences`, `/people/:id/calendar-feed` |
+| `/people` | **People**: two tabs. **People**: expertise and level matrix, skill tags, start and end dates, location, capacity changes, **Import timesheet**, **Add person**; each row opens the person. **Holidays**: company holidays, **Add holiday** | planner | `/people`, `/people/:id/absences`, `/people/:id/tags`, `/people/:id/capacity-changes`, `/tags`, `/holidays`, `/timesheets/template`, `/timesheets/import` |
+| `/people/:id` | **Person**: tabs **Schedule** (month calendar: absences, holidays, weekly load against capacity, hours per project, worked hours), **Absences** (Approve, **Add absence**) and **Calendar sync** (the calendar link and its status); a lead sees the schedule without tabs | planner, lead (read only) | `/people/:id/schedule`, `/people/:id/absences`, `/people/:id/calendar-feed` |
 | `/insights` | **Insights**: capacity forecast by expertise (with pipeline × confidence and shortfall signals), bench list, plan churn over time | planner, lead (forecast only) | `/insights/capacity-forecast`, `/insights/bench`, `/insights/churn` |
-| `/me` | **My schedule**: my month calendar (hours per project each week, leave, holidays), report leave, connect my calendar | specialist | `/me`, `/people/:id/schedule`, `/people/:id/absences`, `/people/:id/calendar-feed` (id from `/me`) |
+| `/me` | **My schedule**: tabs **Schedule** (my month calendar: hours per project each week, leave, holidays), **My absences** (report leave) and **Calendar sync** (connect my calendar) | specialist | `/me`, `/people/:id/schedule`, `/people/:id/absences`, `/people/:id/calendar-feed` (id from `/me`) |
 | `/events` | **Change history** and re-plan status | planner | `/events` |
 
 ```mermaid
@@ -64,9 +64,17 @@ flowchart LR
   draft -->|"Accept"| program
 ```
 
+**Layout rules (every screen):**
+- The sidebar and the header bar (breadcrumbs) are white; pages sit on a light gray area, and each block is a white card with its title, description and actions inside.
+- A page made of one block (Programs, Intake, Scenarios, Events, each People tab) fills the screen: the page does not scroll, its table scrolls under a sticky header.
+- A record page has one header: its name, one meta line, at most one primary button, **Edit**, and the other status actions in the ⋯ menu. Its parts sit in tabs.
+- Adding or editing a record (program, project, phase, demand, person, absence, holiday, a person on a staffing draft) opens a form in a dialog; table rows never turn into inputs. The weekly hours of a staffing draft stay inputs in the grid.
+- Every text and number field shows a placeholder with an example.
+
 ## 2. Program detail page
 
 **Behaviour:**
+- **Tabs**: **Overview** (progress and cost figures, staffing by expertise, the brief), **Projects** and **Members**. The page opens on Overview. **Edit** sits next to a ⋯ menu with Put on hold, Start closing and Cancel program.
 - **Header bars** come straight from `/programs/:id/overview`. Each bar shows ⚠ when the Server flags it (over 100% time, behind on delivery, over-planned, understaffed). Planned burn has no warning in the MVP.
 - **EAC hours** on the Cost card comes from the overview. It is hidden while the Server returns `null` (too little scope done) and shows ⚠ when the Server flags **likely over budget**.
 - **Staffing and gap** are shown together, e.g. "Staffing 80% · 40 h gap", because they show the same shortfall.

@@ -49,6 +49,11 @@ export function TeamList() {
 - A handler that needs state or props lives in the component body. One that does not lives in `utils.ts`, e.g. a `NavLink` `className` function.
 - `.map()` callbacks that render list items are not props and are allowed.
 
+## Adding and editing records
+
+- **Adding or editing a record opens a form in a dialog**: an outline "Add …" button with a `Plus` icon in the card header, or the row's pencil button. A table row never turns into inputs, and nothing is added as a blank row: people must see that their click changed something. The one exception is a grid whose cells are visibly inputs and save as you type (the weekly hours of a staffing draft).
+- The dialog's form is one component for add and edit (title and button text differ); saving closes the dialog and shows a toast. Removing a row asks first (`window.confirm`) when it cannot be undone.
+
 ## Never a component inside a component
 
 `component.tsx` defines exactly one component, the exported one. A second component, whether at the top level or inside the exported one, moves to `components/<child>/component.tsx`, even if it is small.
