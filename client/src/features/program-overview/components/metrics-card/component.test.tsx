@@ -20,6 +20,8 @@ const metrics = (overrides: Partial<ProgressMetrics>): ProgressMetrics => ({
   at_risk: false,
   over_planned: false,
   past_end: false,
+  next_week_hours: 0,
+  next_three_weeks_hours: 0,
   ...overrides,
 })
 

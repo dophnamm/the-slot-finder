@@ -79,6 +79,9 @@ export interface ProgressMetrics {
   at_risk: boolean
   over_planned: boolean
   past_end: boolean
+  /** Baseline hours in the week after the current one, and in the three weeks after it. */
+  next_week_hours: number
+  next_three_weeks_hours: number
 }
 
 /** Budget against planned hours for one expertise of a program. */
