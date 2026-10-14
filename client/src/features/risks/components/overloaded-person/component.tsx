@@ -6,7 +6,7 @@ export function OverloadedPerson({ person }: OverloadedPersonProps) {
   const { t } = useTranslation()
 
   return (
-    <li className="flex flex-col gap-1 rounded-md border p-3">
+    <li className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
       <span className="font-medium">{person.person.name}</span>
       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
         {person.weeks.map((week) => (

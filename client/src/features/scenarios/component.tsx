@@ -21,6 +21,7 @@ export function Scenarios() {
 
   return (
     <Section
+      className="min-h-0 flex-1"
       title={t('What-if scenarios')}
       description={t(
         'Try a change, such as a project slipping or someone on leave, and see what it does to the plan. Nothing real changes.',
@@ -32,7 +33,7 @@ export function Scenarios() {
         </Button>
       }
     >
-      <Table>
+      <Table scroll="both">
         <TableHeader>
           <TableRow>
             <TableHead>{t('Scenario')}</TableHead>
