@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The Slot Finder assigns incoming customer projects to cross-functional squads (PM, Analyst, Engineer, QA), forecasts who is overloaded or idle per ISO week, and re-plans when projects slip or people take leave. `README.md` is the architecture source of truth: goals, data model, metrics formulas, flows and ADRs. `docs/architecture.drawio` mirrors its diagrams. `server/README.md` and `client/README.md` hold the per-side details, API table and screens. `docs/features/` holds one spec per feature in build order (scope, acceptance criteria, tasks); read the feature's spec before building it. `docs/plans/` holds the step-by-step implementation plan of a feature, named like its spec.
 
-Status: all thirteen features in `docs/features/README.md` are built (sign-in through calendar sync).
+Status: the first thirteen features in `docs/features/README.md` are built (sign-in through calendar sync). Program teams (14) is built and in review: a program has a team, and the `lead` role, shown as **Manager**, sees and staffs only the teams of the programs they manage.
 
 ## Repo-wide rules
 
@@ -77,7 +77,7 @@ A Program contains Projects. A Project is split into ordered **Phases** (week ra
   - `internal/dtos` only at the handler edge
   - a logical module is a set of same-named files across the layers
 - `cmd/server/main.go` wires providers with **Uber FX**. `cmd/server/routes/router.go` holds the middleware chain and routes under `/api/v1`, protected by `AuthMiddleware` + `RequireRole`.
-- Auth uses Keycloak JWTs. Roles `planner`, `lead` and `specialist` are in `internal/constants/roles.go`. CSRF is on: unsafe requests need `X-CSRF-Token`, which the server exposes in a response header.
+- Auth uses Keycloak JWTs. Roles `planner`, `lead` (shown as Manager) and `specialist` are in `internal/constants/roles.go`. CSRF is on: unsafe requests need `X-CSRF-Token`, which the server exposes in a response header.
   - `AuthMiddleware` verifies tokens locally against the realm's cached JWKS (`internal/integration/auth/verifier.go`), with no Keycloak call per request. It puts a `request.Principal` in the request context.
   - Routes add `RequireRole(constants.<X>Roles...)`. Services ask `AuthzService` for named checks (`Require(ctx, CanViewOwnProfile)`).
   - Keycloak imports `deploy/keycloak/realm.json` on a fresh start (placeholders from `.env`). The demo users `planner`, `lead` and `specialist` are for development only.

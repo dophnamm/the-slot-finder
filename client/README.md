@@ -16,7 +16,7 @@ npm run lint
 npx shadcn@latest add <component>   # adds a component to src/shared/ui
 ```
 
-Sign in with a demo user (`planner`, `lead` or `specialist`; see [`server/README.md`](../server/README.md#0-run-locally)). Keycloak must be running (`make infra` or `make up`).
+Sign in with a demo user (`planner`, `lead` or `specialist`; the `lead` role is shown as **Manager**; see [`server/README.md`](../server/README.md#0-run-locally)). Keycloak must be running (`make infra` or `make up`).
 
 ## 1. Screens
 
@@ -24,17 +24,17 @@ Sign in with a demo user (`planner`, `lead` or `specialist`; see [`server/README
 |---|---|---|---|
 | `/signed-out` | **Signed out**: where Keycloak returns after sign-out; "Sign in again" | everyone | — |
 | `/auth/callback` | Finishes the Keycloak round trip and returns to the page the user asked for | everyone | Keycloak token endpoint |
-| `/` | **Dashboard**: person × week heatmap (search by name or expertise), overload and deadline-risk alerts | planner, lead | `/insights/heatmap`, `/insights/risks` |
+| `/` | **Dashboard**: person × week heatmap (search by name or expertise), overload and deadline-risk alerts; a manager sees the people of their program teams | planner, lead | `/insights/heatmap`, `/insights/risks` |
 | `/programs` | **Programs**: list with status and timeline; the arrow on a row opens a preview with its figures, projects and members | planner, lead, internal assistant | `/programs`, then `/programs/:id/overview`, `/programs/:id/projects`, `/programs/:id/members` |
-| `/programs/:id` | **Program detail** (see section 2) | planner, lead, internal assistant | `/programs/:id`, `/programs/:id/overview`, `/programs/:id/projects`, `/programs/:id/members`, `/programs/:id/assistants`, `/events?programId=` |
+| `/programs/:id` | **Program detail** (see section 2) | planner, lead, internal assistant | `/programs/:id`, `/programs/:id/overview`, `/programs/:id/projects`, `/programs/:id/team`, `/programs/:id/assistants`, `/events?programId=` |
 | `/intake` | **Intake queue**: incoming projects across programs with their confidence, "Propose squad" | planner, lead | `/projects?status=incoming`, `/staffing-drafts` |
 | `/intake/from-document` | **Intake from a document** (later, AI): paste or upload a brief, review the suggested project with a source quote per field, edit, confirm | planner, lead | `/ai/intake-extractions`, then `/programs/:id/projects`, `/projects/:id/phases`, `/projects/:id/demands` |
 | `/programs/:programId/projects/:id` | **Project detail**: project form (with confidence), phase timeline, demand per phase with hours suggestion, assigned people, risks, scope points | planner, lead | `/projects/:id`, `/projects/:id/phases`, `/projects/:id/demands`, `/projects/:id/hours-suggestion`, `/plans/current` |
-| `/intake/staffing-drafts/:id` | **Staffing draft review**: assignment grid, reasons, alternatives with one-click swap, diff with plan churn, manual edits, lock, accept, AI summary (later) | planner | `/staffing-drafts/:id`, `/staffing-drafts/:id/assignments`, `/staffing-drafts/:id/summary` |
+| `/intake/staffing-drafts/:id` | **Staffing draft review**: assignment grid, reasons, alternatives with one-click swap, diff with plan churn, manual edits, lock, accept, AI summary (later). **Add person** lists the demand's program team only. A manager edits, accepts and rejects a draft whose projects all belong to programs they manage | planner, lead (own) | `/staffing-drafts/:id`, `/staffing-drafts/:id/assignments`, `/staffing-drafts/:id/summary` |
 | `/scenarios` | **What-if scenarios**: the list (assumptions, baseline version with Stale, people changed, hours moved, unmet) and **New scenario** (move a project, add leave) | planner | `/scenarios`, `/projects`, `/people` |
 | `/scenarios/:id` | **Scenario**: assumptions and figures, Run again, Delete, changes week by week (Moved / Added / Removed / Changed), unmet demand, links to the projects planned again | planner | `/scenarios/:id`, `/scenarios/:id/rerun` |
-| `/people` | **People**: two tabs. **People**: expertise and level matrix, skill tags, start and end dates, location, capacity changes, **Import timesheet**, **Add person**; each row opens the person. **Holidays**: company holidays, **Add holiday** | planner | `/people`, `/people/:id/absences`, `/people/:id/tags`, `/people/:id/capacity-changes`, `/tags`, `/holidays`, `/timesheets/template`, `/timesheets/import` |
-| `/people/:id` | **Person**: tabs **Schedule** (month calendar: absences, holidays, weekly load against capacity, hours per project, worked hours), **Absences** (Approve, **Add absence**) and **Calendar sync** (the calendar link and its status); a lead sees the schedule without tabs | planner, lead (read only) | `/people/:id/schedule`, `/people/:id/absences`, `/people/:id/calendar-feed` |
+| `/people` | **People**: two tabs. **People**: expertise and level matrix, skill tags, start and end dates, location, capacity changes, **Import timesheet**, **Add person**; each row opens the person. **Holidays**: company holidays, **Add holiday**; a manager reads both tabs without the buttons, and sees only the people of their program teams and themselves | planner, lead (read only) | `/people`, `/people/:id/absences`, `/people/:id/tags`, `/people/:id/capacity-changes`, `/tags`, `/holidays`, `/timesheets/template`, `/timesheets/import` |
+| `/people/:id` | **Person**: tabs **Schedule** (month calendar, Monday to Sunday with days off shaded: absences, holidays, weekly load against capacity, hours per project, worked hours), **Absences** (Approve, **Add absence**) and **Calendar sync** (the calendar link and its status); a manager sees the schedule without tabs, and **You can’t see this person** for someone outside their program teams | planner, lead (read only) | `/people/:id/schedule`, `/people/:id/absences`, `/people/:id/calendar-feed` |
 | `/insights` | **Insights**: capacity forecast by expertise (with pipeline × confidence and shortfall signals), bench list, plan churn over time | planner, lead (forecast only) | `/insights/capacity-forecast`, `/insights/bench`, `/insights/churn` |
 | `/me` | **My schedule**: tabs **Schedule** (my month calendar: hours per project each week, leave, holidays), **My absences** (report leave) and **Calendar sync** (connect my calendar) | specialist | `/me`, `/people/:id/schedule`, `/people/:id/absences`, `/people/:id/calendar-feed` (id from `/me`) |
 | `/events` | **Change history** and re-plan status | planner | `/events` |
@@ -70,18 +70,19 @@ flowchart LR
 - A record page has one header: its name, one meta line, at most one primary button, **Edit**, and the other status actions in the ⋯ menu. Its parts sit in tabs.
 - Adding or editing a record (program, project, phase, demand, person, absence, holiday, a person on a staffing draft) opens a form in a dialog; table rows never turn into inputs. The weekly hours of a staffing draft stay inputs in the grid.
 - Every text and number field shows a placeholder with an example.
+- **Loading:** data that is loading for the first time shows a skeleton in its own shape, from 300 ms on; data that loads again (another page, filter or month) stays on screen with a thin bar along the card's top; a button that starts a request shows a spinner in place of its icon. No lone spinners, no "Loading…" text, no empty message or `(0)` count while loading.
 
 ## 2. Program detail page
 
 **Behaviour:**
-- **Tabs**: **Overview** (progress and cost figures, staffing by expertise, the brief), **Projects** and **Members**. The page opens on Overview. **Edit** sits next to a ⋯ menu with Put on hold, Start closing and Cancel program.
+- **Tabs**: **Overview** (progress and cost figures, staffing by expertise, the brief), **Projects** and **Team**. The page opens on Overview; the open tab is kept in the URL (`?tab=projects`), so a project's breadcrumb (Programs › program › **Projects** › project) leads back to the Projects tab. **Edit** sits next to a ⋯ menu with Put on hold, Start closing and Cancel program.
 - **Header bars** come straight from `/programs/:id/overview`. Each bar shows ⚠ when the Server flags it (over 100% time, behind on delivery, over-planned, understaffed). Planned burn has no warning in the MVP.
 - **EAC hours** on the Cost card comes from the overview. It is hidden while the Server returns `null` (too little scope done) and shows ⚠ when the Server flags **likely over budget**.
 - **Staffing and gap** are shown together, e.g. "Staffing 80% · 40 h gap", because they show the same shortfall.
 - **Re-plan banner** appears when `/events?programId=` returns an event with status `draft_created`. It links to the staffing draft.
 - **Forecast ✎**: editing calls `PATCH /programs/:id/forecast` for that demand. Clearing the field goes back to planned hours. The table is refetched after the save.
-- **Propose squad** is visible to planners when a project's gap is above 0. It calls `POST /staffing-drafts { projectIds: [id] }` and opens the draft.
-- **Members** are read-only here. A member appears once, with a chip for each expertise they hold in this program. To add or remove a member or an assignment, edit a staffing draft. The **Assistant** sub-tab lets planners and the program lead add or remove assistants.
+- **Propose squad** is visible to planners and to the program's manager when a project's gap is above 0. It calls `POST /staffing-drafts { projectIds: [id] }` and opens the draft.
+- **Team** lists the people the program's projects are staffed from: skills, hours and weeks in this program's baseline ("Not staffed yet" before a draft gives them hours) and projects. Planners get **Add member** (a dialog to pick a person outside the team) and **Remove** on each row, with a confirm; removing keeps the member's baseline hours. The manager reads the team. The **Assistant** sub-tab lets planners and the program's manager add or remove assistants.
 - Internal assistants see the whole page read-only, without edit controls or the Propose squad button.
 
 ## 3. Layers
@@ -99,7 +100,7 @@ flowchart TB
     f1["heatmap"]
     f2["program-overview"]
     f3["program-projects"]
-    f4["program-members"]
+    f4["program-team"]
     f5["intake"]
     f6["draft-review"]
     f7["scenarios"]
@@ -134,7 +135,7 @@ flowchart TB
 | **Project form** | Name, priority, earliest start, deadline, scope points and, for an incoming project, **confidence** (0–100 %) |
 | **Demand form** | One row per need: expertise, minimum level, headcount, budget hours, phase (or "whole project"), profile (flat / front / back), required and preferred tags, preferred person. Budget hours show a suggestion from `/projects/:id/hours-suggestion` (scope points × hours per point); the lead accepts it or types their own |
 | **Assignment editor** | Person × week grid for one staffing draft, grouped by assignment (person × demand). Add a person to any demand, edit weekly hours, lock or unlock, and see the reason and kind of each assignment. Each assignment lists its **alternatives** (score and why they lost); **Swap** replaces the person in one click. A person below the demand's level becomes a **stretch** assignment: shown with ⚠, locked, and confirmed again on accept. If a re-plan merge has superseded the draft, a save, accept or reject gets `409 DRAFT_SUPERSEDED`; the editor reloads the latest version and tells the Planner to check it again |
-| **Expertise chip** | Expertise name with hours. Plain for primary, marked ↔ for cross-expertise, ⚠ for stretch. Used in the Members tab, My schedule and the heatmap popover |
+| **Expertise chip** | Expertise name with hours. Plain for primary, marked ↔ for cross-expertise, ⚠ for stretch. Used in the Programs list preview, My schedule and the heatmap popover |
 | **Diff viewer** | Baseline versus a draft or scenario: who was added or removed, how hours changed, which projects changed risk status. The header shows **plan churn** (people changed, hours moved) |
 | **Capacity forecast** | Per expertise × week: free capacity against unmet confirmed demand and pipeline demand × confidence, with shortfall signals such as "short 1.5 FTE QA in W50–W03" |
 | **Bench list** | People under the underused band for the coming weeks, with suggested actions (stretch assignment, training, internal work). Acting on one is a Planner decision |

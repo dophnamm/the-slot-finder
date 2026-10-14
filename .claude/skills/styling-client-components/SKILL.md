@@ -54,6 +54,18 @@ Styles are Tailwind classes, never `style={...}`. Colors come from theme tokens.
 - **A row that opens a detail page is a `LinkRow`** (`@/shared/components/link-row`) when its other cells only show data: the whole row is clickable, its buttons keep their own action. Keep the name as a `<Link>` for keyboard users.
 - Group rows and other bands use `bg-muted`. A highlighted column (e.g. this week) is an inset `shadow-[inset_2px_0_0_…]` on its body cells, which moves with sticky cells, not a background.
 
+## Loading states
+
+Pick the shape by what the user waits for. Never a lone spinner or a grey "Loading…" text in place of data, and never the empty message while it is still loading.
+
+| Wait | Show |
+|---|---|
+| First load of data (a page, a card, a table, a list, a popover) | A skeleton in the content's own shape: `Skeleton` (`@/shared/ui/skeleton`) bars of uneven width (`SKELETON_TEXT_WIDTHS`); `<TableLoading columns={X} rows={…} />` for table rows; `PageSkeleton` (`@/shared/components/page-skeleton`) for a record page that has nothing yet. Wrap other skeletons in `LOADING_REVEAL_CLASS`, so a quick answer never flashes them (they fade in after 300 ms), and add `aria-busy` plus a `sr-only` `role="status"` text |
+| Loading again with data on screen (another page, filter, month) | Keep the old data, not dimmed, and pass `refreshing={isPlaceholderData}` to its `Section`: a thin bar runs along the card's top edge. The query uses `placeholderData: keepPreviousData` |
+| Saving, sending, any button that starts a request | `<Button isLoading={mutation.isPending}>`: the spinner takes the icon's place, or sits in the middle of a text-only button, which keeps its width. Do not set `disabled` for it, do not change the text ("Saving…") |
+| A select whose options are loading | `<NativeSelect isLoading={isPending}>`: a spinner takes the arrow's place |
+| A count in a heading or tab while its list loads | Leave the count out (`Projects`, not `Projects (0)`) |
+
 ## Checks
 
 `npm run lint` rejects `style={...}` everywhere outside `src/shared/ui`. shadcn's own files may set CSS variables through `style`.
