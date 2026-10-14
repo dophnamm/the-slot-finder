@@ -106,15 +106,20 @@ func (s *insightsService) heatmap(ctx context.Context, in HeatmapInput, scope Pe
 	if err != nil {
 		return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opHeatmap).WithResource(resourceHeatmap)
 	}
+	actuals, err := s.actuals.ListInRange(ctx, from, to)
+	if err != nil {
+		return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opHeatmap).WithResource(resourceHeatmap)
+	}
 
 	weeks := isoweek.Range(from, to)
 	load := loadByPersonWeek(baseline.Assignments)
+	worked := workedByPersonWeek(actuals)
 	rows := make([]models.HeatmapRow, 0, len(people))
 	for _, p := range people {
 		if !scope.Allows(p.ID) {
 			continue
 		}
-		row := s.heatmapRow(p, weeks, absences, load[p.ID])
+		row := s.heatmapRow(p, weeks, absences, load[p.ID], worked[p.ID])
 		if in.ExpertiseID == "" || keepsExpertise(row, in.ExpertiseID) {
 			rows = append(rows, row)
 		}
@@ -186,7 +191,9 @@ func loadByPersonWeek(assignments []models.Assignment) map[string]expertiseLoad 
 	return out
 }
 
-func (s *insightsService) heatmapRow(p models.Person, weeks []isoweek.Week, absences []models.Absence, load expertiseLoad) models.HeatmapRow {
+func (s *insightsService) heatmapRow(p models.Person, weeks []isoweek.Week, absences []models.Absence, load expertiseLoad,
+	worked map[isoweek.Week]float64,
+) models.HeatmapRow {
 	person, own := capacityInputs(p, absences)
 	policy := capacityPolicy(s.cfg)
 	row := models.HeatmapRow{Person: p, Cells: make([]models.HeatmapCell, 0, len(weeks))}
@@ -212,9 +219,25 @@ func (s *insightsService) heatmapRow(p models.Person, weeks []isoweek.Week, abse
 			return a.Expertise.Name < b.Expertise.Name
 		})
 		cell.Utilization, cell.Band = utilizationBand(cell.Load, cell.Capacity, s.cfg.UtilizationUnderusedBelow, s.cfg.UtilizationNearFullFrom)
+		if hours, ok := worked[week]; ok {
+			cell.ActualHours = &hours
+		}
 		row.Cells = append(row.Cells, cell)
 	}
 	return row
+}
+
+// workedByPersonWeek sums imported timesheet rows per person and ISO week. A week with rows is
+// present even when they sum to 0, so the heatmap can tell "worked 0 h" from "nothing imported".
+func workedByPersonWeek(rows []models.ActualHours) map[string]map[isoweek.Week]float64 {
+	out := map[string]map[isoweek.Week]float64{}
+	for _, row := range rows {
+		if out[row.PersonID] == nil {
+			out[row.PersonID] = map[isoweek.Week]float64{}
+		}
+		out[row.PersonID][row.Week] += row.Hours
+	}
+	return out
 }
 
 // utilizationBand is load ÷ capacity and its band. With no capacity the cell is unavailable,
