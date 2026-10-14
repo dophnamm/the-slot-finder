@@ -125,7 +125,7 @@ func (p *planner) keepFeasible(existing []ExistingAssignment) {
 	for _, ea := range sorted {
 		d, requested := p.demands[ea.DemandID]
 		person := byID[ea.PersonID]
-		if !requested || person == nil {
+		if !requested || person == nil || !d.allows(person.ID) {
 			continue
 		}
 		skill, ok := skillFor(person, d.Expertise)
@@ -430,7 +430,7 @@ func (p *planner) assignment(personID, demandID string, kind Kind) *Assignment {
 func (p *planner) qualified(d Demand) []*Person {
 	var out []*Person
 	for _, person := range p.people {
-		if skill, ok := skillFor(person, d.Expertise); ok && skill.Level >= d.MinLevel {
+		if skill, ok := skillFor(person, d.Expertise); ok && skill.Level >= d.MinLevel && d.allows(person.ID) {
 			out = append(out, person)
 		}
 	}
@@ -438,6 +438,9 @@ func (p *planner) qualified(d Demand) []*Person {
 }
 
 func (p *planner) skillGap(d Demand) UnmetReason {
+	if d.Candidates != nil {
+		return UnmetNotInTeam
+	}
 	for _, person := range p.people {
 		if _, ok := skillFor(person, d.Expertise); ok {
 			return UnmetLevelTooLow

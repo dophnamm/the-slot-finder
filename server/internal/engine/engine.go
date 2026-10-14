@@ -28,6 +28,8 @@ const (
 	UnmetNoCapacity UnmetReason = "NO_CAPACITY_BEFORE_DEADLINE"
 	// UnmetBlockedByLocked: the free hours are held by allocations a Planner locked.
 	UnmetBlockedByLocked UnmetReason = "BLOCKED_BY_LOCKED"
+	// UnmetNotInTeam: nobody in the program's team can take the demand.
+	UnmetNotInTeam UnmetReason = "NO_ONE_IN_TEAM"
 )
 
 // Weights rank candidates that pass every hard constraint.
@@ -86,6 +88,15 @@ type Demand struct {
 	Hours        float64
 	// Weeks is the window the demand may be staffed in, in order.
 	Weeks []string
+	// Candidates are the people who may be staffed on the demand: its program's team. Nil
+	// means anyone. Hours kept from an earlier plan for someone outside it are dropped
+	// unless locked.
+	Candidates map[string]bool
+}
+
+// allows reports whether the person may be staffed on the demand.
+func (d Demand) allows(personID string) bool {
+	return d.Candidates == nil || d.Candidates[personID]
 }
 
 // Allocation is the hours of one assignment in one ISO week.
