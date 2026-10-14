@@ -63,7 +63,7 @@ export function TimesheetImport() {
               <DialogTitle>{t('Import timesheet')}</DialogTitle>
               <DialogDescription>
                 {t(
-                  'Download the template for past weeks, fill in actual_hours, then import it. One row with a problem saves nothing.',
+                  'Download the template for past weeks: it lists every person, project and week planned in the baseline, with project_id already filled in. Fill in actual_hours only, keep the other columns, then import the file. One row with a problem saves nothing.',
                 )}
               </DialogDescription>
             </DialogHeader>
