@@ -11,7 +11,7 @@ export function RiskProject({ project }: RiskProjectProps) {
   const { metrics } = project
 
   return (
-    <li className="flex flex-col gap-1 rounded-md border p-3">
+    <li className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <TextLink to={generatePath(ROUTES.projectDetail, { programId: project.program_id, id: project.id })}>
           {project.name}

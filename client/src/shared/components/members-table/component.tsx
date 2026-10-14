@@ -12,32 +12,30 @@ export function MembersTable({ members, isPending, programId }: MembersTableProp
   const { t } = useTranslation()
 
   return (
-    <div className="flex flex-col gap-4">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t('Person')}</TableHead>
-            <TableHead>{t('Expertise')}</TableHead>
-            <TableHead className="text-right">{t('Hours')}</TableHead>
-            <TableHead>{t('Weeks')}</TableHead>
-            <TableHead>{t('Projects')}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {members.map((member) => (
-            <MemberRow key={member.person.id} member={member} programId={programId} />
-          ))}
-          {isPending && <TableLoading columns={MEMBER_TABLE_COLUMNS} />}
-          {!isPending && members.length === 0 && (
-            <TableEmpty
-              columns={MEMBER_TABLE_COLUMNS}
-              icon={Users}
-              title={t('Nobody has hours on this program yet.')}
-              description={t('People appear here once a staffing draft for this program is accepted.')}
-            />
-          )}
-        </TableBody>
-      </Table>
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>{t('Person')}</TableHead>
+          <TableHead>{t('Expertise')}</TableHead>
+          <TableHead className="text-right">{t('Hours')}</TableHead>
+          <TableHead>{t('Weeks')}</TableHead>
+          <TableHead>{t('Projects')}</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {members.map((member) => (
+          <MemberRow key={member.person.id} member={member} programId={programId} />
+        ))}
+        {isPending && <TableLoading columns={MEMBER_TABLE_COLUMNS} />}
+        {!isPending && members.length === 0 && (
+          <TableEmpty
+            columns={MEMBER_TABLE_COLUMNS}
+            icon={Users}
+            title={t('Nobody has hours on this program yet.')}
+            description={t('People appear here once a staffing draft for this program is accepted.')}
+          />
+        )}
+      </TableBody>
+    </Table>
   )
 }

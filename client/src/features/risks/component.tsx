@@ -27,7 +27,7 @@ export function Risks() {
         {projects.length === 0 && !isPending && (
           <p className="text-sm text-muted-foreground">{t('No project needs attention.')}</p>
         )}
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col divide-y">
           {projects.map((project) => (
             <RiskProject key={project.id} project={project} />
           ))}
@@ -38,7 +38,7 @@ export function Risks() {
         {people.length === 0 && !isPending && (
           <p className="text-sm text-muted-foreground">{t('Nobody is over 100 % in the coming weeks.')}</p>
         )}
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col divide-y">
           {people.map((person) => (
             <OverloadedPerson key={person.person.id} person={person} />
           ))}

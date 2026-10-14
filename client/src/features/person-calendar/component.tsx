@@ -8,7 +8,7 @@ import { currentMonth, formatIsoWeekday, formatMonth, monthIsoWeeks } from '@/ut
 import { MonthNav } from './components/month-nav'
 import { WeekDetail } from './components/week-detail'
 import { WeekRow } from './components/week-row'
-import { CALENDAR_LABEL_COLUMNS } from './constants'
+import { CALENDAR_LABEL_COLUMNS, DAY_COLUMN_CLASS } from './constants'
 import type { PersonCalendarProps } from './types'
 import { daysByDate, findWeek, orderedWeekdays, weekCells } from './utils'
 
@@ -39,7 +39,9 @@ export function PersonCalendar({ personId, canOpenProjects }: PersonCalendarProp
           <TableRow>
             <TableHead>{t('Week')}</TableHead>
             {weekdays.map((weekday) => (
-              <TableHead key={weekday}>{formatIsoWeekday(weekday)}</TableHead>
+              <TableHead key={weekday} className={DAY_COLUMN_CLASS}>
+                {formatIsoWeekday(weekday)}
+              </TableHead>
             ))}
             <TableHead className="text-right">{t('Load')}</TableHead>
           </TableRow>

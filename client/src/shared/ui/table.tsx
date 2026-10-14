@@ -2,19 +2,33 @@ import * as React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from 'cn'
 
-// Every table is bordered: a rounded frame, lines between cells and a shaded header. The borders sit on
-// the cells (border-separate), so they stay with sticky headers and columns. The frame also holds the
-// footer (e.g. the pager), outside the part that scrolls.
-const tableFrameVariants = cva('relative flex w-full flex-col overflow-hidden rounded-lg border', {
+// A table has lines between rows and a quiet header. The lines sit on the cells (border-separate), so
+// they stay with sticky headers and columns. The frame also holds the footer (e.g. the pager), outside
+// the part that scrolls. On its own a table has a rounded frame; inside a card section it runs from edge
+// to edge of the card instead, so there is one frame, not a frame in a frame.
+const tableFrameVariants = cva('relative flex w-full flex-col overflow-hidden', {
   variants: {
     scroll: {
       x: '',
       // Fills the rest of a flex column.
       both: 'min-h-0 flex-1',
     },
+    frame: {
+      framed: 'rounded-lg border',
+      flush: 'border-t',
+    },
   },
-  defaultVariants: { scroll: 'x' },
+  defaultVariants: { scroll: 'x', frame: 'framed' },
 })
+
+type TableFrame = NonNullable<VariantProps<typeof tableFrameVariants>['frame']>
+
+/** Set by a card section, so the tables inside it drop their own frame. */
+const TableFrameContext = React.createContext<TableFrame>('framed')
+
+function TableFrameProvider({ frame, children }: { frame: TableFrame; children: React.ReactNode }) {
+  return <TableFrameContext.Provider value={frame}>{children}</TableFrameContext.Provider>
+}
 
 const tableContainerVariants = cva('w-full', {
   variants: {
@@ -33,8 +47,9 @@ function Table({
   footer,
   ...props
 }: React.ComponentProps<'table'> & VariantProps<typeof tableContainerVariants> & { footer?: React.ReactNode }) {
+  const frame = React.useContext(TableFrameContext)
   return (
-    <div data-slot="table-frame" className={tableFrameVariants({ scroll })}>
+    <div data-slot="table-frame" data-frame={frame} className={tableFrameVariants({ scroll, frame })}>
       <div data-slot="table-container" className={tableContainerVariants({ scroll })}>
         <table
           data-slot="table"
@@ -43,10 +58,7 @@ function Table({
         />
       </div>
       {footer && (
-        <div
-          data-slot="table-footer-bar"
-          className="flex items-center justify-end gap-2 border-t bg-muted/40 px-3 py-2"
-        >
+        <div data-slot="table-footer-bar" className="flex items-center justify-end gap-2 border-t px-5 py-2.5">
           {footer}
         </div>
       )}
@@ -90,7 +102,8 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
     <th
       data-slot="table-head"
       className={cn(
-        'h-11 border-r border-b bg-muted px-3 py-2.5 text-left align-middle font-medium whitespace-nowrap text-foreground last:border-r-0 [&:has([role=checkbox])]:pr-0',
+        // Sticky, so a table that scrolls inside its card keeps its header; opaque, so rows do not show through.
+        'sticky top-0 z-10 h-10 border-b bg-background px-3 py-2 text-left align-middle text-xs font-medium whitespace-nowrap text-muted-foreground first:pl-5 last:pr-5 [&:has([role=checkbox])]:pr-0',
         className,
       )}
       {...props}
@@ -103,7 +116,7 @@ function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
     <td
       data-slot="table-cell"
       className={cn(
-        'border-r border-b px-3 py-2 align-middle whitespace-nowrap last:border-r-0 [&:has([role=checkbox])]:pr-0',
+        'border-b px-3 py-2.5 align-middle whitespace-nowrap first:pl-5 last:pr-5 [&:has([role=checkbox])]:pr-0',
         className,
       )}
       {...props}
@@ -117,4 +130,4 @@ function TableCaption({ className, ...props }: React.ComponentProps<'caption'>) 
   )
 }
 
-export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption }
+export { Table, TableFrameProvider, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption }

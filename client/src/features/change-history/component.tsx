@@ -19,12 +19,14 @@ export function ChangeHistory() {
 
   return (
     <Section
+      className="min-h-0 flex-1"
       title={t('Change history')}
       description={t(
         'Leave, holidays and slipped phases or deadlines. Each change is checked against the baseline; a conflict produces a staffing draft.',
       )}
     >
       <Table
+        scroll="both"
         footer={<Pager page={page} total={data?.meta.total} pageSize={HISTORY_PAGE_SIZE} onPageChange={setPage} />}
       >
         <TableHeader>

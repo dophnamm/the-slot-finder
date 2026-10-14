@@ -12,9 +12,9 @@ export interface SectionProps {
   children?: ReactNode
   /** A row under the body, e.g. the pager. */
   footer?: ReactNode
-  /** Puts the body in a card. Leave it off for tables: a bordered table is its own frame. */
+  /** Pads the body for text, numbers or a form. Leave it off for a table, which runs from edge to edge. */
   card?: boolean
-  /** `page` is the larger heading at the top of a page. */
+  /** `page` is the page's own header (the h1), with any body in a card under it. */
   variant?: SectionVariant
   className?: string
   contentClassName?: string
