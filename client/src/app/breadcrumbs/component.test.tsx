@@ -39,10 +39,11 @@ describe('Breadcrumbs', () => {
     expect(screen.getByText('People').getAttribute('aria-current')).toBe('page')
   })
 
-  it('walks from Programs through the program to the project', () => {
+  it('walks from Programs through the program and its Projects tab to the project', () => {
     renderAt('/programs/g1/projects/p1')
     expect(screen.getByRole('link', { name: 'Programs' }).getAttribute('href')).toBe(ROUTES.programs)
     expect(screen.getByRole('link', { name: 'Acme Commerce Platform' }).getAttribute('href')).toBe('/programs/g1')
+    expect(screen.getByRole('link', { name: 'Projects' }).getAttribute('href')).toBe('/programs/g1?tab=projects')
     expect(screen.getByText('Checkout Revamp').getAttribute('aria-current')).toBe('page')
   })
 

@@ -18,3 +18,18 @@ export const ROUTES = {
   events: '/events',
   notFound: '*',
 } as const
+
+/** The query parameter that opens one tab of a page, e.g. `/programs/:id?tab=projects`. */
+export const TAB_PARAM = 'tab'
+
+/** The program page's tabs; a link opens one with tabPath(). */
+export const PROGRAM_TABS = {
+  overview: 'overview',
+  projects: 'projects',
+  team: 'team',
+} as const
+
+/** A link to one tab of the page at `path`. */
+export function tabPath(path: string, tab: string): string {
+  return `${path}?${new URLSearchParams({ [TAB_PARAM]: tab })}`
+}
