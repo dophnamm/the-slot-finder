@@ -5,4 +5,5 @@ export const ABSENCE_ENDPOINTS = {
 
 export const HOLIDAY_ENDPOINTS = {
   list: '/holidays',
+  import: '/holidays/import',
 } as const

@@ -17,6 +17,7 @@ export type LanguageKey = {
   'A planner adds the people this program’s projects are staffed from.': string
   'A program groups a customer’s projects under one timeline.': string
   'A project': string
+  'A public holiday calendar from Google or Outlook, such as Holidays in Vietnam. The link is not saved.': string
   'Absence added.': string
   Absences: string
   'Absences of {name}': string
@@ -69,6 +70,7 @@ export type LanguageKey = {
   Burn: string
   Calendar: string
   'Calendar connected.': string
+  'Calendar link': string
   'Calendar sync': string
   'Calendar sync is turned off on this server.': string
   Cancel: string
@@ -138,10 +140,12 @@ export type LanguageKey = {
   'e.g. Checkout slips two weeks': string
   'e.g. Discovery': string
   'e.g. https://calendar.google.com/calendar/ical/…/private-…/basic.ics': string
+  'e.g. https://calendar.google.com/calendar/ical/…/public/basic.ics': string
   'e.g. https://docs.example.com/charter': string
   'e.g. Move the online store to the new platform before the holidays.': string
   'e.g. National Day': string
   'Each assumption is applied to a copy of the baseline. Nothing real changes.': string
+  'Each event of a holiday calendar between the two dates becomes a company holiday. Holidays imported before are skipped.': string
   'Each person and demand whose hours or weeks differ in this scenario.': string
   'Earliest start': string
   Edit: string
@@ -159,7 +163,9 @@ export type LanguageKey = {
   'Exactly one expertise is primary: the one this person is staffed for first.': string
   Expertise: string
   'Expertise, levels and weekly hours of everyone who can be staffed.': string
+  'Export a holiday calendar from Google or Outlook as an .ics file.': string
   Failed: string
+  File: string
   Forecast: string
   From: string
   'From calendar': string
@@ -178,6 +184,7 @@ export type LanguageKey = {
   Holiday: string
   'Holiday added.': string
   Holidays: string
+  'Holidays imported.': string
   'Holidays lower everyone’s capacity on those days.': string
   Home: string
   Hours: string
@@ -189,7 +196,9 @@ export type LanguageKey = {
   'Hours per day': string
   'Hours per ISO week. Locked hours stay as they are when a draft is generated again; stretch is always locked.': string
   'Hours the planning engine could not place in this scenario.': string
+  'ICS file': string
   Import: string
+  'Import holidays': string
   'Import the filled-in file': string
   'Import timesheet': string
   Inactive: string
@@ -205,6 +214,7 @@ export type LanguageKey = {
   Level: string
   'Level {level}': string
   Line: string
+  Link: string
   Load: string
   'Loading…': string
   'Lock hours': string
@@ -462,6 +472,7 @@ export type LanguageKey = {
   'Your hours by week, leave and holidays.': string
   'Your role cannot open this page.': string
   'Your session has ended. Sign in again.': string
+  '{added} added, {skipped} already there.': string
   '{client} · manager: {manager} · {timeline}': string
   '{count} attempts: {error}': string
   '{count} change is waiting for review.': string

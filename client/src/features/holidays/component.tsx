@@ -8,10 +8,11 @@ import { useTranslation } from '@/shared/i18n'
 import { Table, TableBody } from '@/shared/ui/table'
 import { HOLIDAY_TABLE_COLUMNS } from './constants'
 import { AddHoliday } from './components/add-holiday'
+import { ImportHolidays } from './components/import-holidays'
 import { HolidayRow } from './components/holiday-row'
 import { useDeleteHoliday, useHolidays } from './use-holidays'
 
-/** Company-wide holidays; planners add and remove them. */
+/** Company-wide holidays; planners add them by hand or import a holiday calendar, and remove them. */
 export function HolidaysCard() {
   const { t } = useTranslation()
   const { data: user } = useCurrentUser()
@@ -26,7 +27,14 @@ export function HolidaysCard() {
       className="min-h-0 flex-1"
       title={t('Company holidays')}
       description={t('Holidays lower everyone’s capacity on those days.')}
-      action={canManage && <AddHoliday />}
+      action={
+        canManage && (
+          <>
+            <ImportHolidays />
+            <AddHoliday />
+          </>
+        )
+      }
     >
       <Table scroll="both">
         <TableBody>
