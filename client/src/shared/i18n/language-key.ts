@@ -253,6 +253,7 @@ export type LanguageKey = {
   'Over-planned': string
   Overloaded: string
   'Overloaded people ({count})': string
+  Overview: string
   'Page not found': string
   'Page {page} of {pages}': string
   'Past the end date': string
