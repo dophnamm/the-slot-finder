@@ -1,8 +1,6 @@
 export {
   BURN_LABELS,
-  DEFAULT_PRIORITY,
   FINAL_STATUSES,
-  PRIORITIES,
   PROGRAM_ACTIONS,
   PROGRAM_STATUS_LABELS,
   PROGRAMS_PAGE_SIZE,
@@ -54,6 +52,7 @@ export {
   useProject,
   useProjectAction,
   useProjects,
+  useReorderProjects,
   useReplaceDemands,
   useReplacePhases,
   useSaveProject,

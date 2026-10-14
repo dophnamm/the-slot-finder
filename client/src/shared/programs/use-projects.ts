@@ -6,6 +6,7 @@ import {
   getProject,
   listProgramProjects,
   listProjects,
+  reorderProjects,
   replaceDemands,
   replacePhases,
   updatePhase,
@@ -75,6 +76,15 @@ export function useSaveProject(programId: string, projectId?: string) {
   return useMutation({
     mutationFn: (project: ProjectInput | Partial<ProjectInput>) =>
       projectId ? updateProject(projectId, project) : createProject(programId, project as ProjectInput),
+    onSuccess: invalidate,
+  })
+}
+
+/** Saves a program's project order; it resolves once the lists show the new priorities. */
+export function useReorderProjects(programId: string) {
+  const invalidate = useInvalidateProjects()
+  return useMutation({
+    mutationFn: (projectIds: string[]) => reorderProjects(programId, projectIds),
     onSuccess: invalidate,
   })
 }

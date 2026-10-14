@@ -11,7 +11,6 @@ export interface ProjectFormDialogProps {
 /** Form fields as the inputs hold them. */
 export interface ProjectFormValues {
   name: string
-  priority: string
   start_earliest: string
   deadline: string
   scope_points: string

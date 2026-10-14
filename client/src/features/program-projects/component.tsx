@@ -12,8 +12,12 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/
 import { PROJECT_TABLE_COLUMNS } from './constants'
 import { ProjectRow } from './components/project-row'
 import type { ProgramProjectsProps } from './types'
+import { useProjectOrder } from './use-project-order'
 
-/** Projects tab of the program page: status, timeline, current phase and risk per project. */
+/**
+ * Projects tab of the program page: status, timeline, current phase and risk per project. Their order is
+ * their priority; planners and the program's manager drag a row to change it.
+ */
 export function ProgramProjects({ programId }: ProgramProjectsProps) {
   const { t } = useTranslation()
   const { data: user } = useCurrentUser()
@@ -21,13 +25,19 @@ export function ProgramProjects({ programId }: ProgramProjectsProps) {
   const { data: projects = [], isPending } = useProgramProjects(programId)
   const [adding, setAdding] = useState(false)
   const canAdd = program !== undefined && canEdit(user, [program.lead]) && isOpenStatus(program.status)
+  const canReorder = canAdd && projects.length > 1
+  const { rows, draggingId, handlers } = useProjectOrder(programId, projects)
 
   const handleAdd = () => setAdding(true)
 
   return (
     <Section
       title={t('Projects')}
-      description={t('Ordered by priority, then deadline.')}
+      description={
+        canReorder
+          ? t('Drag a row to change the order: the top project has the highest priority.')
+          : t('Ordered by priority, then deadline.')
+      }
       action={canAdd && <Button onClick={handleAdd}>{t('Add project')}</Button>}
     >
       <Table>
@@ -45,8 +55,12 @@ export function ProgramProjects({ programId }: ProgramProjectsProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {projects.map((project) => (
-            <ProjectRow key={project.id} project={project} />
+          {rows.map((project) => (
+            <ProjectRow
+              key={project.id}
+              project={project}
+              reorder={canReorder ? { ...handlers, dragging: draggingId === project.id } : undefined}
+            />
           ))}
           {isPending && <TableLoading columns={PROJECT_TABLE_COLUMNS} />}
           {!isPending && projects.length === 0 && (

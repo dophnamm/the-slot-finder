@@ -7,6 +7,7 @@ export const PROGRAM_ENDPOINTS = {
   action: (id: string, action: string) => `${program(id)}/actions/${encodeURIComponent(action)}`,
   overview: (id: string) => `${program(id)}/overview`,
   projects: (id: string) => `${program(id)}/projects`,
+  projectOrder: (id: string) => `${program(id)}/project-order`,
   members: (id: string) => `${program(id)}/members`,
   team: (id: string) => `${program(id)}/team`,
   teamMember: (id: string, personId: string) => `${program(id)}/team/${encodeURIComponent(personId)}`,

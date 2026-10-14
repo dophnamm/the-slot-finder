@@ -4,13 +4,12 @@ import { can } from '@/resources/rbac'
 import { useCurrentUser } from '@/shared/auth'
 import { LeadSelect } from '@/shared/components/lead-select'
 import { DatePicker } from '@/shared/components/date-picker'
-import { PRIORITIES, useSaveProject } from '@/shared/programs'
+import { useSaveProject } from '@/shared/programs'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
-import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
 import type { ProjectFormDialogProps, ProjectFormValues, ProjectTextField } from './types'
 import { canSave, initialValues, toChanges, toInput } from './utils'
 
@@ -61,22 +60,6 @@ export function ProjectFormDialog({ open, programId, project, onOpenChange }: Pr
                 onChange={handleChange}
                 required
               />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="project-priority">{t('Priority')}</Label>
-              <NativeSelect
-                id="project-priority"
-                name="priority"
-                className="w-full"
-                value={values.priority}
-                onChange={handleChange}
-              >
-                {PRIORITIES.map((priority) => (
-                  <NativeSelectOption key={priority} value={String(priority)}>
-                    {t('Priority {priority}', { priority })}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
             </div>
             {canChooseLead && (
               <div className="flex flex-col gap-2">

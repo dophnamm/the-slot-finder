@@ -1,10 +1,9 @@
-import { DEFAULT_PRIORITY, type Project, type ProjectInput } from '@/shared/programs'
+import type { Project, ProjectInput } from '@/shared/programs'
 import type { ProjectFormValues } from './types'
 
 export function initialValues(project: Project | null): ProjectFormValues {
   return {
     name: project?.name ?? '',
-    priority: String(project?.priority ?? DEFAULT_PRIORITY),
     start_earliest: project?.start_earliest ?? '',
     deadline: project?.deadline ?? '',
     scope_points: String(project?.scope_points ?? 0),
@@ -16,7 +15,6 @@ export function initialValues(project: Project | null): ProjectFormValues {
 export function toInput(values: ProjectFormValues, canChooseLead: boolean): ProjectInput {
   return {
     name: values.name.trim(),
-    priority: Number(values.priority),
     start_earliest: values.start_earliest,
     deadline: values.deadline,
     scope_points: Number(values.scope_points),
@@ -30,7 +28,6 @@ export function toChanges(project: Project, values: ProjectFormValues, canChoose
   const next = toInput(values, canChooseLead)
   const changes: Partial<ProjectInput> = {}
   if (next.name !== project.name) changes.name = next.name
-  if (next.priority !== project.priority) changes.priority = next.priority
   if (next.start_earliest !== project.start_earliest) changes.start_earliest = next.start_earliest
   if (next.deadline !== project.deadline) changes.deadline = next.deadline
   if (next.scope_points !== project.scope_points) changes.scope_points = next.scope_points

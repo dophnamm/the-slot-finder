@@ -144,9 +144,9 @@ export interface ProgramInput {
   lead_id?: string | null
 }
 
+/** A project's own fields; its priority is its place in the program's order, set by dragging. */
 export interface ProjectInput {
   name: string
-  priority: number
   start_earliest: string
   deadline: string
   scope_points: number

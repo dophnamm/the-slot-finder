@@ -23,10 +23,6 @@ export const LEAD_OPTIONS_PAGE_SIZE = MAX_PAGE_SIZE
 /** Roles that can lead a program or project. */
 export const LEAD_ROLES = ['planner', 'lead'] as const
 
-/** Project priorities, 1 being the highest. */
-export const PRIORITIES = [1, 2, 3, 4, 5] as const
-export const DEFAULT_PRIORITY = 3
-
 export const PROGRAM_STATUS_LABELS: Record<ProgramStatus, PlainKey> = {
   open: 'Open',
   pending: 'On hold',
