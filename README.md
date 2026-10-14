@@ -296,6 +296,7 @@ erDiagram
     uuid id PK
     uuid person_id FK "null = holiday"
     string location "holidays only; null = company-wide"
+    string name "holidays: e.g. National Day; empty for leave"
     date from_date
     date to_date
     decimal hours_per_day
@@ -375,7 +376,7 @@ erDiagram
     uuid id PK
     uuid program_id FK
     string name
-    int priority "1 = highest"
+    int priority "order within the program; 1 = highest"
     string status "incoming / planned / active / on_hold / done / cancelled"
     date start_earliest
     date deadline
