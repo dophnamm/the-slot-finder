@@ -1,0 +1,1 @@
+export { PageSkeleton } from './component'

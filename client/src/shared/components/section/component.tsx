@@ -1,3 +1,4 @@
+import { LoadingBar } from '@/shared/components/loading-bar'
 import { TableFrameProvider } from '@/shared/ui/table'
 import { cn } from '@/utils/functions'
 import {
@@ -25,6 +26,7 @@ export function Section({
   variant = 'section',
   className,
   contentClassName,
+  refreshing = false,
 }: SectionProps) {
   const hasBody = Boolean(children || footer)
 
@@ -39,7 +41,8 @@ export function Section({
           {action && <div className="flex shrink-0 flex-wrap items-center gap-2">{action}</div>}
         </div>
         {hasBody && (
-          <div className={cn(SECTION_CARD_CLASS, PAGE_BODY_CLASS, contentClassName)}>
+          <div className={cn(SECTION_CARD_CLASS, PAGE_BODY_CLASS, 'relative', contentClassName)}>
+            {refreshing && <LoadingBar />}
             {children}
             {footer && <div className="flex items-center justify-end gap-2">{footer}</div>}
           </div>
@@ -59,7 +62,10 @@ export function Section({
       </div>
       {hasBody && (
         <TableFrameProvider frame={card ? 'framed' : 'flush'}>
-          <div className={cn(card ? SECTION_PADDED_BODY_CLASS : SECTION_FLUSH_BODY_CLASS, contentClassName)}>
+          <div
+            className={cn(card ? SECTION_PADDED_BODY_CLASS : SECTION_FLUSH_BODY_CLASS, 'relative', contentClassName)}
+          >
+            {refreshing && <LoadingBar />}
             {children}
             {footer && <div className="flex items-center justify-end gap-2">{footer}</div>}
           </div>

@@ -1,5 +1,6 @@
 export * from './availability'
 export * from './date'
+export * from './loading'
 export * from './query'
 export * from './skills'
 export * from './search'
