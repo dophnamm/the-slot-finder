@@ -1,7 +1,9 @@
 import { UserPlus } from 'lucide-react'
-import { type ChangeEvent, useState } from 'react'
+import { type ChangeEvent, type FormEvent, useState } from 'react'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
+import { Label } from '@/shared/ui/label'
 import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
 import { TableCell, TableRow } from '@/shared/ui/table'
 import { cn } from '@/utils/functions'
@@ -16,10 +18,14 @@ import {
 import type { GroupHeaderRowProps } from './types'
 import { personOptions } from './utils'
 
-/** The demand above its assignments: what it needs, its weeks as a bar, and "add person" for planners. */
+/**
+ * The demand above its assignments: what it needs, its weeks as a bar, and an "Add person" button for
+ * planners that opens a dialog to pick the person.
+ */
 export function GroupHeaderRow({ group, weeks, people, editable, busy, onAdd }: GroupHeaderRowProps) {
   const { t } = useTranslation()
   const [personId, setPersonId] = useState('')
+  const [open, setOpen] = useState(false)
   const { demand, assignments } = group
   const options = personOptions(
     people,
@@ -28,9 +34,15 @@ export function GroupHeaderRow({ group, weeks, people, editable, busy, onAdd }: 
   )
 
   const handleChange = (event: ChangeEvent<HTMLSelectElement>) => setPersonId(event.target.value)
-  const handleAdd = () => {
+  const handleOpen = () => setOpen(true)
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next)
+    if (!next) setPersonId('')
+  }
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
     onAdd(demand.id, personId)
-    setPersonId('')
+    handleOpenChange(false)
   }
 
   return (
@@ -56,26 +68,52 @@ export function GroupHeaderRow({ group, weeks, people, editable, busy, onAdd }: 
             </span>
           </div>
           {editable && (
-            <div className="flex items-center gap-2">
-              <NativeSelect
-                className="min-w-0 flex-1 bg-card"
-                aria-label={t('Person to add')}
-                value={personId}
-                onChange={handleChange}
-              >
-                <NativeSelectOption value="">{t('Choose a person')}</NativeSelectOption>
-                {options.map((option) => (
-                  <NativeSelectOption key={option.id} value={option.id}>
-                    {option.stretch ? t('{name} (stretch)', { name: option.name }) : option.name}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-              <Button variant="outline" size="sm" disabled={!personId || busy} onClick={handleAdd}>
-                <UserPlus />
-                {t('Add person')}
-              </Button>
-            </div>
+            <Button variant="outline" size="sm" className="self-start" disabled={busy} onClick={handleOpen}>
+              <UserPlus />
+              {t('Add person')}
+            </Button>
           )}
+          <Dialog open={open} onOpenChange={handleOpenChange}>
+            <DialogContent className="sm:max-w-md">
+              <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+                <DialogHeader>
+                  <DialogTitle>{t('Add person')}</DialogTitle>
+                  <DialogDescription>
+                    {t('{project} · {expertise} · {phase}', {
+                      project: demand.project,
+                      expertise: demand.expertise,
+                      phase: demand.phase ?? t('Whole project'),
+                    })}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor={`add-person-${demand.id}`}>{t('Person')}</Label>
+                  <NativeSelect
+                    id={`add-person-${demand.id}`}
+                    className="w-full"
+                    value={personId}
+                    onChange={handleChange}
+                    required
+                  >
+                    <NativeSelectOption value="">{t('Choose a person')}</NativeSelectOption>
+                    {options.map((option) => (
+                      <NativeSelectOption key={option.id} value={option.id}>
+                        {option.stretch ? t('{name} (stretch)', { name: option.name }) : option.name}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                  <p className="text-sm text-muted-foreground">
+                    {t('People with the expertise at the minimum level come first; the others would be stretch.')}
+                  </p>
+                </div>
+                <DialogFooter>
+                  <Button type="submit" disabled={!personId || busy}>
+                    {t('Add person')}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </TableCell>
       {weeks.map((week) => (

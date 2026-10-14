@@ -18,6 +18,12 @@ export interface DemandDraft {
   total_hours: string
 }
 
+/** The demand open in the dialog: `index` is null for a new one. */
+export interface DemandEdit {
+  index: number | null
+  draft: DemandDraft
+}
+
 export interface WeekWindow {
   from: string
   to: string
