@@ -38,6 +38,16 @@ export function HolidayForm({ onCreated }: HolidayFormProps) {
   return (
     <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
       <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-2 sm:col-span-2">
+          <Label htmlFor="holiday-name">{t('Name')}</Label>
+          <Input
+            placeholder={t('e.g. National Day')}
+            id="holiday-name"
+            name="name"
+            value={values.name}
+            onChange={handleChange}
+          />
+        </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="holiday-from">{t('From')}</Label>
           <DatePicker id="holiday-from" name="from_date" value={values.from_date} onChange={handleDateChange} />
