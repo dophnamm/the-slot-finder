@@ -1,9 +1,15 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { FORBIDDEN_CODE } from '@/shared/api/constants'
 import { getPerson, getSchedule } from './api'
 import { personQueryKey, scheduleQueryKey } from './constants'
 
+/** One person; a 403 stays quiet because the person page says so itself. */
 export function usePerson(id: string) {
-  return useQuery({ queryKey: personQueryKey(id), queryFn: () => getPerson(id) })
+  return useQuery({
+    queryKey: personQueryKey(id),
+    queryFn: () => getPerson(id),
+    meta: { quietErrorCodes: [FORBIDDEN_CODE] },
+  })
 }
 
 /** A person's schedule; the previous month stays on screen while the next one loads. */

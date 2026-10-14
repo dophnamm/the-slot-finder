@@ -1,0 +1,1 @@
+export { TeamMemberRow } from './component'

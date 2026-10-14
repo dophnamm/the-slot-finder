@@ -104,6 +104,8 @@ export interface Project {
   id: string
   program_id: string
   program_name?: string
+  /** The person who manages the program, on lists that load it. */
+  program_lead_id?: string | null
   name: string
   priority: number
   status: ProjectStatus

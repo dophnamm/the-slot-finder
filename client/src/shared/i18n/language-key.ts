@@ -12,7 +12,9 @@ export type LanguageKey = {
   'A change produced a staffing draft for this program.': string
   'A customer engagement that groups projects under one timeline.': string
   'A later end week moves every later phase by the same number of weeks.': string
+  'A manager sees the people in the teams of the programs they manage.': string
   'A new project starts as incoming until a staffing draft is accepted.': string
+  'A planner adds the people this program’s projects are staffed from.': string
   'A program groups a customer’s projects under one timeline.': string
   'A project': string
   'Absence added.': string
@@ -22,6 +24,7 @@ export type LanguageKey = {
   'Accept this staffing draft? It becomes the baseline everyone plans against.': string
   Accepted: string
   'Accepted as baseline version {version}.': string
+  Actions: string
   Active: string
   Actual: string
   'Add absence': string
@@ -31,10 +34,12 @@ export type LanguageKey = {
   'Add expertise': string
   'Add holiday': string
   'Add leave': string
+  'Add member': string
   'Add person': string
   'Add phase': string
   'Add project': string
   'Add the hours each expertise needs, in a phase or across the whole project.': string
+  'Add the people this program’s projects are staffed from.': string
   'Add the people who can be staffed, with their expertise and levels.': string
   'Add the program’s projects with their phases and demand.': string
   Added: string
@@ -119,6 +124,7 @@ export type LanguageKey = {
   'Draft accepted. It is now the baseline.': string
   'Draft created': string
   'Draft rejected.': string
+  'Drafts for this program’s projects staff only people in its team.': string
   'e.g. 0': string
   'e.g. 120': string
   'e.g. 2': string
@@ -149,6 +155,7 @@ export type LanguageKey = {
   'End week': string
   Events: string
   'Every demand is covered.': string
+  'Everyone is already in this team.': string
   'Exactly one expertise is primary: the one this person is staffed for first.': string
   Expertise: string
   'Expertise, levels and weekly hours of everyone who can be staffed.': string
@@ -175,6 +182,7 @@ export type LanguageKey = {
   Home: string
   Hours: string
   'Hours by week against capacity, with leave and holidays by day.': string
+  'Hours in this program': string
   'Hours in {week}': string
   'Hours moved': string
   'Hours must be a number from 0 to the weekly limit.': string
@@ -201,7 +209,10 @@ export type LanguageKey = {
   Load: string
   'Loading…': string
   'Lock hours': string
+  Manager: string
   'Mark done': string
+  'Member added.': string
+  'Member removed.': string
   Members: string
   'Members ({count})': string
   'Minimum level': string
@@ -233,6 +244,8 @@ export type LanguageKey = {
   'No impact': string
   'No incoming projects.': string
   'No lead': string
+  'No manager': string
+  'No one in the program team': string
   'No people yet.': string
   'No person has this email.': string
   'No person record': string
@@ -247,6 +260,7 @@ export type LanguageKey = {
   'Nobody has the minimum level': string
   'Nobody has this expertise': string
   'Nobody is assigned yet.': string
+  'Nobody is in this team yet.': string
   'Nobody is over 100 % in the coming weeks.': string
   'Nobody matches these filters.': string
   'Nobody’s hours change in this scenario.': string
@@ -254,12 +268,14 @@ export type LanguageKey = {
   'None this week': string
   'Not an ISO week such as 2026-W41.': string
   'Not primary': string
+  'Not staffed yet': string
   'Not yet': string
   'Nothing real has changed. To make it real, move the phases on the project’s page or add the leave on the People page; a re-plan draft follows.': string
   'Nothing was saved. Fix these rows and import again.': string
   'Objectives, one per line': string
   'On hold': string
   'One objective per line, e.g. Ship the new checkout.': string
+  'Only the program team is listed. People with the expertise at the minimum level come first; the others would be stretch.': string
   Open: string
   'Open draft ({status})': string
   'Open navigation': string
@@ -279,8 +295,6 @@ export type LanguageKey = {
   People: string
   'People appear here once a staffing draft for this program is accepted.': string
   'People changed': string
-  'People with hours in the baseline on this program’s projects, most hours first.': string
-  'People with the expertise at the minimum level come first; the others would be stretch.': string
   Person: string
   'Person saved.': string
   Phase: string
@@ -339,6 +353,8 @@ export type LanguageKey = {
   'Remove phase': string
   'Remove the phase {name}?': string
   'Remove this demand?': string
+  'Remove {name} from the team': string
+  'Remove {name} from the team? Their baseline hours stay; the next draft plans without them.': string
   Removed: string
   'Report leave or training. A planner approves it.': string
   Resume: string
@@ -366,6 +382,7 @@ export type LanguageKey = {
   'Signed in as {name}': string
   'Signed out': string
   'Signing you in…': string
+  Skills: string
   Someone: string
   Specialist: string
   'Split the project into phases such as Discovery, Build and Test.': string
@@ -384,6 +401,7 @@ export type LanguageKey = {
   'Summed over {count} projects that are not cancelled.': string
   Superseded: string
   'Sync now': string
+  Team: string
   'Team heatmap': string
   'The baseline changed to version {version} since this draft was made, so it can no longer be accepted.': string
   'The calendar could not be fetched. Your organization may block secret calendar links.': string
@@ -394,6 +412,7 @@ export type LanguageKey = {
   'The last phase ends after the deadline week. Move the deadline or shorten a phase.': string
   'The last phase would end after the deadline week.': string
   'The link does not return a calendar. Your organization may block secret calendar links.': string
+  'The people this program’s projects are staffed from. A draft proposes only them.': string
   'The same person, project and week appear more than once.': string
   'The server is unreachable.': string
   'The server keeps rejecting your sign-in. Try again, or ask an admin to check the sign-in settings.': string
@@ -438,12 +457,13 @@ export type LanguageKey = {
   'Who gains or loses hours if this draft is accepted.': string
   'Whole project': string
   'Worked {hours} h': string
+  'You can’t see this person': string
   'You have signed out.': string
   'Your account is not linked to a person yet. Ask a planner to add you with the same email.': string
   'Your hours by week, leave and holidays.': string
   'Your role cannot open this page.': string
   'Your session has ended. Sign in again.': string
-  '{client} · lead: {lead} · {timeline}': string
+  '{client} · manager: {manager} · {timeline}': string
   '{count} attempts: {error}': string
   '{count} change is waiting for review.': string
   '{count} changes are waiting for review.': string
@@ -465,6 +485,7 @@ export type LanguageKey = {
   '{load} of {capacity} h · {band}': string
   '{load}/{capacity} h': string
   '{name} (stretch)': string
+  '{name} · {expertise}': string
   '{percent}%': string
   '{person} away {dates}, {hours} h a day': string
   '{person} in {week}': string

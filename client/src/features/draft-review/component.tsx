@@ -23,7 +23,7 @@ export function DraftReview({ draftId }: DraftReviewProps) {
       />
     )
 
-  const editable = canEditDraft(user?.role, draft)
+  const editable = canEditDraft(user, draft)
 
   return (
     <div className="flex flex-col gap-8">

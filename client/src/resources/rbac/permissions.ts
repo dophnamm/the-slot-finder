@@ -3,7 +3,7 @@ import type { Permission, Role } from './types'
 
 /**
  * Which roles may see or use each part of the UI. The server enforces the same rules;
- * per-program rules (lead of this program, internal assistant) come from the API.
+ * per-program rules (manager of this program, internal assistant) come from the API.
  */
 export const PERMISSIONS = {
   'dashboard:view': [ROLES.PLANNER, ROLES.LEAD],
@@ -12,7 +12,10 @@ export const PERMISSIONS = {
   'programs:manage-all': [ROLES.PLANNER],
   'intake:view': [ROLES.PLANNER, ROLES.LEAD],
   'staffing-drafts:view': [ROLES.PLANNER, ROLES.LEAD],
-  'staffing-drafts:manage': [ROLES.PLANNER],
+  'staffing-drafts:manage': [ROLES.PLANNER, ROLES.LEAD],
+  'staffing-drafts:manage-all': [ROLES.PLANNER],
+  'program-teams:view': [ROLES.PLANNER, ROLES.LEAD],
+  'program-teams:manage': [ROLES.PLANNER],
   'scenarios:view': [ROLES.PLANNER],
   'people:view': [ROLES.PLANNER, ROLES.LEAD],
   'people:manage': [ROLES.PLANNER],

@@ -29,8 +29,8 @@ vi.mock('@/shared/auth', () => ({ useCurrentUser: () => ({ data: { role: 'planne
 afterEach(cleanup)
 
 describe('ProgramOverview', () => {
-  it('opens on the overview, and shows the projects and members in their own tabs', () => {
-    render(<ProgramOverview programId="g1" projects="projects table" members="members table" />)
+  it('opens on the overview, and shows the projects and the team in their own tabs', () => {
+    render(<ProgramOverview programId="g1" projects="projects table" team="team table" />)
     expect(screen.getByRole('heading', { level: 1, name: /Acme Commerce Platform/ })).toBeTruthy()
     expect(screen.getByText(translate('Program brief'))).toBeTruthy()
     expect(screen.queryByText('projects table')).toBeNull()
@@ -38,5 +38,8 @@ describe('ProgramOverview', () => {
     fireEvent.click(screen.getByRole('tab', { name: translate('Projects') }))
     expect(screen.getByText('projects table')).toBeTruthy()
     expect(screen.queryByText(translate('Program brief'))).toBeNull()
+
+    fireEvent.click(screen.getByRole('tab', { name: translate('Team') }))
+    expect(screen.getByText('team table')).toBeTruthy()
   })
 })

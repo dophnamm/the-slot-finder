@@ -14,7 +14,7 @@ import { Textarea } from '@/shared/ui/textarea'
 import type { ProgramFormDialogProps, ProgramFormValues, ProgramTextField } from './types'
 import { canSave, initialValues, toChanges, toInput } from './utils'
 
-/** Creates a program, or edits one. Planners choose the lead; a lead who creates one leads it. */
+/** Creates a program, or edits one. Planners choose the manager; a manager who creates one manages it. */
 export function ProgramFormDialog({ open, program, onOpenChange, onSaved }: ProgramFormDialogProps) {
   const { t } = useTranslation()
   const { data: user } = useCurrentUser()
@@ -88,8 +88,13 @@ export function ProgramFormDialog({ open, program, onOpenChange, onSaved }: Prog
             </div>
             {canChooseLead && (
               <div className="flex flex-col gap-2">
-                <Label htmlFor="program-lead">{t('Lead')}</Label>
-                <LeadSelect id="program-lead" value={values.lead_id} onChange={handleLeadChange} />
+                <Label htmlFor="program-lead">{t('Manager')}</Label>
+                <LeadSelect
+                  id="program-lead"
+                  value={values.lead_id}
+                  emptyLabel="No manager"
+                  onChange={handleLeadChange}
+                />
               </div>
             )}
             <div className="flex flex-col gap-2">

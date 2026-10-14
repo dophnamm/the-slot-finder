@@ -2,10 +2,11 @@ import type { DraftDemand } from '@/shared/staffing'
 import type { StaffablePerson } from '../../../../types'
 import type { PersonOption } from './types'
 
-/** People not on the demand yet: those who fit first, then stretch, each by name. */
+/** People of the demand's program team not on the demand yet: those who fit first, then stretch, each by name. */
 export function personOptions(people: StaffablePerson[], demand: DraftDemand, taken: string[]): PersonOption[] {
+  const team = demand.team_ids
   return people
-    .filter((person) => !taken.includes(person.id))
+    .filter((person) => !taken.includes(person.id) && (!team || team.includes(person.id)))
     .map((person) => ({
       id: person.id,
       name: person.name,

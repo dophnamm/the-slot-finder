@@ -73,7 +73,7 @@ export function ProjectRow({ project }: ProjectRowProps) {
       </TableCell>
       <TableCell>{project.lead?.name ?? t('No lead')}</TableCell>
       <TableCell className="text-right">
-        <ProposeSquadButton projectId={project.id} status={project.status} />
+        <ProposeSquadButton projectId={project.id} status={project.status} programLeadId={project.program_lead_id} />
       </TableCell>
     </LinkRow>
   )

@@ -1,7 +1,6 @@
 import { RefreshCw } from 'lucide-react'
 import { generatePath, Link, useNavigate } from 'react-router'
 import { toast } from 'sonner'
-import { can } from '@/resources/rbac'
 import { ROUTES } from '@/resources/routes'
 import { useCurrentUser } from '@/shared/auth'
 import { EventSummary } from '@/shared/components/event-summary'
@@ -9,6 +8,7 @@ import { Section } from '@/shared/components/section'
 import { TextLink } from '@/shared/components/text-link'
 import { useTranslation } from '@/shared/i18n'
 import {
+  canStaff,
   type Draft,
   PLAN_STATUS_BADGE,
   PLAN_STATUS_LABELS,
@@ -31,7 +31,12 @@ export function DraftHeader({ draft, editable }: DraftHeaderProps) {
   const reject = useRejectDraft(draft.id)
   const generate = useGenerateDraft()
   const busy = accept.isPending || reject.isPending || generate.isPending
-  const canRegenerate = draft.stale && can(user?.role, 'staffing-drafts:manage')
+  const canRegenerate =
+    draft.stale &&
+    canStaff(
+      user,
+      draft.projects.map((project) => project.program_lead_id),
+    )
 
   const handleAccepted = () => toast.success(t('Draft accepted. It is now the baseline.'))
   const handleRejected = () => toast.success(t('Draft rejected.'))
