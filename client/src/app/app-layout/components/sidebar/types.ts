@@ -9,3 +9,8 @@ export interface NavItem {
   /** The link shows only for roles with this permission. */
   permission: Permission
 }
+
+export interface SidebarProps {
+  /** Called when a link is followed, so the mobile panel can close. */
+  onNavigate?: () => void
+}
