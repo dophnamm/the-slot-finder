@@ -69,6 +69,7 @@ func newMetricsServiceWithActuals(t *testing.T, actual map[string]float64) Insig
 	plans, programs, projects, people, absences := metricsFixture(t)
 	actuals := new(MockActualHoursRepository)
 	actuals.On("SumByProject", mock.Anything, mock.Anything).Return(actual, nil)
+	actuals.On("ListInRange", mock.Anything, mock.Anything, mock.Anything).Return([]models.ActualHours{}, nil).Maybe()
 	cfg := heatmapConfig()
 	cfg.ScopeLagThreshold, cfg.AlertHorizonWeeks = 20, 4
 	return ProvideInsightsService(plans, people, absences, programs, projects, actuals, ProvideAuthzService(leadPeople{}),

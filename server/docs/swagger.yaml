@@ -756,6 +756,12 @@ definitions:
     type: object
   dtos.HeatmapCellResponse:
     properties:
+      actual_hours:
+        description: |-
+          ActualHours is what the person worked that week from imported timesheets; null when
+          nothing was imported. Load, utilization and band stay planned.
+        example: 30
+        type: number
       band:
         enum:
         - unavailable

@@ -41,6 +41,9 @@ type HeatmapCellResponse struct {
 	// Tentative marks planned (not yet approved) absence in the week.
 	Tentative   bool                     `json:"tentative"`
 	ByExpertise []ExpertiseHoursResponse `json:"by_expertise"`
+	// ActualHours is what the person worked that week from imported timesheets; null when
+	// nothing was imported. Load, utilization and band stay planned.
+	ActualHours *float64 `json:"actual_hours" example:"30"`
 }
 
 // HeatmapRowResponse is one person's weeks.
@@ -72,7 +75,7 @@ func NewHeatmapResponse(h models.Heatmap) HeatmapResponse {
 				split = append(split, ExpertiseHoursResponse{ExpertiseID: e.Expertise.ID, Expertise: e.Expertise.Name, Hours: e.Hours, Primary: e.Primary})
 			}
 			cells = append(cells, HeatmapCellResponse{Week: c.Week.String(), Capacity: c.Capacity, Load: c.Load,
-				Utilization: c.Utilization, Band: c.Band, Tentative: c.Tentative, ByExpertise: split})
+				Utilization: c.Utilization, Band: c.Band, Tentative: c.Tentative, ByExpertise: split, ActualHours: c.ActualHours})
 		}
 		rows = append(rows, HeatmapRowResponse{Person: PersonRef{ID: r.Person.ID, Name: r.Person.Name},
 			PrimaryExpertiseID: r.PrimaryExpertise.ID, PrimaryExpertise: r.PrimaryExpertise.Name, Cells: cells})

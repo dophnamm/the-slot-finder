@@ -100,9 +100,25 @@ func heatmapConfig() *config.Config {
 }
 
 func newInsightsService(plans *MockPlanRepository, people *MockPersonRepository, absences *MockAbsenceRepository) InsightsService {
-	finder := leadPeople{}
-	return ProvideInsightsService(plans, people, absences, nil, nil, nil, ProvideAuthzService(finder),
+	return newInsightsServiceWithActuals(plans, people, absences, actualHoursRows())
+}
+
+// newInsightsServiceWithActuals is newInsightsService with these imported timesheet rows.
+func newInsightsServiceWithActuals(plans *MockPlanRepository, people *MockPersonRepository, absences *MockAbsenceRepository,
+	actuals *MockActualHoursRepository,
+) InsightsService {
+	return ProvideInsightsService(plans, people, absences, nil, nil, actuals, ProvideAuthzService(leadPeople{}),
 		clock.NewFixed(time.Date(2026, time.October, 14, 9, 0, 0, 0, time.UTC)), heatmapConfig())
+}
+
+// actualHoursRows is a timesheet repository that holds these rows, whatever the range.
+func actualHoursRows(rows ...models.ActualHours) *MockActualHoursRepository {
+	actuals := new(MockActualHoursRepository)
+	if rows == nil {
+		rows = []models.ActualHours{}
+	}
+	actuals.On("ListInRange", mock.Anything, mock.Anything, mock.Anything).Return(rows, nil)
+	return actuals
 }
 
 func TestInsightsService_Heatmap(t *testing.T) {
@@ -173,7 +189,7 @@ func TestInsightsService_Heatmap(t *testing.T) {
 func TestInsightsService_Heatmap_ManagerSeesTheirTeams(t *testing.T) {
 	plans, people, absences := heatmapFixture(t)
 	authz := ProvideTeamAuthzService(leadPeople{}, ledTeams{leadPersonID: {engPersonID}})
-	service := ProvideInsightsService(plans, people, absences, nil, nil, nil, authz,
+	service := ProvideInsightsService(plans, people, absences, nil, nil, actualHoursRows(), authz,
 		clock.NewFixed(time.Date(2026, time.October, 14, 9, 0, 0, 0, time.UTC)), heatmapConfig())
 	from, to := mustWeek(t, "2026-W42"), mustWeek(t, "2026-W43")
 
@@ -182,4 +198,29 @@ func TestInsightsService_Heatmap_ManagerSeesTheirTeams(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, heatmap.Rows, 1, "only the team of the programs the manager leads")
 	assert.Equal(t, engPersonID, heatmap.Rows[0].Person.ID)
+}
+
+func TestInsightsService_Heatmap_ActualHours(t *testing.T) {
+	planner := asRole("kc-planner", constants.RolePlanner)
+	from, to := mustWeek(t, "2026-W42"), mustWeek(t, "2026-W43")
+	plans, people, absences := heatmapFixture(t)
+	actuals := actualHoursRows(
+		models.ActualHours{PersonID: engPersonID, ProjectID: "p1", Week: from, Hours: 20},
+		models.ActualHours{PersonID: engPersonID, ProjectID: "p2", Week: from, Hours: 6},
+		models.ActualHours{PersonID: qaOnlyID, ProjectID: "p1", Week: to, Hours: 0},
+	)
+
+	heatmap, err := newInsightsServiceWithActuals(plans, people, absences, actuals).Heatmap(planner, HeatmapInput{From: &from, To: &to})
+
+	require.NoError(t, err)
+	pat, erin, quinn := heatmap.Rows[0].Cells, heatmap.Rows[1].Cells, heatmap.Rows[2].Cells
+	require.NotNil(t, erin[0].ActualHours)
+	assert.InDelta(t, 26, *erin[0].ActualHours, hoursEpsilon, "the sum over the week's projects")
+	assert.InDelta(t, 32, erin[0].Load, hoursEpsilon, "load stays the planned hours")
+	assert.Nil(t, erin[1].ActualHours, "no rows imported for that week")
+	assert.Nil(t, pat[0].ActualHours)
+	require.NotNil(t, quinn[1].ActualHours, "an imported 0 is worked hours, not missing")
+	assert.InDelta(t, 0, *quinn[1].ActualHours, hoursEpsilon)
+	actuals.AssertNumberOfCalls(t, "ListInRange", 1)
+	actuals.AssertCalled(t, "ListInRange", mock.Anything, from, to)
 }

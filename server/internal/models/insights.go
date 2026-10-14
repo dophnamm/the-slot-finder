@@ -29,6 +29,9 @@ type HeatmapCell struct {
 	// Tentative marks planned (not yet approved) absence in the week.
 	Tentative   bool
 	ByExpertise []ExpertiseHours
+	// ActualHours is what the person worked that week, summed over the imported timesheet rows;
+	// nil when no row was imported for the week.
+	ActualHours *float64
 }
 
 // ExpertiseHours is the part of a week's load spent on one expertise.

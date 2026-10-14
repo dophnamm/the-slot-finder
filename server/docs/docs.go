@@ -4503,6 +4503,11 @@ const docTemplate = `{
         "dtos.HeatmapCellResponse": {
             "type": "object",
             "properties": {
+                "actual_hours": {
+                    "description": "ActualHours is what the person worked that week from imported timesheets; null when\nnothing was imported. Load, utilization and band stay planned.",
+                    "type": "number",
+                    "example": 30
+                },
                 "band": {
                     "type": "string",
                     "enum": [
