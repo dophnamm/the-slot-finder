@@ -119,7 +119,8 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | POST | `/people/{id}/calendar-feed/sync` | Sync that calendar now | planner, the person themselves |
 | GET | `/expertises` | Expertise catalogue | everyone |
 | GET, POST | `/tags` | Tag catalogue (`name`, `category`: technology / domain / language / client) | GET everyone, POST planner |
-| GET, POST | `/holidays` | Holidays per `location` (no location = company-wide) | GET everyone, POST planner |
+| GET, POST | `/holidays` | Holidays per `location` (no location = company-wide), each with an optional `name` | GET everyone, POST planner |
+| POST | `/holidays/import` | Import holidays from an iCalendar file (multipart `file`) or a link (`url`: https, a calendar host only, never stored, logged or returned) between `from_date` and `to_date`, at `hours_per_day`. An event already imported (same UID) is skipped; returns `{ added, skipped }`. `400 HOLIDAY_SOURCE_INVALID` unless exactly one of file or link is sent | planner |
 
 **Programs and projects**
 
@@ -131,8 +132,9 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | POST | `/programs/{id}/actions/{hold\|resume\|start-closing\|close\|cancel}` | Change program state through an action. `cancel` also cancels the program's open projects | planner, lead (own) |
 | GET | `/programs/{id}/overview` | Header metrics (Time, Scope, Planned burn, Burn from actual hours, Staffing with warnings), cost figures (budget, planned, planned to date, actual, forecast, gap; EAC hours later), staffing by expertise | planner, lead, internal assistant |
 | PATCH | `/programs/{id}/forecast` | Set or clear `forecast_override_hours` per demand | planner, lead (own) |
-| GET | `/programs/{id}/projects` | Projects tab: rows with a `metrics` object (Time / Scope / Planned burn / Burn / Staffing and warnings); next milestone later | planner, lead, internal assistant |
-| POST | `/programs/{id}/projects` | Add a project to the program | planner, lead (own) |
+| GET | `/programs/{id}/projects` | Projects tab: rows in priority order with a `metrics` object (Time / Scope / Planned burn / Burn / Staffing and warnings, and the baseline hours planned next week and in the next three weeks: `next_week_hours`, `next_three_weeks_hours`); next milestone later | planner, lead, internal assistant |
+| POST | `/programs/{id}/projects` | Add a project to the program; it goes last in the priority order unless `priority` is sent | planner, lead (own) |
+| PUT | `/programs/{id}/project-order` | Set the priority order: `{ project_ids }` lists every project of the program, highest priority first, and they get priority 1..N. `422 PROJECT_ORDER_MISMATCH` when the list is not exactly the program's projects | planner, lead (own) |
 | GET | `/programs/{id}/members` | The Programs list preview: everyone with baseline hours on the program's projects, most hours first, with hours per expertise and kind, first and last week, and projects (overall utilization later) | planner, lead |
 | GET | `/programs/{id}/team` | Team tab: the people the program's projects are staffed from, each with their skills and their hours, first and last week and projects in this program's baseline (0 h until a draft gives them some) | planner, lead (own) |
 | POST | `/programs/{id}/team` | Add a member: `{ person_id }`; `409 TEAM_MEMBER_EXISTS` when already in | planner |
@@ -163,7 +165,7 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | GET, POST | `/scenarios` | List scenarios (newest first, with stale flag and churn), or create one from `{ name, assumptions }` (`shift_project`, `add_absence`) and compute it on a copy of the baseline | planner |
 | GET, DELETE | `/scenarios/{id}` | A scenario with its changes against the baseline it was built on (week by week), churn, unmet demand and the projects planned again; or delete it | planner |
 | POST | `/scenarios/{id}/rerun` | Compute a scenario again, with the same assumptions, against the baseline in force | planner |
-| GET | `/insights/heatmap?from=&to=&expertise=` | Person × week matrix. Each cell holds total hours plus hours per expertise; `expertise=` (an expertise id) keeps people who hold that expertise or work on it in the range. Each cell also has capacity, utilization, its band and a tentative flag for planned leave | planner, lead (team) |
+| GET | `/insights/heatmap?from=&to=&expertise=` | Person × week matrix. Each cell holds total hours plus hours per expertise; `expertise=` (an expertise id) keeps people who hold that expertise or work on it in the range. Each cell also has capacity, utilization, its band, a tentative flag for planned leave and `actual_hours`: the hours worked that week from imported timesheets, `null` when none were imported | planner, lead (team) |
 | GET | `/insights/risks` | Understaffed and at-risk projects, delivery behind time, overloaded people in the next `HEATMAP_DEFAULT_WEEKS` weeks (a manager sees only their team's); likely over budget, sustained overload and overdue milestones later | planner, lead |
 | GET | `/insights/capacity-forecast?from=&to=&expertise=` | Per expertise × week: free capacity, unmet confirmed demand, expected pipeline demand (× confidence), and shortfall signals | planner, lead |
 | GET | `/insights/bench` | People below the underused band for each of the next `bench_weeks`, with suggested actions | planner |
