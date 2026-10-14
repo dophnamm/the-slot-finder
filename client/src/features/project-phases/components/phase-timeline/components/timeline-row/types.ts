@@ -4,4 +4,5 @@ export interface TimelineRowProps {
   row: TimelineRowData
   weeks: string[]
   deadlineWeek: string
+  currentWeek: string
 }

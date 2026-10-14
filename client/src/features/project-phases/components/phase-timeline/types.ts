@@ -21,5 +21,7 @@ export interface LegendItem {
 export interface PhaseTimelineProps {
   weeks: string[]
   deadlineWeek: string
+  /** Marked when the timeline shows it. */
+  currentWeek: string
   rows: TimelineRowData[]
 }
