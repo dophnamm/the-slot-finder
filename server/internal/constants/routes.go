@@ -28,6 +28,9 @@ const (
 	PathProgramAction   = "/programs/:id/actions/:action"
 	PathProgramOverview = "/programs/:id/overview"
 	PathProgramMembers  = "/programs/:id/members"
+	// PathProgramTeam is the people a planner gave the program; its manager staffs from them.
+	PathProgramTeam       = "/programs/:id/team"
+	PathProgramTeamMember = "/programs/:id/team/:personId"
 
 	PathProgramProjects = "/programs/:id/projects"
 	PathProjects        = "/projects"

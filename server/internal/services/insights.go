@@ -80,11 +80,16 @@ func (s *insightsService) Heatmap(ctx context.Context, in HeatmapInput) (*models
 	if _, err := s.authz.Require(ctx, CanViewInsights); err != nil {
 		return nil, err
 	}
-	return s.heatmap(ctx, in)
+	scope, err := s.authz.VisiblePeople(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return s.heatmap(ctx, in, scope)
 }
 
-// heatmap builds the heatmap without the permission check, for Heatmap and Risks.
-func (s *insightsService) heatmap(ctx context.Context, in HeatmapInput) (*models.Heatmap, error) {
+// heatmap builds the heatmap of the people in scope, without the permission check, for
+// Heatmap and Risks. A manager's scope is the teams of the programs they lead.
+func (s *insightsService) heatmap(ctx context.Context, in HeatmapInput, scope PeopleScope) (*models.Heatmap, error) {
 	from, to, err := s.weekRange(in)
 	if err != nil {
 		return nil, err
@@ -106,6 +111,9 @@ func (s *insightsService) heatmap(ctx context.Context, in HeatmapInput) (*models
 	load := loadByPersonWeek(baseline.Assignments)
 	rows := make([]models.HeatmapRow, 0, len(people))
 	for _, p := range people {
+		if !scope.Allows(p.ID) {
+			continue
+		}
 		row := s.heatmapRow(p, weeks, absences, load[p.ID])
 		if in.ExpertiseID == "" || keepsExpertise(row, in.ExpertiseID) {
 			rows = append(rows, row)
@@ -506,7 +514,11 @@ func (s *insightsService) Risks(ctx context.Context) (*models.Risks, error) {
 		return a.Understaffed && !b.Understaffed
 	})
 
-	heatmap, err := s.heatmap(ctx, HeatmapInput{})
+	scope, err := s.authz.VisiblePeople(ctx)
+	if err != nil {
+		return nil, err
+	}
+	heatmap, err := s.heatmap(ctx, HeatmapInput{}, scope)
 	if err != nil {
 		return nil, err
 	}

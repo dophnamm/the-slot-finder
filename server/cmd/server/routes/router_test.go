@@ -98,7 +98,7 @@ func newTestRouterWith(cfg *config.Config, availability services.AvailabilitySer
 	timesheets := handlers.ProvideTimesheetHandler(nil, nil)
 	calendarFeeds := handlers.ProvideCalendarFeedHandler(nil, nil)
 	return Router(health, identity, person, absence, program, project, plan, staffing, insights, events, scenarios, schedule,
-		timesheets, calendarFeeds, verifier, cfg)
+		timesheets, calendarFeeds, handlers.ProvideProgramTeamHandler(nil, nil), verifier, cfg)
 }
 
 func baseConfig() *config.Config {
@@ -214,9 +214,13 @@ func TestRouter_People_RBAC(t *testing.T) {
 		{name: "specialist cannot read the intake queue", method: http.MethodGet, path: constants.PathProjects, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot move phases", method: http.MethodPatch, path: "/phases/0192f3a4-0000-7000-8000-0000000000aa", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no role cannot read absences", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/absences", token: "no-role-token", wantStatus: http.StatusForbidden},
-		{name: "lead cannot generate a staffing draft", method: http.MethodPost, path: constants.PathStaffingDrafts, token: "lead-token", wantStatus: http.StatusForbidden},
-		{name: "lead cannot accept a staffing draft", method: http.MethodPost, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa/accept", token: "lead-token", wantStatus: http.StatusForbidden},
-		{name: "lead cannot edit a staffing draft", method: http.MethodPatch, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa/assignments", token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot read a program team", method: http.MethodGet, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/team", token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "lead cannot add a team member", method: http.MethodPost, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/team", token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "lead cannot remove a team member", method: http.MethodDelete, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/team/0192f3a4-0000-7000-8000-0000000000bb", token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "no token cannot read a program team", method: http.MethodGet, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/team", wantStatus: http.StatusUnauthorized},
+		{name: "specialist cannot generate a staffing draft", method: http.MethodPost, path: constants.PathStaffingDrafts, token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot accept a staffing draft", method: http.MethodPost, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa/accept", token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot edit a staffing draft", method: http.MethodPatch, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa/assignments", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read a staffing draft", method: http.MethodGet, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the change history", method: http.MethodGet, path: constants.PathEvents, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the risks", method: http.MethodGet, path: constants.PathRisks, token: "specialist-token", wantStatus: http.StatusForbidden},

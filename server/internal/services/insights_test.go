@@ -106,11 +106,11 @@ func newInsightsService(plans *MockPlanRepository, people *MockPersonRepository,
 }
 
 func TestInsightsService_Heatmap(t *testing.T) {
-	lead := asRole("kc-lead", constants.RoleLead)
+	planner := asRole("kc-planner", constants.RolePlanner)
 	from, to := mustWeek(t, "2026-W42"), mustWeek(t, "2026-W43")
 
 	t.Run("cells, bands, holidays and tentative leave", func(t *testing.T) {
-		heatmap, err := newInsightsService(heatmapFixture(t)).Heatmap(lead, HeatmapInput{From: &from, To: &to})
+		heatmap, err := newInsightsService(heatmapFixture(t)).Heatmap(planner, HeatmapInput{From: &from, To: &to})
 		require.NoError(t, err)
 		require.Len(t, heatmap.Weeks, 2)
 		names := []string{heatmap.Rows[0].Person.Name, heatmap.Rows[1].Person.Name, heatmap.Rows[2].Person.Name}
@@ -135,7 +135,7 @@ func TestInsightsService_Heatmap(t *testing.T) {
 	})
 
 	t.Run("the expertise filter keeps people who hold it", func(t *testing.T) {
-		heatmap, err := newInsightsService(heatmapFixture(t)).Heatmap(lead, HeatmapInput{From: &from, To: &to, ExpertiseID: expQAOnlyID})
+		heatmap, err := newInsightsService(heatmapFixture(t)).Heatmap(planner, HeatmapInput{From: &from, To: &to, ExpertiseID: expQAOnlyID})
 		require.NoError(t, err)
 		require.Len(t, heatmap.Rows, 2)
 		assert.Equal(t, "Erin", heatmap.Rows[0].Person.Name, "an Engineer with QA cover stays")
@@ -143,7 +143,7 @@ func TestInsightsService_Heatmap(t *testing.T) {
 	})
 
 	t.Run("the default range is the current week and the next weeks", func(t *testing.T) {
-		heatmap, err := newInsightsService(heatmapFixture(t)).Heatmap(lead, HeatmapInput{})
+		heatmap, err := newInsightsService(heatmapFixture(t)).Heatmap(planner, HeatmapInput{})
 		require.NoError(t, err)
 		require.Len(t, heatmap.Weeks, 12)
 		assert.Equal(t, "2026-W42", heatmap.Weeks[0].String())
@@ -161,11 +161,25 @@ func TestInsightsService_Heatmap(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				_, err := newInsightsService(heatmapFixture(t)).Heatmap(lead, tt.in)
+				_, err := newInsightsService(heatmapFixture(t)).Heatmap(planner, tt.in)
 				requireAppError(t, err, tt.wantCode, http.StatusBadRequest)
 			})
 		}
 		_, err := newInsightsService(heatmapFixture(t)).Heatmap(asRole("kc-specialist", constants.RoleSpecialist), HeatmapInput{})
 		requireStatus(t, err, http.StatusForbidden)
 	})
+}
+
+func TestInsightsService_Heatmap_ManagerSeesTheirTeams(t *testing.T) {
+	plans, people, absences := heatmapFixture(t)
+	authz := ProvideTeamAuthzService(leadPeople{}, ledTeams{leadPersonID: {engPersonID}})
+	service := ProvideInsightsService(plans, people, absences, nil, nil, nil, authz,
+		clock.NewFixed(time.Date(2026, time.October, 14, 9, 0, 0, 0, time.UTC)), heatmapConfig())
+	from, to := mustWeek(t, "2026-W42"), mustWeek(t, "2026-W43")
+
+	heatmap, err := service.Heatmap(asRole("kc-lead", constants.RoleLead), HeatmapInput{From: &from, To: &to})
+
+	require.NoError(t, err)
+	require.Len(t, heatmap.Rows, 1, "only the team of the programs the manager leads")
+	assert.Equal(t, engPersonID, heatmap.Rows[0].Person.ID)
 }

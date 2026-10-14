@@ -58,6 +58,11 @@ func (m *MockPersonRepository) List(ctx context.Context, page *dtos.PageableRequ
 	return args.Get(0).(*dtos.DataResponse[models.Person]), args.Error(1)
 }
 
+func (m *MockPersonRepository) ListAmong(ctx context.Context, page *dtos.PageableRequest, ids []string) (*dtos.DataResponse[models.Person], error) {
+	args := m.Called(ctx, page, ids)
+	return args.Get(0).(*dtos.DataResponse[models.Person]), args.Error(1)
+}
+
 func (m *MockPersonRepository) FindWithSkills(ctx context.Context, id string) (*models.Person, error) {
 	args := m.Called(ctx, id)
 	return personOrNil(args.Get(0)), args.Error(1)

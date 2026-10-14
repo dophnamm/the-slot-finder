@@ -31,15 +31,19 @@ type seedProject struct {
 type seedProgram struct {
 	name, client string
 	leadEmail    string
-	start, end   time.Time
-	goal         string
-	objectives   []string
-	projects     []seedProject
+	// team is who the planner gave the program, by email; the engine staffs only them.
+	team       []string
+	start, end time.Time
+	goal       string
+	objectives []string
+	projects   []seedProject
 }
 
 var programs = []seedProgram{
 	{
 		name: "Acme Commerce Platform", client: "Acme Retail", leadEmail: "lead@slot-finder.local",
+		team: []string{"alex@slot-finder.local", "bao@slot-finder.local", "chi@slot-finder.local", "dung@slot-finder.local",
+			"khanh@slot-finder.local", "hoa@slot-finder.local", "planner@slot-finder.local", "specialist@slot-finder.local"},
 		start: day(2026, time.September, 28), end: day(2026, time.December, 18),
 		goal:       "Move Acme's online store to the new commerce platform before the holiday season.",
 		objectives: []string{"Ship the new checkout.", "Launch the loyalty program.", "Retire the legacy order database."},
@@ -63,6 +67,9 @@ var programs = []seedProgram{
 	},
 	{
 		name: "Beta Health Portal", client: "Beta Health", leadEmail: "minh@slot-finder.local",
+		// Hoa and Sam are in both teams: their weekly hours are shared between the programs.
+		team: []string{"minh@slot-finder.local", "linh@slot-finder.local", "quang@slot-finder.local", "hoa@slot-finder.local",
+			"specialist@slot-finder.local"},
 		start: day(2026, time.October, 19), end: day(2027, time.February, 26),
 		goal:       "Give Beta Health's patients and clinics one portal for appointments and records.",
 		objectives: []string{"Launch the patient app.", "Give clinics a live dashboard.", "Connect the records system."},

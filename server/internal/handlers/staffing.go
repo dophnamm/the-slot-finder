@@ -23,7 +23,7 @@ func ProvideStaffingHandler(staffing services.StaffingService, validate *validat
 }
 
 func draftResponse(view *services.DraftView) dtos.DraftResponse {
-	return dtos.NewDraftResponse(*view.Plan, view.Projects, view.Weeks, view.BaselineVersion, view.Changes, view.Events)
+	return dtos.NewDraftResponse(*view.Plan, view.Projects, view.Weeks, view.BaselineVersion, view.Changes, view.Events, view.Teams)
 }
 
 // Generate godoc

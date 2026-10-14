@@ -105,7 +105,7 @@ func newStaffingMocks() staffingMocks {
 func (m staffingMocks) service() StaffingService {
 	finder := leadPeople{}
 	return ProvideStaffingService(m.plans, m.projects, m.people, m.absences, m.audit, m.events, finder, ProvideAuthzService(finder),
-		passthroughTx{}, clock.NewFixed(acceptedAt), testPlanningConfig())
+		passthroughTx{}, clock.NewFixed(acceptedAt), testPlanningConfig(), nil)
 }
 
 func TestStaffingService_Generate(t *testing.T) {
@@ -140,8 +140,11 @@ func TestStaffingService_Generate(t *testing.T) {
 		assert.Len(t, view.Weeks, 6)
 	})
 
-	t.Run("a lead cannot generate", func(t *testing.T) {
-		_, err := newStaffingMocks().service().Generate(asRole("kc-lead", constants.RoleLead), GenerateDraftInput{ProjectIDs: []string{projectID}})
+	t.Run("a manager cannot generate for a program they do not lead", func(t *testing.T) {
+		m := newStaffingMocks()
+		project := qaProject(t)
+		m.projects.On("FindDetail", mock.Anything, projectID).Return(project, nil)
+		_, err := m.service().Generate(asRole("kc-lead", constants.RoleLead), GenerateDraftInput{ProjectIDs: []string{projectID}})
 		requireStatus(t, err, http.StatusForbidden)
 	})
 

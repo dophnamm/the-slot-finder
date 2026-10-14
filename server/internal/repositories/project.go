@@ -64,7 +64,7 @@ func phasesInOrder(db *gorm.DB) *gorm.DB { return db.Order("sequence ASC").Order
 func (r *projectRepository) ListByProgram(ctx context.Context, programID string) ([]models.Project, error) {
 	var projects []models.Project
 	err := r.db.From(ctx).
-		Preload(projectLeadPreload).Preload(projectPhasesPreload, phasesInOrder).
+		Preload(projectProgramPreload).Preload(projectLeadPreload).Preload(projectPhasesPreload, phasesInOrder).
 		Where("program_id = ?", programID).
 		Order("priority ASC").Order("deadline ASC").Order("id ASC").
 		Find(&projects).Error

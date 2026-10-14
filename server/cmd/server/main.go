@@ -49,11 +49,12 @@ func NewHTTPServer(lc fx.Lifecycle,
 	scheduleHandler *handlers.ScheduleHandler,
 	timesheetHandler *handlers.TimesheetHandler,
 	calendarFeedHandler *handlers.CalendarFeedHandler,
+	teamHandler *handlers.ProgramTeamHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 	db *db.PostgresDB,
 ) *http.Server {
-	handler := routes.Router(healthHandler, identityHandler, personHandler, absenceHandler, programHandler, projectHandler, planHandler, staffingHandler, insightsHandler, eventHandler, scenarioHandler, scheduleHandler, timesheetHandler, calendarFeedHandler, verifier, cfg)
+	handler := routes.Router(healthHandler, identityHandler, personHandler, absenceHandler, programHandler, projectHandler, planHandler, staffingHandler, insightsHandler, eventHandler, scenarioHandler, scheduleHandler, timesheetHandler, calendarFeedHandler, teamHandler, verifier, cfg)
 
 	srv := &http.Server{
 		Addr:              cfg.AppHTTPServer,
@@ -184,7 +185,9 @@ func appOptions(cfg *config.Config) []fx.Option {
 			email.ProvideEmailSender,
 			services.ProvideEmailService,
 			services.ProvideAuthService,
-			services.ProvideAuthzService,
+			services.ProvideTeamAuthzService,
+			services.ProvideTeamLookup,
+			services.ProvideProgramTeamService,
 			repositories.ProvidePersonRepository,
 			repositories.ProvideAbsenceRepository,
 			repositories.ProvideProgramRepository,
@@ -194,6 +197,7 @@ func appOptions(cfg *config.Config) []fx.Option {
 			repositories.ProvideChangeEventRepository,
 			repositories.ProvideActualHoursRepository,
 			repositories.ProvideCalendarFeedRepository,
+			repositories.ProvideProgramTeamRepository,
 			calendar.ProvideFetcher,
 			services.ProvidePeopleService,
 			services.ProvidePersonFinder,
@@ -224,6 +228,7 @@ func appOptions(cfg *config.Config) []fx.Option {
 			handlers.ProvideScheduleHandler,
 			handlers.ProvideTimesheetHandler,
 			handlers.ProvideCalendarFeedHandler,
+			handlers.ProvideProgramTeamHandler,
 		),
 		fx.Invoke(func(*http.Server) {}),
 		fx.Invoke(registerBaselineHook),

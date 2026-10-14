@@ -66,7 +66,8 @@ func ProvideScheduleService(plans repositories.PlanRepository, people repositori
 }
 
 func (s *scheduleService) Get(ctx context.Context, in ScheduleInput) (*PersonSchedule, error) {
-	if _, err := s.authz.RequireSelfOr(ctx, in.PersonID, CanViewPeople); err != nil {
+	// Everyone sees their own; a planner everyone's; a manager the teams of the programs they lead.
+	if _, err := s.authz.RequireVisiblePerson(ctx, in.PersonID); err != nil {
 		return nil, err
 	}
 	if err := s.checkRange(in.From, in.To); err != nil {

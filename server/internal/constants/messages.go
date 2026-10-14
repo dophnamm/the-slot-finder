@@ -177,3 +177,14 @@ const (
 	MsgTimesheetWeekInFuture   = "The template cannot cover weeks after the current one"
 	MsgTimesheetTemplateFailed = "Could not build the timesheet template"
 )
+
+// Program team messages.
+const (
+	MsgTeamListed         = "Program team retrieved"
+	MsgTeamMemberAdded    = "Team member added"
+	MsgTeamMemberRemoved  = "Team member removed"
+	MsgTeamMemberExists   = "This person is already in the program team"
+	MsgTeamMemberNotFound = "This person is not in the program team"
+	MsgPersonNotInTeam    = "Only members of the program team can be staffed on its projects"
+	MsgTeamSaveFailed     = "Could not save the program team"
+)

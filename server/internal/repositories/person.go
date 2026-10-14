@@ -20,6 +20,8 @@ type PersonRepository interface {
 	ListByEmails(ctx context.Context, emails []string) ([]models.Person, error)
 	// List returns people ordered by name, with their skills.
 	List(ctx context.Context, page *dtos.PageableRequest) (*dtos.DataResponse[models.Person], error)
+	// ListAmong is List limited to these people: what a manager may see.
+	ListAmong(ctx context.Context, page *dtos.PageableRequest, ids []string) (*dtos.DataResponse[models.Person], error)
 	// FindWithSkills returns one person with their skills.
 	FindWithSkills(ctx context.Context, id string) (*models.Person, error)
 	FindByEmail(ctx context.Context, email string) (*models.Person, error)
@@ -45,6 +47,14 @@ func ProvidePersonRepository(db *db.PostgresDB) PersonRepository {
 func (r *personRepository) List(ctx context.Context, page *dtos.PageableRequest) (*dtos.DataResponse[models.Person], error) {
 	query := r.db.From(ctx).
 		Preload(personSkillsPreload).
+		Order("name ASC").Order("id ASC")
+	return r.find(query, page)
+}
+
+func (r *personRepository) ListAmong(ctx context.Context, page *dtos.PageableRequest, ids []string) (*dtos.DataResponse[models.Person], error) {
+	query := r.db.From(ctx).
+		Preload(personSkillsPreload).
+		Where("id IN ?", append([]string{}, ids...)).
 		Order("name ASC").Order("id ASC")
 	return r.find(query, page)
 }

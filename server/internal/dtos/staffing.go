@@ -1,6 +1,7 @@
 package dtos
 
 import (
+	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -66,14 +67,16 @@ type AcceptDraftRequest struct {
 
 // DraftProjectResponse is a project a draft covers.
 type DraftProjectResponse struct {
-	ID           string     `json:"id"`
-	Name         string     `json:"name" example:"Checkout Revamp"`
-	ProgramID    string     `json:"program_id"`
-	Program      string     `json:"program" example:"Acme Commerce Platform"`
-	Status       string     `json:"status" example:"incoming"`
-	Priority     int        `json:"priority" example:"1"`
-	DeadlineWeek string     `json:"deadline_week" example:"2026-W50"`
-	StaffedAt    *time.Time `json:"staffed_at"`
+	ID        string `json:"id"`
+	Name      string `json:"name" example:"Checkout Revamp"`
+	ProgramID string `json:"program_id"`
+	Program   string `json:"program" example:"Acme Commerce Platform"`
+	// ProgramLeadID is the person who manages the program; they may act on a draft of its projects.
+	ProgramLeadID *string    `json:"program_lead_id"`
+	Status        string     `json:"status" example:"incoming"`
+	Priority      int        `json:"priority" example:"1"`
+	DeadlineWeek  string     `json:"deadline_week" example:"2026-W50"`
+	StaffedAt     *time.Time `json:"staffed_at"`
 }
 
 // DraftDemandResponse is one covered demand with the hours the draft assigns to it.
@@ -90,7 +93,9 @@ type DraftDemandResponse struct {
 	FromWeek      string  `json:"from_week" example:"2026-W48"`
 	ToWeek        string  `json:"to_week" example:"2026-W50"`
 	// UnmetReason is the engine's code for hours it could not place when it made the draft.
-	UnmetReason *string `json:"unmet_reason" enums:"NO_SKILL,LEVEL_TOO_LOW,NO_CAPACITY_BEFORE_DEADLINE,BLOCKED_BY_LOCKED"`
+	UnmetReason *string `json:"unmet_reason" enums:"NO_SKILL,LEVEL_TOO_LOW,NO_CAPACITY_BEFORE_DEADLINE,BLOCKED_BY_LOCKED,NO_ONE_IN_TEAM"`
+	// TeamIDs are the people of the program team who may staff the demand; null puts no limit.
+	TeamIDs []string `json:"team_ids"`
 }
 
 // PlanChangeResponse is how one person's hours on one demand change against the baseline.
@@ -130,9 +135,9 @@ type DraftResponse struct {
 }
 
 // NewDraftResponse maps a draft with its projects, the weeks they span, the baseline
-// version in force and the changes against it.
+// version in force, the changes against it and each program's team.
 func NewDraftResponse(plan models.Plan, projects []models.Project, weeks []isoweek.Week, currentVersion int,
-	changes []models.PlanChange, events []models.ChangeEvent,
+	changes []models.PlanChange, events []models.ChangeEvent, teams map[string]map[string]bool,
 ) DraftResponse {
 	covered := map[string]bool{}
 	for _, p := range projects {
@@ -163,7 +168,7 @@ func NewDraftResponse(plan models.Plan, projects []models.Project, weeks []isowe
 		ID: plan.ID, Status: plan.Status, BaseVersion: plan.Version, CurrentVersion: currentVersion,
 		Stale: plan.Status == constants.PlanStatusDraft && plan.Version != currentVersion, CreatedAt: plan.CreatedAt,
 		PublishedAt: plan.PublishedAt, Weeks: labels, Projects: newDraftProjects(projects),
-		Demands: newDraftDemands(projects, assigned, unmet), Assignments: NewAssignmentResponses(assignments),
+		Demands: newDraftDemands(projects, assigned, unmet, teams), Assignments: NewAssignmentResponses(assignments),
 		Changes: newPlanChanges(changes), HasStretch: hasStretch,
 		Auto: len(events) > 0, TriggeredBy: NewChangeEventResponses(events), SupersededBy: plan.SupersededBy,
 	}
@@ -176,20 +181,24 @@ func newDraftProjects(projects []models.Project) []DraftProjectResponse {
 			DeadlineWeek: p.DeadlineWeek().String(), StaffedAt: p.StaffedAt}
 		if p.Program != nil {
 			item.Program = p.Program.Name
+			item.ProgramLeadID = p.Program.LeadID
 		}
 		out = append(out, item)
 	}
 	return out
 }
 
-func newDraftDemands(projects []models.Project, assigned map[string]float64, unmet map[string]string) []DraftDemandResponse {
+func newDraftDemands(projects []models.Project, assigned map[string]float64, unmet map[string]string,
+	teams map[string]map[string]bool,
+) []DraftDemandResponse {
 	out := []DraftDemandResponse{}
 	for _, p := range projects {
+		team := teamIDs(teams, p.ProgramID)
 		for _, d := range p.Demands {
 			from, to := p.DemandWindow(d)
 			item := DraftDemandResponse{ID: d.ID, ProjectID: p.ID, Project: p.Name, Expertise: d.Expertise.Name,
 				MinLevel: d.MinLevel, Headcount: d.Headcount, Hours: d.TotalHours, AssignedHours: assigned[d.ID],
-				FromWeek: from.String(), ToWeek: to.String()}
+				FromWeek: from.String(), ToWeek: to.String(), TeamIDs: team}
 			for _, phase := range p.Phases {
 				if d.PhaseID != nil && phase.ID == *d.PhaseID {
 					item.Phase = &phase.Name
@@ -202,6 +211,19 @@ func newDraftDemands(projects []models.Project, assigned map[string]float64, unm
 		}
 	}
 	return out
+}
+
+// teamIDs is a program's team in id order, or nil when the program has no team entry.
+func teamIDs(teams map[string]map[string]bool, programID string) []string {
+	team, ok := teams[programID]
+	if !ok {
+		return nil
+	}
+	ids := slices.Sorted(maps.Keys(team))
+	if ids == nil {
+		return []string{}
+	}
+	return ids
 }
 
 func newPlanChanges(changes []models.PlanChange) []PlanChangeResponse {

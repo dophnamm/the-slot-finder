@@ -66,9 +66,10 @@ func seedPlans(database *db.PostgresDB, cfg *config.Config) (planResult, error) 
 	tx := db.ProvideTxManager(database)
 	finder := services.ProvidePersonFinder(services.ProvidePeopleService(people, tx, cfg))
 	authz := services.ProvideAuthzService(finder)
+	teams := repositories.ProvideProgramTeamRepository(database)
 	staffing := services.ProvideStaffingService(plans, projects, people, absences, repositories.ProvideAuditRepository(database),
-		repositories.ProvideChangeEventRepository(database), finder, authz, tx, clk, cfg)
-	scenarioService := services.ProvideScenarioService(plans, projects, people, absences, finder, authz, tx, cfg)
+		repositories.ProvideChangeEventRepository(database), finder, authz, tx, clk, cfg, teams)
+	scenarioService := services.ProvideScenarioService(plans, projects, people, absences, finder, authz, tx, cfg, teams)
 	ctx := request.NewPrincipalContext(context.Background(), seedPlanner)
 
 	if err := plans.EnsureBaseline(ctx); err != nil {

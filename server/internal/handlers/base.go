@@ -68,9 +68,14 @@ func (b *BaseHandler) InternalErrorResponse(c *echo.Context, message string, cau
 // pathID reads the :id path parameter. When it is not a UUID it writes a 400 validation
 // error and returns false, and the handler returns nil.
 func (b *BaseHandler) pathID(c *echo.Context) (string, bool) {
-	id := c.Param(pathParamID)
+	return b.pathUUID(c, pathParamID)
+}
+
+// pathUUID reads a path parameter that holds a UUID, like pathID does for :id.
+func (b *BaseHandler) pathUUID(c *echo.Context, name string) (string, bool) {
+	id := c.Param(name)
 	if _, err := uuid.Parse(id); err != nil {
-		_ = b.ValidationErrorResponse(c, constants.MsgInvalidRequest, map[string]string{pathParamID: constants.MsgInvalidID})
+		_ = b.ValidationErrorResponse(c, constants.MsgInvalidRequest, map[string]string{name: constants.MsgInvalidID})
 		return "", false
 	}
 	return id, true

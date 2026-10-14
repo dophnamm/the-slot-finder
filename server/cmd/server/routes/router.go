@@ -34,6 +34,7 @@ func Router(
 	scheduleHandler *handlers.ScheduleHandler,
 	timesheetHandler *handlers.TimesheetHandler,
 	calendarFeedHandler *handlers.CalendarFeedHandler,
+	teamHandler *handlers.ProgramTeamHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 ) *echo.Echo {
@@ -143,6 +144,7 @@ func Router(
 
 	registerPeopleRoutes(v1, authenticated, personHandler, absenceHandler)
 	registerCalendarFeedRoutes(v1, authenticated, calendarFeedHandler)
+	registerTeamRoutes(v1, authenticated, teamHandler)
 	// A specialist reads only their own schedule (checked in the service).
 	v1.GET(constants.PathPersonSchedule, scheduleHandler.Get, authenticated, middlewares.RequireRole(constants.PersonScheduleRoles...))
 	registerProgramRoutes(v1, authenticated, programHandler, projectHandler)
@@ -172,18 +174,19 @@ func registerPlanRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc, planH
 	staffingHandler *handlers.StaffingHandler,
 ) {
 	viewRoles := middlewares.RequireRole(constants.PlanViewRoles...)
-	manageRoles := middlewares.RequireRole(constants.PlanManageRoles...)
+	draftRoles := middlewares.RequireRole(constants.DraftRoles...)
 	v1.GET(constants.PathCurrentPlan, planHandler.Current, authenticated, viewRoles)
 	// A specialist reads only their own assignments (checked in the service).
 	v1.GET(constants.PathPersonAssignments, planHandler.PersonAssignments, authenticated,
 		middlewares.RequireRole(constants.PersonAssignmentRoles...))
 
-	// Staffing drafts: planners generate and change them; leads read those of their projects.
-	v1.POST(constants.PathStaffingDrafts, staffingHandler.Generate, authenticated, manageRoles)
+	// Staffing drafts: planners generate and change any; a manager (lead) those whose projects
+	// all belong to programs they lead (checked in the service).
+	v1.POST(constants.PathStaffingDrafts, staffingHandler.Generate, authenticated, draftRoles)
 	v1.GET(constants.PathStaffingDraft, staffingHandler.Get, authenticated, viewRoles)
-	v1.PATCH(constants.PathDraftAssignments, staffingHandler.Edit, authenticated, manageRoles)
-	v1.POST(constants.PathDraftAccept, staffingHandler.Accept, authenticated, manageRoles)
-	v1.POST(constants.PathDraftReject, staffingHandler.Reject, authenticated, manageRoles)
+	v1.PATCH(constants.PathDraftAssignments, staffingHandler.Edit, authenticated, draftRoles)
+	v1.POST(constants.PathDraftAccept, staffingHandler.Accept, authenticated, draftRoles)
+	v1.POST(constants.PathDraftReject, staffingHandler.Reject, authenticated, draftRoles)
 }
 
 // registerPeopleRoutes adds people, skills, absences and holidays.
@@ -239,4 +242,13 @@ func registerProgramRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc,
 	v1.PUT(constants.PathProjectPhases, projectHandler.ReplacePhases, authenticated, programRoles)
 	v1.PATCH(constants.PathPhase, projectHandler.UpdatePhase, authenticated, programRoles)
 	v1.PUT(constants.PathProjectDemands, projectHandler.ReplaceDemands, authenticated, programRoles)
+}
+
+// registerTeamRoutes adds a program's team: planners manage it; the program's manager reads it
+// (checked in the service).
+func registerTeamRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc, h *handlers.ProgramTeamHandler) {
+	manageRoles := middlewares.RequireRole(constants.ProgramTeamManageRoles...)
+	v1.GET(constants.PathProgramTeam, h.List, authenticated, middlewares.RequireRole(constants.ProgramTeamViewRoles...))
+	v1.POST(constants.PathProgramTeam, h.Add, authenticated, manageRoles)
+	v1.DELETE(constants.PathProgramTeamMember, h.Remove, authenticated, manageRoles)
 }

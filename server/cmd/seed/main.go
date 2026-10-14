@@ -157,6 +157,12 @@ func seedPrograms(tx *gorm.DB, personIDs, expertiseIDs map[string]string) error 
 		if err := tx.Where(models.Program{Name: p.name}).Attrs(row).FirstOrCreate(&row).Error; err != nil {
 			return fmt.Errorf("program %s: %w", p.name, err)
 		}
+		for _, email := range p.team {
+			member := models.ProgramTeamMember{ProgramID: row.ID, PersonID: personIDs[email]}
+			if err := tx.Where(member).FirstOrCreate(&member).Error; err != nil {
+				return fmt.Errorf("team of %s: %w", p.name, err)
+			}
+		}
 		for _, project := range p.projects {
 			if err := seedOneProject(tx, row.ID, project, personIDs, expertiseIDs); err != nil {
 				return fmt.Errorf("project %s: %w", project.name, err)

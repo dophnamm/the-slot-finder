@@ -2146,6 +2146,212 @@ const docTemplate = `{
                 }
             }
         },
+        "/programs/{id}/team": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The people a planner gave the program, with their skills and their hours, weeks and projects in its baseline. The planner and the program's manager may read it.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Programs"
+                ],
+                "summary": "A program's team",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Program id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/dtos.TeamMemberResponse"
+                                    }
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Puts a person in the program's team, so its manager may staff them on its projects.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Programs"
+                ],
+                "summary": "Add a team member",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Program id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Person",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.AddTeamMemberRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/programs/{id}/team/{personId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Takes a person out of the program's team. Their baseline hours stay; the next draft plans without them.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Programs"
+                ],
+                "summary": "Remove a team member",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Program id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Person id",
+                        "name": "personId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/projects": {
             "get": {
                 "security": [
@@ -3334,6 +3540,18 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.AddTeamMemberRequest": {
+            "type": "object",
+            "required": [
+                "person_id"
+            ],
+            "properties": {
+                "person_id": {
+                    "type": "string",
+                    "example": "0192f3a4-0000-7000-8000-0000000000b1"
+                }
+            }
+        },
         "dtos.AllocationResponse": {
             "type": "object",
             "properties": {
@@ -3971,6 +4189,13 @@ const docTemplate = `{
                 "project_id": {
                     "type": "string"
                 },
+                "team_ids": {
+                    "description": "TeamIDs are the people of the program team who may staff the demand; null puts no limit.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "to_week": {
                     "type": "string",
                     "example": "2026-W50"
@@ -3982,7 +4207,8 @@ const docTemplate = `{
                         "NO_SKILL",
                         "LEVEL_TOO_LOW",
                         "NO_CAPACITY_BEFORE_DEADLINE",
-                        "BLOCKED_BY_LOCKED"
+                        "BLOCKED_BY_LOCKED",
+                        "NO_ONE_IN_TEAM"
                     ]
                 }
             }
@@ -4010,6 +4236,10 @@ const docTemplate = `{
                     "example": "Acme Commerce Platform"
                 },
                 "program_id": {
+                    "type": "string"
+                },
+                "program_lead_id": {
+                    "description": "ProgramLeadID is the person who manages the program; they may act on a draft of its projects.",
                     "type": "string"
                 },
                 "staffed_at": {
@@ -4898,6 +5128,10 @@ const docTemplate = `{
                 "program_lead": {
                     "$ref": "#/definitions/dtos.PersonRef"
                 },
+                "program_lead_id": {
+                    "description": "ProgramLeadID is the person who manages the program, when the program is loaded.",
+                    "type": "string"
+                },
                 "program_name": {
                     "type": "string",
                     "example": "Acme onboarding"
@@ -4989,6 +5223,10 @@ const docTemplate = `{
                     "example": 2
                 },
                 "program_id": {
+                    "type": "string"
+                },
+                "program_lead_id": {
+                    "description": "ProgramLeadID is the person who manages the program, when the program is loaded.",
                     "type": "string"
                 },
                 "program_name": {
@@ -5327,7 +5565,8 @@ const docTemplate = `{
                         "NO_SKILL",
                         "LEVEL_TOO_LOW",
                         "NO_CAPACITY_BEFORE_DEADLINE",
-                        "BLOCKED_BY_LOCKED"
+                        "BLOCKED_BY_LOCKED",
+                        "NO_ONE_IN_TEAM"
                     ]
                 }
             }
@@ -5542,6 +5781,38 @@ const docTemplate = `{
                 },
                 "primary": {
                     "type": "boolean"
+                }
+            }
+        },
+        "dtos.TeamMemberResponse": {
+            "type": "object",
+            "properties": {
+                "expertises": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.MemberExpertiseResponse"
+                    }
+                },
+                "from_week": {
+                    "type": "string",
+                    "example": "2026-W44"
+                },
+                "person": {
+                    "$ref": "#/definitions/dtos.PersonResponse"
+                },
+                "projects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ProjectRef"
+                    }
+                },
+                "to_week": {
+                    "type": "string",
+                    "example": "2026-W48"
+                },
+                "total_hours": {
+                    "type": "number",
+                    "example": 160
                 }
             }
         },

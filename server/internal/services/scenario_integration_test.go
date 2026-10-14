@@ -56,7 +56,7 @@ func TestScenario_Postgres(t *testing.T) {
 	cfg := replanConfig()
 	cfg.ScenarioMaxShiftWeeks, cfg.ScenarioMaxAssumptions = 12, 10
 	svc := ProvideScenarioService(plans, repositories.ProvideProjectRepository(pdb), repositories.ProvidePersonRepository(pdb),
-		repositories.ProvideAbsenceRepository(pdb), leadPeople{}, ProvideAuthzService(leadPeople{}), db.ProvideTxManager(pdb), cfg)
+		repositories.ProvideAbsenceRepository(pdb), leadPeople{}, ProvideAuthzService(leadPeople{}), db.ProvideTxManager(pdb), cfg, nil)
 
 	// Ada away in W43: her 36 h there go to Bea, and nothing real changes.
 	view, err := svc.Create(planner, CreateScenarioInput{Name: "Ada away", Assumptions: []AssumptionInput{{

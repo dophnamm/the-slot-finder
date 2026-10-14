@@ -2,9 +2,11 @@ package services
 
 import (
 	"context"
+	"slices"
 
 	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/errors"
+	"the-slot-finder/server/internal/repositories"
 	"the-slot-finder/server/internal/request"
 )
 
@@ -96,15 +98,62 @@ type AuthzService interface {
 	// RequireLeadOf lets the signed-in user through when check passes, or when they hold the
 	// lead role and their person record is one of leadIDs (nil entries are ignored).
 	RequireLeadOf(ctx context.Context, check Check, leadIDs ...*string) (request.Principal, error)
+	// VisiblePeople says whose people data the signed-in user may read: everyone for a
+	// planner; for a manager (lead) the teams of the programs they lead and themselves; for
+	// anyone else themselves only.
+	VisiblePeople(ctx context.Context) (PeopleScope, error)
+	// RequireVisiblePerson lets the signed-in user through when VisiblePeople allows personID,
+	// and answers 403 otherwise.
+	RequireVisiblePerson(ctx context.Context, personID string) (request.Principal, error)
+}
+
+// PeopleScope is whose people data the signed-in user may read.
+type PeopleScope struct {
+	// All is true for a planner, who may read everyone.
+	All bool
+	ids map[string]bool
+}
+
+// Allows reports whether the scope covers the person.
+func (s PeopleScope) Allows(personID string) bool {
+	return s.All || s.ids[personID]
+}
+
+// IDs lists the people a limited scope covers, sorted; it is empty when All is set.
+func (s PeopleScope) IDs() []string {
+	ids := make([]string, 0, len(s.ids))
+	for id := range s.ids {
+		ids = append(ids, id)
+	}
+	slices.Sort(ids)
+	return ids
+}
+
+// TeamLookup finds everyone in the teams of the programs a person leads.
+type TeamLookup interface {
+	PersonIDsLedBy(ctx context.Context, leadID string) ([]string, error)
 }
 
 type authzService struct {
 	people PersonFinder
+	teams  TeamLookup
 }
 
 // ProvideAuthzService creates the authz service. people may be nil when no check needs it.
+// Without teams, a manager sees only themselves.
 func ProvideAuthzService(people PersonFinder) AuthzService {
 	return authzService{people: people}
+}
+
+// ProvideTeamAuthzService creates the authz service that knows the program teams, so a
+// manager sees the people of the programs they lead.
+func ProvideTeamAuthzService(people PersonFinder, teams TeamLookup) AuthzService {
+	return authzService{people: people, teams: teams}
+}
+
+// ProvideTeamLookup exposes the program team repository to the authz service.
+func ProvideTeamLookup(teams repositories.ProgramTeamRepository) TeamLookup {
+	return teams
 }
 
 func (authzService) Principal(ctx context.Context) (request.Principal, error) {
@@ -170,4 +219,55 @@ func (s authzService) RequireLeadOf(ctx context.Context, check Check, leadIDs ..
 	}
 	return request.Principal{}, errors.ForbiddenError(constants.MsgInsufficientPermissions, nil).
 		WithOperation(opAuthorize).WithResource(resourcePrincipal)
+}
+
+func (s authzService) VisiblePeople(ctx context.Context) (PeopleScope, error) {
+	principal, err := s.Principal(ctx)
+	if err != nil {
+		return PeopleScope{}, err
+	}
+	if principal.HasAnyRole(constants.RolePlanner) {
+		return PeopleScope{All: true}, nil
+	}
+	scope := PeopleScope{ids: map[string]bool{}}
+	if s.people == nil {
+		return scope, nil
+	}
+	self, err := s.people.FindForPrincipal(ctx, principal)
+	if err != nil {
+		return PeopleScope{}, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).
+			WithOperation(opAuthorize).WithResource(resourcePrincipal)
+	}
+	if self == nil {
+		return scope, nil
+	}
+	scope.ids[self.ID] = true
+	if s.teams == nil || !principal.HasAnyRole(constants.RoleLead) {
+		return scope, nil
+	}
+	team, err := s.teams.PersonIDsLedBy(ctx, self.ID)
+	if err != nil {
+		return PeopleScope{}, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).
+			WithOperation(opAuthorize).WithResource(resourcePrincipal)
+	}
+	for _, id := range team {
+		scope.ids[id] = true
+	}
+	return scope, nil
+}
+
+func (s authzService) RequireVisiblePerson(ctx context.Context, personID string) (request.Principal, error) {
+	principal, err := s.Principal(ctx)
+	if err != nil {
+		return request.Principal{}, err
+	}
+	scope, err := s.VisiblePeople(ctx)
+	if err != nil {
+		return request.Principal{}, err
+	}
+	if !scope.Allows(personID) {
+		return request.Principal{}, errors.ForbiddenError(constants.MsgInsufficientPermissions, nil).
+			WithOperation(opAuthorize).WithResource(resourcePrincipal)
+	}
+	return principal, nil
 }
