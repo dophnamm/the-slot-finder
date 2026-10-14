@@ -6,6 +6,7 @@ import { can } from '@/resources/rbac'
 import { FORBIDDEN_STATUS } from '@/shared/api/constants'
 import { useCurrentUser } from '@/shared/auth'
 import { PagePlaceholder } from '@/shared/components/page-placeholder'
+import { PageSkeleton } from '@/shared/components/page-skeleton'
 import { Section } from '@/shared/components/section'
 import { useTranslation } from '@/shared/i18n'
 import { usePerson } from '@/shared/people'
@@ -16,13 +17,14 @@ export function PersonDetailPage() {
   const { t } = useTranslation()
   const { id = '' } = useParams()
   const { data: user } = useCurrentUser()
-  const { data: person, error } = usePerson(id)
+  const { data: person, error, isPending } = usePerson(id)
   const primary = person?.skills.find((skill) => skill.primary)
   const canApprove = can(user?.role, 'absences:approve')
   const canSync = can(user?.role, 'calendar-feeds:manage')
   // Waits for the person, so a person the user may not see costs one request, not two.
   const calendar = person && <PersonCalendar personId={id} canOpenProjects={can(user?.role, 'programs:view')} />
 
+  if (isPending) return <PageSkeleton />
   if (error?.status === FORBIDDEN_STATUS)
     return (
       <PagePlaceholder
@@ -35,7 +37,7 @@ export function PersonDetailPage() {
     <div className="flex flex-col gap-6">
       <Section
         variant="page"
-        title={person?.name ?? t('Loading…')}
+        title={person?.name}
         description={
           person &&
           t('{expertise}, {hours} h per week, {nonProject} h of them non-project', {

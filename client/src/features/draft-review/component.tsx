@@ -1,4 +1,5 @@
 import { useCurrentUser } from '@/shared/auth'
+import { PageSkeleton } from '@/shared/components/page-skeleton'
 import { PagePlaceholder } from '@/shared/components/page-placeholder'
 import { useTranslation } from '@/shared/i18n'
 import { canEditDraft, useDraft } from '@/shared/staffing'
@@ -14,7 +15,7 @@ export function DraftReview({ draftId }: DraftReviewProps) {
   const { data: user } = useCurrentUser()
   const { data: draft, isPending } = useDraft(draftId)
 
-  if (isPending) return null
+  if (isPending) return <PageSkeleton />
   if (!draft)
     return (
       <PagePlaceholder

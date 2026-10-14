@@ -3,9 +3,12 @@ import { MetricBar } from '@/shared/components/metric-bar'
 import { useTranslation } from '@/shared/i18n'
 import { useProgramMembers, useProgramOverview, useProgramProjects } from '@/shared/programs'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
-import { cn } from '@/utils/functions'
+import { Skeleton } from '@/shared/ui/skeleton'
+import { LOADING_REVEAL_CLASS } from '@/utils/constants'
+import { cn, range } from '@/utils/functions'
 import { PreviewProjects } from './components/preview-projects'
 import type { ProgramPreviewProps } from './types'
+import { PREVIEW_FIGURES } from './constants'
 import { previewFigures } from './utils'
 
 /**
@@ -39,10 +42,24 @@ export function ProgramPreview({ programId }: ProgramPreviewProps) {
           />
         </dl>
       )}
+      {!overview && (
+        <div aria-busy className={cn('grid grid-cols-2 gap-4 sm:grid-cols-4', LOADING_REVEAL_CLASS)}>
+          {range(PREVIEW_FIGURES + 1).map((figure) => (
+            <div key={figure} className="flex flex-col gap-2">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+          ))}
+        </div>
+      )}
       <Tabs defaultValue="projects">
         <TabsList>
-          <TabsTrigger value="projects">{t('Projects ({count})', { count: projectList.length })}</TabsTrigger>
-          <TabsTrigger value="members">{t('Members ({count})', { count: memberList.length })}</TabsTrigger>
+          <TabsTrigger value="projects">
+            {projects.isPending ? t('Projects') : t('Projects ({count})', { count: projectList.length })}
+          </TabsTrigger>
+          <TabsTrigger value="members">
+            {members.isPending ? t('Members') : t('Members ({count})', { count: memberList.length })}
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="projects">
           <PreviewProjects projects={projectList} isPending={projects.isPending} programId={programId} />

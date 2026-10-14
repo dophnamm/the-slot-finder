@@ -72,7 +72,7 @@ export function PhaseDialog({ draft, canSave, busy, preview, onChange, onSave, o
             <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>
               {t('Cancel')}
             </Button>
-            <Button type="submit" disabled={!canSave || busy}>
+            <Button type="submit" disabled={!canSave} isLoading={busy}>
               {t('Save phase')}
             </Button>
           </DialogFooter>

@@ -1,6 +1,9 @@
 import { toast } from 'sonner'
 import { Section } from '@/shared/components/section'
 import { useTranslation } from '@/shared/i18n'
+import { Skeleton } from '@/shared/ui/skeleton'
+import { LOADING_REVEAL_CLASS } from '@/utils/constants'
+import { cn } from '@/utils/functions'
 import { CalendarFeedForm } from './components/calendar-feed-form'
 import { CalendarFeedStatus } from './components/calendar-feed-status'
 import type { CalendarFeedProps } from './types'
@@ -27,7 +30,16 @@ export function CalendarFeed({ personId }: CalendarFeedProps) {
       )}
       card
     >
-      {isPending && <p className="text-sm text-muted-foreground">{t('Loading…')}</p>}
+      {isPending && (
+        <div aria-busy className={cn('flex flex-col gap-3', LOADING_REVEAL_CLASS)}>
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-8 w-full max-w-xl" />
+          <Skeleton className="h-8 w-36" />
+          <span className="sr-only" role="status">
+            {t('Loading…')}
+          </span>
+        </div>
+      )}
       {state?.kind === 'disabled' && (
         <p className="text-sm text-muted-foreground">{t('Calendar sync is turned off on this server.')}</p>
       )}

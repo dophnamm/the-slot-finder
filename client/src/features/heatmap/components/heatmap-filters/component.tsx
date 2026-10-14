@@ -12,7 +12,7 @@ import { useHeatmapFilters } from '../../use-heatmap-filters'
 /** First week, number of weeks and expertise of the heatmap. */
 export function HeatmapFilters() {
   const { t } = useTranslation()
-  const { data: expertises = [] } = useExpertises()
+  const { data: expertises = [], isPending: expertisesLoading } = useExpertises()
   const { from, weeks, expertiseId, search, setFrom, setWeeks, setExpertiseId, setSearch } = useHeatmapFilters()
 
   const handleWeeksChange = (event: ChangeEvent<HTMLSelectElement>) => setWeeks(Number(event.target.value))
@@ -51,7 +51,12 @@ export function HeatmapFilters() {
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="heatmap-expertise">{t('Expertise')}</Label>
-        <NativeSelect id="heatmap-expertise" value={expertiseId} onChange={handleExpertiseChange}>
+        <NativeSelect
+          id="heatmap-expertise"
+          value={expertiseId}
+          isLoading={expertisesLoading}
+          onChange={handleExpertiseChange}
+        >
           <NativeSelectOption value="">{t('All expertises')}</NativeSelectOption>
           {expertises.map((expertise) => (
             <NativeSelectOption key={expertise.id} value={expertise.id}>

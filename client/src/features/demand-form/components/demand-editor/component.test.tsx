@@ -42,13 +42,13 @@ afterEach(() => {
 
 describe('DemandEditor', () => {
   it('lists the demand as plain rows, not as inputs', () => {
-    render(<DemandEditor project={PROJECT} expertises={EXPERTISES} editable />)
+    render(<DemandEditor project={PROJECT} expertises={EXPERTISES} expertisesLoading={false} editable />)
     expect(screen.getByText('Engineer')).toBeTruthy()
     expect(screen.queryByRole('spinbutton')).toBeNull()
   })
 
   it('adds a demand from a dialog and saves the whole list', async () => {
-    render(<DemandEditor project={PROJECT} expertises={EXPERTISES} editable />)
+    render(<DemandEditor project={PROJECT} expertises={EXPERTISES} expertisesLoading={false} editable />)
     fireEvent.click(screen.getByRole('button', { name: translate('Add demand') }))
     const dialog = await screen.findByRole('dialog')
     fireEvent.change(screen.getByLabelText(translate('Expertise')), { target: { value: 'e2' } })
@@ -64,7 +64,7 @@ describe('DemandEditor', () => {
   })
 
   it('edits a demand in the same dialog', async () => {
-    render(<DemandEditor project={PROJECT} expertises={EXPERTISES} editable />)
+    render(<DemandEditor project={PROJECT} expertises={EXPERTISES} expertisesLoading={false} editable />)
     fireEvent.click(screen.getByRole('button', { name: translate('Edit demand') }))
     await screen.findByRole('dialog')
     expect((screen.getByLabelText(translate('Budget hours')) as HTMLInputElement).value).toBe('320')

@@ -42,7 +42,7 @@ export function CalendarFeedForm({ personId, onConnect, pending, error }: Calend
         </p>
         {problem && <p className="text-sm text-destructive">{t(CALENDAR_FEED_ERROR_LABELS[problem])}</p>}
       </div>
-      <Button type="submit" className="self-start" disabled={pending}>
+      <Button type="submit" className="self-start" isLoading={pending}>
         {t('Connect calendar')}
       </Button>
     </form>

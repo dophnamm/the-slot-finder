@@ -19,8 +19,8 @@ export function NewScenarioDialog({ open, onOpenChange }: NewScenarioDialogProps
   const { t } = useTranslation()
   const navigate = useNavigate()
   const create = useCreateScenario()
-  const { data: projects = [] } = useOpenProjects()
-  const { data: people = [] } = usePeopleOptions()
+  const { data: projects = [], isPending: projectsLoading } = useOpenProjects()
+  const { data: people = [], isPending: peopleLoading } = usePeopleOptions()
   const [name, setName] = useState('')
   const [drafts, setDrafts] = useState<AssumptionDraft[]>(() => [newAssumption()])
 
@@ -65,6 +65,8 @@ export function NewScenarioDialog({ open, onOpenChange }: NewScenarioDialogProps
                 draft={draft}
                 projects={projects}
                 people={people}
+                projectsLoading={projectsLoading}
+                peopleLoading={peopleLoading}
                 removable={drafts.length > 1}
                 onChange={handleChange}
                 onRemove={handleRemove}
@@ -76,8 +78,8 @@ export function NewScenarioDialog({ open, onOpenChange }: NewScenarioDialogProps
             </Button>
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={!canCreate(name, drafts) || create.isPending}>
-              {create.isPending ? t('Computing…') : t('Create scenario')}
+            <Button type="submit" disabled={!canCreate(name, drafts)} isLoading={create.isPending}>
+              {t('Create scenario')}
             </Button>
           </DialogFooter>
         </form>

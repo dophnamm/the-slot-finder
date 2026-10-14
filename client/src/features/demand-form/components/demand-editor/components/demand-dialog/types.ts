@@ -8,6 +8,8 @@ export interface DemandDialogProps {
   /** The demand the form starts from; the dialog is remounted for each one. */
   initial: DemandDraft
   expertises: Expertise[]
+  /** The expertise catalogue is still loading. */
+  expertisesLoading: boolean
   project: ProjectDetail
   saving: boolean
   onSubmit: (draft: DemandDraft) => void

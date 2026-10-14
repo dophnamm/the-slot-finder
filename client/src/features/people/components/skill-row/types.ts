@@ -5,6 +5,8 @@ export interface SkillRowProps {
   skill: SkillInput
   /** The expertises this row may pick. */
   expertises: Expertise[]
+  /** The expertise catalogue is still loading. */
+  expertisesLoading: boolean
   onChange: (index: number, skill: SkillInput) => void
   onRemove: (index: number) => void
 }

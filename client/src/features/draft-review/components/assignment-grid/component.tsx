@@ -17,7 +17,7 @@ import { groupByDemand, lockChanges } from './utils'
 export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
   const { t } = useTranslation()
   const edit = useEditDraft(draft.id)
-  const { data: people = [] } = useStaffablePeople(editable)
+  const { data: people = [], isPending: peopleLoading } = useStaffablePeople(editable)
   const groups = groupByDemand(draft)
 
   const handleSetHours = (assignment: Assignment, week: string, hours: number) =>
@@ -55,6 +55,7 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
                 group={group}
                 weeks={draft.weeks}
                 people={people}
+                peopleLoading={peopleLoading}
                 editable={editable}
                 busy={edit.isPending}
                 onAdd={handleAdd}

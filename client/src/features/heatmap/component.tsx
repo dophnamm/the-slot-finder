@@ -1,13 +1,16 @@
 import { SearchX } from 'lucide-react'
 import { EmptyState } from '@/shared/components/empty-state'
 import { Section } from '@/shared/components/section'
+import { TableLoading } from '@/shared/components/table-loading'
 import { useDebouncedValue } from '@/shared/hooks'
 import { useTranslation } from '@/shared/i18n'
+import { Table, TableBody } from '@/shared/ui/table'
 import { SEARCH_DEBOUNCE_MS } from '@/utils/constants'
 import { addIsoWeeks } from '@/utils/functions'
 import { HeatmapFilters } from './components/heatmap-filters'
 import { HeatmapGrid } from './components/heatmap-grid'
 import { HeatmapLegend } from './components/heatmap-legend'
+import { HEATMAP_LOADING_ROWS } from './constants'
 import { useHeatmap } from './use-heatmap'
 import { useHeatmapFilters } from './use-heatmap-filters'
 import { filterRows } from './utils'
@@ -19,19 +22,30 @@ export function Heatmap() {
   const weeks = useHeatmapFilters((state) => state.weeks)
   const expertiseId = useHeatmapFilters((state) => state.expertiseId)
   const search = useHeatmapFilters((state) => state.search)
-  const { data, isPending } = useHeatmap({ from, to: addIsoWeeks(from, weeks - 1), expertise: expertiseId })
+  const { data, isPending, isPlaceholderData } = useHeatmap({
+    from,
+    to: addIsoWeeks(from, weeks - 1),
+    expertise: expertiseId,
+  })
   const query = useDebouncedValue(search, SEARCH_DEBOUNCE_MS)
   const rows = filterRows(data?.rows ?? [], query)
 
   return (
     <Section
+      refreshing={isPlaceholderData}
       title={t('Team heatmap')}
       description={t('Baseline load against capacity per person and ISO week. Click a cell to see its assignments.')}
       className="h-full min-h-0"
     >
       <HeatmapFilters />
       {data && rows.length > 0 && <HeatmapGrid data={{ ...data, rows }} expertiseId={expertiseId} />}
-      {isPending && <p className="py-6 text-center text-sm text-muted-foreground">{t('Loading…')}</p>}
+      {isPending && (
+        <Table>
+          <TableBody>
+            <TableLoading columns={weeks + 1} rows={HEATMAP_LOADING_ROWS} />
+          </TableBody>
+        </Table>
+      )}
       {data && rows.length === 0 && (
         <EmptyState
           framed

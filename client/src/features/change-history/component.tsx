@@ -14,11 +14,12 @@ import { HISTORY_PAGE_SIZE, HISTORY_TABLE_COLUMNS } from './constants'
 export function ChangeHistory() {
   const { t } = useTranslation()
   const [page, setPage] = useState(1)
-  const { data, isPending } = useEvents(undefined, page, HISTORY_PAGE_SIZE)
+  const { data, isPending, isPlaceholderData } = useEvents(undefined, page, HISTORY_PAGE_SIZE)
   const events = data?.data ?? []
 
   return (
     <Section
+      refreshing={isPlaceholderData}
       className="min-h-0 flex-1"
       title={t('Change history')}
       description={t(

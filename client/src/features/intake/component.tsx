@@ -14,11 +14,12 @@ import { INTAKE_STATUS, INTAKE_TABLE_COLUMNS } from './constants'
 export function IntakeQueue() {
   const { t } = useTranslation()
   const [page, setPage] = useState(1)
-  const { data, isPending } = useProjects(INTAKE_STATUS, page)
+  const { data, isPending, isPlaceholderData } = useProjects(INTAKE_STATUS, page)
   const projects = data?.data ?? []
 
   return (
     <Section
+      refreshing={isPlaceholderData}
       className="min-h-0 flex-1"
       title={t('Intake queue')}
       description={t('Incoming projects across programs, highest priority and earliest deadline first.')}

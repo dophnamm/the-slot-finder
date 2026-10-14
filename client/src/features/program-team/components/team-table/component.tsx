@@ -8,7 +8,7 @@ import { TeamMemberRow } from './components/team-member-row'
 import type { TeamTableProps } from './types'
 
 /** A program's team: each member's skills, and their hours, weeks and projects in the program's baseline. */
-export function TeamTable({ members, isPending, programId, canManage, busy, onRemove }: TeamTableProps) {
+export function TeamTable({ members, isPending, programId, canManage, removingId, onRemove }: TeamTableProps) {
   const { t } = useTranslation()
   const columns = TEAM_TABLE_COLUMNS + Number(canManage)
 
@@ -35,7 +35,7 @@ export function TeamTable({ members, isPending, programId, canManage, busy, onRe
             member={member}
             programId={programId}
             canManage={canManage}
-            busy={busy}
+            removing={removingId === member.person.id}
             onRemove={onRemove}
           />
         ))}

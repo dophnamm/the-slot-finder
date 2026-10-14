@@ -20,9 +20,9 @@ export function ProposeSquadButton({ projectId, status, programLeadId }: Propose
   if (!canStaff(user, [programLeadId]) || !PLANNABLE_STATUSES.includes(status)) return null
 
   return (
-    <Button variant="outline" size="sm" disabled={generate.isPending} onClick={handleClick}>
+    <Button variant="outline" size="sm" isLoading={generate.isPending} onClick={handleClick}>
       <Users />
-      {generate.isPending ? t('Proposing…') : t('Propose squad')}
+      {t('Propose squad')}
     </Button>
   )
 }

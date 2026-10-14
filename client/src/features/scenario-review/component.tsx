@@ -2,6 +2,7 @@ import { RefreshCw, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router'
 import { ROUTES } from '@/resources/routes'
 import { AssumptionText } from '@/shared/components/assumption-text'
+import { PageSkeleton } from '@/shared/components/page-skeleton'
 import { Section } from '@/shared/components/section'
 import { TextLink } from '@/shared/components/text-link'
 import { useTranslation } from '@/shared/i18n'
@@ -30,7 +31,7 @@ export function ScenarioReview({ scenarioId }: ScenarioReviewProps) {
     remove.mutate(undefined, { onSuccess: handleDeleted })
   }
 
-  if (isPending) return <p className="text-sm text-muted-foreground">{t('Loading…')}</p>
+  if (isPending) return <PageSkeleton />
   if (!scenario) return null
   const { summary } = scenario
 
@@ -58,11 +59,11 @@ export function ScenarioReview({ scenarioId }: ScenarioReviewProps) {
         }
         action={
           <>
-            <Button variant="outline" size="sm" disabled={busy} onClick={handleRerun}>
+            <Button variant="outline" size="sm" disabled={busy} isLoading={rerun.isPending} onClick={handleRerun}>
               <RefreshCw />
               {t('Run again')}
             </Button>
-            <Button variant="outline" size="sm" disabled={busy} onClick={handleDelete}>
+            <Button variant="outline" size="sm" disabled={busy} isLoading={remove.isPending} onClick={handleDelete}>
               <Trash2 />
               {t('Delete')}
             </Button>

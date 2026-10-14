@@ -10,6 +10,11 @@ export function ScenarioTrail({ scenarioId }: ScenarioTrailProps) {
   const { data: scenario } = useScenario(scenarioId)
 
   return (
-    <Trail crumbs={[{ label: t('Scenarios'), to: ROUTES.scenarios }, { label: scenario?.name ?? t('Loading…') }]} />
+    <Trail
+      crumbs={[
+        { label: t('Scenarios'), to: ROUTES.scenarios },
+        scenario ? { label: scenario.name } : { label: t('Loading…'), pending: true },
+      ]}
+    />
   )
 }

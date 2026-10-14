@@ -9,3 +9,6 @@ export const MAX_TIMELINE_WEEKS = 104
 
 /** Columns of the table; the loading and empty rows span them all. */
 export const PHASE_TABLE_COLUMNS = 5
+
+/** Skeleton rows while the project loads: a typical project has about three phases. */
+export const PHASE_LOADING_ROWS = 3

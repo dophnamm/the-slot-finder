@@ -43,7 +43,14 @@ export function AddMemberDialog({ open, programId, teamIds, onOpenChange }: AddM
           </DialogHeader>
           <div className="flex flex-col gap-2">
             <Label htmlFor="team-member">{t('Person')}</Label>
-            <NativeSelect id="team-member" className="w-full" value={personId} onChange={handleChange} required>
+            <NativeSelect
+              id="team-member"
+              className="w-full"
+              value={personId}
+              isLoading={isPending}
+              onChange={handleChange}
+              required
+            >
               <NativeSelectOption value="">{t('Choose a person')}</NativeSelectOption>
               {options.map((option) => (
                 <NativeSelectOption key={option.id} value={option.id}>
@@ -58,7 +65,7 @@ export function AddMemberDialog({ open, programId, teamIds, onOpenChange }: AddM
             )}
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={!personId || add.isPending}>
+            <Button type="submit" disabled={!personId} isLoading={add.isPending}>
               {t('Add member')}
             </Button>
           </DialogFooter>

@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router'
 import { PROGRAM_TABS, TAB_PARAM } from '@/resources/routes'
+import { PageSkeleton } from '@/shared/components/page-skeleton'
 import { PagePlaceholder } from '@/shared/components/page-placeholder'
 import { useProgram, useProgramOverview } from '@/shared/programs'
 import { useTranslation } from '@/shared/i18n'
@@ -24,7 +25,7 @@ export function ProgramOverview({ programId, projects, team }: ProgramOverviewPr
 
   const handleTabChange = (value: string) => setSearchParams({ [TAB_PARAM]: value }, { replace: true })
 
-  if (isPending) return null
+  if (isPending) return <PageSkeleton tabs={Object.keys(PROGRAM_TABS).length} />
   if (!program)
     return <PagePlaceholder title={t('Program not found')} description={t('There is no program at this address.')} />
 
@@ -38,8 +39,8 @@ export function ProgramOverview({ programId, projects, team }: ProgramOverviewPr
           <TabsTrigger value={PROGRAM_TABS.team}>{t('Team')}</TabsTrigger>
         </TabsList>
         <TabsContent value={PROGRAM_TABS.overview} className="flex flex-col gap-5">
-          {overview && <MetricsCard overview={overview} />}
-          {overview && <ExpertiseStaffing rows={overview.staffing_by_expertise} />}
+          <MetricsCard overview={overview} />
+          <ExpertiseStaffing rows={overview?.staffing_by_expertise ?? []} isPending={!overview} />
           <BriefCard program={program} />
         </TabsContent>
         <TabsContent value={PROGRAM_TABS.projects}>{projects}</TabsContent>

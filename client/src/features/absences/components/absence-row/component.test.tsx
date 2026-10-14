@@ -37,11 +37,11 @@ describe('AbsenceRow', () => {
     expect(onApprove).toHaveBeenCalledWith('a1')
   })
 
-  it('locks Approve while the approval runs, so a double click sends one request', () => {
+  it('shows Approve busy while the approval runs, so a double click sends one request', () => {
     const onApprove = vi.fn()
     renderRow(planned, onApprove, true)
-    const button = screen.getByRole('button', { name: 'Approve' }) as HTMLButtonElement
-    expect(button.disabled).toBe(true)
+    const button = screen.getByRole('button', { name: 'Approve' })
+    expect(button.getAttribute('aria-busy')).toBe('true')
     fireEvent.click(button)
     expect(onApprove).not.toHaveBeenCalled()
   })

@@ -19,7 +19,7 @@ export function PeopleTable({ canManage, onShowAbsences, actions }: PeopleTableP
   const [page, setPage] = useState(1)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Person | null>(null)
-  const { data, isPending } = usePeople(page)
+  const { data, isPending, isPlaceholderData } = usePeople(page)
   const people = data?.data ?? []
 
   const handleAdd = () => {
@@ -33,6 +33,7 @@ export function PeopleTable({ canManage, onShowAbsences, actions }: PeopleTableP
 
   return (
     <Section
+      refreshing={isPlaceholderData}
       className="min-h-0 flex-1"
       title={t('People')}
       description={t('Expertise, levels and weekly hours of everyone who can be staffed.')}

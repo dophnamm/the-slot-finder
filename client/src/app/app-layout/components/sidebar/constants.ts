@@ -11,3 +11,6 @@ export const NAV_ITEMS: NavItem[] = [
   { to: ROUTES.events, label: 'Events', icon: History, permission: 'events:view' },
   { to: ROUTES.mySchedule, label: 'My schedule', icon: CalendarDays, permission: 'my-schedule:view' },
 ]
+
+/** Skeleton links while the role, and so the menu, is still loading. */
+export const NAV_LOADING_ITEMS = 5

@@ -29,7 +29,15 @@ function renderRow(onAdd = vi.fn()) {
   render(
     <table>
       <tbody>
-        <GroupHeaderRow group={GROUP} weeks={['2026-W44']} people={PEOPLE} editable busy={false} onAdd={onAdd} />
+        <GroupHeaderRow
+          group={GROUP}
+          weeks={['2026-W44']}
+          people={PEOPLE}
+          peopleLoading={false}
+          editable
+          busy={false}
+          onAdd={onAdd}
+        />
       </tbody>
     </table>,
   )

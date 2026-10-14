@@ -90,7 +90,6 @@ export type LanguageKey = {
   'Company holiday {dates}': string
   'Company holiday {dates} removed': string
   'Company holidays': string
-  'Computing…': string
   'Connect calendar': string
   'Connected to': string
   'Could not finish signing in.': string
@@ -192,7 +191,6 @@ export type LanguageKey = {
   Import: string
   'Import the filled-in file': string
   'Import timesheet': string
-  'Importing…': string
   Inactive: string
   Incoming: string
   'Incoming projects across programs, highest priority and earliest deadline first.': string
@@ -287,6 +285,7 @@ export type LanguageKey = {
   'Outlook: Settings → Calendar → Shared calendars → Publish a calendar → ICS link.': string
   'Over-planned': string
   Overloaded: string
+  'Overloaded people': string
   'Overloaded people ({count})': string
   Overview: string
   'Page not found': string
@@ -337,7 +336,6 @@ export type LanguageKey = {
   'Projects added to a program wait here until a staffing draft covers them.': string
   'Projects that are understaffed, at risk or behind on delivery, and people over 100 % in the coming weeks.': string
   'Propose squad': string
-  'Proposing…': string
   'Put on hold': string
   'Re-plan': string
   Reason: string

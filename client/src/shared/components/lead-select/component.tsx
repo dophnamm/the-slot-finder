@@ -7,12 +7,12 @@ import type { LeadSelectProps } from './types'
 /** Picks a planner or manager to manage a program or lead a project. Only planners see it. */
 export function LeadSelect({ id, value, emptyLabel = 'No lead', onChange }: LeadSelectProps) {
   const { t } = useTranslation()
-  const { data: options = [] } = useLeadOptions(true)
+  const { data: options = [], isPending } = useLeadOptions(true)
 
   const handleChange = (event: ChangeEvent<HTMLSelectElement>) => onChange(event.target.value)
 
   return (
-    <NativeSelect id={id} className="w-full" value={value} onChange={handleChange}>
+    <NativeSelect id={id} className="w-full" value={value} isLoading={isPending} onChange={handleChange}>
       <NativeSelectOption value="">{t(emptyLabel)}</NativeSelectOption>
       {options.map((option) => (
         <NativeSelectOption key={option.id} value={option.id}>

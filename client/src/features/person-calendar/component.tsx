@@ -18,7 +18,7 @@ export function PersonCalendar({ personId, canOpenProjects }: PersonCalendarProp
   const [month, setMonth] = useState(currentMonth)
   const [selectedWeek, setSelectedWeek] = useState<string | null>(null)
   const weeks = monthIsoWeeks(month)
-  const { data: schedule, isPending } = useSchedule(personId, weeks[0], weeks[weeks.length - 1])
+  const { data: schedule, isPending, isPlaceholderData } = useSchedule(personId, weeks[0], weeks[weeks.length - 1])
   const workingWeekdays = schedule?.working_weekdays ?? []
   const days = daysByDate(schedule?.days ?? [])
   const selected = findWeek(schedule?.weeks ?? [], selectedWeek)
@@ -30,6 +30,7 @@ export function PersonCalendar({ personId, canOpenProjects }: PersonCalendarProp
 
   return (
     <Section
+      refreshing={isPlaceholderData}
       title={formatMonth(month)}
       description={t('Hours by week against capacity, with leave and holidays by day.')}
       action={<MonthNav month={month} onChange={handleMonthChange} />}

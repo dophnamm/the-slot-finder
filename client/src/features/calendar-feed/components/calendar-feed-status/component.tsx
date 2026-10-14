@@ -32,11 +32,11 @@ export function CalendarFeedStatus({ personId, calendar }: CalendarFeedStatusPro
         <p className="text-sm text-destructive">{t(CALENDAR_FEED_ERROR_LABELS[calendar.last_error])}</p>
       )}
       <div className="flex gap-2">
-        <Button variant="outline" onClick={handleSync} disabled={sync.isPending}>
+        <Button variant="outline" isLoading={sync.isPending} onClick={handleSync}>
           <RefreshCw />
           {t('Sync now')}
         </Button>
-        <Button variant="ghost" onClick={handleDisconnect} disabled={disconnect.isPending}>
+        <Button variant="ghost" isLoading={disconnect.isPending} onClick={handleDisconnect}>
           {t('Disconnect')}
         </Button>
       </div>

@@ -7,6 +7,7 @@ export interface TeamTableProps {
   programId: string
   /** Adds a column with Remove on each row. */
   canManage: boolean
-  busy: boolean
+  /** The member being removed: their row shows a spinner. */
+  removingId: string | undefined
   onRemove: (member: TeamMember) => void
 }

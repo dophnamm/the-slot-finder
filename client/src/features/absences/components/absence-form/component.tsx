@@ -116,7 +116,7 @@ export function AbsenceForm({ personId, canApprove, onCreated }: AbsenceFormProp
         )}
       </div>
       <DialogFooter>
-        <Button type="submit" disabled={!canSubmit(values) || create.isPending}>
+        <Button type="submit" disabled={!canSubmit(values)} isLoading={create.isPending}>
           {t('Add absence')}
         </Button>
       </DialogFooter>
