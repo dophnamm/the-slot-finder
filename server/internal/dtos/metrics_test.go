@@ -23,3 +23,14 @@ func TestNewProgressResponse_ActualHours(t *testing.T) {
 	assert.Contains(t, string(body), `"actual_hours":null`)
 	assert.Contains(t, string(body), `"burn_percent":null`)
 }
+
+func TestNewProgressResponse_UpcomingHours(t *testing.T) {
+	got := NewProgressResponse(metrics.Progress{NextWeekHours: 40, NextThreeWeeksHours: 90})
+	assert.InDelta(t, 40, got.NextWeekHours, 1e-9)
+	assert.InDelta(t, 90, got.NextThreeWeeksHours, 1e-9)
+
+	body, err := json.Marshal(got)
+	require.NoError(t, err)
+	assert.Contains(t, string(body), `"next_week_hours":40`)
+	assert.Contains(t, string(body), `"next_three_weeks_hours":90`)
+}

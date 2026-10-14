@@ -105,6 +105,9 @@ func TestInsightsService_ProjectMetrics(t *testing.T) {
 	assert.InDelta(t, 80, *byID[checkoutID].StaffingPercent, 1e-9)
 	assert.Nil(t, byID[loyaltyID].StaffingPercent, "a project without budget has no Staffing %")
 	assert.False(t, byID[loyaltyID].Understaffed)
+	assert.InDelta(t, 100, byID[checkoutID].NextWeekHours, 1e-9, "W47, the week after 15 Nov (W46)")
+	assert.InDelta(t, 160, byID[checkoutID].NextThreeWeeksHours, 1e-9, "W47 and W48; W44 and W45 are past")
+	assert.Zero(t, byID[loyaltyID].NextWeekHours)
 }
 
 func TestInsightsService_Risks(t *testing.T) {

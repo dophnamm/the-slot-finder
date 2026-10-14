@@ -1137,6 +1137,15 @@ definitions:
       gap_hours:
         example: 80
         type: number
+      next_three_weeks_hours:
+        example: 120
+        type: number
+      next_week_hours:
+        description: |-
+          NextWeekHours and NextThreeWeeksHours are the baseline hours in the week after the current
+          one, and in the three weeks after it.
+        example: 40
+        type: number
       over_planned:
         type: boolean
       past_end:
