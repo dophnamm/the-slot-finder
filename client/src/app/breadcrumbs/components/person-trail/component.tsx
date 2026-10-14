@@ -11,7 +11,7 @@ export function PersonTrail({ personId }: PersonTrailProps) {
   const { t } = useTranslation()
   const { data: user } = useCurrentUser()
   const { data: person } = usePerson(personId)
-  const peopleLink = can(user?.role, 'people:manage') ? ROUTES.people : undefined
+  const peopleLink = can(user?.role, 'people:view') ? ROUTES.people : undefined
 
   return <Trail crumbs={[{ label: t('People'), to: peopleLink }, { label: person?.name ?? t('Loading…') }]} />
 }

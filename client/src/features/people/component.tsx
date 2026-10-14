@@ -14,7 +14,7 @@ import type { PeopleTableProps, Person } from './types'
 import { usePeople } from './use-people'
 
 /** Everyone who can be staffed, with their skills; planners add and edit people here. */
-export function PeopleTable({ onShowAbsences, actions }: PeopleTableProps) {
+export function PeopleTable({ canManage, onShowAbsences, actions }: PeopleTableProps) {
   const { t } = useTranslation()
   const [page, setPage] = useState(1)
   const [formOpen, setFormOpen] = useState(false)
@@ -39,7 +39,7 @@ export function PeopleTable({ onShowAbsences, actions }: PeopleTableProps) {
       action={
         <div className="flex flex-wrap gap-2">
           {actions}
-          <Button onClick={handleAdd}>{t('Add person')}</Button>
+          {canManage && <Button onClick={handleAdd}>{t('Add person')}</Button>}
         </div>
       }
     >
@@ -59,7 +59,12 @@ export function PeopleTable({ onShowAbsences, actions }: PeopleTableProps) {
         </TableHeader>
         <TableBody>
           {people.map((person) => (
-            <PersonRow key={person.id} person={person} onEdit={handleEdit} onShowAbsences={onShowAbsences} />
+            <PersonRow
+              key={person.id}
+              person={person}
+              onEdit={canManage ? handleEdit : undefined}
+              onShowAbsences={onShowAbsences}
+            />
           ))}
           {isPending && <TableLoading columns={PEOPLE_TABLE_COLUMNS} />}
           {!isPending && people.length === 0 && (
@@ -72,7 +77,9 @@ export function PeopleTable({ onShowAbsences, actions }: PeopleTableProps) {
           )}
         </TableBody>
       </Table>
-      <PersonFormDialog key={editing?.id ?? 'new'} open={formOpen} person={editing} onOpenChange={setFormOpen} />
+      {canManage && (
+        <PersonFormDialog key={editing?.id ?? 'new'} open={formOpen} person={editing} onOpenChange={setFormOpen} />
+      )}
     </Section>
   )
 }

@@ -58,7 +58,7 @@ export const router = createBrowserRouter([
             ],
           },
           {
-            element: <RequirePermission permission="people:manage" />,
+            element: <RequirePermission permission="people:view" />,
             children: [{ path: ROUTES.people, Component: PeoplePage, handle: crumb('people') }],
           },
           {

@@ -56,11 +56,10 @@ describe('Breadcrumbs', () => {
     expect(screen.getByText('Alex Nguyen').getAttribute('aria-current')).toBe('page')
   })
 
-  it('shows People as plain text to a lead, who cannot open the People list', () => {
+  it('links People for a lead too, who may read the People list', () => {
     useCurrentUser.mockReturnValue({ data: { role: 'lead' } })
     renderAt('/people/u1')
-    expect(screen.queryByRole('link', { name: 'People' })).toBeNull()
-    expect(screen.getByText('People').getAttribute('aria-current')).toBeNull()
+    expect(screen.getByRole('link', { name: 'People' }).getAttribute('href')).toBe(ROUTES.people)
     expect(screen.getByText('Alex Nguyen').getAttribute('aria-current')).toBe('page')
   })
 })
