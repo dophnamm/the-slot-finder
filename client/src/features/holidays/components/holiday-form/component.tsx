@@ -55,6 +55,7 @@ export function HolidayForm({ onCreated }: HolidayFormProps) {
         <div className="flex flex-col gap-2">
           <Label htmlFor="holiday-hours">{t('Hours per day')}</Label>
           <Input
+            placeholder={t('e.g. 8')}
             id="holiday-hours"
             name="hours_per_day"
             type="number"

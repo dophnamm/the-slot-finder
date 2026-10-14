@@ -100,6 +100,7 @@ export function DemandDialog({
             <div className="flex flex-col gap-2">
               <Label htmlFor="demand-headcount">{t('Headcount')}</Label>
               <Input
+                placeholder={t('e.g. 2')}
                 id="demand-headcount"
                 name="headcount"
                 type="number"
@@ -114,6 +115,7 @@ export function DemandDialog({
             <div className="flex flex-col gap-2">
               <Label htmlFor="demand-hours">{t('Budget hours')}</Label>
               <Input
+                placeholder={t('e.g. 320')}
                 id="demand-hours"
                 name="total_hours"
                 type="number"

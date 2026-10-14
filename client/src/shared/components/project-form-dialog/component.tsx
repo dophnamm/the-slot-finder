@@ -53,7 +53,14 @@ export function ProjectFormDialog({ open, programId, project, onOpenChange }: Pr
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2 sm:col-span-2">
               <Label htmlFor="project-name">{t('Name')}</Label>
-              <Input id="project-name" name="name" value={values.name} onChange={handleChange} required />
+              <Input
+                placeholder={t('e.g. Checkout Revamp')}
+                id="project-name"
+                name="name"
+                value={values.name}
+                onChange={handleChange}
+                required
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="project-priority">{t('Priority')}</Label>
@@ -99,6 +106,7 @@ export function ProjectFormDialog({ open, programId, project, onOpenChange }: Pr
             <div className="flex flex-col gap-2">
               <Label htmlFor="project-scope">{t('Scope points')}</Label>
               <Input
+                placeholder={t('e.g. 120')}
                 id="project-scope"
                 name="scope_points"
                 type="number"
@@ -111,6 +119,7 @@ export function ProjectFormDialog({ open, programId, project, onOpenChange }: Pr
             <div className="flex flex-col gap-2">
               <Label htmlFor="project-done">{t('Done points')}</Label>
               <Input
+                placeholder={t('e.g. 0')}
                 id="project-done"
                 name="done_points"
                 type="number"

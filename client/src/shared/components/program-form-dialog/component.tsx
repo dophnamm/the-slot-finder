@@ -52,11 +52,25 @@ export function ProgramFormDialog({ open, program, onOpenChange, onSaved }: Prog
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <Label htmlFor="program-name">{t('Name')}</Label>
-              <Input id="program-name" name="name" value={values.name} onChange={handleChange} required />
+              <Input
+                placeholder={t('e.g. Acme Commerce Platform')}
+                id="program-name"
+                name="name"
+                value={values.name}
+                onChange={handleChange}
+                required
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="program-client">{t('Client')}</Label>
-              <Input id="program-client" name="client" value={values.client} onChange={handleChange} required />
+              <Input
+                placeholder={t('e.g. Acme Retail')}
+                id="program-client"
+                name="client"
+                value={values.client}
+                onChange={handleChange}
+                required
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="program-start">{t('Start date')}</Label>
@@ -81,6 +95,7 @@ export function ProgramFormDialog({ open, program, onOpenChange, onSaved }: Prog
             <div className="flex flex-col gap-2">
               <Label htmlFor="program-charter">{t('Charter link')}</Label>
               <Input
+                placeholder={t('e.g. https://docs.example.com/charter')}
                 id="program-charter"
                 name="charter_url"
                 type="url"
@@ -91,11 +106,23 @@ export function ProgramFormDialog({ open, program, onOpenChange, onSaved }: Prog
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="program-goal">{t('Goal')}</Label>
-            <Textarea id="program-goal" name="goal" value={values.goal} onChange={handleChange} />
+            <Textarea
+              placeholder={t('e.g. Move the online store to the new platform before the holidays.')}
+              id="program-goal"
+              name="goal"
+              value={values.goal}
+              onChange={handleChange}
+            />
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="program-objectives">{t('Objectives, one per line')}</Label>
-            <Textarea id="program-objectives" name="objectives" value={values.objectives} onChange={handleChange} />
+            <Textarea
+              placeholder={t('One objective per line, e.g. Ship the new checkout.')}
+              id="program-objectives"
+              name="objectives"
+              value={values.objectives}
+              onChange={handleChange}
+            />
           </div>
           <DialogFooter>
             <Button type="submit" disabled={!canSave(values) || save.isPending}>
