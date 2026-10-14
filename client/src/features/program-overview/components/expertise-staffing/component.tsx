@@ -2,14 +2,15 @@ import { ClipboardList } from 'lucide-react'
 import { MetricBar } from '@/shared/components/metric-bar'
 import { Section } from '@/shared/components/section'
 import { TableEmpty } from '@/shared/components/table-empty'
+import { TableLoading } from '@/shared/components/table-loading'
 import { useTranslation } from '@/shared/i18n'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 import { cn } from '@/utils/functions'
-import { STAFFING_TABLE_COLUMNS } from './constants'
+import { STAFFING_LOADING_ROWS, STAFFING_TABLE_COLUMNS } from './constants'
 import type { ExpertiseStaffingProps } from './types'
 
 /** Budget against planned hours per expertise across the program. */
-export function ExpertiseStaffing({ rows }: ExpertiseStaffingProps) {
+export function ExpertiseStaffing({ rows, isPending }: ExpertiseStaffingProps) {
   const { t } = useTranslation()
 
   return (
@@ -45,7 +46,8 @@ export function ExpertiseStaffing({ rows }: ExpertiseStaffingProps) {
               </TableCell>
             </TableRow>
           ))}
-          {rows.length === 0 && (
+          {isPending && <TableLoading columns={STAFFING_TABLE_COLUMNS} rows={STAFFING_LOADING_ROWS} />}
+          {!isPending && rows.length === 0 && (
             <TableEmpty columns={STAFFING_TABLE_COLUMNS} icon={ClipboardList} title={t('No demand yet.')} />
           )}
         </TableBody>

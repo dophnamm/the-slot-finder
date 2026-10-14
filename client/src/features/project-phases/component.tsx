@@ -5,13 +5,14 @@ import { useCurrentUser } from '@/shared/auth'
 import { canEditProject, type Phase, useProject, useReplacePhases, useUpdatePhase } from '@/shared/programs'
 import { Section } from '@/shared/components/section'
 import { TableEmpty } from '@/shared/components/table-empty'
+import { TableLoading } from '@/shared/components/table-loading'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 import { PhaseDialog } from './components/phase-dialog'
 import { PhaseRow } from './components/phase-row'
 import { PhaseTimeline } from './components/phase-timeline'
-import { PHASE_TABLE_COLUMNS } from './constants'
+import { PHASE_LOADING_ROWS, PHASE_TABLE_COLUMNS } from './constants'
 import type { PhaseDraft, ProjectPhasesProps } from './types'
 import {
   endsLate,
@@ -33,12 +34,25 @@ import {
 export function ProjectPhases({ projectId }: ProjectPhasesProps) {
   const { t } = useTranslation()
   const { data: user } = useCurrentUser()
-  const { data: project } = useProject(projectId)
+  const { data: project, isPending } = useProject(projectId)
   const [draft, setDraft] = useState<PhaseDraft | null>(null)
   const updatePhase = useUpdatePhase()
   const replacePhases = useReplacePhases(projectId)
   const busy = updatePhase.isPending || replacePhases.isPending
 
+  if (isPending)
+    return (
+      <Section
+        title={t('Phases')}
+        description={t('A later end week moves every later phase by the same number of weeks.')}
+      >
+        <Table>
+          <TableBody>
+            <TableLoading columns={PHASE_TABLE_COLUMNS} rows={PHASE_LOADING_ROWS} />
+          </TableBody>
+        </Table>
+      </Section>
+    )
   if (!project) return null
 
   const { phases } = project

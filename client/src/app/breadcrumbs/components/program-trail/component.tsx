@@ -9,5 +9,12 @@ export function ProgramTrail({ programId }: ProgramTrailProps) {
   const { t } = useTranslation()
   const { data: program } = useProgram(programId)
 
-  return <Trail crumbs={[{ label: t('Programs'), to: ROUTES.programs }, { label: program?.name ?? t('Loading…') }]} />
+  return (
+    <Trail
+      crumbs={[
+        { label: t('Programs'), to: ROUTES.programs },
+        program ? { label: program.name } : { label: t('Loading…'), pending: true },
+      ]}
+    />
+  )
 }

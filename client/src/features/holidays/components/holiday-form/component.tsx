@@ -69,7 +69,7 @@ export function HolidayForm({ onCreated }: HolidayFormProps) {
         </div>
       </div>
       <DialogFooter>
-        <Button type="submit" disabled={!canSubmit(values) || create.isPending}>
+        <Button type="submit" disabled={!canSubmit(values)} isLoading={create.isPending}>
           {t('Add holiday')}
         </Button>
       </DialogFooter>

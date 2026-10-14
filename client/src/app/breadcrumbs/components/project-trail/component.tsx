@@ -10,7 +10,15 @@ export function ProjectTrail({ projectId }: ProjectTrailProps) {
   const { t } = useTranslation()
   const { data: project } = useProject(projectId)
 
-  if (!project) return <Trail crumbs={[{ label: t('Programs'), to: ROUTES.programs }, { label: t('Loading…') }]} />
+  if (!project)
+    return (
+      <Trail
+        crumbs={[
+          { label: t('Programs'), to: ROUTES.programs },
+          { label: t('Loading…'), pending: true },
+        ]}
+      />
+    )
   const programPath = generatePath(ROUTES.programDetail, { id: project.program_id })
   return (
     <Trail

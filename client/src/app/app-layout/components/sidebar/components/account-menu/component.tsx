@@ -12,17 +12,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu'
+import { Skeleton } from '@/shared/ui/skeleton'
+import { LOADING_REVEAL_CLASS } from '@/utils/constants'
+import { cn } from '@/utils/functions'
 import { initials } from './utils'
 
 /** The signed-in person as one row; it opens a menu with the role and Sign out. */
 export function AccountMenu() {
   const { t } = useTranslation()
-  const { data: user } = useCurrentUser()
+  const { data: user, isPending } = useCurrentUser()
 
   const handleSignOut = () => {
     void signOut()
   }
 
+  if (isPending)
+    return (
+      <div aria-hidden className={cn('flex h-10 items-center gap-2.5 px-1.5', LOADING_REVEAL_CLASS)}>
+        <Skeleton className="size-7 shrink-0 rounded-full" />
+        <Skeleton className="h-3.5 w-28" />
+      </div>
+    )
   if (!user) return null
   const name = user.name || user.username
 

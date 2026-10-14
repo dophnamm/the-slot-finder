@@ -17,7 +17,7 @@ import { newDraft, phaseName, toDemandInput, toDrafts } from './utils'
  * The project's demand as a table. Adding or editing one opens a dialog, and saving it saves the whole
  * list at once, so every change shows in the table right away.
  */
-export function DemandEditor({ project, expertises, editable }: DemandEditorProps) {
+export function DemandEditor({ project, expertises, expertisesLoading, editable }: DemandEditorProps) {
   const { t } = useTranslation()
   const [editing, setEditing] = useState<DemandEdit | null>(null)
   const save = useReplaceDemands(project.id)
@@ -97,6 +97,7 @@ export function DemandEditor({ project, expertises, editable }: DemandEditorProp
           title={editing.index === null ? t('Add demand') : t('Edit demand')}
           initial={editing.draft}
           expertises={expertises}
+          expertisesLoading={expertisesLoading}
           project={project}
           saving={save.isPending}
           onSubmit={handleSubmit}

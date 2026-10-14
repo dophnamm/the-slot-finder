@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { ROUTES } from '@/resources/routes'
 import { useCurrentUser } from '@/shared/auth'
 import { ActionMenu } from '@/shared/components/action-menu'
+import { PageSkeleton } from '@/shared/components/page-skeleton'
 import { PagePlaceholder } from '@/shared/components/page-placeholder'
 import { ProjectFormDialog } from '@/shared/components/project-form-dialog'
 import { StatusBadge } from '@/shared/components/status-badge'
@@ -38,7 +39,7 @@ export function ProjectSummary({ projectId }: ProjectSummaryProps) {
   const handleDone = () => toast.success(t('Project updated.'))
   const handleAction = (next: ProjectAction) => action.mutate(next, { onSuccess: handleDone })
 
-  if (isPending) return null
+  if (isPending) return <PageSkeleton />
   if (!project)
     return <PagePlaceholder title={t('Project not found')} description={t('There is no project at this address.')} />
 

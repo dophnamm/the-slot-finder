@@ -130,7 +130,7 @@ export function ProgramFormDialog({ open, program, onOpenChange, onSaved }: Prog
             />
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={!canSave(values) || save.isPending}>
+            <Button type="submit" disabled={!canSave(values)} isLoading={save.isPending}>
               {t('Save')}
             </Button>
           </DialogFooter>

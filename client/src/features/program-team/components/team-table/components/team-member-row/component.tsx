@@ -11,7 +11,7 @@ import { formatIsoWeekSpan } from '@/utils/functions'
 import type { TeamMemberRowProps } from './types'
 
 /** One member: name, skills, hours and weeks in this program, its projects, and Remove for planners. */
-export function TeamMemberRow({ member, programId, canManage, busy, onRemove }: TeamMemberRowProps) {
+export function TeamMemberRow({ member, programId, canManage, removing, onRemove }: TeamMemberRowProps) {
   const { t } = useTranslation()
   const expertiseBadge = useExpertiseBadge()
   const { person } = member
@@ -67,7 +67,7 @@ export function TeamMemberRow({ member, programId, canManage, busy, onRemove }: 
             <Button
               variant="ghost"
               size="icon-sm"
-              disabled={busy}
+              isLoading={removing}
               aria-label={t('Remove {name} from the team', { name: person.name })}
               title={t('Remove {name} from the team', { name: person.name })}
               onClick={handleRemove}

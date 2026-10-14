@@ -7,7 +7,7 @@ import { SKILL_LEVELS } from '@/utils/constants'
 import { PRIMARY_RADIO_NAME } from './constants'
 import type { SkillRowProps } from './types'
 
-export function SkillRow({ index, skill, expertises, onChange, onRemove }: SkillRowProps) {
+export function SkillRow({ index, skill, expertises, expertisesLoading, onChange, onRemove }: SkillRowProps) {
   const { t } = useTranslation()
 
   const handleExpertiseChange = (event: ChangeEvent<HTMLSelectElement>) =>
@@ -23,6 +23,7 @@ export function SkillRow({ index, skill, expertises, onChange, onRemove }: Skill
         className="flex-1"
         aria-label={t('Expertise')}
         value={skill.expertise_id}
+        isLoading={expertisesLoading}
         onChange={handleExpertiseChange}
       >
         {expertises.map((expertise) => (

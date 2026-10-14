@@ -11,6 +11,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/shared/ui/breadcrumb'
+import { Skeleton } from '@/shared/ui/skeleton'
 import type { TrailProps } from './types'
 
 /** Renders a trail after a home icon: links up to the current page, which is plain text. */
@@ -29,7 +30,12 @@ export function Trail({ crumbs }: TrailProps) {
           <Fragment key={`${index}:${crumb.label}`}>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              {index === crumbs.length - 1 ? (
+              {crumb.pending ? (
+                <BreadcrumbPage>
+                  <Skeleton className="h-3.5 w-28" />
+                  <span className="sr-only">{crumb.label}</span>
+                </BreadcrumbPage>
+              ) : index === crumbs.length - 1 ? (
                 <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
               ) : crumb.to ? (
                 <BreadcrumbLink render={<Link to={crumb.to} />}>{crumb.label}</BreadcrumbLink>

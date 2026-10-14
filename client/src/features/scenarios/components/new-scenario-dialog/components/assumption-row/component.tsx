@@ -16,7 +16,16 @@ import { ASSUMPTION_TYPE_OPTIONS } from './constants'
 import type { AssumptionRowProps } from './types'
 
 /** One assumption: move a project by some weeks, or a person away for some dates. */
-export function AssumptionRow({ draft, projects, people, removable, onChange, onRemove }: AssumptionRowProps) {
+export function AssumptionRow({
+  draft,
+  projects,
+  people,
+  projectsLoading,
+  peopleLoading,
+  removable,
+  onChange,
+  onRemove,
+}: AssumptionRowProps) {
   const { t } = useTranslation()
 
   const handleTypeChange = (event: ChangeEvent<HTMLSelectElement>) =>
@@ -47,6 +56,7 @@ export function AssumptionRow({ draft, projects, people, removable, onChange, on
               name="project_id"
               aria-label={t('Project')}
               value={draft.project_id}
+              isLoading={projectsLoading}
               onChange={handleTextChange}
             >
               <NativeSelectOption value="">{t('Choose a project')}</NativeSelectOption>
@@ -82,6 +92,7 @@ export function AssumptionRow({ draft, projects, people, removable, onChange, on
               name="person_id"
               aria-label={t('Person')}
               value={draft.person_id}
+              isLoading={peopleLoading}
               onChange={handleTextChange}
             >
               <NativeSelectOption value="">{t('Choose a person')}</NativeSelectOption>

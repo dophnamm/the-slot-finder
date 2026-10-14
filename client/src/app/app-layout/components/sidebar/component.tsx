@@ -2,15 +2,19 @@ import { NavLink } from 'react-router'
 import { ROUTES } from '@/resources/routes'
 import { useCurrentUser } from '@/shared/auth'
 import { useTranslation } from '@/shared/i18n'
+import { Skeleton } from '@/shared/ui/skeleton'
+import { LOADING_REVEAL_CLASS } from '@/utils/constants'
+import { cn, range } from '@/utils/functions'
 import { AccountMenu } from './components/account-menu'
 import { Brand } from './components/brand'
+import { NAV_LOADING_ITEMS } from './constants'
 import type { SidebarProps } from './types'
 import { navLinkClassName, visibleNavItems } from './utils'
 
 /** The white column: the product, the pages the role may open, and the signed-in account at the bottom. */
 export function Sidebar({ onNavigate }: SidebarProps) {
   const { t } = useTranslation()
-  const { data: user } = useCurrentUser()
+  const { data: user, isPending } = useCurrentUser()
   const navItems = visibleNavItems(user?.role)
 
   return (
@@ -19,6 +23,13 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         <Brand />
       </div>
       <nav aria-label={t('Navigation')} className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-3">
+        {isPending &&
+          range(NAV_LOADING_ITEMS).map((item) => (
+            <div key={item} aria-hidden className={cn('flex h-10 items-center gap-2.5 px-3', LOADING_REVEAL_CLASS)}>
+              <Skeleton className="size-4 shrink-0" />
+              <Skeleton className="h-3.5 w-24" />
+            </div>
+          ))}
         {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to} end={to === ROUTES.dashboard} className={navLinkClassName} onClick={onNavigate}>
             <Icon className="size-4 shrink-0" />

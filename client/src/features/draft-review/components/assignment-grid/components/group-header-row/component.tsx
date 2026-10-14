@@ -22,7 +22,7 @@ import { personOptions } from './utils'
  * The demand above its assignments: what it needs, its weeks as a bar, and an "Add person" button for
  * planners that opens a dialog to pick the person.
  */
-export function GroupHeaderRow({ group, weeks, people, editable, busy, onAdd }: GroupHeaderRowProps) {
+export function GroupHeaderRow({ group, weeks, people, peopleLoading, editable, busy, onAdd }: GroupHeaderRowProps) {
   const { t } = useTranslation()
   const [personId, setPersonId] = useState('')
   const [open, setOpen] = useState(false)
@@ -92,6 +92,7 @@ export function GroupHeaderRow({ group, weeks, people, editable, busy, onAdd }: 
                     id={`add-person-${demand.id}`}
                     className="w-full"
                     value={personId}
+                    isLoading={peopleLoading}
                     onChange={handleChange}
                     required
                   >
@@ -109,7 +110,7 @@ export function GroupHeaderRow({ group, weeks, people, editable, busy, onAdd }: 
                   </p>
                 </div>
                 <DialogFooter>
-                  <Button type="submit" disabled={!personId || busy}>
+                  <Button type="submit" disabled={!personId} isLoading={busy}>
                     {t('Add person')}
                   </Button>
                 </DialogFooter>

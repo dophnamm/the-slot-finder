@@ -12,7 +12,11 @@ export function PersonTrail({ personId }: PersonTrailProps) {
   const { data: user } = useCurrentUser()
   const { data: person, error } = usePerson(personId)
   const peopleLink = can(user?.role, 'people:view') ? ROUTES.people : undefined
-  const fallback = error ? t('Person') : t('Loading…')
+  const current = person
+    ? { label: person.name }
+    : error
+      ? { label: t('Person') }
+      : { label: t('Loading…'), pending: true }
 
-  return <Trail crumbs={[{ label: t('People'), to: peopleLink }, { label: person?.name ?? fallback }]} />
+  return <Trail crumbs={[{ label: t('People'), to: peopleLink }, current]} />
 }

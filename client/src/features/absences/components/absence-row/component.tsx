@@ -33,7 +33,7 @@ export function AbsenceRow({ absence, onDelete, onApprove, approving = false }: 
       <TableCell>
         <div className="flex justify-end gap-2">
           {onApprove && absence.status === PLANNED_ABSENCE_STATUS && (
-            <Button variant="outline" size="sm" disabled={approving} onClick={handleApprove}>
+            <Button variant="outline" size="sm" isLoading={approving} onClick={handleApprove}>
               {t('Approve')}
             </Button>
           )}

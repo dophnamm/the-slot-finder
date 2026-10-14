@@ -49,7 +49,7 @@ export function ProgramTeam({ programId, canManage }: ProgramTeamProps) {
         isPending={isPending}
         programId={programId}
         canManage={canManage}
-        busy={remove.isPending}
+        removingId={remove.isPending ? remove.variables : undefined}
         onRemove={handleRemove}
       />
       {canManage && <AddMemberDialog open={adding} programId={programId} teamIds={teamIds} onOpenChange={setAdding} />}

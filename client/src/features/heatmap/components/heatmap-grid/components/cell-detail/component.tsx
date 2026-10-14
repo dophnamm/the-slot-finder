@@ -1,9 +1,12 @@
 import { useTranslation } from '@/shared/i18n'
 import { ASSIGNMENT_KIND_BADGE, ASSIGNMENT_KIND_LABELS } from '@/shared/staffing'
 import { Badge } from '@/shared/ui/badge'
-import { formatIsoWeekRange } from '@/utils/functions'
+import { Skeleton } from '@/shared/ui/skeleton'
+import { LOADING_REVEAL_CLASS } from '@/utils/constants'
+import { formatIsoWeekRange, range } from '@/utils/functions'
 import { BAND_LABELS } from '../../../../constants'
 import { usePersonWeek } from '../../../../use-heatmap'
+import { CELL_LOADING_ITEMS } from './constants'
 import type { CellDetailProps } from './types'
 import { weekHours } from './utils'
 
@@ -30,7 +33,24 @@ export function CellDetail({ cell, person }: CellDetailProps) {
       {cell.tentative && (
         <span className="text-xs text-muted-foreground">{t('Planned leave this week, not approved yet.')}</span>
       )}
-      {isPending && <span className="text-muted-foreground">{t('Loading…')}</span>}
+      {isPending && (
+        <div aria-busy className={LOADING_REVEAL_CLASS}>
+          <ul className="flex flex-col gap-2">
+            {range(CELL_LOADING_ITEMS).map((item) => (
+              <li key={item} className="flex items-start justify-between gap-2">
+                <div className="flex flex-1 flex-col gap-1.5">
+                  <Skeleton className="h-3.5 w-2/3" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+                <Skeleton className="h-3.5 w-10" />
+              </li>
+            ))}
+          </ul>
+          <span className="sr-only" role="status">
+            {t('Loading…')}
+          </span>
+        </div>
+      )}
       {!isPending && assignments.length === 0 && (
         <span className="text-muted-foreground">{t('No assignments this week.')}</span>
       )}

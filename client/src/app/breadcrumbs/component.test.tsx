@@ -27,7 +27,7 @@ function renderAt(path: string) {
     ],
     { initialEntries: [path] },
   )
-  render(<RouterProvider router={router} />)
+  return render(<RouterProvider router={router} />)
 }
 
 afterEach(cleanup)
@@ -65,6 +65,14 @@ describe('Breadcrumbs', () => {
     usePerson.mockReturnValueOnce({ data: undefined, error: { status: 403 } } as never)
     renderAt('/people/u9')
     expect(screen.getByText('Person').getAttribute('aria-current')).toBe('page')
+  })
+
+  it('shows a skeleton bar while the name of the person loads', () => {
+    useCurrentUser.mockReturnValue({ data: { role: 'planner' } })
+    usePerson.mockReturnValueOnce({ data: undefined, error: null } as never)
+    const { container } = renderAt('/people/u1')
+    expect(container.querySelector('[data-slot=skeleton]')).toBeTruthy()
+    expect(screen.queryByText('Alex Nguyen')).toBeNull()
   })
 
   it('links People for a lead too, who may read the People list', () => {

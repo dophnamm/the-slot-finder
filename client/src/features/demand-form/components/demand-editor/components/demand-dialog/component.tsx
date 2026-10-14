@@ -15,6 +15,7 @@ export function DemandDialog({
   title,
   initial,
   expertises,
+  expertisesLoading,
   project,
   saving,
   onSubmit,
@@ -56,6 +57,7 @@ export function DemandDialog({
                 name="expertise_id"
                 className="w-full"
                 value={draft.expertise_id}
+                isLoading={expertisesLoading}
                 onChange={handleChange}
               >
                 {expertises.map((expertise) => (
@@ -135,7 +137,7 @@ export function DemandDialog({
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={!isValidDraft(draft) || saving}>
+            <Button type="submit" disabled={!isValidDraft(draft)} isLoading={saving}>
               {t('Save demand')}
             </Button>
           </DialogFooter>

@@ -6,6 +6,8 @@ export interface GroupHeaderRowProps {
   /** Columns the header spans: the person column and every week. */
   weeks: string[]
   people: StaffablePerson[]
+  /** The people to add are still loading. */
+  peopleLoading: boolean
   editable: boolean
   busy: boolean
   onAdd: (demandId: string, personId: string) => void

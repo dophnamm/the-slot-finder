@@ -4,6 +4,8 @@ import type { ProjectDetail } from '@/shared/programs'
 export interface DemandEditorProps {
   project: ProjectDetail
   expertises: Expertise[]
+  /** The expertise catalogue is still loading. */
+  expertisesLoading: boolean
   editable: boolean
 }
 

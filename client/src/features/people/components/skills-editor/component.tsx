@@ -8,7 +8,7 @@ import type { SkillsEditorProps } from './types'
 import { addSkill, optionsForRow, removeSkill, replaceSkill } from './utils'
 
 /** Edits a person's skills: expertise, level 1–5 and which one is primary. */
-export function SkillsEditor({ skills, expertises, onChange }: SkillsEditorProps) {
+export function SkillsEditor({ skills, expertises, expertisesLoading, onChange }: SkillsEditorProps) {
   const { t } = useTranslation()
   const canAdd = skills.length < expertises.length
 
@@ -35,6 +35,7 @@ export function SkillsEditor({ skills, expertises, onChange }: SkillsEditorProps
           index={index}
           skill={skill}
           expertises={optionsForRow(skills, expertises, index)}
+          expertisesLoading={expertisesLoading}
           onChange={handleSkillChange}
           onRemove={handleRemove}
         />

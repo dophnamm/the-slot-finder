@@ -8,3 +8,6 @@ export const WEEK_COUNT_OPTIONS = [4, 8, 12, 26] as const
 
 export const HEATMAP_QUERY_NAME = 'heatmap'
 export const PERSON_WEEK_QUERY_NAME = 'person-week'
+
+/** Skeleton rows while the heatmap loads: about one screen of people. */
+export const HEATMAP_LOADING_ROWS = 8

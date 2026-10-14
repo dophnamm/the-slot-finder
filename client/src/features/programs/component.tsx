@@ -21,13 +21,14 @@ export function ProgramsTable({ onCreated }: ProgramsTableProps) {
   const { data: user } = useCurrentUser()
   const [page, setPage] = useState(1)
   const [formOpen, setFormOpen] = useState(false)
-  const { data, isPending } = usePrograms(page)
+  const { data, isPending, isPlaceholderData } = usePrograms(page)
   const programs = data?.data ?? []
 
   const handleNew = () => setFormOpen(true)
 
   return (
     <Section
+      refreshing={isPlaceholderData}
       className="min-h-0 flex-1"
       title={t('Programs')}
       description={t('Customer engagements and their projects.')}

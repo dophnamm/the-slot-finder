@@ -20,7 +20,7 @@ export function PersonFormDialog({ open, person, onOpenChange }: PersonFormDialo
   const { t } = useTranslation()
   const [values, setValues] = useState<PersonFormValues>(() => initialValues(person))
   const [skills, setSkills] = useState(() => initialSkills(person))
-  const { data: expertises = [] } = useExpertises()
+  const { data: expertises = [], isPending: expertisesLoading } = useExpertises()
   const save = useSavePerson()
   const roles = Object.values(ROLES)
 
@@ -162,9 +162,14 @@ export function PersonFormDialog({ open, person, onOpenChange }: PersonFormDialo
               />
             </div>
           </div>
-          <SkillsEditor skills={skills} expertises={expertises} onChange={setSkills} />
+          <SkillsEditor
+            skills={skills}
+            expertises={expertises}
+            expertisesLoading={expertisesLoading}
+            onChange={setSkills}
+          />
           <DialogFooter>
-            <Button type="submit" disabled={!canSave(values, skills) || save.isPending}>
+            <Button type="submit" disabled={!canSave(values, skills)} isLoading={save.isPending}>
               {t('Save')}
             </Button>
           </DialogFooter>

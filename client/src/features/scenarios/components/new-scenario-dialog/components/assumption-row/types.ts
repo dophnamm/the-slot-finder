@@ -6,6 +6,9 @@ export interface AssumptionRowProps {
   draft: AssumptionDraft
   projects: Project[]
   people: PersonOption[]
+  /** The project and person lists are still loading. */
+  projectsLoading: boolean
+  peopleLoading: boolean
   /** False for the last row: a scenario needs at least one assumption. */
   removable: boolean
   onChange: (draft: AssumptionDraft) => void

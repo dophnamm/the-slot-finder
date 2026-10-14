@@ -83,7 +83,7 @@ export function TimesheetImport() {
                   <Label htmlFor={FIELD_IDS.to}>{t('To week')}</Label>
                   <WeekPicker id={FIELD_IDS.to} name={RANGE_FIELDS.to} value={range.to} onChange={handleWeekChange} />
                 </div>
-                <Button type="button" variant="outline" disabled={download.isPending} onClick={handleDownload}>
+                <Button type="button" variant="outline" isLoading={download.isPending} onClick={handleDownload}>
                   {t('Download template')}
                 </Button>
               </div>
@@ -106,8 +106,8 @@ export function TimesheetImport() {
               </div>
             )}
             <DialogFooter>
-              <Button type="submit" disabled={!file || upload.isPending}>
-                {upload.isPending ? t('Importing…') : t('Import')}
+              <Button type="submit" disabled={!file} isLoading={upload.isPending}>
+                {t('Import')}
               </Button>
             </DialogFooter>
           </form>

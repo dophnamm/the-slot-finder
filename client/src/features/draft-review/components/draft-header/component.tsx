@@ -85,10 +85,10 @@ export function DraftHeader({ draft, editable }: DraftHeaderProps) {
         editable &&
         !draft.stale && (
           <>
-            <Button variant="outline" size="sm" disabled={busy} onClick={handleReject}>
+            <Button variant="outline" size="sm" disabled={busy} isLoading={reject.isPending} onClick={handleReject}>
               {t('Reject')}
             </Button>
-            <Button size="sm" disabled={busy} onClick={handleAccept}>
+            <Button size="sm" disabled={busy} isLoading={accept.isPending} onClick={handleAccept}>
               {t('Accept draft')}
             </Button>
           </>
@@ -145,7 +145,13 @@ export function DraftHeader({ draft, editable }: DraftHeaderProps) {
             )}
           </p>
           {canRegenerate && (
-            <Button variant="outline" size="sm" disabled={busy} onClick={handleRegenerate}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy}
+              isLoading={generate.isPending}
+              onClick={handleRegenerate}
+            >
               <RefreshCw />
               {t('Generate a new draft')}
             </Button>
