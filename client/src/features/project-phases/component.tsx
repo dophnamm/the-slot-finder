@@ -9,6 +9,7 @@ import { TableLoading } from '@/shared/components/table-loading'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { currentIsoWeek } from '@/utils/functions'
 import { PhaseDialog } from './components/phase-dialog'
 import { PhaseRow } from './components/phase-row'
 import { PhaseTimeline } from './components/phase-timeline'
@@ -64,6 +65,7 @@ export function ProjectPhases({ projectId }: ProjectPhasesProps) {
   const saved = previewPhases(phases, null)
   const savedWeeks = timelineWeeks(project, saved)
   const savedRows = timelineRows(phases, saved, savedWeeks)
+  const thisWeek = currentIsoWeek()
   const slip = slipOf(phases, draft)
   const late = draft !== null && endsLate(preview, project.deadline_week)
 
@@ -110,7 +112,12 @@ export function ProjectPhases({ projectId }: ProjectPhasesProps) {
       contentClassName="flex flex-col gap-4"
     >
       {savedRows.length > 0 && (
-        <PhaseTimeline weeks={savedWeeks} deadlineWeek={project.deadline_week} rows={savedRows} />
+        <PhaseTimeline
+          weeks={savedWeeks}
+          deadlineWeek={project.deadline_week}
+          currentWeek={thisWeek}
+          rows={savedRows}
+        />
       )}
       <Table>
         <TableHeader>
@@ -150,7 +157,9 @@ export function ProjectPhases({ projectId }: ProjectPhasesProps) {
           busy={busy}
           preview={
             <div className="flex flex-col gap-3">
-              {rows.length > 0 && <PhaseTimeline weeks={weeks} deadlineWeek={project.deadline_week} rows={rows} />}
+              {rows.length > 0 && (
+                <PhaseTimeline weeks={weeks} deadlineWeek={project.deadline_week} currentWeek={thisWeek} rows={rows} />
+              )}
               {slip.phases > 0 && (
                 <p className="text-sm">
                   {slip.weeks === 1

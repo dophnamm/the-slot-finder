@@ -423,6 +423,7 @@ export type LanguageKey = {
   'This cannot be undone. Continue?': string
   'This cannot be undone. Open projects of a cancelled program are cancelled too. Continue?': string
   'This draft has stretch assignments: people below the minimum level or without the expertise. Accept them anyway?': string
+  'This week': string
   Time: string
   Timeline: string
   'Timesheet file': string

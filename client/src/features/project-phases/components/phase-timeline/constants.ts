@@ -8,6 +8,9 @@ export const CELL_CLASSES: Record<CellState, string> = {
   vacated: 'bg-underused/20',
 }
 
+/** Outlines the cells of the current week in the link blue, inside the cell like the deadline ring. */
+export const CURRENT_WEEK_CELL_CLASS = 'outline-2 -outline-offset-2 outline-primary'
+
 /** Outlines every cell of the deadline week. */
 export const DEADLINE_CELL_CLASS = 'ring-2 ring-inset ring-destructive'
 
