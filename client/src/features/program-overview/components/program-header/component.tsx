@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useCurrentUser } from '@/shared/auth'
-import { ActionButton } from '@/shared/components/action-button'
+import { ActionMenu } from '@/shared/components/action-menu'
 import { ProgramFormDialog } from '@/shared/components/program-form-dialog'
 import { StatusBadge } from '@/shared/components/status-badge'
 import { Section } from '@/shared/components/section'
@@ -25,7 +25,14 @@ export function ProgramHeader({ program }: ProgramHeaderProps) {
   const [editing, setEditing] = useState(false)
   const action = useProgramAction(program.id)
   const editable = canEdit(user, [program.lead])
-  const actions = editable ? availableActions(PROGRAM_ACTIONS, program.status) : []
+  const menuItems = (editable ? availableActions(PROGRAM_ACTIONS, program.status) : []).map((name) => ({
+    action: name,
+    label: t(PROGRAM_ACTIONS[name].label),
+    destructive: name === 'cancel',
+    confirmText: CONFIRMED_PROGRAM_ACTIONS.includes(name)
+      ? t('This cannot be undone. Open projects of a cancelled program are cancelled too. Continue?')
+      : undefined,
+  }))
 
   const handleEdit = () => setEditing(true)
   const handleDone = () => toast.success(t('Program updated.'))
@@ -54,21 +61,7 @@ export function ProgramHeader({ program }: ProgramHeaderProps) {
                   {t('Edit')}
                 </Button>
               )}
-              {actions.map((name) => (
-                <ActionButton
-                  key={name}
-                  action={name}
-                  label={t(PROGRAM_ACTIONS[name].label)}
-                  destructive={name === 'cancel'}
-                  confirmText={
-                    CONFIRMED_PROGRAM_ACTIONS.includes(name)
-                      ? t('This cannot be undone. Open projects of a cancelled program are cancelled too. Continue?')
-                      : undefined
-                  }
-                  disabled={action.isPending}
-                  onAction={handleAction}
-                />
-              ))}
+              <ActionMenu items={menuItems} disabled={action.isPending} onAction={handleAction} />
             </>
           )
         }

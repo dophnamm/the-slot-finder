@@ -187,6 +187,7 @@ export type LanguageKey = {
   Members: string
   'Members ({count})': string
   'Minimum level': string
+  'More actions': string
   'Move a project': string
   Moved: string
   'Moved, not saved yet': string

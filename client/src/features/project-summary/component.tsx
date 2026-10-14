@@ -3,7 +3,7 @@ import { generatePath } from 'react-router'
 import { toast } from 'sonner'
 import { ROUTES } from '@/resources/routes'
 import { useCurrentUser } from '@/shared/auth'
-import { ActionButton } from '@/shared/components/action-button'
+import { ActionMenu } from '@/shared/components/action-menu'
 import { PagePlaceholder } from '@/shared/components/page-placeholder'
 import { ProjectFormDialog } from '@/shared/components/project-form-dialog'
 import { StatusBadge } from '@/shared/components/status-badge'
@@ -43,7 +43,12 @@ export function ProjectSummary({ projectId }: ProjectSummaryProps) {
     return <PagePlaceholder title={t('Project not found')} description={t('There is no project at this address.')} />
 
   const editable = canEdit(user, [project.lead, project.program_lead])
-  const actions = editable ? availableActions(PROJECT_ACTIONS, project.status) : []
+  const menuItems = (editable ? availableActions(PROJECT_ACTIONS, project.status) : []).map((name) => ({
+    action: name,
+    label: t(PROJECT_ACTIONS[name].label),
+    destructive: name === 'cancel',
+    confirmText: CONFIRMED_PROJECT_ACTIONS.includes(name) ? t('This cannot be undone. Continue?') : undefined,
+  }))
 
   return (
     <Section
@@ -64,19 +69,7 @@ export function ProjectSummary({ projectId }: ProjectSummaryProps) {
                 {t('Edit')}
               </Button>
             )}
-            {actions.map((name) => (
-              <ActionButton
-                key={name}
-                action={name}
-                label={t(PROJECT_ACTIONS[name].label)}
-                destructive={name === 'cancel'}
-                confirmText={
-                  CONFIRMED_PROJECT_ACTIONS.includes(name) ? t('This cannot be undone. Continue?') : undefined
-                }
-                disabled={action.isPending}
-                onAction={handleAction}
-              />
-            ))}
+            <ActionMenu items={menuItems} disabled={action.isPending} onAction={handleAction} />
           </>
         )
       }
