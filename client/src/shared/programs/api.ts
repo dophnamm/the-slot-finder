@@ -50,6 +50,15 @@ export function listProgramProjects(programId: string) {
   return request<Project[]>({ url: PROGRAM_ENDPOINTS.projects(programId) })
 }
 
+/** Sets the order of a program's projects, top first; their priorities follow it. */
+export function reorderProjects(programId: string, projectIds: string[]) {
+  return request<Project[]>({
+    url: PROGRAM_ENDPOINTS.projectOrder(programId),
+    method: 'PUT',
+    data: { project_ids: projectIds },
+  })
+}
+
 export function listProjects(status: ProjectStatus | undefined, page: number, pageSize: number) {
   return requestWithMeta<Project[]>({ url: PROJECT_ENDPOINTS.list, params: { status, page, page_size: pageSize } })
 }

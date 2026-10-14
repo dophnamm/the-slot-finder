@@ -124,6 +124,8 @@ export type LanguageKey = {
   'Draft created': string
   'Draft rejected.': string
   'Drafts for this program’s projects staff only people in its team.': string
+  'Drag a row to change the order: the top project has the highest priority.': string
+  'Drag to change the order, or use the arrow keys.': string
   'e.g. 0': string
   'e.g. 120': string
   'e.g. 2': string
@@ -216,6 +218,7 @@ export type LanguageKey = {
   'Minimum level': string
   'More actions': string
   'Move a project': string
+  'Move {name}': string
   Moved: string
   'Moved, not saved yet': string
   'My absences': string
@@ -320,7 +323,6 @@ export type LanguageKey = {
   'Previous month': string
   Primary: string
   'Primary expertise': string
-  Priority: string
   'Priority {priority}': string
   Problem: string
   Program: string
