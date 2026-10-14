@@ -3,29 +3,18 @@ import { ProgramMembers } from '@/features/program-members'
 import { ProgramOverview } from '@/features/program-overview'
 import { ProgramProjects } from '@/features/program-projects'
 import { ReplanBanner } from '@/features/replan-banner'
-import { useTranslation } from '@/shared/i18n'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
 
 export function ProgramDetailPage() {
   const { id = '' } = useParams()
-  const { t } = useTranslation()
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <ReplanBanner programId={id} />
-      <ProgramOverview programId={id} />
-      <Tabs defaultValue="projects">
-        <TabsList>
-          <TabsTrigger value="projects">{t('Projects')}</TabsTrigger>
-          <TabsTrigger value="members">{t('Members')}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="projects">
-          <ProgramProjects programId={id} />
-        </TabsContent>
-        <TabsContent value="members">
-          <ProgramMembers programId={id} />
-        </TabsContent>
-      </Tabs>
+      <ProgramOverview
+        programId={id}
+        projects={<ProgramProjects programId={id} />}
+        members={<ProgramMembers programId={id} />}
+      />
     </div>
   )
 }

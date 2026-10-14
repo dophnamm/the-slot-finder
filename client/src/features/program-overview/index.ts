@@ -1,2 +1,2 @@
 export { ProgramOverview } from './component'
-export type { ProgramOverviewProps } from './types'
+export type { ProgramOverviewProps, ProgramTab } from './types'
