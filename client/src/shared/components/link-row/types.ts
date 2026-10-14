@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react'
+import type { ComponentProps, ReactNode } from 'react'
 
-export interface LinkRowProps {
+/** A table row's own props (e.g. draggable and its drag events), except the click that opens the page. */
+export interface LinkRowProps extends Omit<ComponentProps<'tr'>, 'onClick' | 'children'> {
   /** The detail page the row opens. */
   to: string
   children: ReactNode
