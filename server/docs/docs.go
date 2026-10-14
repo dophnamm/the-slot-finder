@@ -5035,6 +5035,15 @@ const docTemplate = `{
                     "type": "number",
                     "example": 80
                 },
+                "next_three_weeks_hours": {
+                    "type": "number",
+                    "example": 120
+                },
+                "next_week_hours": {
+                    "description": "NextWeekHours and NextThreeWeeksHours are the baseline hours in the week after the current\none, and in the three weeks after it.",
+                    "type": "number",
+                    "example": 40
+                },
                 "over_planned": {
                     "type": "boolean"
                 },

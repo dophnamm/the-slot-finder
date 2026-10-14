@@ -181,3 +181,36 @@ func TestSumOptional(t *testing.T) {
 	assert.InDelta(t, 3, *SumOptional(nil, &three), 1e-9)
 	assert.InDelta(t, 8, *SumOptional(&five, &three), 1e-9)
 }
+
+func TestUpcomingHours(t *testing.T) {
+	allocations := []WeekHours{
+		{WeeksFromNow: -1, Hours: 40}, {WeeksFromNow: 0, Hours: 30}, {WeeksFromNow: 1, Hours: 20},
+		{WeeksFromNow: 1, Hours: 4}, {WeeksFromNow: 2, Hours: 10}, {WeeksFromNow: 3, Hours: 5}, {WeeksFromNow: 4, Hours: 99},
+	}
+	tests := []struct {
+		name        string
+		allocations []WeekHours
+		weeks       int
+		want        float64
+	}{
+		{name: "next week only, two allocations in it", allocations: allocations, weeks: 1, want: 24},
+		{name: "the three weeks after this one", allocations: allocations, weeks: 3, want: 39},
+		{name: "past and current weeks never count", allocations: allocations[:2], weeks: 3, want: 0},
+		{name: "no allocations", allocations: nil, weeks: 3, want: 0},
+		{name: "no weeks asked", allocations: allocations, weeks: 0, want: 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.InDelta(t, tt.want, UpcomingHours(tt.allocations, tt.weeks), 1e-9)
+		})
+	}
+}
+
+func TestCompute_UpcomingHours(t *testing.T) {
+	in := Input{BudgetHours: 400, PlannedHours: 320, Upcoming: []WeekHours{
+		{WeeksFromNow: 1, Hours: 40}, {WeeksFromNow: 2, Hours: 30}, {WeeksFromNow: 3, Hours: 20}, {WeeksFromNow: 4, Hours: 10},
+	}}
+	p := Compute(in, settings)
+	assert.InDelta(t, 40, p.NextWeekHours, 1e-9)
+	assert.InDelta(t, 90, p.NextThreeWeeksHours, 1e-9)
+}

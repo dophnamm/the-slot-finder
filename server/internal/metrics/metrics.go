@@ -13,6 +13,12 @@ const epsilon = 1e-6
 // hoursPerDay turns a duration into days for Time %.
 const hoursPerDay = 24
 
+// The spans of the upcoming planned hours: the week after the current one, and the three after it.
+const (
+	nextWeekSpan       = 1
+	nextThreeWeeksSpan = 3
+)
+
 // Settings are the thresholds the warnings use; the caller copies them from config.
 type Settings struct {
 	// ScopeLagThreshold is how many percentage points Scope % may trail Time % before the
@@ -43,6 +49,16 @@ type Input struct {
 	LastPhaseLate bool
 	// Closed is true when the work is finished or cancelled; it silences Past end.
 	Closed bool
+	// Upcoming is the baseline's allocations by how many weeks they are after the current
+	// week; the caller may leave out past weeks.
+	Upcoming []WeekHours
+}
+
+// WeekHours is planned hours in one ISO week, placed by its distance from the current week:
+// 0 is the current week, 1 the next one, negative a past week.
+type WeekHours struct {
+	WeeksFromNow int
+	Hours        float64
 }
 
 // Progress is the metrics and warnings of one project or program. A ratio with a zero
@@ -67,6 +83,10 @@ type Progress struct {
 	OverPlanned      bool
 	// PastEnd is Time % over 100 while the work is not closed.
 	PastEnd bool
+	// NextWeekHours and NextThreeWeeksHours are the planned hours in the week after the
+	// current one, and in the three weeks after it.
+	NextWeekHours       float64
+	NextThreeWeeksHours float64
 }
 
 // Compute applies every formula and warning to the input.
@@ -77,17 +97,19 @@ func Compute(in Input, s Settings) Progress {
 		gap = 0
 	}
 	p := Progress{
-		TimePercent:        TimePercent(in.Start, in.End, in.Today),
-		ScopePercent:       Percent(in.DonePoints, in.ScopePoints),
-		StaffingPercent:    Percent(in.PlannedHours, in.BudgetHours),
-		PlannedBurnPercent: Percent(in.PlannedToDateHours, in.BudgetHours),
-		BudgetHours:        in.BudgetHours,
-		PlannedHours:       in.PlannedHours,
-		ForecastHours:      forecast,
-		GapHours:           gap,
-		PlannedToDateHours: in.PlannedToDateHours,
-		Understaffed:       gap > epsilon,
-		OverPlanned:        in.PlannedHours > in.BudgetHours+epsilon,
+		TimePercent:         TimePercent(in.Start, in.End, in.Today),
+		ScopePercent:        Percent(in.DonePoints, in.ScopePoints),
+		StaffingPercent:     Percent(in.PlannedHours, in.BudgetHours),
+		PlannedBurnPercent:  Percent(in.PlannedToDateHours, in.BudgetHours),
+		BudgetHours:         in.BudgetHours,
+		PlannedHours:        in.PlannedHours,
+		ForecastHours:       forecast,
+		GapHours:            gap,
+		PlannedToDateHours:  in.PlannedToDateHours,
+		Understaffed:        gap > epsilon,
+		OverPlanned:         in.PlannedHours > in.BudgetHours+epsilon,
+		NextWeekHours:       UpcomingHours(in.Upcoming, nextWeekSpan),
+		NextThreeWeeksHours: UpcomingHours(in.Upcoming, nextThreeWeeksSpan),
 	}
 	if in.ActualHours != nil {
 		actual := *in.ActualHours
@@ -98,6 +120,18 @@ func Compute(in Input, s Settings) Progress {
 	p.AtRisk = AtRisk(gap, in.WeeksToDeadline, s.AlertHorizonWeeks, in.LastPhaseLate)
 	p.PastEnd = !in.Closed && p.TimePercent != nil && *p.TimePercent > 100+epsilon
 	return p
+}
+
+// UpcomingHours sums the planned hours of the `weeks` weeks after the current week; the current
+// and past weeks never count.
+func UpcomingHours(allocations []WeekHours, weeks int) float64 {
+	total := 0.0
+	for _, a := range allocations {
+		if a.WeeksFromNow >= 1 && a.WeeksFromNow <= weeks {
+			total += a.Hours
+		}
+	}
+	return total
 }
 
 // Percent is part ÷ whole × 100, or nil when whole is 0.

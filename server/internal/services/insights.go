@@ -283,6 +283,8 @@ func keepsExpertise(row models.HeatmapRow, expertiseID string) bool {
 type plannedHours struct {
 	total  float64
 	toDate float64
+	// upcoming are the allocations after the current week, for the next weeks' planned hours.
+	upcoming []metrics.WeekHours
 }
 
 func plannedByDemand(assignments []models.Assignment, current isoweek.Week) map[string]plannedHours {
@@ -293,6 +295,9 @@ func plannedByDemand(assignments []models.Assignment, current isoweek.Week) map[
 			hours.total += alloc.Hours
 			if !alloc.Week.After(current) {
 				hours.toDate += alloc.Hours
+			} else {
+				hours.upcoming = append(hours.upcoming,
+					metrics.WeekHours{WeeksFromNow: isoweek.WeeksBetween(current, alloc.Week), Hours: alloc.Hours})
 			}
 		}
 		out[a.DemandID] = hours
@@ -320,6 +325,7 @@ func (s *insightsService) projectInput(p models.Project, planned map[string]plan
 		in.BudgetHours += d.TotalHours
 		in.PlannedHours += planned[d.ID].total
 		in.PlannedToDateHours += planned[d.ID].toDate
+		in.Upcoming = append(in.Upcoming, planned[d.ID].upcoming...)
 	}
 	if hours, ok := actual[p.ID]; ok {
 		in.ActualHours = &hours
@@ -374,6 +380,7 @@ func (s *insightsService) ProgramOverview(ctx context.Context, programID string)
 		in.BudgetHours += pin.BudgetHours
 		in.PlannedHours += pin.PlannedHours
 		in.PlannedToDateHours += pin.PlannedToDateHours
+		in.Upcoming = append(in.Upcoming, pin.Upcoming...)
 		in.ActualHours = metrics.SumOptional(in.ActualHours, pin.ActualHours)
 		in.LastPhaseLate = in.LastPhaseLate || metrics.Compute(pin, s.settings()).AtRisk
 		for _, d := range p.Demands {

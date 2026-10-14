@@ -25,6 +25,10 @@ type ProgressResponse struct {
 	AtRisk           bool     `json:"at_risk"`
 	OverPlanned      bool     `json:"over_planned"`
 	PastEnd          bool     `json:"past_end"`
+	// NextWeekHours and NextThreeWeeksHours are the baseline hours in the week after the current
+	// one, and in the three weeks after it.
+	NextWeekHours       float64 `json:"next_week_hours" example:"40"`
+	NextThreeWeeksHours float64 `json:"next_three_weeks_hours" example:"120"`
 }
 
 // NewProgressResponse maps computed metrics.
@@ -34,7 +38,7 @@ func NewProgressResponse(p metrics.Progress) ProgressResponse {
 		ForecastHours: p.ForecastHours, GapHours: p.GapHours, PlannedToDateHours: p.PlannedToDateHours,
 		ActualHours: p.ActualHours, BurnPercent: p.BurnPercent,
 		BehindOnDelivery: p.BehindOnDelivery, Understaffed: p.Understaffed, AtRisk: p.AtRisk, OverPlanned: p.OverPlanned,
-		PastEnd: p.PastEnd}
+		PastEnd: p.PastEnd, NextWeekHours: p.NextWeekHours, NextThreeWeeksHours: p.NextThreeWeeksHours}
 }
 
 // ExpertiseStaffingResponse is budget against planned hours for one expertise.
