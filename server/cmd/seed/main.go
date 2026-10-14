@@ -138,8 +138,9 @@ func seedHolidays(tx *gorm.DB) error {
 			FromDate: h.from, ToDate: h.to, HoursPerDay: h.hoursPerDay,
 			Type: constants.AbsenceTypeHoliday, Status: constants.AbsenceStatusApproved,
 		}
+		// Assign keeps the name current on a holiday seeded before holidays had names.
 		err := tx.Where("person_id IS NULL AND from_date = ? AND to_date = ?", h.from, h.to).
-			Attrs(row).FirstOrCreate(&row).Error
+			Attrs(row).Assign(models.Absence{Name: h.name}).FirstOrCreate(&row).Error
 		if err != nil {
 			return fmt.Errorf("holiday %s: %w", h.from.Format(constants.DateLayout), err)
 		}

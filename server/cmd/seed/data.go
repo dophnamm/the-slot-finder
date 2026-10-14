@@ -39,6 +39,7 @@ type seedAbsence struct {
 }
 
 type seedHoliday struct {
+	name        string
 	from, to    time.Time
 	hoursPerDay float64
 }
@@ -99,7 +100,7 @@ var absences = []seedAbsence{
 }
 
 var holidays = []seedHoliday{
-	{from: day(2026, time.December, 24), to: day(2026, time.December, 24), hoursPerDay: 4},
-	{from: day(2026, time.December, 25), to: day(2026, time.December, 25), hoursPerDay: 8},
-	{from: day(2027, time.January, 1), to: day(2027, time.January, 1), hoursPerDay: 8},
+	{name: "Christmas Eve", from: day(2026, time.December, 24), to: day(2026, time.December, 24), hoursPerDay: 4},
+	{name: "Christmas Day", from: day(2026, time.December, 25), to: day(2026, time.December, 25), hoursPerDay: 8},
+	{name: "New Year's Day", from: day(2027, time.January, 1), to: day(2027, time.January, 1), hoursPerDay: 8},
 }

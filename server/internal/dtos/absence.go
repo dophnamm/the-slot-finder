@@ -1,6 +1,10 @@
 package dtos
 
-import "the-slot-finder/server/internal/models"
+import (
+	"strings"
+
+	"the-slot-finder/server/internal/models"
+)
 
 // CreateAbsenceRequest is the body of POST /people/{id}/absences. Dates use the 2026-10-12
 // format and are inclusive. status is honoured for planners; others always report planned.
@@ -14,15 +18,21 @@ type CreateAbsenceRequest struct {
 
 // CreateHolidayRequest is the body of POST /holidays.
 type CreateHolidayRequest struct {
+	Name        string  `json:"name" validate:"max=100" example:"Christmas Day"`
 	FromDate    string  `json:"from_date" validate:"required,isodate" example:"2026-12-24"`
 	ToDate      string  `json:"to_date" validate:"required,isodate" example:"2026-12-25"`
 	HoursPerDay float64 `json:"hours_per_day" validate:"gt=0,lte=24" example:"8"`
 }
 
+// Normalize trims the name.
+func (r *CreateHolidayRequest) Normalize() { r.Name = strings.TrimSpace(r.Name) }
+
 // AbsenceResponse is an absence or a holiday (person_id null).
 type AbsenceResponse struct {
-	ID          string  `json:"id"`
-	PersonID    *string `json:"person_id"`
+	ID       string  `json:"id"`
+	PersonID *string `json:"person_id"`
+	// Name says what a holiday is; empty for leave.
+	Name        string  `json:"name" example:"National Day"`
 	FromDate    string  `json:"from_date" example:"2026-10-19"`
 	ToDate      string  `json:"to_date" example:"2026-10-23"`
 	HoursPerDay float64 `json:"hours_per_day" example:"8"`
@@ -36,6 +46,7 @@ func NewAbsenceResponse(a models.Absence) AbsenceResponse {
 	return AbsenceResponse{
 		ID:          a.ID,
 		PersonID:    a.PersonID,
+		Name:        a.Name,
 		FromDate:    *FormatDate(&a.FromDate),
 		ToDate:      *FormatDate(&a.ToDate),
 		HoursPerDay: a.HoursPerDay,
