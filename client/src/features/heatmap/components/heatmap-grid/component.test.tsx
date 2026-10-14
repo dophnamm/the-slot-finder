@@ -14,6 +14,7 @@ const cell = (week: string, overrides: Partial<HeatmapCell>): HeatmapCell => ({
   band: 'underused',
   tentative: false,
   by_expertise: [],
+  actual_hours: null,
   ...overrides,
 })
 

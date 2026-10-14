@@ -22,6 +22,8 @@ export interface HeatmapCell {
   /** Planned (not yet approved) absence this week. */
   tentative: boolean
   by_expertise: ExpertiseHours[]
+  /** Hours worked that week from imported timesheets; null when nothing was imported. */
+  actual_hours: number | null
 }
 
 export interface HeatmapRow {

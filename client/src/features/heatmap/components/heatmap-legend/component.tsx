@@ -1,6 +1,6 @@
 import { useTranslation } from '@/shared/i18n'
 import { cn } from '@/utils/functions'
-import { BAND_CLASSES, BAND_LABELS, BAND_ORDER } from '../../constants'
+import { BAND_CLASSES, BAND_LABELS, BAND_ORDER, WORKED_CELL_CLASS } from '../../constants'
 
 /** What each cell colour and the stripes mean. */
 export function HeatmapLegend() {
@@ -17,6 +17,10 @@ export function HeatmapLegend() {
       <span className="flex items-center gap-1.5">
         <span className="size-3 rounded-sm border bg-hatched" />
         {t('Planned leave, not approved yet')}
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span className={cn('size-3 rounded-sm bg-muted', WORKED_CELL_CLASS)} />
+        {t('Past weeks show worked hours when a timesheet was imported.')}
       </span>
     </div>
   )

@@ -4,6 +4,7 @@ import { TextLink } from '@/shared/components/text-link'
 import { useTranslation } from '@/shared/i18n'
 import { Badge } from '@/shared/ui/badge'
 import { TableCell, TableRow } from '@/shared/ui/table'
+import { workedHours } from '../../../../utils'
 import { PERSON_COLUMN_CLASS } from '../../constants'
 import { HeatmapCell } from '../heatmap-cell'
 import type { HeatmapRowProps } from './types'
@@ -22,7 +23,13 @@ export function HeatmapRow({ row, expertiseId, currentWeek }: HeatmapRowProps) {
         </div>
       </TableCell>
       {row.cells.map((cell) => (
-        <HeatmapCell key={cell.week} cell={cell} person={row.person} current={cell.week === currentWeek} />
+        <HeatmapCell
+          key={cell.week}
+          cell={cell}
+          person={row.person}
+          current={cell.week === currentWeek}
+          worked={workedHours(cell, currentWeek)}
+        />
       ))}
     </TableRow>
   )
