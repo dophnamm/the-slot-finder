@@ -50,11 +50,12 @@ func NewHTTPServer(lc fx.Lifecycle,
 	timesheetHandler *handlers.TimesheetHandler,
 	calendarFeedHandler *handlers.CalendarFeedHandler,
 	teamHandler *handlers.ProgramTeamHandler,
+	holidayImportHandler *handlers.HolidayImportHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 	db *db.PostgresDB,
 ) *http.Server {
-	handler := routes.Router(healthHandler, identityHandler, personHandler, absenceHandler, programHandler, projectHandler, planHandler, staffingHandler, insightsHandler, eventHandler, scenarioHandler, scheduleHandler, timesheetHandler, calendarFeedHandler, teamHandler, verifier, cfg)
+	handler := routes.Router(healthHandler, identityHandler, personHandler, absenceHandler, programHandler, projectHandler, planHandler, staffingHandler, insightsHandler, eventHandler, scenarioHandler, scheduleHandler, timesheetHandler, calendarFeedHandler, teamHandler, holidayImportHandler, verifier, cfg)
 
 	srv := &http.Server{
 		Addr:              cfg.AppHTTPServer,
@@ -188,6 +189,7 @@ func appOptions(cfg *config.Config) []fx.Option {
 			services.ProvideTeamAuthzService,
 			services.ProvideTeamLookup,
 			services.ProvideProgramTeamService,
+			services.ProvideHolidayImportService,
 			repositories.ProvidePersonRepository,
 			repositories.ProvideAbsenceRepository,
 			repositories.ProvideProgramRepository,
@@ -229,6 +231,7 @@ func appOptions(cfg *config.Config) []fx.Option {
 			handlers.ProvideTimesheetHandler,
 			handlers.ProvideCalendarFeedHandler,
 			handlers.ProvideProgramTeamHandler,
+			handlers.ProvideHolidayImportHandler,
 		),
 		fx.Invoke(func(*http.Server) {}),
 		fx.Invoke(registerBaselineHook),

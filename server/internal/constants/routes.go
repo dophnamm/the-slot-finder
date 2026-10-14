@@ -22,6 +22,7 @@ const (
 	PathPersonCalendarFeed     = "/people/:id/calendar-feed"
 	PathPersonCalendarFeedSync = "/people/:id/calendar-feed/sync"
 	PathHolidays               = "/holidays"
+	PathHolidayImport          = "/holidays/import"
 
 	PathPrograms        = "/programs"
 	PathProgram         = "/programs/:id"
@@ -65,4 +66,4 @@ const (
 
 // SecretBodyPaths are routes whose request body holds a secret (a calendar link). The request
 // log and error reports keep a placeholder instead of the body, even when the request is refused.
-var SecretBodyPaths = []string{PathAPIBase + PathPersonCalendarFeed}
+var SecretBodyPaths = []string{PathAPIBase + PathPersonCalendarFeed, PathAPIBase + PathHolidayImport}
