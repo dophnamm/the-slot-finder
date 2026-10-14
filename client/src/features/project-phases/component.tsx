@@ -60,6 +60,10 @@ export function ProjectPhases({ projectId }: ProjectPhasesProps) {
   const preview = previewPhases(phases, draft)
   const weeks = timelineWeeks(project, preview)
   const rows = timelineRows(phases, preview, weeks)
+  // The page shows the saved phases; an unsaved change is previewed in the dialog only.
+  const saved = previewPhases(phases, null)
+  const savedWeeks = timelineWeeks(project, saved)
+  const savedRows = timelineRows(phases, saved, savedWeeks)
   const slip = slipOf(phases, draft)
   const late = draft !== null && endsLate(preview, project.deadline_week)
 
@@ -105,7 +109,9 @@ export function ProjectPhases({ projectId }: ProjectPhasesProps) {
       }
       contentClassName="flex flex-col gap-4"
     >
-      {rows.length > 0 && <PhaseTimeline weeks={weeks} deadlineWeek={project.deadline_week} rows={rows} />}
+      {savedRows.length > 0 && (
+        <PhaseTimeline weeks={savedWeeks} deadlineWeek={project.deadline_week} rows={savedRows} />
+      )}
       <Table>
         <TableHeader>
           <TableRow>
