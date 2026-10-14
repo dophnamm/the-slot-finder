@@ -39,7 +39,15 @@ export function PhaseDialog({ draft, canSave, busy, preview, onChange, onSave, o
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="flex flex-col gap-2">
               <Label htmlFor="phase-name">{t('Phase name')}</Label>
-              <Input id="phase-name" name="name" value={draft.name} onChange={handleChange} required autoFocus />
+              <Input
+                placeholder={t('e.g. Discovery')}
+                id="phase-name"
+                name="name"
+                value={draft.name}
+                onChange={handleChange}
+                required
+                autoFocus
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="phase-start">{t('Start week')}</Label>

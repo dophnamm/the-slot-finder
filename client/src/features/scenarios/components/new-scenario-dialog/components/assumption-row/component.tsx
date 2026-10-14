@@ -60,6 +60,7 @@ export function AssumptionRow({ draft, projects, people, removable, onChange, on
           <div className="flex flex-col gap-1">
             <span className="text-xs text-muted-foreground">{t('Weeks (minus is earlier)')}</span>
             <Input
+              placeholder={t('e.g. 2')}
               name="weeks"
               type="number"
               className="w-28"
@@ -108,6 +109,7 @@ export function AssumptionRow({ draft, projects, people, removable, onChange, on
           <div className="flex flex-col gap-1">
             <span className="text-xs text-muted-foreground">{t('Hours per day')}</span>
             <Input
+              placeholder={t('e.g. 8')}
               name="hours_per_day"
               type="number"
               className="w-24"

@@ -35,6 +35,15 @@ const NO_NATIVE_DATE_INPUTS = [
   },
 ]
 
+const INPUTS_NEED_PLACEHOLDER = [
+  {
+    // Text and number fields show what to type; file, hidden, checkbox and radio inputs are exempt.
+    selector:
+      'JSXOpeningElement[name.name=/^(Input|Textarea)$/]:not(:has(JSXAttribute[name.name="placeholder"])):not(:has(JSXAttribute[name.name="type"] > Literal[value=/^(file|hidden|checkbox|radio)$/]))',
+    message: "Every input has a placeholder that shows what to type, e.g. placeholder={t('e.g. 8')}.",
+  },
+]
+
 const NO_STYLED_LINKS = [
   {
     selector: 'JSXOpeningElement[name.name=/^(Link|a)$/] > JSXAttribute[name.name="className"]',
@@ -135,6 +144,7 @@ export default defineConfig([
         ...NO_RAW_TEXT,
         ...NO_INLINE_STYLE,
         ...NO_NATIVE_DATE_INPUTS,
+        ...INPUTS_NEED_PLACEHOLDER,
         ...NO_STYLED_LINKS,
         ...NO_INLINE_FUNCTION_PROPS,
       ],
@@ -150,6 +160,7 @@ export default defineConfig([
         ...NO_RAW_TEXT,
         ...NO_INLINE_STYLE,
         ...NO_NATIVE_DATE_INPUTS,
+        ...INPUTS_NEED_PLACEHOLDER,
         ...NO_STYLED_LINKS,
         ...NO_INLINE_FUNCTION_PROPS,
         ...NO_TYPES_IN_COMPONENT,
@@ -167,6 +178,7 @@ export default defineConfig([
         ...NO_RAW_TEXT,
         ...NO_INLINE_STYLE,
         ...NO_NATIVE_DATE_INPUTS,
+        ...INPUTS_NEED_PLACEHOLDER,
         ...NO_INLINE_FUNCTION_PROPS,
         ...NO_TYPES_IN_COMPONENT,
         ...ONE_COMPONENT_PER_FILE,

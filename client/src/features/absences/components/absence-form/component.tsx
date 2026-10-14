@@ -70,6 +70,7 @@ export function AbsenceForm({ personId, canApprove, onCreated }: AbsenceFormProp
         <div className="flex flex-col gap-2">
           <Label htmlFor={`absence-hours-${personId}`}>{t('Hours per day')}</Label>
           <Input
+            placeholder={t('e.g. 8')}
             id={`absence-hours-${personId}`}
             name="hours_per_day"
             type="number"

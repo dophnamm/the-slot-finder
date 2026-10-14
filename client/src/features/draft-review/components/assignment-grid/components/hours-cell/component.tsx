@@ -5,7 +5,7 @@ import { Input } from '@/shared/ui/input'
 import { TableCell } from '@/shared/ui/table'
 import { cn } from '@/utils/functions'
 import { WEEK_COLUMN_CLASS } from '../../constants'
-import { MAX_WEEK_HOURS } from './constants'
+import { HOURS_CELL_PLACEHOLDER, MAX_WEEK_HOURS } from './constants'
 import type { HoursCellProps } from './types'
 
 /** One week of an assignment: the hours as text, or an input that saves on blur or Enter. */
@@ -42,6 +42,7 @@ export function HoursCell({ week, hours, locked, inWindow, editable, onCommit }:
   return (
     <TableCell className={cn(WEEK_COLUMN_CLASS, 'p-1')}>
       <Input
+        placeholder={HOURS_CELL_PLACEHOLDER}
         type="number"
         inputMode="decimal"
         min={0}

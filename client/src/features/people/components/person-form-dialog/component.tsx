@@ -69,11 +69,19 @@ export function PersonFormDialog({ open, person, onOpenChange }: PersonFormDialo
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <Label htmlFor="person-name">{t('Name')}</Label>
-              <Input id="person-name" name="name" value={values.name} onChange={handleTextChange} required />
+              <Input
+                placeholder={t('e.g. Alex Nguyen')}
+                id="person-name"
+                name="name"
+                value={values.name}
+                onChange={handleTextChange}
+                required
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="person-email">{t('Email')}</Label>
               <Input
+                placeholder={t('e.g. alex@company.com')}
                 id="person-email"
                 name="email"
                 type="email"
@@ -110,6 +118,7 @@ export function PersonFormDialog({ open, person, onOpenChange }: PersonFormDialo
             <div className="flex flex-col gap-2">
               <Label htmlFor="person-weekly-hours">{t('Weekly hours')}</Label>
               <Input
+                placeholder={t('e.g. 40')}
                 id="person-weekly-hours"
                 name="weekly_hours"
                 type="number"

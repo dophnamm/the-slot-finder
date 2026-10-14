@@ -119,8 +119,22 @@ export type LanguageKey = {
   'Draft accepted. It is now the baseline.': string
   'Draft created': string
   'Draft rejected.': string
+  'e.g. 0': string
+  'e.g. 120': string
+  'e.g. 2': string
+  'e.g. 320': string
+  'e.g. 40': string
+  'e.g. 8': string
+  'e.g. Acme Commerce Platform': string
+  'e.g. Acme Retail': string
+  'e.g. Alex Nguyen': string
+  'e.g. alex@company.com': string
+  'e.g. Checkout Revamp': string
   'e.g. Checkout slips two weeks': string
+  'e.g. Discovery': string
   'e.g. https://calendar.google.com/calendar/ical/…/private-…/basic.ics': string
+  'e.g. https://docs.example.com/charter': string
+  'e.g. Move the online store to the new platform before the holidays.': string
   'Each assumption is applied to a copy of the baseline. Nothing real changes.': string
   'Each person and demand whose hours or weeks differ in this scenario.': string
   'Earliest start': string
@@ -245,6 +259,7 @@ export type LanguageKey = {
   'Nothing was saved. Fix these rows and import again.': string
   'Objectives, one per line': string
   'On hold': string
+  'One objective per line, e.g. Ship the new checkout.': string
   Open: string
   'Open draft ({status})': string
   'Open navigation': string
