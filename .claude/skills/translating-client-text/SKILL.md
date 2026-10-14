@@ -66,9 +66,13 @@ One word per idea, the same on every screen:
 3. Register it in the `locales` map. Missing keys fall back to English.
 4. Switch the language with `useLanguageStore.getState().setLanguage('vi')`. `<html lang>` follows automatically.
 
+## Placeholders
+
+**Every `Input` and `Textarea` has a placeholder** that shows a real example: an `'e.g. …'` key such as `t('e.g. 8')`, `t('e.g. Checkout Revamp')`, or a sentence for free text (`t('One objective per line, e.g. Ship the new checkout.')`). A number cell in a grid uses a named constant (`'0'`). File, hidden, checkbox and radio inputs are exempt; `DatePicker` and `WeekPicker` already show their own prompt.
+
 ## Checks
 
-`npm run lint` rejects raw text in JSX and literal `alt`, `aria-label`, `placeholder` and `title` attributes. `npx tsc -b` rejects unknown keys and wrong or missing params.
+`npm run lint` rejects raw text in JSX and literal `alt`, `aria-label`, `placeholder` and `title` attributes, and an `Input` or `Textarea` without a placeholder. `npx tsc -b` rejects unknown keys and wrong or missing params.
 
 | tsc error | Cause |
 |---|---|
