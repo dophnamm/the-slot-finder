@@ -51,19 +51,22 @@ const (
 
 // Absence and holiday messages.
 const (
-	MsgAbsencesListed       = "Absences retrieved"
-	MsgAbsenceCreated       = "Absence created"
-	MsgAbsenceDeleted       = "Absence deleted"
-	MsgHolidaysListed       = "Holidays retrieved"
-	MsgHolidayCreated       = "Holiday created"
-	MsgAbsenceNotFound      = "Absence not found"
-	MsgAbsenceDatesInvalid  = "to_date must not be before from_date"
-	MsgAbsenceApproved      = "Absence approved"
-	MsgAbsenceNotPlanned    = "Only a planned absence can be approved"
-	MsgAbsenceApproveFailed = "Could not approve the absence"
-	MsgAbsenceListFailed    = "Could not list absences"
-	MsgAbsenceCreateFailed  = "Could not create the absence"
-	MsgAbsenceDeleteFailed  = "Could not delete the absence"
+	MsgAbsencesListed        = "Absences retrieved"
+	MsgAbsenceCreated        = "Absence created"
+	MsgAbsenceDeleted        = "Absence deleted"
+	MsgHolidaysListed        = "Holidays retrieved"
+	MsgHolidayCreated        = "Holiday created"
+	MsgHolidaysImported      = "Holidays imported"
+	MsgHolidaySourceInvalid  = "Send an ICS file or a calendar link, not both"
+	MsgHolidayFileUnreadable = "The holiday file could not be read"
+	MsgAbsenceNotFound       = "Absence not found"
+	MsgAbsenceDatesInvalid   = "to_date must not be before from_date"
+	MsgAbsenceApproved       = "Absence approved"
+	MsgAbsenceNotPlanned     = "Only a planned absence can be approved"
+	MsgAbsenceApproveFailed  = "Could not approve the absence"
+	MsgAbsenceListFailed     = "Could not list absences"
+	MsgAbsenceCreateFailed   = "Could not create the absence"
+	MsgAbsenceDeleteFailed   = "Could not delete the absence"
 )
 
 // Program and project messages.

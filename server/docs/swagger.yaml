@@ -826,6 +826,15 @@ definitions:
       primary_expertise_id:
         type: string
     type: object
+  dtos.HolidayImportResponse:
+    properties:
+      added:
+        example: 11
+        type: integer
+      skipped:
+        example: 2
+        type: integer
+    type: object
   dtos.ImportResultResponse:
     properties:
       created:
@@ -2101,6 +2110,72 @@ paths:
       summary: Add a company-wide holiday
       tags:
       - Availability
+  /holidays/import:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Planners. Send an ICS file or an https link to a holiday calendar
+        (a host in CALENDAR_ALLOWED_HOSTS), not both. Each event between from_date
+        and to_date becomes a company holiday named after it; an event imported before
+        is skipped. The link is never stored or logged.
+      parameters:
+      - description: ICS file
+        in: formData
+        name: file
+        type: file
+      - description: Link to an ICS calendar
+        in: formData
+        name: url
+        type: string
+      - description: First date kept
+        example: "2026-01-01"
+        in: formData
+        name: from_date
+        required: true
+        type: string
+      - description: Last date kept
+        example: "2027-12-31"
+        in: formData
+        name: to_date
+        required: true
+        type: string
+      - description: Hours each holiday takes off
+        example: 8
+        in: formData
+        name: hours_per_day
+        required: true
+        type: number
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.HolidayImportResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Import holidays from a calendar
+      tags:
+      - Holidays
   /insights/heatmap:
     get:
       description: Person × week load, capacity, utilization band and hours per expertise

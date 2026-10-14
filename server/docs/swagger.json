@@ -433,6 +433,102 @@
                 }
             }
         },
+        "/holidays/import": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Planners. Send an ICS file or an https link to a holiday calendar (a host in CALENDAR_ALLOWED_HOSTS), not both. Each event between from_date and to_date becomes a company holiday named after it; an event imported before is skipped. The link is never stored or logged.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Holidays"
+                ],
+                "summary": "Import holidays from a calendar",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "ICS file",
+                        "name": "file",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Link to an ICS calendar",
+                        "name": "url",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-01-01",
+                        "description": "First date kept",
+                        "name": "from_date",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2027-12-31",
+                        "description": "Last date kept",
+                        "name": "to_date",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "example": 8,
+                        "description": "Hours each holiday takes off",
+                        "name": "hours_per_day",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.HolidayImportResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/insights/heatmap": {
             "get": {
                 "security": [
@@ -4682,6 +4778,19 @@
                 },
                 "primary_expertise_id": {
                     "type": "string"
+                }
+            }
+        },
+        "dtos.HolidayImportResponse": {
+            "type": "object",
+            "properties": {
+                "added": {
+                    "type": "integer",
+                    "example": 11
+                },
+                "skipped": {
+                    "type": "integer",
+                    "example": 2
                 }
             }
         },

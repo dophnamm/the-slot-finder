@@ -22,6 +22,8 @@ const (
 	AbsenceDatesInvalid = "ABSENCE_DATES_INVALID"
 	// AbsenceNotPlanned: only a person's planned absence can be approved (not an approved one, not a holiday).
 	AbsenceNotPlanned = "ABSENCE_NOT_PLANNED"
+	// HolidaySourceInvalid: a holiday import needs exactly one of an ICS file or a calendar link.
+	HolidaySourceInvalid = "HOLIDAY_SOURCE_INVALID"
 
 	// Calendar feed errors. The link is a secret, so a problem is only ever stored as one of these.
 	CalendarSyncDisabled       = "CALENDAR_SYNC_DISABLED"

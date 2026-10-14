@@ -35,6 +35,7 @@ func Router(
 	timesheetHandler *handlers.TimesheetHandler,
 	calendarFeedHandler *handlers.CalendarFeedHandler,
 	teamHandler *handlers.ProgramTeamHandler,
+	holidayImportHandler *handlers.HolidayImportHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 ) *echo.Echo {
@@ -145,6 +146,8 @@ func Router(
 	registerPeopleRoutes(v1, authenticated, personHandler, absenceHandler)
 	registerCalendarFeedRoutes(v1, authenticated, calendarFeedHandler)
 	registerTeamRoutes(v1, authenticated, teamHandler)
+	v1.POST(constants.PathHolidayImport, holidayImportHandler.Import, authenticated,
+		middlewares.RequireRole(constants.HolidayManageRoles...))
 	// A specialist reads only their own schedule (checked in the service).
 	v1.GET(constants.PathPersonSchedule, scheduleHandler.Get, authenticated, middlewares.RequireRole(constants.PersonScheduleRoles...))
 	registerProgramRoutes(v1, authenticated, programHandler, projectHandler)
