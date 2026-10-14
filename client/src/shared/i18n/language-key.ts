@@ -291,6 +291,7 @@ export type LanguageKey = {
   'Page not found': string
   'Page {page} of {pages}': string
   'Past the end date': string
+  'Past weeks show worked hours when a timesheet was imported.': string
   People: string
   'People appear here once a staffing draft for this program is accepted.': string
   'People changed': string
@@ -311,6 +312,7 @@ export type LanguageKey = {
   'Planned leave this week, not approved yet.': string
   'Planned leave, not approved yet': string
   'Planned to date': string
+  'Planned {planned} h · Worked {actual} h': string
   Planner: string
   Previous: string
   'Previous month': string
@@ -454,6 +456,7 @@ export type LanguageKey = {
   When: string
   'Who gains or loses hours if this draft is accepted.': string
   'Whole project': string
+  Worked: string
   'Worked {hours} h': string
   'You can’t see this person': string
   'You have signed out.': string

@@ -1,5 +1,5 @@
-import { toSearchText } from '@/utils/functions'
-import type { ExpertiseGroup, HeatmapRow } from './types'
+import { isoWeeksBetween, toSearchText } from '@/utils/functions'
+import type { ExpertiseGroup, HeatmapCell, HeatmapRow } from './types'
 
 /** Rows whose person name or primary expertise contains the search text, ignoring case and accents. */
 export function filterRows(rows: HeatmapRow[], search: string): HeatmapRow[] {
@@ -22,4 +22,10 @@ export function groupByExpertise(rows: HeatmapRow[]): ExpertiseGroup[] {
 /** A utilization ratio as a whole percentage, e.g. 0.875 → 88. */
 export function percent(utilization: number): number {
   return Math.round(utilization * 100)
+}
+
+/** The hours to show for a week that is over and has an imported timesheet; null keeps the planned load. */
+export function workedHours(cell: HeatmapCell, currentWeek: string): number | null {
+  const past = isoWeeksBetween(cell.week, currentWeek) > 0
+  return past ? cell.actual_hours : null
 }
