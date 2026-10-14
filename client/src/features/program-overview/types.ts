@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
+import type { PROGRAM_TABS } from '@/resources/routes'
 
-export type ProgramTab = 'overview' | 'projects' | 'team'
+export type ProgramTab = (typeof PROGRAM_TABS)[keyof typeof PROGRAM_TABS]
 
 export interface ProgramOverviewProps {
   programId: string
