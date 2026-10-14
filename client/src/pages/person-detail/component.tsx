@@ -3,7 +3,9 @@ import { AbsenceList, AddAbsence } from '@/features/absences'
 import { CalendarFeed } from '@/features/calendar-feed'
 import { PersonCalendar } from '@/features/person-calendar'
 import { can } from '@/resources/rbac'
+import { FORBIDDEN_STATUS } from '@/shared/api/constants'
 import { useCurrentUser } from '@/shared/auth'
+import { PagePlaceholder } from '@/shared/components/page-placeholder'
 import { Section } from '@/shared/components/section'
 import { useTranslation } from '@/shared/i18n'
 import { usePerson } from '@/shared/people'
@@ -14,11 +16,20 @@ export function PersonDetailPage() {
   const { t } = useTranslation()
   const { id = '' } = useParams()
   const { data: user } = useCurrentUser()
-  const { data: person } = usePerson(id)
+  const { data: person, error } = usePerson(id)
   const primary = person?.skills.find((skill) => skill.primary)
   const canApprove = can(user?.role, 'absences:approve')
   const canSync = can(user?.role, 'calendar-feeds:manage')
-  const calendar = <PersonCalendar personId={id} canOpenProjects={can(user?.role, 'programs:view')} />
+  // Waits for the person, so a person the user may not see costs one request, not two.
+  const calendar = person && <PersonCalendar personId={id} canOpenProjects={can(user?.role, 'programs:view')} />
+
+  if (error?.status === FORBIDDEN_STATUS)
+    return (
+      <PagePlaceholder
+        title={t('You can’t see this person')}
+        description={t('A manager sees the people in the teams of the programs they manage.')}
+      />
+    )
 
   return (
     <div className="flex flex-col gap-6">

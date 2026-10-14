@@ -42,7 +42,7 @@ export function ProgramsTable({ onCreated }: ProgramsTableProps) {
             <TableHead>{t('Program')}</TableHead>
             <TableHead>{t('Status')}</TableHead>
             <TableHead>{t('Timeline')}</TableHead>
-            <TableHead>{t('Lead')}</TableHead>
+            <TableHead>{t('Manager')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

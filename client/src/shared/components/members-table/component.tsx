@@ -7,7 +7,7 @@ import { MEMBER_TABLE_COLUMNS } from './constants'
 import { MemberRow } from './components/member-row'
 import type { MembersTableProps } from './types'
 
-/** A program's members: expertise, hours, weeks and projects. Used by the Members tab and the Programs list preview. */
+/** A program's members: expertise, hours, weeks and projects. Used by the Programs list preview. */
 export function MembersTable({ members, isPending, programId }: MembersTableProps) {
   const { t } = useTranslation()
 

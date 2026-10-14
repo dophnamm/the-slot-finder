@@ -4,7 +4,8 @@ import type { PersonRef, ProjectStatus } from '@/shared/programs'
 /** They match the server's constants/plan.go and the engine's codes. */
 export type PlanStatus = 'draft' | 'published' | 'rejected' | 'superseded'
 export type AssignmentKind = 'primary' | 'cross_expertise' | 'stretch'
-export type UnmetReason = 'NO_SKILL' | 'LEVEL_TOO_LOW' | 'NO_CAPACITY_BEFORE_DEADLINE' | 'BLOCKED_BY_LOCKED'
+export type UnmetReason =
+  'NO_SKILL' | 'LEVEL_TOO_LOW' | 'NO_CAPACITY_BEFORE_DEADLINE' | 'BLOCKED_BY_LOCKED' | 'NO_ONE_IN_TEAM'
 export type PlanChangeKind = 'added' | 'removed' | 'changed'
 
 /** An assignment's hours in one ISO week. */
@@ -47,6 +48,8 @@ export interface DraftProject {
   name: string
   program_id: string
   program: string
+  /** The person who manages the program; they may act on a draft of its projects. */
+  program_lead_id: string | null
   status: ProjectStatus
   priority: number
   deadline_week: string
@@ -67,6 +70,8 @@ export interface DraftDemand {
   from_week: string
   to_week: string
   unmet_reason: UnmetReason | null
+  /** The program team who may staff the demand; null puts no limit. */
+  team_ids: string[] | null
 }
 
 /** How one person's hours on one demand change against the baseline. */

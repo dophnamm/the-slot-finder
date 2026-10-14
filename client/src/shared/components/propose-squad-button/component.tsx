@@ -1,15 +1,14 @@
 import { Users } from 'lucide-react'
 import { generatePath, useNavigate } from 'react-router'
-import { can } from '@/resources/rbac'
 import { ROUTES } from '@/resources/routes'
 import { useCurrentUser } from '@/shared/auth'
 import { useTranslation } from '@/shared/i18n'
-import { type Draft, PLANNABLE_STATUSES, useGenerateDraft } from '@/shared/staffing'
+import { canStaff, type Draft, PLANNABLE_STATUSES, useGenerateDraft } from '@/shared/staffing'
 import { Button } from '@/shared/ui/button'
 import type { ProposeSquadButtonProps } from './types'
 
-/** Asks the planning engine for a staffing draft for one project and opens it (planners only). */
-export function ProposeSquadButton({ projectId, status }: ProposeSquadButtonProps) {
+/** Asks the planning engine for a staffing draft for one project and opens it (planners and the program's manager). */
+export function ProposeSquadButton({ projectId, status, programLeadId }: ProposeSquadButtonProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { data: user } = useCurrentUser()
@@ -18,7 +17,7 @@ export function ProposeSquadButton({ projectId, status }: ProposeSquadButtonProp
   const handleOpen = (draft: Draft) => navigate(generatePath(ROUTES.staffingDraft, { id: draft.id }))
   const handleClick = () => generate.mutate([projectId], { onSuccess: handleOpen })
 
-  if (!can(user?.role, 'staffing-drafts:manage') || !PLANNABLE_STATUSES.includes(status)) return null
+  if (!canStaff(user, [programLeadId]) || !PLANNABLE_STATUSES.includes(status)) return null
 
   return (
     <Button variant="outline" size="sm" disabled={generate.isPending} onClick={handleClick}>

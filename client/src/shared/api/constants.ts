@@ -27,3 +27,9 @@ export const CLIENT_ERROR_CODE = {
 
 /** The server answers 401 when it no longer accepts the access token. */
 export const UNAUTHORIZED_STATUS = 401
+
+/** The server answers 403 when the user may not see or do this; asking again will not change it. */
+export const FORBIDDEN_STATUS = 403
+
+/** The server's `error_code` for 403. */
+export const FORBIDDEN_CODE = 'FORBIDDEN'

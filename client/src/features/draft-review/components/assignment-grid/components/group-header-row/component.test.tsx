@@ -15,6 +15,7 @@ const GROUP = {
     min_level: 3,
     hours: 320,
     assigned_hours: 0,
+    team_ids: null,
   },
   assignments: [],
 } as unknown as DemandGroup

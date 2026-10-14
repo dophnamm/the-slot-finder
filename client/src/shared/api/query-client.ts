@@ -1,16 +1,17 @@
-import { type Mutation, MutationCache, QueryCache, QueryClient } from '@tanstack/react-query'
+import { type Mutation, MutationCache, type Query, QueryCache, QueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { signOutLocally } from '@/shared/auth/session'
 import { translate } from '@/shared/i18n'
 import { QUERY_RETRY, QUERY_STALE_TIME_MS } from '@/utils/constants'
-import { UNAUTHORIZED_STATUS } from './constants'
+import { FORBIDDEN_STATUS, UNAUTHORIZED_STATUS } from './constants'
 import type { ApiError } from './types'
 
 declare module '@tanstack/react-query' {
   interface Register {
     // Every request goes through `http.ts`, which only rejects with ApiError.
     defaultError: ApiError
-    // A mutation lists the error codes it shows itself, so the shared toast skips them.
+    // A query or mutation lists the error codes it shows itself, so the shared toast skips them.
+    queryMeta: { quietErrorCodes?: readonly string[] }
     mutationMeta: { quietErrorCodes?: readonly string[] }
   }
 }
@@ -29,6 +30,12 @@ function notifyError(error: ApiError) {
   toast.error(error.message)
 }
 
+/** Like notifyError, except for the codes the query shows itself. */
+function notifyQueryError(error: ApiError, query: Query<unknown, unknown, unknown>) {
+  if (query.meta?.quietErrorCodes?.includes(error.code)) return
+  notifyError(error)
+}
+
 /** Like notifyError, except for the codes the mutation shows itself. */
 function notifyMutationError(
   error: ApiError,
@@ -40,13 +47,13 @@ function notifyMutationError(
   notifyError(error)
 }
 
-/** Retries a failed query, except when the session has ended. */
+/** Retries a failed query, except when the session has ended or the user may not see it. */
 function shouldRetry(failureCount: number, error: ApiError) {
-  return error.status !== UNAUTHORIZED_STATUS && failureCount < QUERY_RETRY
+  return error.status !== UNAUTHORIZED_STATUS && error.status !== FORBIDDEN_STATUS && failureCount < QUERY_RETRY
 }
 
 export const queryClient = new QueryClient({
-  queryCache: new QueryCache({ onError: notifyError }),
+  queryCache: new QueryCache({ onError: notifyQueryError }),
   mutationCache: new MutationCache({ onError: notifyMutationError }),
   defaultOptions: {
     queries: {

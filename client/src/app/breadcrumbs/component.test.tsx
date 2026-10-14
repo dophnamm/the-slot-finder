@@ -9,8 +9,11 @@ vi.mock('@/shared/programs', () => ({
   useProgram: () => ({ data: { name: 'Acme Commerce Platform' } }),
   useProject: () => ({ data: { name: 'Checkout Revamp', program_id: 'g1', program_name: 'Acme Commerce Platform' } }),
 }))
-vi.mock('@/shared/people', () => ({ usePerson: () => ({ data: { name: 'Alex Nguyen' } }) }))
-const { useCurrentUser } = vi.hoisted(() => ({ useCurrentUser: vi.fn() }))
+const { useCurrentUser, usePerson } = vi.hoisted(() => ({
+  useCurrentUser: vi.fn(),
+  usePerson: vi.fn(() => ({ data: { name: 'Alex Nguyen' }, error: null })),
+}))
+vi.mock('@/shared/people', () => ({ usePerson }))
 vi.mock('@/shared/auth', () => ({ useCurrentUser }))
 
 function renderAt(path: string) {
@@ -54,6 +57,13 @@ describe('Breadcrumbs', () => {
     renderAt('/people/u1')
     expect(screen.getByRole('link', { name: 'People' }).getAttribute('href')).toBe(ROUTES.people)
     expect(screen.getByText('Alex Nguyen').getAttribute('aria-current')).toBe('page')
+  })
+
+  it('names the crumb Person when the person cannot be loaded', () => {
+    useCurrentUser.mockReturnValue({ data: { role: 'lead' } })
+    usePerson.mockReturnValueOnce({ data: undefined, error: { status: 403 } } as never)
+    renderAt('/people/u9')
+    expect(screen.getByText('Person').getAttribute('aria-current')).toBe('page')
   })
 
   it('links People for a lead too, who may read the People list', () => {

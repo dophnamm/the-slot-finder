@@ -103,7 +103,9 @@ export function GroupHeaderRow({ group, weeks, people, editable, busy, onAdd }: 
                     ))}
                   </NativeSelect>
                   <p className="text-sm text-muted-foreground">
-                    {t('People with the expertise at the minimum level come first; the others would be stretch.')}
+                    {t(
+                      'Only the program team is listed. People with the expertise at the minimum level come first; the others would be stretch.',
+                    )}
                   </p>
                 </div>
                 <DialogFooter>

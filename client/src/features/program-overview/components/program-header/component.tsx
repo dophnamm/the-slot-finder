@@ -48,9 +48,9 @@ export function ProgramHeader({ program }: ProgramHeaderProps) {
             <StatusBadge status={program.status} kind="program" />
           </>
         }
-        description={t('{client} · lead: {lead} · {timeline}', {
+        description={t('{client} · manager: {manager} · {timeline}', {
           client: program.client,
-          lead: program.lead?.name ?? t('No lead'),
+          manager: program.lead?.name ?? t('No manager'),
           timeline: weekSpan(program.start_week, program.end_week),
         })}
         action={

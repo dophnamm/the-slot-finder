@@ -46,7 +46,7 @@ export function ProgramRow({ program }: ProgramRowProps) {
           <StatusBadge status={program.status} kind="program" />
         </TableCell>
         <TableCell className="text-sm">{weekSpan(program.start_week, program.end_week)}</TableCell>
-        <TableCell>{program.lead?.name ?? t('No lead')}</TableCell>
+        <TableCell>{program.lead?.name ?? t('No manager')}</TableCell>
       </LinkRow>
       {expanded && (
         <TableRow className="hover:bg-transparent">

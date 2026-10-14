@@ -59,6 +59,7 @@ export const UNMET_REASON_LABELS: Record<UnmetReason, PlainKey> = {
   LEVEL_TOO_LOW: 'Nobody has the minimum level',
   NO_CAPACITY_BEFORE_DEADLINE: 'No free capacity in the window',
   BLOCKED_BY_LOCKED: 'The free hours are held by locked allocations',
+  NO_ONE_IN_TEAM: 'No one in the program team',
 }
 
 /** Badge colour per change: added green, changed amber, removed red. */

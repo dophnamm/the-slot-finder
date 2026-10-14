@@ -27,5 +27,5 @@ export type {
   UnmetReason,
   WeekHours,
 } from './types'
-export { canEditDraft, shortfall } from './utils'
+export { canEditDraft, canStaff, shortfall } from './utils'
 export { useAcceptDraft, useDraft, useEditDraft, useGenerateDraft, useRejectDraft } from './use-staffing'
