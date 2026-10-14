@@ -10,6 +10,8 @@ export const PERMISSIONS = {
   'programs:view': [ROLES.PLANNER, ROLES.LEAD],
   'programs:manage': [ROLES.PLANNER, ROLES.LEAD],
   'programs:manage-all': [ROLES.PLANNER],
+  // A manager whose programs list holds a single program opens it instead of the list.
+  'programs:open-only-program': [ROLES.LEAD],
   'intake:view': [ROLES.PLANNER, ROLES.LEAD],
   'staffing-drafts:view': [ROLES.PLANNER, ROLES.LEAD],
   'staffing-drafts:manage': [ROLES.PLANNER, ROLES.LEAD],
