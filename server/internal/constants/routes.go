@@ -33,12 +33,14 @@ const (
 	PathProgramTeamMember = "/programs/:id/team/:personId"
 
 	PathProgramProjects = "/programs/:id/projects"
-	PathProjects        = "/projects"
-	PathProject         = "/projects/:id"
-	PathProjectAction   = "/projects/:id/actions/:action"
-	PathProjectPhases   = "/projects/:id/phases"
-	PathProjectDemands  = "/projects/:id/demands"
-	PathPhase           = "/phases/:id"
+	// PathProgramProjectOrder sets the order of a program's projects, which is their priority.
+	PathProgramProjectOrder = "/programs/:id/project-order"
+	PathProjects            = "/projects"
+	PathProject             = "/projects/:id"
+	PathProjectAction       = "/projects/:id/actions/:action"
+	PathProjectPhases       = "/projects/:id/phases"
+	PathProjectDemands      = "/projects/:id/demands"
+	PathPhase               = "/phases/:id"
 
 	PathCurrentPlan       = "/plans/current"
 	PathPersonAssignments = "/people/:id/assignments"

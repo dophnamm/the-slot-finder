@@ -213,6 +213,7 @@ func TestRouter_People_RBAC(t *testing.T) {
 		{name: "specialist cannot create programs", method: http.MethodPost, path: constants.PathPrograms, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the intake queue", method: http.MethodGet, path: constants.PathProjects, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot move phases", method: http.MethodPatch, path: "/phases/0192f3a4-0000-7000-8000-0000000000aa", token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot reorder projects", method: http.MethodPut, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/project-order", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no role cannot read absences", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/absences", token: "no-role-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read a program team", method: http.MethodGet, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/team", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "lead cannot add a team member", method: http.MethodPost, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/team", token: "lead-token", wantStatus: http.StatusForbidden},

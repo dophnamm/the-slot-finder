@@ -2027,6 +2027,96 @@ const docTemplate = `{
                 }
             }
         },
+        "/programs/{id}/project-order": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Planners and the program's manager. project_ids lists every project of the program, top first; their priorities become 1, 2, 3… in that order.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Set the order of a program's projects",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Program id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Projects, top first",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ReorderProjectsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/dtos.ProjectResponse"
+                                    }
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/programs/{id}/projects": {
             "get": {
                 "security": [
@@ -3996,7 +4086,6 @@ const docTemplate = `{
                 },
                 "priority": {
                     "type": "integer",
-                    "maximum": 5,
                     "minimum": 1,
                     "example": 2
                 },
@@ -5276,6 +5365,22 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.ReorderProjectsRequest": {
+            "type": "object",
+            "required": [
+                "project_ids"
+            ],
+            "properties": {
+                "project_ids": {
+                    "type": "array",
+                    "maxItems": 200,
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "dtos.ReplaceDemandsRequest": {
             "type": "object",
             "properties": {
@@ -5942,7 +6047,6 @@ const docTemplate = `{
                 },
                 "priority": {
                     "type": "integer",
-                    "maximum": 5,
                     "minimum": 1
                 },
                 "scope_points": {

@@ -144,6 +144,40 @@ func (h *ProjectHandler) Create(c *echo.Context) error {
 	return h.CreatedResponse(c, constants.MsgProjectCreated, dtos.NewProjectDetailResponse(*project, h.thisWeek()))
 }
 
+// Reorder godoc
+// @Summary Set the order of a program's projects
+// @Description Planners and the program's manager. project_ids lists every project of the program, top first; their priorities become 1, 2, 3… in that order.
+// @Tags Projects
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Program id"
+// @Param body body dtos.ReorderProjectsRequest true "Projects, top first"
+// @Success 200 {object} object{meta=dtos.Meta,data=[]dtos.ProjectResponse}
+// @Failure 400 {object} object{meta=dtos.Meta}
+// @Failure 403 {object} object{meta=dtos.Meta}
+// @Failure 422 {object} object{meta=dtos.Meta}
+// @Router /programs/{id}/project-order [put]
+func (h *ProjectHandler) Reorder(c *echo.Context) error {
+	programID, ok := h.pathID(c)
+	if !ok {
+		return nil
+	}
+	var req dtos.ReorderProjectsRequest
+	if err := echo.BindBody(c, &req); err != nil {
+		return h.ValidationErrorResponse(c, constants.MsgInvalidRequest, errors.ParseValidationErrors(err))
+	}
+	req.Normalize()
+	if err := h.validate.Struct(req); err != nil {
+		return h.ValidationErrorResponse(c, constants.MsgInvalidRequest, errors.ParseValidationErrors(err))
+	}
+	projects, err := h.projects.Reorder(c.Request().Context(), programID, req.ProjectIDs)
+	if err != nil {
+		return h.HandleError(c, err)
+	}
+	return h.SuccessResponse(c, constants.MsgProjectsReordered, dtos.NewProjectResponses(projects, h.thisWeek()), nil)
+}
+
 // Update godoc
 // @Summary Edit a project
 // @Description Only the fields sent change, including scope_points and done_points. lead_id accepts null; only planners change the lead. status is rejected: use an action.

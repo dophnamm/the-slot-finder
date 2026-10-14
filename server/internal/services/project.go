@@ -20,6 +20,7 @@ const (
 	opListProjects     = "list_projects"
 	opGetProject       = "get_project"
 	opCreateProject    = "create_project"
+	opReorderProjects  = "reorder_projects"
 	opUpdateProject    = "update_project"
 	opProjectAction    = "project_action"
 	opReplacePhases    = "replace_phases"
@@ -52,9 +53,10 @@ var programStatusesAcceptingProjects = []string{constants.ProgramStatusOpen, con
 // CreateProjectInput holds a new project in a program. LeadID is honoured for planners;
 // a lead who adds a project becomes its lead.
 type CreateProjectInput struct {
-	ProgramID     string
-	Name          string
-	Priority      int
+	ProgramID string
+	Name      string
+	// Priority is the place in the program's order; nil puts the project last.
+	Priority      *int
 	StartEarliest time.Time
 	Deadline      time.Time
 	ScopePoints   float64
@@ -113,6 +115,9 @@ type ProjectService interface {
 	ListByStatus(ctx context.Context, in ListProjectsInput) (*dtos.DataResponse[models.Project], error)
 	Get(ctx context.Context, id string) (*models.Project, error)
 	Create(ctx context.Context, in CreateProjectInput) (*models.Project, error)
+	// Reorder sets the order of a program's projects: the first id gets priority 1, the next 2,
+	// and so on. The ids must be each of the program's projects exactly once.
+	Reorder(ctx context.Context, programID string, projectIDs []string) ([]models.Project, error)
 	Update(ctx context.Context, id string, in UpdateProjectInput) (*models.Project, error)
 	ApplyAction(ctx context.Context, id, action string) (*models.Project, error)
 	// ReplacePhases saves the full ordered list: listed ids are updated, new rows added, missing ones removed.
@@ -193,12 +198,16 @@ func (s *projectService) Create(ctx context.Context, in CreateProjectInput) (*mo
 	if err != nil {
 		return nil, err
 	}
+	priority, err := s.newPriority(ctx, program.ID, in.Priority)
+	if err != nil {
+		return nil, err
+	}
 
 	project := &models.Project{
 		BaseModel:     models.NewBaseModel(),
 		ProgramID:     program.ID,
 		Name:          in.Name,
-		Priority:      in.Priority,
+		Priority:      priority,
 		Status:        constants.ProjectStatusIncoming,
 		StartEarliest: in.StartEarliest,
 		Deadline:      in.Deadline,
@@ -210,6 +219,61 @@ func (s *projectService) Create(ctx context.Context, in CreateProjectInput) (*mo
 		return nil, errors.DatabaseError(constants.MsgProjectSaveFailed, err).WithOperation(opCreateProject).WithResource(resourceProject)
 	}
 	return s.find(ctx, project.ID, opCreateProject)
+}
+
+// newPriority is the given priority, or the place after the program's last project.
+func (s *projectService) newPriority(ctx context.Context, programID string, priority *int) (int, error) {
+	if priority != nil {
+		return *priority, nil
+	}
+	last, err := s.projects.MaxPriority(ctx, programID)
+	if err != nil {
+		return 0, errors.DatabaseError(constants.MsgProjectSaveFailed, err).WithOperation(opCreateProject).WithResource(resourceProject)
+	}
+	return last + 1, nil
+}
+
+func (s *projectService) Reorder(ctx context.Context, programID string, projectIDs []string) ([]models.Project, error) {
+	program, err := s.findProgram(ctx, programID, opReorderProjects)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := s.authz.RequireLeadOf(ctx, CanManageAllPrograms, program.LeadID); err != nil {
+		return nil, err
+	}
+	projects, err := s.projects.ListByProgram(ctx, program.ID)
+	if err != nil {
+		return nil, errors.DatabaseError(constants.MsgProjectListFailed, err).WithOperation(opReorderProjects).WithResource(resourceProject)
+	}
+	priorities, ok := orderPriorities(projects, projectIDs)
+	if !ok {
+		return nil, errors.NewAppError(constants.ProjectOrderMismatch, constants.MsgProjectOrderMismatch, errors.ErrorTypeValidation,
+			http.StatusUnprocessableEntity).WithOperation(opReorderProjects).WithResource(resourceProject)
+	}
+	if err := s.tx.Do(ctx, func(ctx context.Context) error { return s.projects.SetPriorities(ctx, priorities) }); err != nil {
+		return nil, errors.DatabaseError(constants.MsgProjectSaveFailed, err).WithOperation(opReorderProjects).WithResource(resourceProject)
+	}
+	return s.ListByProgram(ctx, program.ID)
+}
+
+// orderPriorities maps each id to its place in the order, from 1. It is false unless the order
+// lists each of the projects exactly once.
+func orderPriorities(projects []models.Project, order []string) (map[string]int, bool) {
+	if len(order) != len(projects) {
+		return nil, false
+	}
+	known := make(map[string]bool, len(projects))
+	for _, p := range projects {
+		known[p.ID] = true
+	}
+	priorities := make(map[string]int, len(order))
+	for i, id := range order {
+		if _, seen := priorities[id]; seen || !known[id] {
+			return nil, false
+		}
+		priorities[id] = i + 1
+	}
+	return priorities, true
 }
 
 func (s *projectService) Update(ctx context.Context, id string, in UpdateProjectInput) (*models.Project, error) {

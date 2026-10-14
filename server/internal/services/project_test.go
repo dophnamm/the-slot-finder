@@ -50,6 +50,15 @@ func (m *MockProjectRepository) Updates(ctx context.Context, entity *models.Proj
 	return m.Called(ctx, entity).Error(0)
 }
 
+func (m *MockProjectRepository) MaxPriority(ctx context.Context, programID string) (int, error) {
+	args := m.Called(ctx, programID)
+	return args.Int(0), args.Error(1)
+}
+
+func (m *MockProjectRepository) SetPriorities(ctx context.Context, priorities map[string]int) error {
+	return m.Called(ctx, priorities).Error(0)
+}
+
 func (m *MockProjectRepository) ListByProgram(ctx context.Context, programID string) ([]models.Project, error) {
 	args := m.Called(ctx, programID)
 	return args.Get(0).([]models.Project), args.Error(1)
@@ -319,7 +328,20 @@ func TestProjectService_Create(t *testing.T) {
 		})).Return(nil)
 		projects.On("FindDetail", mock.Anything, mock.Anything).Return(buildAndTest(t), nil)
 		_, err := newProjectService(projects, programs).Create(asRole("kc-lead", constants.RoleLead),
-			CreateProjectInput{ProgramID: programID, Name: "App", Priority: 2, StartEarliest: start, Deadline: deadline})
+			CreateProjectInput{ProgramID: programID, Name: "App", Priority: new(2), StartEarliest: start, Deadline: deadline})
+		require.NoError(t, err)
+		projects.AssertExpectations(t)
+	})
+
+	t.Run("without a priority the project goes to the bottom of the program's list", func(t *testing.T) {
+		projects := new(MockProjectRepository)
+		programs := new(MockProgramRepository)
+		programs.On("FindWithLead", mock.Anything, programID).Return(program(constants.ProgramStatusOpen, nil), nil)
+		projects.On("MaxPriority", mock.Anything, programID).Return(3, nil)
+		projects.On("Create", mock.Anything, mock.MatchedBy(func(p *models.Project) bool { return p.Priority == 4 })).Return(nil)
+		projects.On("FindDetail", mock.Anything, mock.Anything).Return(buildAndTest(t), nil)
+		_, err := newProjectService(projects, programs).Create(asRole("kc-planner", constants.RolePlanner),
+			CreateProjectInput{ProgramID: programID, Name: "App", StartEarliest: start, Deadline: deadline})
 		require.NoError(t, err)
 		projects.AssertExpectations(t)
 	})
@@ -328,7 +350,7 @@ func TestProjectService_Create(t *testing.T) {
 		programs := new(MockProgramRepository)
 		programs.On("FindWithLead", mock.Anything, programID).Return(program(constants.ProgramStatusClosed, nil), nil)
 		_, err := newProjectService(new(MockProjectRepository), programs).Create(asRole("kc-planner", constants.RolePlanner),
-			CreateProjectInput{ProgramID: programID, Name: "App", Priority: 2, StartEarliest: start, Deadline: deadline})
+			CreateProjectInput{ProgramID: programID, Name: "App", Priority: new(2), StartEarliest: start, Deadline: deadline})
 		requireAppError(t, err, constants.ProgramNotOpen, http.StatusConflict)
 	})
 }
@@ -385,4 +407,54 @@ func TestProgramService_CancelCascades(t *testing.T) {
 func (m *MockProjectRepository) ListByIDs(ctx context.Context, ids []string) ([]models.Project, error) {
 	args := m.Called(ctx, ids)
 	return args.Get(0).([]models.Project), args.Error(1)
+}
+
+func TestProjectService_Reorder(t *testing.T) {
+	const (
+		first  = "0192f3a4-0000-7000-8000-0000000000f1"
+		second = "0192f3a4-0000-7000-8000-0000000000f2"
+		third  = "0192f3a4-0000-7000-8000-0000000000f3"
+		other  = "0192f3a4-0000-7000-8000-0000000000f9"
+	)
+	ownLead, otherLead := leadPersonID, other
+	listed := []models.Project{
+		{BaseModel: models.BaseModel{ID: first}, ProgramID: programID, Priority: 1},
+		{BaseModel: models.BaseModel{ID: second}, ProgramID: programID, Priority: 2},
+		{BaseModel: models.BaseModel{ID: third}, ProgramID: programID, Priority: 2},
+	}
+	setup := func(lead *string) (*MockProjectRepository, *MockProgramRepository) {
+		projects, programs := new(MockProjectRepository), new(MockProgramRepository)
+		programs.On("FindWithLead", mock.Anything, programID).Return(program(constants.ProgramStatusOpen, lead), nil)
+		projects.On("ListByProgram", mock.Anything, programID).Return(listed, nil)
+		return projects, programs
+	}
+
+	t.Run("the program's manager sets the order; priorities follow it from 1", func(t *testing.T) {
+		projects, programs := setup(&ownLead)
+		projects.On("SetPriorities", mock.Anything, map[string]int{third: 1, first: 2, second: 3}).Return(nil)
+		_, err := newProjectService(projects, programs).Reorder(asRole("kc-lead", constants.RoleLead), programID, []string{third, first, second})
+		require.NoError(t, err)
+		projects.AssertExpectations(t)
+	})
+
+	t.Run("the order must list each of the program's projects once", func(t *testing.T) {
+		for name, ids := range map[string][]string{
+			"one missing":   {first, second},
+			"one repeated":  {first, second, second},
+			"one not there": {first, second, other},
+		} {
+			t.Run(name, func(t *testing.T) {
+				projects, programs := setup(nil)
+				_, err := newProjectService(projects, programs).Reorder(asRole("kc-planner", constants.RolePlanner), programID, ids)
+				requireAppError(t, err, constants.ProjectOrderMismatch, http.StatusUnprocessableEntity)
+				projects.AssertNotCalled(t, "SetPriorities", mock.Anything, mock.Anything)
+			})
+		}
+	})
+
+	t.Run("another program's manager may not", func(t *testing.T) {
+		projects, programs := setup(&otherLead)
+		_, err := newProjectService(projects, programs).Reorder(asRole("kc-lead", constants.RoleLead), programID, []string{first, second, third})
+		requireStatus(t, err, http.StatusForbidden)
+	})
 }

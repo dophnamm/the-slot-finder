@@ -40,6 +40,7 @@ const (
 	LeadNotFound           = "LEAD_NOT_FOUND"
 	ProjectNotFound        = "PROJECT_NOT_FOUND"
 	ProjectDatesInvalid    = "PROJECT_DATES_INVALID"
+	ProjectOrderMismatch   = "PROJECT_ORDER_MISMATCH"
 	ProgramNotOpen         = "PROGRAM_NOT_OPEN"
 	PhaseNotFound          = "PHASE_NOT_FOUND"
 	PhaseWeeksInvalid      = "PHASE_WEEKS_INVALID"

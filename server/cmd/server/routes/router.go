@@ -234,6 +234,7 @@ func registerProgramRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc,
 	// Projects, phases and demand (leads edit only projects they or their program lead)
 	v1.GET(constants.PathProgramProjects, projectHandler.ListByProgram, authenticated, programRoles)
 	v1.POST(constants.PathProgramProjects, projectHandler.Create, authenticated, programRoles)
+	v1.PUT(constants.PathProgramProjectOrder, projectHandler.Reorder, authenticated, programRoles)
 	v1.GET(constants.PathProjects, projectHandler.List, authenticated, programRoles)
 	v1.GET(constants.PathProject, projectHandler.Get, authenticated, programRoles)
 	v1.PATCH(constants.PathProject, projectHandler.Update, authenticated, programRoles)
