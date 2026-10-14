@@ -1,59 +1,51 @@
-import { LogOut } from 'lucide-react'
-import { NavLink, Outlet } from 'react-router'
-import { ROLE_LABELS } from '@/resources/rbac'
-import { ROUTES } from '@/resources/routes'
-import { signOut, useCurrentUser } from '@/shared/auth'
+import { Menu } from 'lucide-react'
+import { useState } from 'react'
+import { Outlet } from 'react-router'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
-import { Separator } from '@/shared/ui/separator'
+import { Sheet, SheetContent, SheetTitle } from '@/shared/ui/sheet'
 import { Breadcrumbs } from '../breadcrumbs'
+import { Sidebar } from './components/sidebar'
 import { PAGE_AREA_CLASS } from './constants'
-import { navLinkClassName, visibleNavItems } from './utils'
 
+/** White sidebar and header around a gray page area; below lg the sidebar slides in from the left. */
 export function AppLayout() {
   const { t } = useTranslation()
-  const { data: user } = useCurrentUser()
-  const navItems = visibleNavItems(user?.role)
+  const [isNavOpen, setIsNavOpen] = useState(false)
 
-  const handleSignOut = () => {
-    void signOut()
-  }
+  const handleOpenNav = () => setIsNavOpen(true)
+  const handleCloseNav = () => setIsNavOpen(false)
 
   return (
-    <div className="flex h-svh overflow-hidden">
-      <aside className="flex w-56 shrink-0 flex-col gap-3 overflow-y-auto border-r bg-sidebar p-3 text-sidebar-foreground">
-        <div className="px-2 pt-1 font-heading text-base font-semibold">{t('The Slot Finder')}</div>
-        <Separator />
-        <nav className="flex flex-col gap-1">
-          {navItems.map(({ to, label, icon: Icon }) => (
-            <NavLink key={to} to={to} end={to === ROUTES.dashboard} className={navLinkClassName}>
-              <Icon className="size-4" />
-              {t(label)}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="mt-auto flex flex-col gap-2">
-          <Separator />
-          {user && (
-            <div className="flex flex-col px-2 text-sm">
-              <span className="truncate font-medium">
-                {t('Signed in as {name}', { name: user.name || user.username })}
-              </span>
-              {user.role && <span className="text-muted-foreground">{t(ROLE_LABELS[user.role])}</span>}
-            </div>
-          )}
-          <Button variant="ghost" className="justify-start" onClick={handleSignOut}>
-            <LogOut />
-            {t('Sign out')}
-          </Button>
-        </div>
+    <div className="flex h-svh overflow-hidden bg-canvas">
+      <aside className="hidden w-60 shrink-0 lg:flex">
+        <Sidebar />
       </aside>
-      <main className="flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-6">
-        <Breadcrumbs />
-        <div className={PAGE_AREA_CLASS}>
-          <Outlet />
-        </div>
-      </main>
+      <Sheet open={isNavOpen} onOpenChange={setIsNavOpen}>
+        <SheetContent side="left" showCloseButton={false} className="w-64 gap-0 p-0">
+          <SheetTitle className="sr-only">{t('Navigation')}</SheetTitle>
+          <Sidebar onNavigate={handleCloseNav} />
+        </SheetContent>
+      </Sheet>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4 lg:px-6">
+          <Button
+            variant="ghost"
+            size="icon-lg"
+            className="lg:hidden"
+            aria-label={t('Open navigation')}
+            onClick={handleOpenNav}
+          >
+            <Menu />
+          </Button>
+          <Breadcrumbs />
+        </header>
+        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 lg:p-6">
+          <div className={PAGE_AREA_CLASS}>
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   )
 }

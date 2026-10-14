@@ -194,6 +194,7 @@ export type LanguageKey = {
   'My schedule': string
   Name: string
   'Name or expertise': string
+  Navigation: string
   'Near full': string
   Needed: string
   'New phase': string
@@ -241,6 +242,7 @@ export type LanguageKey = {
   'On hold': string
   Open: string
   'Open draft ({status})': string
+  'Open navigation': string
   'Open the charter': string
   'Open the latest version': string
   'Ordered by priority, then deadline.': string

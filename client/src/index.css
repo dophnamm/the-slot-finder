@@ -29,6 +29,9 @@
   --color-healthy: var(--healthy);
   --color-underused: var(--underused);
   --color-link: var(--link);
+  /* The page area behind the cards, and the current item in the sidebar. */
+  --color-canvas: var(--canvas);
+  --color-nav-active: var(--nav-active);
   /* Pastel badge colours: a soft background with a darker text of the same hue. */
   --color-badge-blue: var(--badge-blue);
   --color-badge-blue-foreground: var(--badge-blue-foreground);
@@ -76,7 +79,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  /* The accent: the blue that links already use, so buttons, links and focus share one colour. */
+  --primary: oklch(0.5 0.17 255);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -90,6 +94,9 @@
   --underused: oklch(0.685 0.169 237.323);
   /* Text links: a blue that reads as clickable on white and on muted rows. */
   --link: oklch(0.5 0.17 255);
+  /* A light gray page, so the white cards and the white sidebar stand apart from it. */
+  --canvas: oklch(0.975 0.003 255);
+  --nav-active: oklch(0.945 0.006 255);
   --badge-blue: oklch(0.95 0.045 250);
   --badge-blue-foreground: oklch(0.47 0.16 250);
   --badge-green: oklch(0.95 0.05 155);
@@ -108,7 +115,7 @@
   --badge-gray-foreground: oklch(0.45 0 0);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: oklch(0.62 0.14 255);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -132,8 +139,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: oklch(0.7 0.14 255);
+  --primary-foreground: oklch(0.145 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -145,6 +152,8 @@
   --healthy: oklch(0.792 0.209 151.711);
   --underused: oklch(0.746 0.16 232.661);
   --link: oklch(0.76 0.13 250);
+  --canvas: oklch(0.12 0 0);
+  --nav-active: oklch(0.269 0 0);
   --badge-blue: oklch(0.32 0.06 250);
   --badge-blue-foreground: oklch(0.86 0.09 250);
   --badge-green: oklch(0.32 0.06 155);
