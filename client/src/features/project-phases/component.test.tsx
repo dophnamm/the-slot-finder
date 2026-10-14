@@ -46,4 +46,13 @@ describe('ProjectPhases', () => {
     await screen.findByRole('dialog')
     expect(screen.getByLabelText(translate('Phase name'))).toBeTruthy()
   })
+
+  it('keeps the timeline on the page on the saved phases while the dialog previews a change', async () => {
+    render(<ProjectPhases projectId="p1" />)
+    fireEvent.click(screen.getByRole('button', { name: translate('Add phase') }))
+    const dialog = await screen.findByRole('dialog')
+    const unsaved = screen.getAllByText(translate('New phase'))
+    expect(unsaved).toHaveLength(1)
+    expect(dialog.contains(unsaved[0])).toBe(true)
+  })
 })
