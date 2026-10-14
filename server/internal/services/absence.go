@@ -42,6 +42,8 @@ type CreateAbsenceInput struct {
 
 // CreateHolidayInput is a company-wide holiday, from FromDate to ToDate inclusive.
 type CreateHolidayInput struct {
+	// Name says what the holiday is, e.g. National Day; it may be empty.
+	Name        string
 	FromDate    time.Time
 	ToDate      time.Time
 	HoursPerDay float64
@@ -279,6 +281,7 @@ func (s *availabilityService) CreateHoliday(ctx context.Context, in CreateHolida
 	}
 	holiday := &models.Absence{
 		BaseModel:   models.NewBaseModel(),
+		Name:        in.Name,
 		FromDate:    in.FromDate,
 		ToDate:      in.ToDate,
 		HoursPerDay: in.HoursPerDay,

@@ -3566,6 +3566,11 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "name": {
+                    "description": "Name says what a holiday is; empty for leave.",
+                    "type": "string",
+                    "example": "National Day"
+                },
                 "person_id": {
                     "type": "string"
                 },
@@ -3964,6 +3969,11 @@ const docTemplate = `{
                     "type": "number",
                     "maximum": 24,
                     "example": 8
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "example": "Christmas Day"
                 },
                 "to_date": {
                     "type": "string",

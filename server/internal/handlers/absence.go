@@ -161,6 +161,7 @@ func (h *AbsenceHandler) CreateHoliday(c *echo.Context) error {
 	if err := echo.BindBody(c, &req); err != nil {
 		return h.ValidationErrorResponse(c, constants.MsgInvalidRequest, errors.ParseValidationErrors(err))
 	}
+	req.Normalize()
 	if err := h.validate.Struct(req); err != nil {
 		return h.ValidationErrorResponse(c, constants.MsgInvalidRequest, errors.ParseValidationErrors(err))
 	}
@@ -168,7 +169,7 @@ func (h *AbsenceHandler) CreateHoliday(c *echo.Context) error {
 	to, _ := dtos.ParseDate(req.ToDate)
 
 	holiday, err := h.availability.CreateHoliday(c.Request().Context(), services.CreateHolidayInput{
-		FromDate: from, ToDate: to, HoursPerDay: req.HoursPerDay,
+		Name: req.Name, FromDate: from, ToDate: to, HoursPerDay: req.HoursPerDay,
 	})
 	if err != nil {
 		return h.HandleError(c, err)

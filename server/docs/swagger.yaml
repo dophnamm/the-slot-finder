@@ -10,6 +10,10 @@ definitions:
         type: number
       id:
         type: string
+      name:
+        description: Name says what a holiday is; empty for leave.
+        example: National Day
+        type: string
       person_id:
         type: string
       source:
@@ -293,6 +297,10 @@ definitions:
         example: 8
         maximum: 24
         type: number
+      name:
+        example: Christmas Day
+        maxLength: 100
+        type: string
       to_date:
         example: "2026-12-25"
         type: string

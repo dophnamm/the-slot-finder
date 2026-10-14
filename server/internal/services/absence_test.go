@@ -201,10 +201,11 @@ func TestAvailabilityService_CreateHoliday(t *testing.T) {
 	t.Run("planner adds a company-wide holiday", func(t *testing.T) {
 		repo := new(MockAbsenceRepository)
 		repo.On("Create", mock.Anything, mock.MatchedBy(func(a *models.Absence) bool {
-			return a.PersonID == nil && a.Type == constants.AbsenceTypeHoliday && a.Status == constants.AbsenceStatusApproved
+			return a.PersonID == nil && a.Type == constants.AbsenceTypeHoliday && a.Status == constants.AbsenceStatusApproved &&
+				a.Name == "Christmas Day"
 		})).Return(nil)
 		_, err := newAvailability(repo).CreateHoliday(asRole("kc-planner", constants.RolePlanner),
-			CreateHolidayInput{FromDate: day, ToDate: day, HoursPerDay: 8})
+			CreateHolidayInput{Name: "Christmas Day", FromDate: day, ToDate: day, HoursPerDay: 8})
 		require.NoError(t, err)
 		repo.AssertExpectations(t)
 	})
