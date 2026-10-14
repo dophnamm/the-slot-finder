@@ -106,6 +106,7 @@ export type LanguageKey = {
   Delete: string
   'Delete this scenario? The real plan is not affected.': string
   Demand: string
+  'Demand removed.': string
   'Demand saved.': string
   Disconnect: string
   'Disconnect this calendar? Leave it already added stays.': string
@@ -124,6 +125,7 @@ export type LanguageKey = {
   'Each person and demand whose hours or weeks differ in this scenario.': string
   'Earliest start': string
   Edit: string
+  'Edit demand': string
   'Edit person': string
   'Edit phase': string
   'Edit program': string
@@ -263,9 +265,9 @@ export type LanguageKey = {
   'People appear here once a staffing draft for this program is accepted.': string
   'People changed': string
   'People with hours in the baseline on this program’s projects, most hours first.': string
+  'People with the expertise at the minimum level come first; the others would be stretch.': string
   Person: string
   'Person saved.': string
-  'Person to add': string
   Phase: string
   'Phase name': string
   'Phase saved.': string
@@ -321,9 +323,9 @@ export type LanguageKey = {
   'Remove holiday': string
   'Remove phase': string
   'Remove the phase {name}?': string
+  'Remove this demand?': string
   Removed: string
   'Report leave or training. A planner approves it.': string
-  Reset: string
   Resume: string
   'Review draft': string
   Risks: string
@@ -331,6 +333,7 @@ export type LanguageKey = {
   'Run again': string
   Save: string
   'Save demand': string
+  'Save phase': string
   'Saving moves every later phase by 1 week.': string
   'Saving moves every later phase by {weeks} weeks.': string
   Scenario: string

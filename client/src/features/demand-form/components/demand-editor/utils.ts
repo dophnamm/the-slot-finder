@@ -50,11 +50,6 @@ export function isValidDraft(draft: DemandDraft): boolean {
   )
 }
 
-/** Whether the rows differ from the saved demand. */
-export function draftsChanged(demands: Demand[], drafts: DemandDraft[]): boolean {
-  return JSON.stringify(toDrafts(demands).map(toDemandInput)) !== JSON.stringify(drafts.map(toDemandInput))
-}
-
 /** Weeks a demand may be staffed in: its phase, or the project's start through its deadline. */
 export function demandWindow(project: ProjectDetail, phaseId: string | null): WeekWindow {
   const phase = project.phases.find((p) => p.id === phaseId)

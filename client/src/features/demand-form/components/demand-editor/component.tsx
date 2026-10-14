@@ -8,27 +8,40 @@ import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 import { DEMAND_EDIT_COLUMNS, DEMAND_TABLE_COLUMNS } from './constants'
-import { DemandRow } from './components/demand-row'
+import { DemandDialog } from './components/demand-dialog'
 import { DemandViewRow } from './components/demand-view-row'
-import type { DemandDraft, DemandEditorProps } from './types'
-import { demandWindow, draftsChanged, isValidDraft, newDraft, phaseName, toDemandInput, toDrafts } from './utils'
+import type { DemandDraft, DemandEdit, DemandEditorProps } from './types'
+import { newDraft, phaseName, toDemandInput, toDrafts } from './utils'
 
-/** Edits the full demand list and saves it at once; read-only for people who cannot edit the project. */
+/**
+ * The project's demand as a table. Adding or editing one opens a dialog, and saving it saves the whole
+ * list at once, so every change shows in the table right away.
+ */
 export function DemandEditor({ project, expertises, editable }: DemandEditorProps) {
   const { t } = useTranslation()
-  const [drafts, setDrafts] = useState(() => toDrafts(project.demands))
+  const [editing, setEditing] = useState<DemandEdit | null>(null)
   const save = useReplaceDemands(project.id)
-  const changed = draftsChanged(project.demands, drafts)
-  const valid = drafts.every(isValidDraft)
-  const empty = editable ? drafts.length === 0 : project.demands.length === 0
+  const saved = toDrafts(project.demands)
 
-  const handleChange = (index: number, draft: DemandDraft) =>
-    setDrafts((current) => current.map((row, i) => (i === index ? draft : row)))
-  const handleRemove = (index: number) => setDrafts((current) => current.filter((_, i) => i !== index))
-  const handleAdd = () => setDrafts((current) => [...current, newDraft(expertises)])
-  const handleReset = () => setDrafts(toDrafts(project.demands))
-  const handleSaved = () => toast.success(t('Demand saved.'))
-  const handleSave = () => save.mutate(drafts.map(toDemandInput), { onSuccess: handleSaved })
+  const handleAdd = () => setEditing({ index: null, draft: newDraft(expertises) })
+  const handleEdit = (index: number) => setEditing({ index, draft: saved[index] })
+  const handleOpenChange = (open: boolean) => {
+    if (!open) setEditing(null)
+  }
+  const handleSaved = () => {
+    toast.success(t('Demand saved.'))
+    setEditing(null)
+  }
+  const handleSubmit = (draft: DemandDraft) => {
+    const index = editing?.index ?? null
+    const next = index === null ? [...saved, draft] : saved.map((row, i) => (i === index ? draft : row))
+    save.mutate(next.map(toDemandInput), { onSuccess: handleSaved })
+  }
+  const handleRemoved = () => toast.success(t('Demand removed.'))
+  const handleRemove = (index: number) => {
+    if (!window.confirm(t('Remove this demand?'))) return
+    save.mutate(saved.filter((_, i) => i !== index).map(toDemandInput), { onSuccess: handleRemoved })
+  }
 
   return (
     <Section
@@ -38,22 +51,10 @@ export function DemandEditor({ project, expertises, editable }: DemandEditorProp
       )}
       action={
         editable && (
-          <Button variant="outline" size="sm" disabled={expertises.length === 0} onClick={handleAdd}>
+          <Button variant="outline" disabled={expertises.length === 0} onClick={handleAdd}>
             <Plus />
             {t('Add demand')}
           </Button>
-        )
-      }
-      footer={
-        editable && (
-          <>
-            <Button variant="ghost" disabled={!changed || save.isPending} onClick={handleReset}>
-              {t('Reset')}
-            </Button>
-            <Button disabled={!changed || !valid || save.isPending} onClick={handleSave}>
-              {t('Save demand')}
-            </Button>
-          </>
         )
       }
     >
@@ -70,23 +71,17 @@ export function DemandEditor({ project, expertises, editable }: DemandEditorProp
           </TableRow>
         </TableHeader>
         <TableBody>
-          {editable
-            ? drafts.map((draft, index) => (
-                <DemandRow
-                  key={draft.key}
-                  index={index}
-                  draft={draft}
-                  expertises={expertises}
-                  phases={project.phases}
-                  window={demandWindow(project, draft.phase_id || null)}
-                  onChange={handleChange}
-                  onRemove={handleRemove}
-                />
-              ))
-            : project.demands.map((demand) => (
-                <DemandViewRow key={demand.id} demand={demand} phase={phaseName(project, demand.phase_id)} />
-              ))}
-          {empty && (
+          {project.demands.map((demand, index) => (
+            <DemandViewRow
+              key={demand.id}
+              index={index}
+              demand={demand}
+              phase={phaseName(project, demand.phase_id)}
+              onEdit={editable ? handleEdit : undefined}
+              onRemove={editable ? handleRemove : undefined}
+            />
+          ))}
+          {project.demands.length === 0 && (
             <TableEmpty
               columns={editable ? DEMAND_EDIT_COLUMNS : DEMAND_TABLE_COLUMNS}
               icon={ClipboardList}
@@ -96,6 +91,18 @@ export function DemandEditor({ project, expertises, editable }: DemandEditorProp
           )}
         </TableBody>
       </Table>
+      {editing && (
+        <DemandDialog
+          key={editing.draft.key}
+          title={editing.index === null ? t('Add demand') : t('Edit demand')}
+          initial={editing.draft}
+          expertises={expertises}
+          project={project}
+          saving={save.isPending}
+          onSubmit={handleSubmit}
+          onOpenChange={handleOpenChange}
+        />
+      )}
     </Section>
   )
 }
