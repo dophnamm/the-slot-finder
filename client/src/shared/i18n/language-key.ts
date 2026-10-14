@@ -118,7 +118,7 @@ export type LanguageKey = {
   'Done points': string
   'Download template': string
   'Download the template': string
-  'Download the template for past weeks, fill in actual_hours, then import it. One row with a problem saves nothing.': string
+  'Download the template for past weeks: it lists every person, project and week planned in the baseline, with project_id already filled in. Fill in actual_hours only, keep the other columns, then import the file. One row with a problem saves nothing.': string
   Draft: string
   'Draft accepted. It is now the baseline.': string
   'Draft created': string
