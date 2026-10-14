@@ -14,8 +14,12 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/
 import { PROGRAM_TABLE_COLUMNS } from './constants'
 import { ProgramRow } from './components/program-row'
 import type { ProgramsTableProps } from './types'
+import { useOnlyProgramRedirect } from './use-only-program-redirect'
 
-/** Every program with its status, timeline and lead; planners and leads create programs here. */
+/**
+ * Every program with its status, timeline and lead; planners and leads create programs here. A manager whose
+ * list is a single program goes straight to it.
+ */
 export function ProgramsTable({ onCreated }: ProgramsTableProps) {
   const { t } = useTranslation()
   const { data: user } = useCurrentUser()
@@ -23,6 +27,7 @@ export function ProgramsTable({ onCreated }: ProgramsTableProps) {
   const [formOpen, setFormOpen] = useState(false)
   const { data, isPending, isPlaceholderData } = usePrograms(page)
   const programs = data?.data ?? []
+  useOnlyProgramRedirect(programs, data?.meta.total)
 
   const handleNew = () => setFormOpen(true)
 
