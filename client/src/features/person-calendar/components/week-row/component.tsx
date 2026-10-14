@@ -8,7 +8,7 @@ import { WorkedHours } from './components/worked-hours'
 import { LOAD_BUTTON_CLASS } from './constants'
 import type { WeekRowProps } from './types'
 
-/** One ISO week: its working days, then its load against capacity, which selects the week. */
+/** One ISO week: its seven days (days off shaded), then its load against capacity, which selects the week. */
 export function WeekRow({ week, days, month, selected, onSelect }: WeekRowProps) {
   const { t } = useTranslation()
 
@@ -17,8 +17,8 @@ export function WeekRow({ week, days, month, selected, onSelect }: WeekRowProps)
   return (
     <TableRow data-state={selected ? 'selected' : undefined}>
       <TableCell className="text-xs text-muted-foreground">{shortWeekLabel(week.week)}</TableCell>
-      {days.map((day) => (
-        <DayCell key={day.date} day={day} month={month} />
+      {days.map((cell) => (
+        <DayCell key={cell.day.date} day={cell.day} working={cell.working} month={month} />
       ))}
       <TableCell className="text-right">
         <div className="flex flex-col items-end gap-0.5">

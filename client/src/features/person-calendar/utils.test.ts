@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ScheduleDay } from '@/shared/people'
-import { daysByDate, findWeek, orderedWeekdays, weekCells } from './utils'
+import { daysByDate, findWeek, weekCells } from './utils'
 
 const leave: ScheduleDay = {
   date: '2026-10-14',
@@ -8,24 +8,21 @@ const leave: ScheduleDay = {
   holidays: [],
 }
 
-describe('orderedWeekdays', () => {
-  it('puts Monday first and Sunday last', () => {
-    expect(orderedWeekdays([7, 3, 1])).toEqual([1, 3, 7])
-  })
-})
-
 describe('weekCells', () => {
-  it('gives each working weekday its date and what is on it', () => {
+  it('gives all seven days, Monday first, with what is on each and whether it is a working day', () => {
     const cells = weekCells('2026-W42', [1, 2, 3, 4, 5], daysByDate([leave]))
-    expect(cells.map((cell) => cell.date)).toEqual([
+    expect(cells.map((cell) => cell.day.date)).toEqual([
       '2026-10-12',
       '2026-10-13',
       '2026-10-14',
       '2026-10-15',
       '2026-10-16',
+      '2026-10-17',
+      '2026-10-18',
     ])
-    expect(cells[2]).toBe(leave)
-    expect(cells[0]).toEqual({ date: '2026-10-12', absences: [], holidays: [] })
+    expect(cells.map((cell) => cell.working)).toEqual([true, true, true, true, true, false, false])
+    expect(cells[2].day).toBe(leave)
+    expect(cells[5].day).toEqual({ date: '2026-10-17', absences: [], holidays: [] })
   })
 })
 

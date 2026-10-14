@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PersonSchedule, ScheduleWeek } from '@/shared/people'
+import { formatIsoWeekday } from '@/utils/functions'
 import { PersonCalendar } from './component'
 
 const { useSchedule } = vi.hoisted(() => ({ useSchedule: vi.fn() }))
@@ -134,5 +135,14 @@ describe('PersonCalendar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next month' }))
     expect(useSchedule).toHaveBeenLastCalledWith('u1', '2026-W44', '2026-W49')
     expect(screen.getByText('November 2026')).toBeTruthy()
+  })
+})
+
+describe('PersonCalendar weekends', () => {
+  it('shows Saturday and Sunday as columns too', () => {
+    renderCalendar()
+    const headers = screen.getAllByRole('columnheader').map((cell) => cell.textContent)
+    expect(headers).toContain(formatIsoWeekday(6))
+    expect(headers).toContain(formatIsoWeekday(7))
   })
 })

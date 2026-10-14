@@ -4,13 +4,13 @@ import { TableLoading } from '@/shared/components/table-loading'
 import { useTranslation } from '@/shared/i18n'
 import { useSchedule } from '@/shared/people'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
-import { currentMonth, formatIsoWeekday, formatMonth, monthIsoWeeks } from '@/utils/functions'
+import { cn, currentMonth, formatIsoWeekday, formatMonth, monthIsoWeeks } from '@/utils/functions'
 import { MonthNav } from './components/month-nav'
 import { WeekDetail } from './components/week-detail'
 import { WeekRow } from './components/week-row'
-import { CALENDAR_LABEL_COLUMNS, DAY_COLUMN_CLASS } from './constants'
+import { CALENDAR_LABEL_COLUMNS, CALENDAR_WEEKDAYS, DAY_COLUMN_CLASS, DAY_OFF_CLASS } from './constants'
 import type { PersonCalendarProps } from './types'
-import { daysByDate, findWeek, orderedWeekdays, weekCells } from './utils'
+import { daysByDate, findWeek, weekCells } from './utils'
 
 /** One person's month: absences and holidays by day, load against capacity and hours per project by week. */
 export function PersonCalendar({ personId, canOpenProjects }: PersonCalendarProps) {
@@ -19,7 +19,7 @@ export function PersonCalendar({ personId, canOpenProjects }: PersonCalendarProp
   const [selectedWeek, setSelectedWeek] = useState<string | null>(null)
   const weeks = monthIsoWeeks(month)
   const { data: schedule, isPending } = useSchedule(personId, weeks[0], weeks[weeks.length - 1])
-  const weekdays = orderedWeekdays(schedule?.working_weekdays ?? [])
+  const workingWeekdays = schedule?.working_weekdays ?? []
   const days = daysByDate(schedule?.days ?? [])
   const selected = findWeek(schedule?.weeks ?? [], selectedWeek)
 
@@ -38,8 +38,11 @@ export function PersonCalendar({ personId, canOpenProjects }: PersonCalendarProp
         <TableHeader>
           <TableRow>
             <TableHead>{t('Week')}</TableHead>
-            {weekdays.map((weekday) => (
-              <TableHead key={weekday} className={DAY_COLUMN_CLASS}>
+            {CALENDAR_WEEKDAYS.map((weekday) => (
+              <TableHead
+                key={weekday}
+                className={cn(DAY_COLUMN_CLASS, !workingWeekdays.includes(weekday) && DAY_OFF_CLASS)}
+              >
                 {formatIsoWeekday(weekday)}
               </TableHead>
             ))}
@@ -51,13 +54,13 @@ export function PersonCalendar({ personId, canOpenProjects }: PersonCalendarProp
             <WeekRow
               key={week.week}
               week={week}
-              days={weekCells(week.week, weekdays, days)}
+              days={weekCells(week.week, workingWeekdays, days)}
               month={month}
               selected={week.week === selectedWeek}
               onSelect={setSelectedWeek}
             />
           ))}
-          {isPending && <TableLoading columns={weekdays.length + CALENDAR_LABEL_COLUMNS} />}
+          {isPending && <TableLoading columns={CALENDAR_WEEKDAYS.length + CALENDAR_LABEL_COLUMNS} />}
         </TableBody>
       </Table>
       {selected && <WeekDetail week={selected} canOpenProjects={canOpenProjects} />}
