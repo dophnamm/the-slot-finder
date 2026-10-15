@@ -144,6 +144,8 @@ type draftBuilder struct {
 	absences repositories.AbsenceRepository
 	// teams limits each program's demand to its team; nil puts no limit (tests).
 	teams repositories.ProgramTeamRepository
+	// clock gives the current ISO week: only weeks from it on are planned.
+	clock clock.Clock
 	cfg   *config.Config
 }
 
@@ -155,7 +157,6 @@ type staffingService struct {
 	finder PersonFinder
 	authz  AuthzService
 	tx     db.TxManager
-	clock  clock.Clock
 }
 
 // ProvideStaffingService creates the staffing service.
@@ -164,8 +165,8 @@ func ProvideStaffingService(plans repositories.PlanRepository, projects reposito
 	events repositories.ChangeEventRepository, finder PersonFinder, authz AuthzService, tx db.TxManager, clk clock.Clock,
 	cfg *config.Config, teams repositories.ProgramTeamRepository,
 ) StaffingService {
-	return &staffingService{draftBuilder: draftBuilder{projects: projects, people: people, absences: absences, teams: teams, cfg: cfg},
-		plans: plans, audit: audit, events: events, finder: finder, authz: authz, tx: tx, clock: clk}
+	return &staffingService{draftBuilder: draftBuilder{projects: projects, people: people, absences: absences, teams: teams, clock: clk, cfg: cfg},
+		plans: plans, audit: audit, events: events, finder: finder, authz: authz, tx: tx}
 }
 
 func (s *staffingService) Generate(ctx context.Context, in GenerateDraftInput) (*DraftView, error) {

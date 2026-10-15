@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"the-slot-finder/server/internal/clock"
 	"the-slot-finder/server/internal/config"
 	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/db"
@@ -88,9 +89,9 @@ type scenarioService struct {
 // ProvideScenarioService creates the scenario service.
 func ProvideScenarioService(plans repositories.PlanRepository, projects repositories.ProjectRepository,
 	people repositories.PersonRepository, absences repositories.AbsenceRepository, finder PersonFinder, authz AuthzService,
-	tx db.TxManager, cfg *config.Config, teams repositories.ProgramTeamRepository,
+	tx db.TxManager, clk clock.Clock, cfg *config.Config, teams repositories.ProgramTeamRepository,
 ) ScenarioService {
-	return &scenarioService{draftBuilder: draftBuilder{projects: projects, people: people, absences: absences, teams: teams, cfg: cfg},
+	return &scenarioService{draftBuilder: draftBuilder{projects: projects, people: people, absences: absences, teams: teams, clock: clk, cfg: cfg},
 		plans: plans, finder: finder, authz: authz, tx: tx}
 }
 

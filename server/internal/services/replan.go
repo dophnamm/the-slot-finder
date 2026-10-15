@@ -45,7 +45,6 @@ type replanService struct {
 	plans  repositories.PlanRepository
 	events repositories.ChangeEventRepository
 	tx     db.TxManager
-	clock  clock.Clock
 }
 
 // ProvideReplanService creates the re-plan service.
@@ -53,8 +52,8 @@ func ProvideReplanService(plans repositories.PlanRepository, events repositories
 	projects repositories.ProjectRepository, people repositories.PersonRepository, absences repositories.AbsenceRepository,
 	tx db.TxManager, clk clock.Clock, cfg *config.Config, teams repositories.ProgramTeamRepository,
 ) ReplanService {
-	return &replanService{draftBuilder: draftBuilder{projects: projects, people: people, absences: absences, teams: teams, cfg: cfg},
-		plans: plans, events: events, tx: tx, clock: clk}
+	return &replanService{draftBuilder: draftBuilder{projects: projects, people: people, absences: absences, teams: teams, clock: clk, cfg: cfg},
+		plans: plans, events: events, tx: tx}
 }
 
 func (s *replanService) Run(ctx context.Context) {

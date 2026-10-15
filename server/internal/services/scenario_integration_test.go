@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"the-slot-finder/server/internal/clock"
 	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/db"
 	"the-slot-finder/server/internal/db/dbtest"
@@ -56,7 +57,7 @@ func TestScenario_Postgres(t *testing.T) {
 	cfg := replanConfig()
 	cfg.ScenarioMaxShiftWeeks, cfg.ScenarioMaxAssumptions = 12, 10
 	svc := ProvideScenarioService(plans, repositories.ProvideProjectRepository(pdb), repositories.ProvidePersonRepository(pdb),
-		repositories.ProvideAbsenceRepository(pdb), leadPeople{}, ProvideAuthzService(leadPeople{}), db.ProvideTxManager(pdb), cfg, nil)
+		repositories.ProvideAbsenceRepository(pdb), leadPeople{}, ProvideAuthzService(leadPeople{}), db.ProvideTxManager(pdb), clock.NewFixed(day(time.October, 12)), cfg, nil)
 
 	// Ada away in W43: her 36 h there go to Bea, and nothing real changes.
 	view, err := svc.Create(planner, CreateScenarioInput{Name: "Ada away", Assumptions: []AssumptionInput{{
