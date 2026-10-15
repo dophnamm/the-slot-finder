@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { Section } from '@/shared/components/section'
 import { useTranslation } from '@/shared/i18n'
+import { confirm } from '@/shared/stores/confirm-store'
 import { Button } from '@/shared/ui/button'
 import { AddMemberDialog } from './components/add-member-dialog'
 import { TeamTable } from './components/team-table'
@@ -19,15 +20,14 @@ export function ProgramTeam({ programId, canManage }: ProgramTeamProps) {
 
   const handleAdd = () => setAdding(true)
   const handleRemoved = () => toast.success(t('Member removed.'))
-  const handleRemove = (member: TeamMember) => {
-    if (
-      !window.confirm(
-        t('Remove {name} from the team? Their baseline hours stay; the next draft plans without them.', {
-          name: member.person.name,
-        }),
-      )
-    )
-      return
+  const handleRemove = async (member: TeamMember) => {
+    const confirmed = await confirm({
+      title: t('Remove {name} from the team?', { name: member.person.name }),
+      description: t('Their baseline hours stay; the next draft plans without them.'),
+      confirmLabel: t('Remove'),
+      destructive: true,
+    })
+    if (!confirmed) return
     remove.mutate(member.person.id, { onSuccess: handleRemoved })
   }
 

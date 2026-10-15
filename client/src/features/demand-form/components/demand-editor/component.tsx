@@ -5,6 +5,7 @@ import { useReplaceDemands } from '@/shared/programs'
 import { Section } from '@/shared/components/section'
 import { TableEmpty } from '@/shared/components/table-empty'
 import { useTranslation } from '@/shared/i18n'
+import { confirm } from '@/shared/stores/confirm-store'
 import { Button } from '@/shared/ui/button'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 import { DEMAND_EDIT_COLUMNS, DEMAND_TABLE_COLUMNS } from './constants'
@@ -38,8 +39,9 @@ export function DemandEditor({ project, expertises, expertisesLoading, editable 
     save.mutate(next.map(toDemandInput), { onSuccess: handleSaved })
   }
   const handleRemoved = () => toast.success(t('Demand removed.'))
-  const handleRemove = (index: number) => {
-    if (!window.confirm(t('Remove this demand?'))) return
+  const handleRemove = async (index: number) => {
+    const confirmed = await confirm({ title: t('Remove this demand?'), confirmLabel: t('Remove'), destructive: true })
+    if (!confirmed) return
     save.mutate(saved.filter((_, i) => i !== index).map(toDemandInput), { onSuccess: handleRemoved })
   }
 

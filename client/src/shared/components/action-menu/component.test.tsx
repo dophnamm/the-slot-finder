@@ -1,6 +1,9 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { confirm } from '@/shared/stores/confirm-store'
 import { ActionMenu } from './component'
+
+vi.mock('@/shared/stores/confirm-store', () => ({ confirm: vi.fn() }))
 
 const ITEMS = [
   { action: 'hold', label: 'Put on hold' },
@@ -27,11 +30,14 @@ describe('ActionMenu', () => {
 
   it('asks before an action that cannot be undone', async () => {
     const onAction = vi.fn()
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    vi.mocked(confirm).mockResolvedValue(false)
     render(<ActionMenu items={ITEMS} onAction={onAction} />)
     openMenu()
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Cancel program' }))
-    expect(confirm).toHaveBeenCalledWith('This cannot be undone. Continue?')
+    await waitFor(() => expect(confirm).toHaveBeenCalled())
+    expect(confirm).toHaveBeenCalledWith(
+      expect.objectContaining({ description: 'This cannot be undone. Continue?', destructive: true }),
+    )
     expect(onAction).not.toHaveBeenCalled()
   })
 

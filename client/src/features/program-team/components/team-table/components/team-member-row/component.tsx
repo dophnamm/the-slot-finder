@@ -40,7 +40,7 @@ export function TeamMemberRow({ member, programId, canManage, removing, onRemove
           ))}
         </div>
       </TableCell>
-      <TableCell className="text-right tabular-nums">{t('{hours} h', { hours: member.total_hours })}</TableCell>
+      <TableCell className="text-right tabular-nums">{t('{hours} hrs', { hours: member.total_hours })}</TableCell>
       <TableCell className="text-sm">
         {member.from_week && member.to_week ? (
           formatIsoWeekSpan(member.from_week, member.to_week)

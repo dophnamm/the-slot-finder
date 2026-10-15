@@ -7,6 +7,7 @@ import { Section } from '@/shared/components/section'
 import { TableEmpty } from '@/shared/components/table-empty'
 import { TableLoading } from '@/shared/components/table-loading'
 import { useTranslation } from '@/shared/i18n'
+import { confirm } from '@/shared/stores/confirm-store'
 import { Button } from '@/shared/ui/button'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 import { currentIsoWeek } from '@/utils/functions'
@@ -91,8 +92,13 @@ export function ProjectPhases({ projectId }: ProjectPhasesProps) {
       updatePhase.mutate({ phaseId: draft.id, changes: phaseChanges(phases, draft) }, { onSuccess: handlePhaseSaved })
     }
   }
-  const handleRemove = (phase: Phase) => {
-    if (!window.confirm(t('Remove the phase {name}?', { name: phase.name }))) return
+  const handleRemove = async (phase: Phase) => {
+    const confirmed = await confirm({
+      title: t('Remove the phase {name}?', { name: phase.name }),
+      confirmLabel: t('Remove'),
+      destructive: true,
+    })
+    if (!confirmed) return
     const kept = phases.filter((other) => other.id !== phase.id).map(toDraft)
     replacePhases.mutate(kept.map(toPhaseInput), { onSuccess: handleListSaved })
   }

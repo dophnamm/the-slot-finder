@@ -1,7 +1,8 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { translate } from '@/shared/i18n'
+import { confirm } from '@/shared/stores/confirm-store'
 import { ProgramTeam } from './component'
 
 const person = (id: string, name: string) => ({
@@ -18,6 +19,8 @@ const person = (id: string, name: string) => ({
 })
 
 const removeMember = vi.fn()
+
+vi.mock('@/shared/stores/confirm-store', () => ({ confirm: vi.fn() }))
 
 vi.mock('./use-program-team', () => ({
   useProgramTeam: () => ({
@@ -65,7 +68,7 @@ describe('ProgramTeam', () => {
     renderTeam(false)
     expect(screen.getByRole('link', { name: 'Ada Ng' }).getAttribute('href')).toBe('/people/u1')
     expect(screen.getAllByText('QA · level 3')).toHaveLength(2)
-    expect(screen.getByText('80 h')).toBeTruthy()
+    expect(screen.getByText('80 hrs')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Checkout' }).getAttribute('href')).toBe('/programs/g1/projects/p1')
     expect(screen.getByText(translate('Not staffed yet'))).toBeTruthy()
   })
@@ -78,18 +81,20 @@ describe('ProgramTeam', () => {
     ).toBeNull()
   })
 
-  it('lets a planner remove a member after confirming', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+  it('lets a planner remove a member after confirming', async () => {
+    vi.mocked(confirm).mockResolvedValue(true)
     renderTeam(true)
     expect(screen.getByRole('button', { name: translate('Add member') })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: translate('Remove {name} from the team', { name: 'Ada Ng' }) }))
-    expect(removeMember).toHaveBeenCalledWith('u1', expect.anything())
+    await waitFor(() => expect(removeMember).toHaveBeenCalledWith('u1', expect.anything()))
+    expect(confirm).toHaveBeenCalledWith(expect.objectContaining({ destructive: true }))
   })
 
-  it('keeps the member when the planner cancels', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
+  it('keeps the member when the planner cancels', async () => {
+    vi.mocked(confirm).mockResolvedValue(false)
     renderTeam(true)
     fireEvent.click(screen.getByRole('button', { name: translate('Remove {name} from the team', { name: 'Ada Ng' }) }))
+    await waitFor(() => expect(confirm).toHaveBeenCalled())
     expect(removeMember).not.toHaveBeenCalled()
   })
 })
