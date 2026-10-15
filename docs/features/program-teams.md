@@ -36,7 +36,8 @@
 | DELETE | `/programs/{id}/team/{personId}` | Remove a member | planner |
 
 - **Data:** `program_team_members (program_id, person_id, created_at)`, unique on the pair, both foreign keys cascade on delete.
-- **Visibility:** `AuthzService.VisiblePeople(ctx)` answers "everyone" for a planner, and for a manager the person ids of the teams of the programs they lead plus their own. `GET /people`, `GET /people/{id}`, `GET /people/{id}/schedule`, the heatmap and the risks use it.
+- **Visibility:** `AuthzService.VisiblePeople(ctx)` answers "everyone" for a planner, and for a manager their own id plus the person ids of the teams of the programs they read (they lead it or lead one of its projects). `GET /people`, `GET /people/{id}`, `GET /people/{id}/schedule`, the heatmap and the risks use it.
+- **Programs a manager reads:** `AuthzService.ProgramReader(ctx)` answers "every program" for a planner, and for a manager the programs they lead or lead a project in. `GET /programs`, the project list (intake) and the risks leave the other programs out; `GET /programs/{id}`, its overview, members and projects, and `GET /projects/{id}` answer `403` for them.
 - **Drafts:** the draft routes also admit `lead`; the staffing service lets a manager act only when every project of the draft belongs to a program they lead (else `403`).
 - **Engine:** `engine.Demand.Candidates` (a set of person ids; `nil` means anyone). The staffing snapshot fills it with the team of the demand's program. A person outside the set is never proposed, and their unlocked hours on that demand are dropped; locked hours stay.
 - **Seed:** each demo program gets a team: the people the demo baseline uses, plus one or two more.

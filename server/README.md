@@ -124,6 +124,8 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 
 **Programs and projects**
 
+A manager (`lead`) reads only the programs they lead or lead a project in, and the people of those programs' teams: `GET /programs`, `GET /projects` and the risks leave the others out, and the routes of another program or its projects answer `403`.
+
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
 | GET, POST | `/programs` | List or create programs | planner, lead |
