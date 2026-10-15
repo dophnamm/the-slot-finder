@@ -1,9 +1,13 @@
 import { STAFFING_ENDPOINTS } from '@/resources/endpoints'
 import { request } from '@/shared/api/http'
-import type { Draft, DraftAcceptance, DraftEdit } from './types'
+import type { Draft, DraftAcceptance, DraftEdit, OpenDraft } from './types'
 
 export function generateDraft(projectIds: string[]) {
   return request<Draft>({ url: STAFFING_ENDPOINTS.drafts, method: 'POST', data: { project_ids: projectIds } })
+}
+
+export function listOpenDrafts() {
+  return request<OpenDraft[]>({ url: STAFFING_ENDPOINTS.open })
 }
 
 export function getDraft(id: string) {

@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router'
 import { ROUTES } from '@/resources/routes'
 import { AuthCallbackPage } from '@/pages/auth-callback'
+import { DraftsPage } from '@/pages/drafts'
 import { EventsPage } from '@/pages/events'
 import { IntakePage } from '@/pages/intake'
 import { MySchedulePage } from '@/pages/my-schedule'
@@ -46,7 +47,10 @@ export const router = createBrowserRouter([
           },
           {
             element: <RequirePermission permission="staffing-drafts:view" />,
-            children: [{ path: ROUTES.staffingDraft, Component: StaffingDraftPage, handle: crumb('staffingDraft') }],
+            children: [
+              { path: ROUTES.drafts, Component: DraftsPage, handle: crumb('drafts') },
+              { path: ROUTES.staffingDraft, Component: StaffingDraftPage, handle: crumb('staffingDraft') },
+            ],
           },
           {
             element: <RequirePermission permission="scenarios:view" />,

@@ -56,6 +56,21 @@ export interface DraftProject {
   staffed_at: string | null
 }
 
+/** An open draft as listed in the drafts inbox, newest first. */
+export interface OpenDraft {
+  id: string
+  base_version: number
+  current_version: number
+  /** Built on a baseline that is no longer in force; it cannot be accepted. */
+  stale: boolean
+  /** A re-plan draft that changes such as leave or a slipped phase created. */
+  auto: boolean
+  created_at: string
+  projects: DraftProject[]
+  /** Demands the engine could not cover when the draft was generated. */
+  unmet_count: number
+}
+
 /** A covered demand with the hours the draft gives it. */
 export interface DraftDemand {
   id: string

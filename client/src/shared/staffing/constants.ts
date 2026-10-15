@@ -1,9 +1,13 @@
+import type { TermName } from '@/shared/components/term'
 import type { PlainKey } from '@/shared/i18n'
 import type { ProjectStatus } from '@/shared/programs'
 import type { BadgeVariant } from '@/shared/ui/badge'
 import type { AssignmentKind, PlanChangeKind, PlanStatus, UnmetReason } from './types'
 
 export const draftQueryKey = (id: string) => ['staffing-drafts', id] as const
+
+/** The drafts inbox; generating, accepting or rejecting a draft refetches it. */
+export const OPEN_DRAFTS_QUERY_KEY = ['staffing-drafts', 'open'] as const
 
 /** The server's code when the baseline moved on since the draft was made. */
 export const PLAN_VERSION_CONFLICT = 'PLAN_VERSION_CONFLICT'
@@ -45,6 +49,12 @@ export const ASSIGNMENT_KIND_LABELS: Record<AssignmentKind, PlainKey> = {
   primary: 'Primary',
   cross_expertise: 'Cross-expertise',
   stretch: 'Stretch',
+}
+
+/** Kinds whose word has a definition to show on hover. */
+export const ASSIGNMENT_KIND_TERMS: Partial<Record<AssignmentKind, TermName>> = {
+  cross_expertise: 'crossExpertise',
+  stretch: 'stretch',
 }
 
 /** Badge colour per assignment kind: primary blue, cross-expertise violet, stretch red. */

@@ -1,6 +1,7 @@
 export {
   ASSIGNMENT_KIND_BADGE,
   ASSIGNMENT_KIND_LABELS,
+  ASSIGNMENT_KIND_TERMS,
   PLAN_CHANGE_BADGE,
   PLAN_CHANGE_LABELS,
   PLAN_STATUS_BADGE,
@@ -21,6 +22,7 @@ export type {
   DraftDemand,
   DraftEdit,
   DraftProject,
+  OpenDraft,
   PlanChange,
   PlanChangeKind,
   PlanStatus,
@@ -28,4 +30,4 @@ export type {
   WeekHours,
 } from './types'
 export { canEditDraft, canStaff, shortfall } from './utils'
-export { useAcceptDraft, useDraft, useEditDraft, useGenerateDraft, useRejectDraft } from './use-staffing'
+export { useAcceptDraft, useDraft, useEditDraft, useGenerateDraft, useOpenDrafts, useRejectDraft } from './use-staffing'

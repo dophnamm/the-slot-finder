@@ -5,9 +5,14 @@ import { translate } from '@/shared/i18n'
 import { PROGRAMS_QUERY_KEY, PROJECTS_QUERY_KEY } from '@/shared/programs'
 import { SCENARIOS_QUERY_KEY } from '@/shared/scenarios'
 import { INSIGHTS_QUERY_KEY } from '@/utils/constants'
-import { acceptDraft, editDraft, generateDraft, getDraft, rejectDraft } from './api'
-import { DRAFT_SUPERSEDED, draftQueryKey, PLAN_VERSION_CONFLICT } from './constants'
+import { acceptDraft, editDraft, generateDraft, getDraft, listOpenDrafts, rejectDraft } from './api'
+import { DRAFT_SUPERSEDED, draftQueryKey, OPEN_DRAFTS_QUERY_KEY, PLAN_VERSION_CONFLICT } from './constants'
 import type { Draft, DraftAcceptance, DraftEdit } from './types'
+
+/** Open drafts for the inbox and the sidebar count; enabled only for roles that may see drafts. */
+export function useOpenDrafts(enabled = true) {
+  return useQuery({ queryKey: OPEN_DRAFTS_QUERY_KEY, queryFn: listOpenDrafts, enabled })
+}
 
 export function useDraft(id: string) {
   return useQuery({ queryKey: draftQueryKey(id), queryFn: () => getDraft(id) })
@@ -30,8 +35,15 @@ function useReloadSuperseded(id: string) {
 }
 
 export function useGenerateDraft() {
+  const queryClient = useQueryClient()
   const store = useStoreDraft()
-  return useMutation({ mutationFn: (projectIds: string[]) => generateDraft(projectIds), onSuccess: store })
+  return useMutation({
+    mutationFn: (projectIds: string[]) => generateDraft(projectIds),
+    onSuccess: async (draft) => {
+      store(draft)
+      await queryClient.invalidateQueries({ queryKey: OPEN_DRAFTS_QUERY_KEY })
+    },
+  })
 }
 
 export function useEditDraft(id: string) {
@@ -61,6 +73,7 @@ export function useAcceptDraft(id: string) {
       await queryClient.invalidateQueries({ queryKey: INSIGHTS_QUERY_KEY })
       await queryClient.invalidateQueries({ queryKey: EVENTS_QUERY_KEY })
       await queryClient.invalidateQueries({ queryKey: SCENARIOS_QUERY_KEY })
+      await queryClient.invalidateQueries({ queryKey: OPEN_DRAFTS_QUERY_KEY })
     },
     onError: (error) => {
       if (error.code === PLAN_VERSION_CONFLICT) void queryClient.invalidateQueries({ queryKey: draftQueryKey(id) })
@@ -79,6 +92,7 @@ export function useRejectDraft(id: string) {
     onSuccess: async (draft) => {
       store(draft)
       await queryClient.invalidateQueries({ queryKey: EVENTS_QUERY_KEY })
+      await queryClient.invalidateQueries({ queryKey: OPEN_DRAFTS_QUERY_KEY })
     },
     onError: reload,
   })
