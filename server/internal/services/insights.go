@@ -255,6 +255,13 @@ func (s *insightsService) heatmapRow(p models.Person, weeks []isoweek.Week, abse
 		}
 		row.Cells = append(row.Cells, cell)
 	}
+	overloaded := make([]bool, len(row.Cells))
+	for i, cell := range row.Cells {
+		overloaded[i] = cell.Band == constants.BandOverloaded
+	}
+	if start, length, ok := metrics.SustainedOverload(overloaded, s.cfg.SustainedOverloadWeeks); ok {
+		row.Sustained = &models.OverloadRun{From: row.Cells[start].Week, Weeks: length}
+	}
 	return row
 }
 
@@ -597,15 +604,13 @@ func (s *insightsService) Risks(ctx context.Context) (*models.Risks, error) {
 	}
 	for _, row := range heatmap.Rows {
 		var weeks []models.HeatmapCell
-		overloaded := make([]bool, len(row.Cells))
-		for i, cell := range row.Cells {
+		for _, cell := range row.Cells {
 			if cell.Band == constants.BandOverloaded {
 				weeks = append(weeks, cell)
-				overloaded[i] = true
 			}
 		}
-		if start, length, ok := metrics.SustainedOverload(overloaded, s.cfg.SustainedOverloadWeeks); ok {
-			risks.Sustained = append(risks.Sustained, models.SustainedOverload{Person: row.Person, From: row.Cells[start].Week, Weeks: length})
+		if row.Sustained != nil {
+			risks.Sustained = append(risks.Sustained, models.SustainedOverload{Person: row.Person, From: row.Sustained.From, Weeks: row.Sustained.Weeks})
 		}
 		if len(weeks) > 0 {
 			risks.People = append(risks.People, models.PersonOverload{Person: row.Person, Weeks: weeks})

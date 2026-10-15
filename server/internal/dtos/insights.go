@@ -48,12 +48,21 @@ type HeatmapCellResponse struct {
 	ActualHours *float64 `json:"actual_hours" example:"30"`
 }
 
+// OverloadRunResponse is weeks in a row over 100 %, from a week.
+type OverloadRunResponse struct {
+	FromWeek string `json:"from_week" example:"2026-W44"`
+	Weeks    int    `json:"weeks" example:"3"`
+}
+
 // HeatmapRowResponse is one person's weeks.
 type HeatmapRowResponse struct {
 	Person             PersonRef             `json:"person"`
 	PrimaryExpertiseID string                `json:"primary_expertise_id"`
 	PrimaryExpertise   string                `json:"primary_expertise" example:"Engineer"`
 	Cells              []HeatmapCellResponse `json:"cells"`
+	// SustainedOverload is the first run of overloaded weeks in the range, long enough to
+	// warn about; null when there is none.
+	SustainedOverload *OverloadRunResponse `json:"sustained_overload"`
 }
 
 // HeatmapResponse is the person × week matrix, rows grouped by primary expertise.
@@ -79,8 +88,13 @@ func NewHeatmapResponse(h models.Heatmap) HeatmapResponse {
 			cells = append(cells, HeatmapCellResponse{Week: c.Week.String(), Capacity: c.Capacity, Load: c.Load,
 				Utilization: c.Utilization, Band: c.Band, Tentative: c.Tentative, ByExpertise: split, ActualHours: c.ActualHours})
 		}
+		var sustained *OverloadRunResponse
+		if r.Sustained != nil {
+			sustained = &OverloadRunResponse{FromWeek: r.Sustained.From.String(), Weeks: r.Sustained.Weeks}
+		}
 		rows = append(rows, HeatmapRowResponse{Person: PersonRef{ID: r.Person.ID, Name: r.Person.Name},
-			PrimaryExpertiseID: r.PrimaryExpertise.ID, PrimaryExpertise: r.PrimaryExpertise.Name, Cells: cells})
+			PrimaryExpertiseID: r.PrimaryExpertise.ID, PrimaryExpertise: r.PrimaryExpertise.Name, Cells: cells,
+			SustainedOverload: sustained})
 	}
 	return HeatmapResponse{Weeks: weeks, Rows: rows}
 }

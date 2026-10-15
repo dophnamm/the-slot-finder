@@ -28,3 +28,20 @@ func TestNewHeatmapResponse_ActualHours(t *testing.T) {
 	require.NoError(t, err)
 	assert.Contains(t, string(body), `"actual_hours":null`)
 }
+
+func TestNewHeatmapResponse_SustainedOverload(t *testing.T) {
+	week, err := isoweek.Parse("2026-W44")
+	require.NoError(t, err)
+	heatmap := models.Heatmap{Weeks: []isoweek.Week{week}, Rows: []models.HeatmapRow{
+		{Sustained: &models.OverloadRun{From: week, Weeks: 3}},
+		{},
+	}}
+
+	got := NewHeatmapResponse(heatmap)
+
+	require.NotNil(t, got.Rows[0].SustainedOverload)
+	assert.Equal(t, OverloadRunResponse{FromWeek: "2026-W44", Weeks: 3}, *got.Rows[0].SustainedOverload)
+	body, err := json.Marshal(got.Rows[1])
+	require.NoError(t, err)
+	assert.Contains(t, string(body), `"sustained_overload":null`)
+}
