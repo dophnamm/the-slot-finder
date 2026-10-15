@@ -1,5 +1,6 @@
 import type { Assignment, Draft, DraftEdit } from '@/shared/staffing'
-import type { DemandGroup, WeekLoad } from './types'
+import { MAX_WEEK_HOURS } from './constants'
+import type { DemandGroup, DragSource, WeekLoad } from './types'
 
 /** Assignments grouped under their demand, in the draft's demand order. */
 export function groupByDemand(draft: Draft): DemandGroup[] {
@@ -36,4 +37,33 @@ export function weekLoads(draft: Draft, assignment: Assignment): Map<string, Wee
       return [entry.week, { capacity: entry.capacity, rest: entry.other_hours + elsewhereInDraft }]
     }),
   )
+}
+
+/**
+ * The batch that moves the dragged hours onto another cell, or null when that is not allowed. A cell may take
+ * them in the same row (another week) or in the same week of another person on the same demand; the hours of
+ * the target add to what it has. Locked cells neither give nor take, and a week holds at most MAX_WEEK_HOURS.
+ */
+export function moveHours(source: DragSource, target: DragSource): NonNullable<DraftEdit['set']> | null {
+  const from = source.assignment.allocations.find((alloc) => alloc.week === source.week)
+  const to = target.assignment.allocations.find((alloc) => alloc.week === target.week)
+  const sameRow = source.assignment.id === target.assignment.id
+  const sameCell = sameRow && source.week === target.week
+  const reachable = sameRow ? source.week !== target.week : source.week === target.week
+  const { demand } = target.assignment
+  const allowed =
+    from !== undefined &&
+    !from.locked &&
+    !to?.locked &&
+    !sameCell &&
+    reachable &&
+    source.assignment.demand.id === demand.id &&
+    inWindow(target.week, demand.from_week, demand.to_week)
+  if (!allowed) return null
+  const hours = (to?.hours ?? 0) + from.hours
+  if (hours > MAX_WEEK_HOURS) return null
+  return [
+    { assignment_id: source.assignment.id, week: source.week, hours: 0 },
+    { assignment_id: target.assignment.id, week: target.week, hours },
+  ]
 }
