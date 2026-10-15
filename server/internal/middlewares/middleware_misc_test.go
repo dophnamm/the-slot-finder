@@ -211,7 +211,8 @@ func TestRateLimit(t *testing.T) {
 		require.NoError(t, json.Unmarshal(last.Body.Bytes(), &body))
 		assert.Equal(t, constants.RateLimitExceeded, body.Meta.ErrorCode)
 		assert.Equal(t, http.StatusTooManyRequests, body.Meta.Code)
-		assert.Equal(t, dtos.RateLimitResponse{Limit: 1, Window: time.Minute.String()}, body.Data)
+		assert.Equal(t, dtos.RateLimitResponse{Limit: 1, Window: time.Minute.String(), RetryAfter: 60}, body.Data)
+		assert.Equal(t, "60", last.Header().Get(echo.HeaderRetryAfter))
 
 		// Another client is not affected.
 		assert.Equal(t, http.StatusNoContent, call(e, "10.0.0.2").Code)
@@ -222,6 +223,16 @@ func TestRateLimit(t *testing.T) {
 		for i := 0; i < 5; i++ {
 			assert.Equal(t, http.StatusNoContent, call(e, "10.0.0.3").Code)
 		}
+	})
+
+	t.Run("a short window still asks for a whole second", func(t *testing.T) {
+		e := newServer(&config.Config{RateLimit: 20, RateLimitDuration: time.Second})
+		var last *httptest.ResponseRecorder
+		for i := 0; i < 25; i++ {
+			last = call(e, "10.0.0.4")
+		}
+		require.Equal(t, http.StatusTooManyRequests, last.Code)
+		assert.Equal(t, "1", last.Header().Get(echo.HeaderRetryAfter))
 	})
 }
 
