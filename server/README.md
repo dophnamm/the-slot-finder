@@ -110,8 +110,6 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | GET | `/people/{id}` | One person with their expertise, for the person page | planner, lead (team; else `403`) |
 | PATCH | `/people/{id}` | Edit a person: only the sent fields; `start_date` and `end_date` accept null to clear them | planner |
 | PUT | `/people/{id}/skills` | Replace expertise and levels (exactly one primary) | planner |
-| PUT | `/people/{id}/tags` | Replace a person's skill tags | planner |
-| GET, POST | `/people/{id}/capacity-changes` | Effective-dated weekly hours (`from_week`, `weekly_hours`) | planner |
 | GET, POST | `/people/{id}/absences` | Leave calendar. A person's own absence is always `planned`; planners choose the status. Leave read from a calendar feed has `source = calendar` | planner, the person themselves |
 | DELETE | `/absences/{id}` | Remove an absence, or a holiday (planner) | planner, the person themselves |
 | POST | `/absences/{id}/approve` | Approve a planned absence; records a change event | planner |
@@ -120,7 +118,6 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | GET, PUT, DELETE | `/people/{id}/calendar-feed` | A person's calendar link: its status (never the link itself), connect or replace (`{ url }`, checked and synced once), disconnect. `503 CALENDAR_SYNC_DISABLED` without `CALENDAR_FEED_KEY` | planner, the person themselves |
 | POST | `/people/{id}/calendar-feed/sync` | Sync that calendar now | planner, the person themselves |
 | GET | `/expertises` | Expertise catalogue | everyone |
-| GET, POST | `/tags` | Tag catalogue (`name`, `category`: technology / domain / language / client) | GET everyone, POST planner |
 | GET, POST | `/holidays` | Holidays per `location` (no location = company-wide), each with an optional `name` | GET everyone, POST planner |
 | POST | `/holidays/import` | Import holidays from an iCalendar file (multipart `file`) or a link (`url`: https, a calendar host only, never stored, logged or returned) between `from_date` and `to_date`, at `hours_per_day`. An event already imported (same UID) is skipped; returns `{ added, skipped }`. `400 HOLIDAY_SOURCE_INVALID` unless exactly one of file or link is sent | planner |
 
@@ -135,7 +132,6 @@ A manager (`lead`) reads only the programs they lead or lead a project in, and t
 | PATCH | `/programs/{id}` | Edit a program. Moving the end date emits `ProgramSlipped` | planner, lead (own) |
 | POST | `/programs/{id}/actions/{hold\|resume\|start-closing\|close\|cancel}` | Change program state through an action. `cancel` also cancels the program's open projects | planner, lead (own) |
 | GET | `/programs/{id}/overview` | Header metrics (Time, Scope, Planned burn, Burn from actual hours, Staffing with warnings), cost figures (budget, planned, planned to date, actual, forecast, gap; EAC hours later), staffing by expertise | planner, lead, internal assistant |
-| PATCH | `/programs/{id}/forecast` | Set or clear `forecast_override_hours` per demand | planner, lead (own) |
 | GET | `/programs/{id}/projects` | Projects tab: rows in priority order with a `metrics` object (Time / Scope / Planned burn / Burn / Staffing and warnings, and the baseline hours planned next week and in the next three weeks: `next_week_hours`, `next_three_weeks_hours`); next milestone later | planner, lead, internal assistant |
 | POST | `/programs/{id}/projects` | Add a project to the program; it goes last in the priority order unless `priority` is sent | planner, lead (own) |
 | PUT | `/programs/{id}/project-order` | Set the priority order: `{ project_ids }` lists every project of the program, highest priority first, and they get priority 1..N. `422 PROJECT_ORDER_MISMATCH` when the list is not exactly the program's projects | planner, lead (own) |
@@ -143,10 +139,6 @@ A manager (`lead`) reads only the programs they lead or lead a project in, and t
 | GET | `/programs/{id}/team` | Team tab: the people the program's projects are staffed from, each with their skills and their hours, first and last week and projects in this program's baseline (0 h until a draft gives them some) | planner, lead (own) |
 | POST | `/programs/{id}/team` | Add a member: `{ person_id }`; `409 TEAM_MEMBER_EXISTS` when already in | planner |
 | DELETE | `/programs/{id}/team/{personId}` | Remove a member; their baseline hours stay, the next draft plans without them (`404 TEAM_MEMBER_NOT_FOUND`) | planner |
-| GET, POST | `/programs/{id}/assistants` | List or add assistants (`kind`: internal or external) | planner, lead (own); internal assistants may list |
-| DELETE | `/programs/{id}/assistants/{assistantId}` | Remove an assistant | planner, lead (own) |
-| GET, POST | `/programs/{id}/milestones` | List or add milestones | planner, lead (own); internal assistants may list |
-| PATCH | `/milestones/{id}` | Edit a milestone or mark it delivered | planner, lead (own) |
 | GET | `/projects` | Projects across programs (filter by `status`) | planner, lead |
 | GET | `/projects/{id}` | Project record with its phases, its demand (each row with the weeks it may be staffed in) and the program's lead | planner, lead |
 | PATCH | `/projects/{id}` | Edit a project, including `scope_points`, `done_points` and `confidence`. Moving the deadline emits `ProjectSlipped` | planner, lead (own) |
@@ -154,7 +146,6 @@ A manager (`lead`) reads only the programs they lead or lead a project in, and t
 | GET, PUT | `/projects/{id}/phases` | Ordered phases of a project (PUT replaces the whole list; removing a phase that still has demand gets `409 PHASE_IN_USE`) | planner, lead (own); GET also internal assistant |
 | PATCH | `/phases/{id}` | Edit a phase. Moving its end week later shifts every later phase by the same weeks and emits `PhaseSlipped`. Returns every phase it changed | planner, lead (own) |
 | PUT | `/projects/{id}/demands` | Staffing demand: budget hours per expertise and level, each with an optional `phase_id`, a `profile`, required and preferred tags, and an optional preferred person | planner, lead (own) |
-| GET | `/projects/{id}/hours-suggestion` | Suggested budget hours per expertise: `scope_points × hours_per_point(expertise)` from done projects, with the ratio used | planner, lead (own) |
 
 **Planning and insights**
 
@@ -172,21 +163,32 @@ A manager (`lead`) reads only the programs they lead or lead a project in, and t
 | POST | `/scenarios/{id}/rerun` | Compute a scenario again, with the same assumptions, against the baseline in force | planner |
 | GET | `/insights/heatmap?from=&to=&expertise=` | Person × week matrix. Each cell holds total hours plus hours per expertise; `expertise=` (an expertise id) keeps people who hold that expertise or work on it in the range. Each cell also has capacity, utilization, its band, a tentative flag for planned leave and `actual_hours`: the hours worked that week from imported timesheets, `null` when none were imported | planner, lead (team) |
 | GET | `/insights/risks` | Understaffed and at-risk projects, delivery behind time, overloaded people in the next `HEATMAP_DEFAULT_WEEKS` weeks (a manager sees only their team's), and before them `sustained_overload`: each person over 100 % for `SUSTAINED_OVERLOAD_WEEKS` or more weeks in a row (`person`, `from_week`, `weeks`, the first such run); likely over budget and overdue milestones later | planner, lead |
-| GET | `/insights/capacity-forecast?from=&to=&expertise=` | Per expertise × week: free capacity, unmet confirmed demand, expected pipeline demand (× confidence), and shortfall signals | planner, lead |
-| GET | `/insights/bench` | People below the underused band for each of the next `bench_weeks`, with suggested actions | planner |
-| GET | `/insights/churn?from=&to=` | Plan churn per accepted draft: people changed, hours moved | planner |
 | GET | `/events?program_id=` | Change history and processing status; the program page uses it for the re-plan banner | planner, lead |
-| POST | `/imports/{csv\|hr}` | Import data (runs in the background) | planner |
 | GET | `/timesheets/template?from=&to=` | CSV template: person × project × week with baseline hours in a range of past weeks, with planned hours and any actual hours already recorded | planner |
 | POST | `/timesheets/import` | Upload a filled-in template (multipart `file`). Every row is checked first; any failure gets `400 TIMESHEET_INVALID` with line, column and code, and nothing is saved | planner |
 
-**AI assistant** (later). While `AI_ENABLED` is false, these return `503` with `AI_DISABLED`.
+**Later** (designed, not registered in the Server yet; the routes below return `404` today):
 
-| Method | Path | Purpose | Roles |
-|---|---|---|---|
-| POST | `/ai/intake-extractions` | `text` or one uploaded file (multipart), optional `programId` → a suggested project (phases, demand, tags) with a source quote per field. Saves nothing | planner, lead |
-| POST | `/ai/chat` | One turn: the visible conversation plus optional context (`programId`, `scenarioId`) → the reply and links to any scenario or draft it created | planner, lead, specialist (own data only) |
-| GET | `/staffing-drafts/{id}/summary` | Plain-language summary of the draft's diff, reasons and unmet; facts only. Made once per draft version and reused by `notify` | planner, lead |
+- `PUT /people/{id}/tags`: replace a person's skill tags
+- `GET /people/{id}/capacity-changes`: list effective-dated weekly hours
+- `POST /people/{id}/capacity-changes`: add effective-dated weekly hours (`from_week`, `weekly_hours`)
+- `GET /tags`: tag catalogue (`name`, `category`: technology / domain / language / client)
+- `POST /tags`: add a tag to the catalogue
+- `PATCH /programs/{id}/forecast`: set or clear `forecast_override_hours` per demand
+- `GET /programs/{id}/assistants`: list assistants (`kind`: internal or external)
+- `POST /programs/{id}/assistants`: add an assistant
+- `DELETE /programs/{id}/assistants/{assistantId}`: remove an assistant
+- `GET /programs/{id}/milestones`: list milestones
+- `POST /programs/{id}/milestones`: add a milestone
+- `PATCH /milestones/{id}`: edit a milestone or mark it delivered
+- `GET /projects/{id}/hours-suggestion`: suggested budget hours per expertise (`scope_points × hours_per_point`)
+- `GET /insights/capacity-forecast?from=&to=&expertise=`: free capacity, unmet demand, pipeline demand and shortfall signals per expertise and week
+- `GET /insights/bench`: people below the underused band, with suggested actions
+- `GET /insights/churn?from=&to=`: plan churn per accepted draft
+- `POST /imports/{csv|hr}`: import data in the background
+- `GET /staffing-drafts/{id}/summary`: plain-language summary of a draft's diff, reasons and unmet demand
+- `POST /ai/intake-extractions`: suggested project from text or one file; saves nothing
+- `POST /ai/chat`: one turn of the AI assistant
 
 **Response envelope** (success and error):
 
@@ -307,7 +309,7 @@ The **insights** module computes these for `/programs/{id}/overview`, `/programs
 | Planned burn % | Planned hours in weeks up to and including the current week ÷ budget hours. No "behind plan" warning |
 | Actual hours and Burn % | Σ actual hours from timesheet imports, and actual ÷ budget hours. Burn % is `null` until the project has actual hours |
 | Delivery warning | Scope % lower than Time % by more than `SCOPE_LAG_THRESHOLD` |
-| EAC hours | Hours used to date ÷ Scope %. Returned as `null` while Scope % < `EAC_MIN_SCOPE_PERCENT`. EAC > budget sets **likely over budget** |
+| **Later** · EAC hours | Hours used to date ÷ Scope %. Returned as `null` while Scope % < `EAC_MIN_SCOPE_PERCENT`. EAC > budget sets **likely over budget** |
 | Gap and Staffing % | Returned side by side; they show the same shortfall unless a forecast override is set |
 | Hours per point | Per expertise: Σ allocated hours on `done` projects ÷ Σ their `scope_points`. `null` with no done projects, and the form then offers no suggestion |
 | Time-to-staff (goal G1) | `staffed_at − created_at` per project. `staffed_at` is set when the first draft covering the project is accepted |
