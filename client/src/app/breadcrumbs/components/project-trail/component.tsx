@@ -5,17 +5,17 @@ import { useProject } from '@/shared/programs'
 import { Trail } from '../trail'
 import type { ProjectTrailProps } from './types'
 
-/** Programs › the project's program › its Projects tab › the project's name. */
+/** Programs › the project's program › its Projects tab › the project's name; Programs › Project when it cannot be loaded. */
 export function ProjectTrail({ projectId }: ProjectTrailProps) {
   const { t } = useTranslation()
-  const { data: project } = useProject(projectId)
+  const { data: project, error } = useProject(projectId)
 
   if (!project)
     return (
       <Trail
         crumbs={[
           { label: t('Programs'), to: ROUTES.programs },
-          { label: t('Loading…'), pending: true },
+          error ? { label: t('Project') } : { label: t('Loading…'), pending: true },
         ]}
       />
     )

@@ -1,4 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { FORBIDDEN_CODE } from '@/shared/api/constants'
 import { MAX_PAGE_SIZE } from '@/utils/constants'
 import {
   applyProjectAction,
@@ -57,8 +58,13 @@ export function useOpenProjects() {
   })
 }
 
+/** One project; a 403 stays quiet because the project page says so itself. */
 export function useProject(id: string) {
-  return useQuery({ queryKey: projectQueryKey(id), queryFn: () => getProject(id) })
+  return useQuery({
+    queryKey: projectQueryKey(id),
+    queryFn: () => getProject(id),
+    meta: { quietErrorCodes: [FORBIDDEN_CODE] },
+  })
 }
 
 /** After any project write: refetch every project list and the program's project rows. */
