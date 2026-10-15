@@ -1,5 +1,5 @@
 /** The person column stays in view while the weeks scroll sideways. */
-export const PERSON_COLUMN_CLASS = 'sticky left-0 z-10 w-80 min-w-80 bg-card'
+export const PERSON_COLUMN_CLASS = 'sticky left-0 z-10 w-80 max-w-80 min-w-80 bg-card'
 
 /** Week columns share one width and a line between them, so hours sit right under their week. */
 export const WEEK_COLUMN_CLASS = 'w-20 min-w-20 border-l text-center'
