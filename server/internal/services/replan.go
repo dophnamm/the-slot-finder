@@ -110,8 +110,8 @@ func (s *replanService) RunOnce(ctx context.Context) (int, error) {
 	return len(claimed), err
 }
 
-// process assesses the baseline after the changes. Without a conflict the events end as
-// no_impact; otherwise the affected projects are planned again into a re-plan draft, merged
+// process assesses the baseline after the changes. Without a conflict, and without an
+// understaffed project the events could help, they end as no_impact; otherwise the affected projects are planned again into a re-plan draft, merged
 // with the open one when there is one, and the events are linked to it.
 func (s *replanService) process(ctx context.Context, events []models.ChangeEvent) error {
 	baseline, err := findBaseline(ctx, s.plans, opReplan, true)
@@ -123,6 +123,12 @@ func (s *replanService) process(ctx context.Context, events []models.ChangeEvent
 	if err != nil {
 		return err
 	}
+	// A conflict is not the only reason to plan again: freed capacity or changed demand may
+	// leave a project understaffed that can now be staffed.
+	opened, err := s.eventScope(ctx, events, baseline.Assignments)
+	if err != nil {
+		return err
+	}
 	open, err := s.plans.FindOpenAutoDraft(ctx, baseline.Version)
 	if stderrors.Is(err, gorm.ErrRecordNotFound) {
 		open, err = nil, nil
@@ -131,7 +137,7 @@ func (s *replanService) process(ctx context.Context, events []models.ChangeEvent
 		return err
 	}
 
-	scope := conflicts
+	scope := unionIDs(conflicts, opened)
 	if open != nil {
 		scope = unionIDs(scope, open.ProjectIDs)
 	}
@@ -139,7 +145,7 @@ func (s *replanService) process(ctx context.Context, events []models.ChangeEvent
 	if err != nil {
 		return err
 	}
-	if len(conflicts) == 0 || len(projects) == 0 {
+	if len(scope) == 0 || len(projects) == 0 {
 		for _, e := range events {
 			if err := s.events.Finish(ctx, e.ID, constants.EventStatusNoImpact, nil, touched[e.ID]); err != nil {
 				return err
@@ -361,13 +367,18 @@ func conflictingProjects(assignments []models.Assignment, capacityOf func(person
 	return sortedKeys(affected)
 }
 
-// touchedProjects is, per event, the projects it touches: those it was recorded with, or for
-// absence the projects the person (everyone, for a holiday) has hours on in those dates.
+// touchedProjects is, per event, the projects it touches: those it was recorded with; for a
+// capacity change the projects the person has hours on from then on; or for absence the
+// projects the person (everyone, for a holiday) has hours on in those dates.
 func touchedProjects(events []models.ChangeEvent, assignments []models.Assignment) map[string][]string {
 	out := make(map[string][]string, len(events))
 	for _, e := range events {
 		if len(e.ProjectIDs) > 0 {
 			out[e.ID] = e.ProjectIDs
+			continue
+		}
+		if e.Type == constants.EventPersonCapacityChanged {
+			out[e.ID] = projectsOfPersonFrom(assignments, stringField(e.Payload, payloadPersonID), isoweek.Of(e.OccurredAt))
 			continue
 		}
 		from, errFrom := time.Parse(constants.DateLayout, stringField(e.Payload, payloadFromDate))
@@ -394,12 +405,97 @@ func touchedProjects(events []models.ChangeEvent, assignments []models.Assignmen
 	return out
 }
 
-// Payload keys of AbsenceChange that the assessment reads back.
+// Payload keys of the changes that the assessment reads back.
 const (
-	payloadPersonID = "person_id"
-	payloadFromDate = "from_date"
-	payloadToDate   = "to_date"
+	payloadPersonID  = "person_id"
+	payloadFromDate  = "from_date"
+	payloadToDate    = "to_date"
+	payloadNewStatus = "new_status"
 )
+
+// projectsOfPersonFrom is the projects the person has hours on from the given week on.
+func projectsOfPersonFrom(assignments []models.Assignment, personID string, from isoweek.Week) []string {
+	projects := map[string]bool{}
+	for _, a := range assignments {
+		if a.PersonID != personID {
+			continue
+		}
+		for _, alloc := range a.Allocations {
+			if !alloc.Week.Before(from) {
+				projects[projectOf(a)] = true
+			}
+		}
+	}
+	return sortedKeys(projects)
+}
+
+// eventScope is the projects to plan again because of what the events changed, beyond the
+// baseline's conflicts. A changed demand, a team change or a project that became plannable
+// again opens the projects it names; freed capacity (a project that stopped being plannable,
+// or a person's capacity changing) opens every project. Either way only projects the baseline
+// leaves understaffed are returned: nothing else could gain from a new draft.
+func (s *draftBuilder) eventScope(ctx context.Context, events []models.ChangeEvent, assignments []models.Assignment) ([]string, error) {
+	named := map[string]bool{}
+	freed := false
+	for _, e := range events {
+		switch e.Type {
+		case constants.EventDemandChanged, constants.EventTeamChanged:
+			for _, id := range e.ProjectIDs {
+				named[id] = true
+			}
+		case constants.EventProjectStatusChanged:
+			if slices.Contains(constants.PlannableProjectStatuses, stringField(e.Payload, payloadNewStatus)) {
+				for _, id := range e.ProjectIDs {
+					named[id] = true
+				}
+			} else {
+				freed = true
+			}
+		case constants.EventPersonCapacityChanged:
+			freed = true
+		}
+	}
+	if !freed && len(named) == 0 {
+		return nil, nil
+	}
+	projects, err := s.projects.ListForMetrics(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, 0)
+	for _, id := range understaffedProjects(projects, assignments) {
+		if freed || named[id] {
+			out = append(out, id)
+		}
+	}
+	return out, nil
+}
+
+// understaffedProjects is the plannable projects whose baseline hours are less than their
+// budget, sorted by id.
+func understaffedProjects(projects []models.Project, assignments []models.Assignment) []string {
+	planned := map[string]float64{}
+	for _, a := range assignments {
+		for _, alloc := range a.Allocations {
+			planned[a.DemandID] += alloc.Hours
+		}
+	}
+	short := map[string]bool{}
+	for _, p := range projects {
+		if !slices.Contains(constants.PlannableProjectStatuses, p.Status) {
+			continue
+		}
+		budget, held := 0.0, 0.0
+		for _, d := range p.Demands {
+			budget += d.TotalHours
+			held += planned[d.ID]
+		}
+		if budget-held > hoursEpsilon {
+			short[p.ID] = true
+		}
+	}
+	return sortedKeys(short)
+}
 
 func stringField(payload map[string]any, key string) string {
 	if v, ok := payload[key].(string); ok {
