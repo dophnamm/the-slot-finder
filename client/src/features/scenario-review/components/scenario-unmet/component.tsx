@@ -28,7 +28,7 @@ export function ScenarioUnmet({ unmet }: ScenarioUnmetProps) {
               <TableCell className="font-medium">{row.project}</TableCell>
               <TableCell>{row.expertise}</TableCell>
               <TableCell className="text-right text-destructive tabular-nums">
-                {t('{hours} h', { hours: row.hours })}
+                {t('{hours} hrs', { hours: row.hours })}
               </TableCell>
               <TableCell>{t(UNMET_REASON_LABELS[row.reason])}</TableCell>
             </TableRow>

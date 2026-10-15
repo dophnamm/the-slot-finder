@@ -1,5 +1,6 @@
 import { RefreshCw } from 'lucide-react'
 import { useTranslation } from '@/shared/i18n'
+import { confirm } from '@/shared/stores/confirm-store'
 import { Button } from '@/shared/ui/button'
 import { formatDateTime } from '@/utils/functions'
 import { CALENDAR_FEED_ERROR_LABELS } from '../../constants'
@@ -13,8 +14,14 @@ export function CalendarFeedStatus({ personId, calendar }: CalendarFeedStatusPro
   const disconnect = useDisconnectCalendarFeed(personId)
 
   const handleSync = () => sync.mutate()
-  const handleDisconnect = () => {
-    if (!window.confirm(t('Disconnect this calendar? Leave it already added stays.'))) return
+  const handleDisconnect = async () => {
+    const confirmed = await confirm({
+      title: t('Disconnect this calendar?'),
+      description: t('Leave that was already added stays.'),
+      confirmLabel: t('Disconnect'),
+      destructive: true,
+    })
+    if (!confirmed) return
     disconnect.mutate()
   }
 

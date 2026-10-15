@@ -48,6 +48,13 @@ const NO_NATIVE_DATE_INPUTS = [
   },
 ]
 
+const NO_NATIVE_DIALOGS = [
+  {
+    selector: 'CallExpression[callee.object.name="window"][callee.property.name=/^(confirm|alert|prompt)$/]',
+    message: "The browser's dialogs do not match the app. Ask with confirm() from '@/shared/stores/confirm-store'.",
+  },
+]
+
 const INPUTS_NEED_PLACEHOLDER = [
   {
     // Text and number fields show what to type; file, hidden, checkbox and radio inputs are exempt.
@@ -158,6 +165,7 @@ export default defineConfig([
         ...NO_RAW_TEXT,
         ...NO_INLINE_STYLE,
         ...NO_NATIVE_DATE_INPUTS,
+        ...NO_NATIVE_DIALOGS,
         ...INPUTS_NEED_PLACEHOLDER,
         ...NO_STYLED_LINKS,
         ...NO_INLINE_FUNCTION_PROPS,
@@ -174,6 +182,7 @@ export default defineConfig([
         ...NO_RAW_TEXT,
         ...NO_INLINE_STYLE,
         ...NO_NATIVE_DATE_INPUTS,
+        ...NO_NATIVE_DIALOGS,
         ...INPUTS_NEED_PLACEHOLDER,
         ...NO_STYLED_LINKS,
         ...NO_INLINE_FUNCTION_PROPS,
@@ -192,6 +201,7 @@ export default defineConfig([
         ...NO_RAW_TEXT,
         ...NO_INLINE_STYLE,
         ...NO_NATIVE_DATE_INPUTS,
+        ...NO_NATIVE_DIALOGS,
         ...INPUTS_NEED_PLACEHOLDER,
         ...NO_INLINE_FUNCTION_PROPS,
         ...NO_TYPES_IN_COMPONENT,

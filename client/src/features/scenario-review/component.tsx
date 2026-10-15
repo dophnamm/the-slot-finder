@@ -6,6 +6,7 @@ import { PageSkeleton } from '@/shared/components/page-skeleton'
 import { Section } from '@/shared/components/section'
 import { TextLink } from '@/shared/components/text-link'
 import { useTranslation } from '@/shared/i18n'
+import { confirm } from '@/shared/stores/confirm-store'
 import { useDeleteScenario, useRerunScenario, useScenario } from '@/shared/scenarios'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
@@ -26,8 +27,14 @@ export function ScenarioReview({ scenarioId }: ScenarioReviewProps) {
 
   const handleRerun = () => rerun.mutate()
   const handleDeleted = () => navigate(ROUTES.scenarios, { replace: true })
-  const handleDelete = () => {
-    if (!window.confirm(t('Delete this scenario? The real plan is not affected.'))) return
+  const handleDelete = async () => {
+    const confirmed = await confirm({
+      title: t('Delete this scenario?'),
+      description: t('The real plan is not affected.'),
+      confirmLabel: t('Delete'),
+      destructive: true,
+    })
+    if (!confirmed) return
     remove.mutate(undefined, { onSuccess: handleDeleted })
   }
 
@@ -88,12 +95,12 @@ export function ScenarioReview({ scenarioId }: ScenarioReviewProps) {
             </div>
             <div className="flex flex-col">
               <dt className="text-xs text-muted-foreground">{t('Hours moved')}</dt>
-              <dd className="text-lg font-semibold tabular-nums">{t('{hours} h', { hours: summary.hours_moved })}</dd>
+              <dd className="text-lg font-semibold tabular-nums">{t('{hours} hrs', { hours: summary.hours_moved })}</dd>
             </div>
             <div className="flex flex-col">
               <dt className="text-xs text-muted-foreground">{t('Unmet')}</dt>
               <dd className={cn('text-lg font-semibold tabular-nums', summary.unmet_hours > 0 && 'text-destructive')}>
-                {t('{hours} h', { hours: summary.unmet_hours })}
+                {t('{hours} hrs', { hours: summary.unmet_hours })}
               </dd>
             </div>
           </dl>

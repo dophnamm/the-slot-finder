@@ -36,7 +36,7 @@ export function ScenarioChanges({ changes }: ScenarioChangesProps) {
               <TableCell>{change.expertise}</TableCell>
               <TableCell>
                 <div className="flex flex-col">
-                  <span className="tabular-nums">{t('{hours} h', { hours: change.before_hours })}</span>
+                  <span className="tabular-nums">{t('{hours} hrs', { hours: change.before_hours })}</span>
                   <span className="text-xs text-muted-foreground">
                     {weekSpan(change.before_from, change.before_to)}
                   </span>
@@ -44,7 +44,7 @@ export function ScenarioChanges({ changes }: ScenarioChangesProps) {
               </TableCell>
               <TableCell>
                 <div className="flex flex-col">
-                  <span className="tabular-nums">{t('{hours} h', { hours: change.after_hours })}</span>
+                  <span className="tabular-nums">{t('{hours} hrs', { hours: change.after_hours })}</span>
                   <span className="text-xs text-muted-foreground">{weekSpan(change.after_from, change.after_to)}</span>
                 </div>
               </TableCell>

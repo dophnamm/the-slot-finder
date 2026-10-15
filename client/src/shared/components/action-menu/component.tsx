@@ -1,6 +1,7 @@
 import { MoreHorizontal } from 'lucide-react'
 import type { MouseEvent } from 'react'
 import { useTranslation } from '@/shared/i18n'
+import { confirm } from '@/shared/stores/confirm-store'
 import { Button } from '@/shared/ui/button'
 import {
   DropdownMenu,
@@ -20,10 +21,18 @@ export function ActionMenu<A extends string>({ items, disabled, onAction }: Acti
   const regular = items.filter((item) => !item.destructive)
   const destructive = items.filter((item) => item.destructive)
 
-  const handleSelect = (event: MouseEvent<HTMLElement>) => {
+  const handleSelect = async (event: MouseEvent<HTMLElement>) => {
     const item = items.find((candidate) => candidate.action === event.currentTarget.dataset.action)
     if (!item) return
-    if (!item.confirmText || window.confirm(item.confirmText)) onAction(item.action)
+    const confirmed =
+      !item.confirmText ||
+      (await confirm({
+        title: item.label,
+        description: item.confirmText,
+        confirmLabel: item.label,
+        destructive: item.destructive,
+      }))
+    if (confirmed) onAction(item.action)
   }
 
   if (items.length === 0) return null
