@@ -147,8 +147,11 @@ func GetMetaPaging(c *echo.Context, code string, pageable *Pageable, httpStatus 
 	}
 }
 
-// RateLimitResponse is the data of a 429 answer: how many requests are allowed per window.
+// RateLimitResponse is the data of a 429 answer: how many requests are allowed per window, and
+// how long to wait before the next one.
 type RateLimitResponse struct {
 	Limit  int    `json:"limit"`
 	Window string `json:"window"`
+	// RetryAfter is in whole seconds, as in the Retry-After header.
+	RetryAfter int `json:"retry_after"`
 }
