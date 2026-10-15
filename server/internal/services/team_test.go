@@ -60,6 +60,12 @@ func (m *memoryTeams) PersonIDsLedBy(_ context.Context, _ string) ([]string, err
 
 func newTeamService(t *testing.T, teams *memoryTeams) ProgramTeamService {
 	t.Helper()
+	return newTeamServiceWith(t, teams, new(MockProjectRepository), ProvideAuthzService(leadPeople{}))
+}
+
+// newTeamServiceWith is newTeamService with this project repository and authz service.
+func newTeamServiceWith(t *testing.T, teams *memoryTeams, projects *MockProjectRepository, authz AuthzService) ProgramTeamService {
+	t.Helper()
 	programs := new(MockProgramRepository)
 	lead := leadPersonID
 	programs.On("FindWithLead", mock.Anything, teamProgramID).Return(&models.Program{BaseModel: models.BaseModel{ID: teamProgramID}, LeadID: &lead}, nil)
@@ -67,7 +73,7 @@ func newTeamService(t *testing.T, teams *memoryTeams) ProgramTeamService {
 	people.On("FindWithSkills", mock.Anything, teamPersonID).Return(&models.Person{BaseModel: models.BaseModel{ID: teamPersonID}}, nil).Maybe()
 	plans := new(MockPlanRepository)
 	plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(1), nil).Maybe()
-	return ProvideProgramTeamService(teams, programs, people, plans, ProvideAuthzService(leadPeople{}))
+	return ProvideProgramTeamService(teams, programs, projects, people, plans, authz)
 }
 
 func TestProgramTeamService_List(t *testing.T) {
@@ -82,6 +88,17 @@ func TestProgramTeamService_List(t *testing.T) {
 
 	_, err = service.List(asRole("kc-other-lead", constants.RoleLead), teamProgramID)
 	requireStatus(t, err, http.StatusForbidden)
+}
+
+func TestProgramTeamService_List_ProjectLead(t *testing.T) {
+	teams := &memoryTeams{members: map[string][]string{teamProgramID: {teamPersonID}}}
+	projects := new(MockProjectRepository)
+	projects.On("LeadsProjectIn", mock.Anything, teamProgramID, otherPersonID2).Return(true, nil)
+	authz := ProvideAuthzService(selfFinder{"kc-project-lead": otherPersonID2})
+
+	members, err := newTeamServiceWith(t, teams, projects, authz).List(asRole("kc-project-lead", constants.RoleLead), teamProgramID)
+	require.NoError(t, err, "the lead of one of the program's projects reads its team")
+	require.Len(t, members, 1)
 }
 
 func TestProgramTeamService_AddAndRemove(t *testing.T) {

@@ -74,6 +74,24 @@ func TestProgramVisibility_Postgres(t *testing.T) {
 	require.NoError(t, err)
 	assert.ElementsMatch(t, []string{"Checkout", "Patient App"}, names(intake.Data))
 
+	// People: the teams of the programs Lee leads or leads a project in, and Lee.
+	ada, bao, cam := person("ada"), person("bao"), person("cam")
+	for _, member := range []models.ProgramTeamMember{{ProgramID: acme.ID, PersonID: ada.ID}, {ProgramID: beta.ID, PersonID: bao.ID},
+		{ProgramID: gamma.ID, PersonID: cam.ID}} {
+		require.NoError(t, pdb.Create(&member).Error)
+	}
+	teamRepo := repositories.ProvideProgramTeamRepository(pdb)
+	teamAuthz := ProvideTeamAuthzService(people, teamRepo)
+	visible, err := teamAuthz.VisiblePeople(manager)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{lee.ID, ada.ID, bao.ID}, visible.IDs())
+
+	teams := ProvideProgramTeamService(teamRepo, programRepo, projects, repositories.ProvidePersonRepository(pdb),
+		repositories.ProvidePlanRepository(pdb), teamAuthz)
+	_, err = teams.List(manager, beta.ID)
+	require.NoError(t, err, "a project they lead opens the program's team")
+	_, err = teams.List(manager, gamma.ID)
+	requireStatus(t, err, http.StatusForbidden)
 }
 
 func programNames(programs []models.Program) []string {

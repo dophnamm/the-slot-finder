@@ -35,6 +35,7 @@ type ProgramTeamService interface {
 type programTeamService struct {
 	teams    repositories.ProgramTeamRepository
 	programs repositories.ProgramRepository
+	projects repositories.ProjectRepository
 	people   repositories.PersonRepository
 	plans    repositories.PlanRepository
 	authz    AuthzService
@@ -42,9 +43,10 @@ type programTeamService struct {
 
 // ProvideProgramTeamService creates the program team service.
 func ProvideProgramTeamService(teams repositories.ProgramTeamRepository, programs repositories.ProgramRepository,
-	people repositories.PersonRepository, plans repositories.PlanRepository, authz AuthzService,
+	projects repositories.ProjectRepository, people repositories.PersonRepository, plans repositories.PlanRepository,
+	authz AuthzService,
 ) ProgramTeamService {
-	return &programTeamService{teams: teams, programs: programs, people: people, plans: plans, authz: authz}
+	return &programTeamService{teams: teams, programs: programs, projects: projects, people: people, plans: plans, authz: authz}
 }
 
 func (s *programTeamService) List(ctx context.Context, programID string) ([]models.TeamMember, error) {
@@ -52,7 +54,7 @@ func (s *programTeamService) List(ctx context.Context, programID string) ([]mode
 	if err != nil {
 		return nil, notFoundOrDatabase(err, constants.ProgramNotFound, constants.MsgProgramNotFound, resourceProgram, opListTeam)
 	}
-	if _, err := s.authz.RequireLeadOf(ctx, CanManageAllPrograms, program.LeadID); err != nil {
+	if err := requireProgramReader(ctx, s.authz, s.projects, program, opListTeam); err != nil {
 		return nil, err
 	}
 	members, err := s.teams.ListByProgram(ctx, programID)
