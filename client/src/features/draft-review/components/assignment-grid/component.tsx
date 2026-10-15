@@ -13,8 +13,8 @@ import { AssignmentRow } from './components/assignment-row'
 import { GroupHeaderRow } from './components/group-header-row'
 import { SwapPersonDialog } from './components/swap-person-dialog'
 import { LABEL_COLUMNS, PERSON_COLUMN_CLASS, WEEK_COLUMN_CLASS } from './constants'
-import type { AssignmentGridProps } from './types'
-import { groupByDemand, inWindow, lockChanges, weekLoads } from './utils'
+import type { AssignmentGridProps, DragSource } from './types'
+import { groupByDemand, inWindow, lockChanges, moveHours, weekLoads } from './utils'
 
 /** Person × week hours, grouped by demand; planners edit hours, lock weeks, add and remove people. */
 export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
@@ -23,6 +23,7 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
   const { data: people = [], isPending: peopleLoading } = useStaffablePeople(editable)
   const groups = groupByDemand(draft)
   const [allocating, setAllocating] = useState<Assignment | null>(null)
+  const [drag, setDrag] = useState<DragSource | null>(null)
   const [swapping, setSwapping] = useState<Assignment | null>(null)
   const allocateWeeks = allocating
     ? draft.weeks.filter((week) => inWindow(week, allocating.demand.from_week, allocating.demand.to_week))
@@ -44,6 +45,13 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
         },
       },
     )
+  const handleDragStart = (source: DragSource) => setDrag(source)
+  const handleDragEnd = () => setDrag(null)
+  const handleDropHours = (target: DragSource) => {
+    const changes = drag ? moveHours(drag, target) : null
+    setDrag(null)
+    if (changes) edit.mutate({ set: changes })
+  }
   const handleSwap = (assignment: Assignment) => setSwapping(assignment)
   const handleSwapCancel = () => setSwapping(null)
   const handleSwapChoose = (personId: string) => {
@@ -79,6 +87,7 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
         'Hours per ISO week. Locked hours stay as they are when a draft is generated again; stretch is always locked. A week is coloured by the whole load of the person, as on the heatmap.',
       )}
     >
+      {editable && <p className="text-xs text-muted-foreground">{t('Drag hours to another week or person.')}</p>}
       <Table>
         <TableHeader>
           <TableRow>
@@ -113,6 +122,10 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
                   loads={weekLoads(draft, assignment)}
                   bands={draft.bands}
                   editable={editable}
+                  drag={drag}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                  onDropHours={handleDropHours}
                   busy={edit.isPending}
                   onSetHours={handleSetHours}
                   onToggleLock={handleToggleLock}

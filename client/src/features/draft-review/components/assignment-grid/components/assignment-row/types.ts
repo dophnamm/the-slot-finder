@@ -1,6 +1,6 @@
 import type { Assignment } from '@/shared/staffing'
 import type { UtilizationBands } from '@/shared/utilization'
-import type { WeekLoad } from '../../types'
+import type { DragSource, WeekLoad } from '../../types'
 
 export interface AssignmentRowProps {
   assignment: Assignment
@@ -9,6 +9,12 @@ export interface AssignmentRowProps {
   loads: Map<string, WeekLoad>
   bands: UtilizationBands
   editable: boolean
+  /** The hours being dragged in the grid, or null. */
+  drag: DragSource | null
+  onDragStart: (source: DragSource) => void
+  onDragEnd: () => void
+  /** Called with this assignment and week when the dragged hours are dropped there. */
+  onDropHours: (target: DragSource) => void
   busy: boolean
   onSetHours: (assignment: Assignment, week: string, hours: number) => void
   onToggleLock: (assignment: Assignment) => void
