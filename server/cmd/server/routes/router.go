@@ -192,6 +192,7 @@ func registerPlanRoutes(v1 *echo.Group, authenticated, heavy echo.MiddlewareFunc
 	v1.GET(constants.PathPlanDrafts, staffingHandler.ListOpen, authenticated, viewRoles)
 	v1.GET(constants.PathStaffingDraft, staffingHandler.Get, authenticated, viewRoles)
 	v1.PATCH(constants.PathDraftAssignments, staffingHandler.Edit, authenticated, draftRoles)
+	v1.GET(constants.PathDraftAlternatives, staffingHandler.Alternatives, authenticated, draftRoles)
 	v1.POST(constants.PathDraftAccept, staffingHandler.Accept, authenticated, draftRoles)
 	v1.POST(constants.PathDraftReject, staffingHandler.Reject, authenticated, draftRoles)
 }

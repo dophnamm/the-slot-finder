@@ -49,6 +49,7 @@ const (
 	PathStaffingDrafts    = "/staffing-drafts"
 	PathStaffingDraft     = "/staffing-drafts/:id"
 	PathDraftAssignments  = "/staffing-drafts/:id/assignments"
+	PathDraftAlternatives = "/staffing-drafts/:id/assignments/:assignmentId/alternatives"
 	PathDraftAccept       = "/staffing-drafts/:id/accept"
 	PathDraftReject       = "/staffing-drafts/:id/reject"
 

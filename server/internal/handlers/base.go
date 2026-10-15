@@ -14,6 +14,9 @@ import (
 // pathParamID is the name of the id parameter in route paths such as /people/:id.
 const pathParamID = "id"
 
+// pathParamAssignmentID is the assignment id in /staffing-drafts/:id/assignments/:assignmentId/alternatives.
+const pathParamAssignmentID = "assignmentId"
+
 type BaseHandler struct {
 	errorHandler *errors.ErrorHandler
 }

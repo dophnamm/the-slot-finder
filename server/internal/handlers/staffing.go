@@ -131,6 +131,34 @@ func (h *StaffingHandler) Edit(c *echo.Context) error {
 	return h.SuccessResponse(c, constants.MsgDraftUpdated, draftResponse(view), nil)
 }
 
+// Alternatives godoc
+// @Summary People who could take over an assignment
+// @Description Members of the demand's program team who hold its expertise at the required level and do not cover it yet, with the hours they have free over the demand's window, most first. At most DRAFT_ALTERNATIVES_LIMIT. To swap, send one remove and one add in the same PATCH of the draft's assignments.
+// @Tags Staffing drafts
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Draft id"
+// @Param assignmentId path string true "Assignment id"
+// @Success 200 {object} object{meta=dtos.Meta,data=[]dtos.AlternativeResponse}
+// @Failure 404 {object} object{meta=dtos.Meta}
+// @Failure 409 {object} object{meta=dtos.Meta}
+// @Router /staffing-drafts/{id}/assignments/{assignmentId}/alternatives [get]
+func (h *StaffingHandler) Alternatives(c *echo.Context) error {
+	id, ok := h.pathID(c)
+	if !ok {
+		return nil
+	}
+	assignmentID, ok := h.pathUUID(c, pathParamAssignmentID)
+	if !ok {
+		return nil
+	}
+	alternatives, err := h.staffing.Alternatives(c.Request().Context(), id, assignmentID)
+	if err != nil {
+		return h.HandleError(c, err)
+	}
+	return h.SuccessResponse(c, constants.MsgAlternativesListed, dtos.NewAlternativeResponses(alternatives), nil)
+}
+
 // editDraftInput maps the request; the isoweek tag has checked every week.
 func editDraftInput(req dtos.EditDraftRequest) (services.EditDraftInput, error) {
 	in := services.EditDraftInput{Remove: req.Remove}

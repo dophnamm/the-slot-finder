@@ -29,6 +29,7 @@ const (
 	opGetDraft      = "get_draft"
 	opListDrafts    = "list_drafts"
 	opEditDraft     = "edit_draft"
+	opAlternatives  = "list_alternatives"
 	opAcceptDraft   = "accept_draft"
 	opRejectDraft   = "reject_draft"
 	resourceDraft   = "staffing_draft"
@@ -110,6 +111,10 @@ type StaffingService interface {
 	// ListOpen returns the open drafts newest first: every one for a planner, and for a manager
 	// (lead) those whose projects all belong to programs they lead, as for the draft actions.
 	ListOpen(ctx context.Context) ([]OpenDraft, error)
+	// Alternatives lists who could take over an assignment: people of the program team who hold
+	// the demand's expertise at its level and do not cover the demand yet, most free hours over
+	// its window first, at most DRAFT_ALTERNATIVES_LIMIT.
+	Alternatives(ctx context.Context, id, assignmentID string) ([]models.Alternative, error)
 	// Edit adds or removes assignments and changes weekly hours and locks. The server sets
 	// each added assignment's kind; a stretch assignment is locked.
 	Edit(ctx context.Context, id string, in EditDraftInput) (*DraftView, error)
@@ -1016,4 +1021,118 @@ func (s *draftBuilder) teamCandidates(ctx context.Context, projects []models.Pro
 		out[programID] = team
 	}
 	return out, nil
+}
+
+func (s *staffingService) Alternatives(ctx context.Context, id, assignmentID string) ([]models.Alternative, error) {
+	plan, err := s.openDraft(ctx, id, opAlternatives)
+	if err != nil {
+		return nil, err
+	}
+	projects, err := s.loadProjects(ctx, plan.ProjectIDs, opAlternatives)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := s.requireDraftRights(ctx, projects); err != nil {
+		return nil, err
+	}
+	assignment := findAssignment(plan, assignmentID)
+	if assignment == nil {
+		return nil, draftError(constants.AssignmentNotFound, constants.MsgAssignmentNotFound, http.StatusNotFound, opAlternatives)
+	}
+	var demand *engine.Demand
+	demands, _, _ := engineDemands(projects)
+	for i := range demands {
+		if demands[i].ID == assignment.DemandID {
+			demand = &demands[i]
+		}
+	}
+	if demand == nil {
+		return nil, draftError(constants.DemandNotInDraft, constants.MsgDemandNotInDraft, http.StatusBadRequest, opAlternatives)
+	}
+	teams, err := s.teamCandidates(ctx, projects, opAlternatives)
+	if err != nil {
+		return nil, err
+	}
+	demand.Candidates = teams[demand.ProgramID]
+	people, err := s.people.ListActive(ctx)
+	if err != nil {
+		return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opAlternatives).WithResource(resourceDraft)
+	}
+	weeks := make([]isoweek.Week, 0, len(demand.Weeks))
+	for _, label := range demand.Weeks {
+		week, err := isoweek.Parse(label)
+		if err != nil {
+			return nil, err
+		}
+		weeks = append(weeks, week)
+	}
+	absences, err := s.absences.ListOverlapping(ctx, weeks[0].Monday(), weeks[len(weeks)-1].Monday().AddDate(0, 0, daysInWeek-1))
+	if err != nil {
+		return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opAlternatives).WithResource(resourceDraft)
+	}
+	names := make(map[string]string, len(people))
+	for _, p := range people {
+		names[p.ID] = p.Name
+	}
+	return rankAlternatives(*demand, s.enginePeople(people, absences, weeks), names, plan.Assignments, s.cfg.DraftAlternativesLimit), nil
+}
+
+// rankAlternatives picks who could cover the demand in place of its current holders: allowed by
+// the demand's team, holding its expertise at its level, and not on it yet. They are ordered by
+// the hours they have free over its window (capacity minus the plan's hours), then by name.
+func rankAlternatives(d engine.Demand, people []engine.Person, names map[string]string, assignments []models.Assignment,
+	limit int,
+) []models.Alternative {
+	holders := map[string]bool{}
+	load := map[string]map[string]float64{}
+	for _, a := range assignments {
+		if a.DemandID == d.ID {
+			holders[a.PersonID] = true
+		}
+		if load[a.PersonID] == nil {
+			load[a.PersonID] = map[string]float64{}
+		}
+		for _, alloc := range a.Allocations {
+			load[a.PersonID][alloc.Week.String()] += alloc.Hours
+		}
+	}
+	out := []models.Alternative{}
+	for _, p := range people {
+		if holders[p.ID] || (d.Candidates != nil && !d.Candidates[p.ID]) {
+			continue
+		}
+		skillIndex := slices.IndexFunc(p.Skills, func(skill engine.Skill) bool {
+			return skill.Expertise == d.Expertise && skill.Level >= d.MinLevel
+		})
+		if skillIndex < 0 {
+			continue
+		}
+		skill := p.Skills[skillIndex]
+		kind := constants.AssignmentKindCrossExpertise
+		if skill.Primary {
+			kind = constants.AssignmentKindPrimary
+		}
+		alternative := models.Alternative{PersonID: p.ID, PersonName: names[p.ID], Kind: kind,
+			Reason: []string{engine.SkillReason(&p, d, skill)}}
+		for _, week := range d.Weeks {
+			alternative.CapacityHours += p.Capacity[week]
+			alternative.FreeHours += max(0, p.Capacity[week]-load[p.ID][week])
+		}
+		out = append(out, alternative)
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		a, b := out[i], out[j]
+		switch {
+		case a.FreeHours != b.FreeHours:
+			return a.FreeHours > b.FreeHours
+		case a.PersonName != b.PersonName:
+			return a.PersonName < b.PersonName
+		default:
+			return a.PersonID < b.PersonID
+		}
+	})
+	if limit > 0 && len(out) > limit {
+		out = out[:limit]
+	}
+	return out
 }
