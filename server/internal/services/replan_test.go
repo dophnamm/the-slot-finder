@@ -159,3 +159,135 @@ func TestStaffingService_SupersededDraft(t *testing.T) {
 	_, err = m.service().Reject(planner, staffingDraftID)
 	requireAppError(t, err, constants.DraftSuperseded, http.StatusConflict)
 }
+
+func TestUnderstaffedProjects(t *testing.T) {
+	demand := func(id string, hours float64) models.Demand {
+		return models.Demand{BaseModel: models.BaseModel{ID: id}, TotalHours: hours}
+	}
+	project := func(id, status string, demands ...models.Demand) models.Project {
+		return models.Project{BaseModel: models.BaseModel{ID: id}, Status: status, Demands: demands}
+	}
+	assignments := []models.Assignment{
+		{DemandID: "full", Allocations: allocationsOf(t, map[string]float64{"2026-W44": 40})},
+		{DemandID: "half", Allocations: allocationsOf(t, map[string]float64{"2026-W44": 20})},
+		{DemandID: "gone", Allocations: allocationsOf(t, map[string]float64{"2026-W44": 5})},
+	}
+	projects := []models.Project{
+		project("a-full", constants.ProjectStatusActive, demand("full", 40)),
+		project("b-half", constants.ProjectStatusActive, demand("half", 40)),
+		project("c-none", constants.ProjectStatusIncoming, demand("none", 10)),
+		project("d-hold", constants.ProjectStatusOnHold, demand("gone", 100)),
+		project("e-nodemand", constants.ProjectStatusActive),
+	}
+	assert.Equal(t, []string{"b-half", "c-none"}, understaffedProjects(projects, assignments),
+		"a project that is not plannable or has no demand is never understaffed")
+}
+
+func TestReplanService_RunOnce_EventScope(t *testing.T) {
+	cutoff := eventTime.Add(-5 * time.Minute)
+	staffed := func(t *testing.T, project *models.Project) []models.Assignment {
+		return []models.Assignment{{PersonID: qaPersonID, DemandID: project.Demands[0].ID,
+			Allocations: allocationsOf(t, map[string]float64{"2026-W46": 20, "2026-W47": 20, "2026-W48": 20})}}
+	}
+	tests := []struct {
+		name     string
+		event    models.ChangeEvent
+		baseline func(t *testing.T, project *models.Project) []models.Assignment
+		want     string
+	}{
+		{name: "changed demand on an understaffed project plans it again",
+			event: models.ChangeEvent{Type: constants.EventDemandChanged, ProjectIDs: []string{projectID}}, want: constants.EventStatusDraftCreated},
+		{name: "changed demand on a staffed project is no impact",
+			event: models.ChangeEvent{Type: constants.EventDemandChanged, ProjectIDs: []string{projectID}}, baseline: staffed, want: constants.EventStatusNoImpact},
+		{name: "a team change plans the program's projects again",
+			event: models.ChangeEvent{Type: constants.EventTeamChanged, ProjectIDs: []string{projectID}}, want: constants.EventStatusDraftCreated},
+		{name: "a team change on another project is no impact",
+			event: models.ChangeEvent{Type: constants.EventTeamChanged, ProjectIDs: []string{"other"}}, want: constants.EventStatusNoImpact},
+		{name: "a person's capacity change may free hours for an understaffed project",
+			event: models.ChangeEvent{Type: constants.EventPersonCapacityChanged, Payload: map[string]any{"person_id": qaPersonID}},
+			want:  constants.EventStatusDraftCreated},
+		{name: "a person's capacity change with nothing understaffed is no impact",
+			event:    models.ChangeEvent{Type: constants.EventPersonCapacityChanged, Payload: map[string]any{"person_id": qaPersonID}},
+			baseline: staffed, want: constants.EventStatusNoImpact},
+		{name: "a cancelled project frees capacity for an understaffed one",
+			event: models.ChangeEvent{Type: constants.EventProjectStatusChanged, ProjectIDs: []string{"cancelled"},
+				Payload: map[string]any{"new_status": constants.ProjectStatusCancelled}}, want: constants.EventStatusDraftCreated},
+		{name: "a project that is plannable again is planned",
+			event: models.ChangeEvent{Type: constants.EventProjectStatusChanged, ProjectIDs: []string{projectID},
+				Payload: map[string]any{"new_status": constants.ProjectStatusIncoming}}, want: constants.EventStatusDraftCreated},
+		{name: "a project that is plannable again but staffed is no impact",
+			event: models.ChangeEvent{Type: constants.EventProjectStatusChanged, ProjectIDs: []string{projectID},
+				Payload: map[string]any{"new_status": constants.ProjectStatusIncoming}}, baseline: staffed, want: constants.EventStatusNoImpact},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.event.BaseModel = models.BaseModel{ID: "e1"}
+			tt.event.OccurredAt = eventTime.Add(-time.Hour)
+			events, plans, projects := new(MockChangeEventRepository), new(MockPlanRepository), new(MockProjectRepository)
+			people, absences := new(MockPersonRepository), new(MockAbsenceRepository)
+			project := qaProject(t)
+			baseline := publishedBaseline(1)
+			if tt.baseline != nil {
+				baseline.Assignments = tt.baseline(t, project)
+			}
+			events.On("LockReplanning", mock.Anything).Return(nil)
+			events.On("ClaimPending", mock.Anything, eventTime, cutoff, 50).Return([]models.ChangeEvent{tt.event}, nil)
+			plans.On("FindBaseline", mock.Anything).Return(baseline, nil)
+			plans.On("FindOpenAutoDraft", mock.Anything, 1).Return(nil, gorm.ErrRecordNotFound)
+			projects.On("ListForMetrics", mock.Anything, "").Return([]models.Project{*project}, nil)
+			projects.On("FindDetail", mock.Anything, projectID).Return(project, nil)
+			people.On("ListActive", mock.Anything).Return([]models.Person{qaPerson()}, nil)
+			absences.On("ListOverlapping", mock.Anything, mock.Anything, mock.Anything).Return([]models.Absence{}, nil)
+			plans.On("CreateWithAssignments", mock.Anything, mock.Anything).Return(nil).Maybe()
+			var finished string
+			events.On("Finish", mock.Anything, "e1", mock.Anything, mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+				finished = args.String(2)
+			}).Return(nil)
+
+			service := ProvideReplanService(plans, events, projects, people, absences, passthroughTx{}, clock.NewFixed(eventTime), replanConfig(), nil)
+			n, err := service.RunOnce(t.Context())
+			require.NoError(t, err)
+			assert.Equal(t, 1, n)
+			assert.Equal(t, tt.want, finished)
+		})
+	}
+}
+
+// An auto re-plan in 2026-W48 plans the rest of the QA project from W48 on and leaves what
+// the baseline holds in W46 and W47 as it was.
+func TestReplanService_RunOnce_KeepsPastWeeks(t *testing.T) {
+	cutoff := inWeek48.Add(-5 * time.Minute)
+	events, plans, projects := new(MockChangeEventRepository), new(MockPlanRepository), new(MockProjectRepository)
+	people, absences := new(MockPersonRepository), new(MockAbsenceRepository)
+	project := qaProject(t)
+	baseline := publishedBaseline(1)
+	baseline.Assignments = []models.Assignment{{BaseModel: models.BaseModel{ID: draftAssignmentID}, PersonID: qaPersonID, DemandID: demandID,
+		Kind: constants.AssignmentKindPrimary, Demand: &project.Demands[0],
+		Allocations: allocationsOf(t, map[string]float64{"2026-W46": 10, "2026-W47": 10})}}
+	event := models.ChangeEvent{BaseModel: models.BaseModel{ID: "e1"}, Type: constants.EventDemandChanged, ProjectIDs: []string{projectID},
+		OccurredAt: inWeek48.Add(-time.Hour)}
+	events.On("LockReplanning", mock.Anything).Return(nil)
+	events.On("ClaimPending", mock.Anything, inWeek48, cutoff, 50).Return([]models.ChangeEvent{event}, nil)
+	plans.On("FindBaseline", mock.Anything).Return(baseline, nil)
+	plans.On("FindOpenAutoDraft", mock.Anything, 1).Return(nil, gorm.ErrRecordNotFound)
+	projects.On("ListForMetrics", mock.Anything, "").Return([]models.Project{*project}, nil)
+	projects.On("FindDetail", mock.Anything, projectID).Return(project, nil)
+	people.On("ListActive", mock.Anything).Return([]models.Person{qaPerson()}, nil)
+	absences.On("ListOverlapping", mock.Anything, mock.Anything, mock.Anything).Return([]models.Absence{}, nil)
+	var draft *models.Plan
+	plans.On("CreateWithAssignments", mock.Anything, mock.Anything).Run(func(args mock.Arguments) { draft = args.Get(1).(*models.Plan) }).Return(nil)
+	events.On("Finish", mock.Anything, "e1", constants.EventStatusDraftCreated, mock.Anything, mock.Anything).Return(nil)
+
+	service := ProvideReplanService(plans, events, projects, people, absences, passthroughTx{}, clock.NewFixed(inWeek48), replanConfig(), nil)
+	_, err := service.RunOnce(t.Context())
+	require.NoError(t, err)
+
+	require.NotNil(t, draft)
+	require.Len(t, draft.Assignments, 1)
+	weeks := hoursInWeeks(draft.Assignments[0])
+	assert.InDelta(t, 10, weeks["2026-W46"], hoursEpsilon, "history stays as it was")
+	assert.InDelta(t, 10, weeks["2026-W47"], hoursEpsilon, "history stays as it was")
+	assert.InDelta(t, 40, weeks["2026-W48"]+weeks["2026-W49"]+weeks["2026-W50"]+weeks["2026-W51"], hoursEpsilon,
+		"the 60 h demand minus the 20 h worked is planned from the current week on")
+	assert.InDelta(t, 60, draft.Assignments[0].TotalHours(), hoursEpsilon)
+}
