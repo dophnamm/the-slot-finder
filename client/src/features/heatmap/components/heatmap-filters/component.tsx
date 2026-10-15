@@ -3,20 +3,24 @@ import type { ChangeEvent } from 'react'
 import { WeekPicker } from '@/shared/components/week-picker'
 import { useExpertises } from '@/shared/expertises'
 import { useTranslation } from '@/shared/i18n'
+import { useProgramOptions } from '@/shared/programs'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
 import { WEEK_COUNT_OPTIONS } from '../../constants'
 import { useHeatmapFilters } from '../../use-heatmap-filters'
 
-/** First week, number of weeks and expertise of the heatmap. */
+/** First week, number of weeks, expertise and program of the heatmap. */
 export function HeatmapFilters() {
   const { t } = useTranslation()
   const { data: expertises = [], isPending: expertisesLoading } = useExpertises()
-  const { from, weeks, expertiseId, search, setFrom, setWeeks, setExpertiseId, setSearch } = useHeatmapFilters()
+  const { data: programs = [], isPending: programsLoading } = useProgramOptions()
+  const { from, weeks, expertiseId, programId, search, setFrom, setWeeks, setExpertiseId, setProgramId, setSearch } =
+    useHeatmapFilters()
 
   const handleWeeksChange = (event: ChangeEvent<HTMLSelectElement>) => setWeeks(Number(event.target.value))
   const handleExpertiseChange = (event: ChangeEvent<HTMLSelectElement>) => setExpertiseId(event.target.value)
+  const handleProgramChange = (event: ChangeEvent<HTMLSelectElement>) => setProgramId(event.target.value)
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)
 
   return (
@@ -61,6 +65,17 @@ export function HeatmapFilters() {
           {expertises.map((expertise) => (
             <NativeSelectOption key={expertise.id} value={expertise.id}>
               {expertise.name}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="heatmap-program">{t('Program')}</Label>
+        <NativeSelect id="heatmap-program" value={programId} isLoading={programsLoading} onChange={handleProgramChange}>
+          <NativeSelectOption value="">{t('All programs')}</NativeSelectOption>
+          {programs.map((program) => (
+            <NativeSelectOption key={program.id} value={program.id}>
+              {program.name}
             </NativeSelectOption>
           ))}
         </NativeSelect>
