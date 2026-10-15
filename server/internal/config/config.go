@@ -121,8 +121,10 @@ type Config struct {
 	AWSSESSecretKey string
 
 	// Rate limiting configuration
-	RateLimit         int
-	RateLimitDuration time.Duration
+	RateLimit              int
+	RateLimitDuration      time.Duration
+	RateLimitHeavy         int
+	RateLimitHeavyDuration time.Duration
 
 	// Sentry configuration
 	SentryDSN string
@@ -275,6 +277,8 @@ func Load() (*Config, error) {
 		AWSSESSecretKey:              getEnv("AWS_SES_SECRET_KEY", ""),
 		RateLimit:                    getEnvAsInt("RATE_LIMIT", 20),
 		RateLimitDuration:            getEnvAsDuration("RATE_LIMIT_DURATION", 1*time.Second),
+		RateLimitHeavy:               getEnvAsInt("RATE_LIMIT_HEAVY", 20),
+		RateLimitHeavyDuration:       getEnvAsDuration("RATE_LIMIT_HEAVY_DURATION", 30*time.Second),
 		SentryDSN:                    getEnv("SENTRY_DSN", ""),
 		OTelServiceName:              getEnv("OTEL_SERVICE_NAME", getEnv("APP_NAME", "slot-finder")),
 		OTelExporterEndpoint:         getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", ""),

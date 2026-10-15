@@ -236,6 +236,70 @@ func TestRateLimit(t *testing.T) {
 	})
 }
 
+// testUserHeader names the signed-in user in TestHeavyRateLimit, standing in for AuthMiddleware.
+const testUserHeader = "X-Test-User"
+
+func TestHeavyRateLimit(t *testing.T) {
+	newServer := func(cfg *config.Config) *echo.Echo {
+		e := echo.New()
+		e.IPExtractor = echo.ExtractIPDirect()
+		signIn := func(next echo.HandlerFunc) echo.HandlerFunc {
+			return func(c *echo.Context) error {
+				if subject := c.Request().Header.Get(testUserHeader); subject != "" {
+					ctx := request.NewPrincipalContext(c.Request().Context(), request.Principal{Subject: subject})
+					c.SetRequest(c.Request().WithContext(ctx))
+				}
+				return next(c)
+			}
+		}
+		noContent := func(c *echo.Context) error { return c.NoContent(http.StatusNoContent) }
+		e.POST("/generate", noContent, signIn, HeavyRateLimit(cfg))
+		e.POST("/import", noContent, signIn, HeavyRateLimit(cfg))
+		return e
+	}
+	call := func(e *echo.Echo, path, user, ip string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, path, nil)
+		req.RemoteAddr = ip + ":9999"
+		if user != "" {
+			req.Header.Set(testUserHeader, user)
+		}
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		return rec
+	}
+	limited := &config.Config{RateLimitHeavy: 1, RateLimitHeavyDuration: time.Minute}
+
+	t.Run("each user has their own allowance on each route", func(t *testing.T) {
+		e := newServer(limited)
+		require.Equal(t, http.StatusNoContent, call(e, "/generate", "alex", "10.0.1.1").Code)
+
+		denied := call(e, "/generate", "alex", "10.0.1.2")
+		require.Equal(t, http.StatusTooManyRequests, denied.Code, "a new IP does not reset the user's allowance")
+		var body dtos.BaseResponse[dtos.RateLimitResponse]
+		require.NoError(t, json.Unmarshal(denied.Body.Bytes(), &body))
+		assert.Equal(t, constants.RateLimitExceeded, body.Meta.ErrorCode)
+		assert.Equal(t, dtos.RateLimitResponse{Limit: 1, Window: time.Minute.String(), RetryAfter: 60}, body.Data)
+		assert.Equal(t, "60", denied.Header().Get(echo.HeaderRetryAfter))
+
+		assert.Equal(t, http.StatusNoContent, call(e, "/generate", "sam", "10.0.1.1").Code, "another user on the same IP")
+		assert.Equal(t, http.StatusNoContent, call(e, "/import", "alex", "10.0.1.1").Code, "another route")
+	})
+
+	t.Run("without a signed-in user it counts per client IP", func(t *testing.T) {
+		e := newServer(limited)
+		require.Equal(t, http.StatusNoContent, call(e, "/generate", "", "10.0.2.1").Code)
+		assert.Equal(t, http.StatusTooManyRequests, call(e, "/generate", "", "10.0.2.1").Code)
+		assert.Equal(t, http.StatusNoContent, call(e, "/generate", "", "10.0.2.2").Code)
+	})
+
+	t.Run("disabled with a zero limit", func(t *testing.T) {
+		e := newServer(&config.Config{RateLimitHeavy: 0, RateLimitHeavyDuration: time.Minute})
+		for i := 0; i < 5; i++ {
+			assert.Equal(t, http.StatusNoContent, call(e, "/generate", "alex", "10.0.3.1").Code)
+		}
+	})
+}
+
 func TestRequestContext(t *testing.T) {
 	tests := []struct {
 		name             string

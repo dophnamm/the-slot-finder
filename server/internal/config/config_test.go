@@ -175,6 +175,8 @@ func TestLoad_DefaultsAndOverrides(t *testing.T) {
 	assert.Equal(t, 5*time.Minute, cfg.DatabaseConnMaxLifetime)
 	assert.Equal(t, 20, cfg.RateLimit)
 	assert.Equal(t, time.Second, cfg.RateLimitDuration)
+	assert.Equal(t, 20, cfg.RateLimitHeavy)
+	assert.Equal(t, 30*time.Second, cfg.RateLimitHeavyDuration)
 	assert.True(t, cfg.OTelTracesEnabled)
 	assert.False(t, cfg.HTTPClientTLSInsecureSkipTLS)
 

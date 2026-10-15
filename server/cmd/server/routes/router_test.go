@@ -196,6 +196,51 @@ func TestRouter_RateLimit(t *testing.T) {
 	assert.Equal(t, constants.RateLimitExceeded, body.Meta.ErrorCode)
 }
 
+// heavyRouteID fills the :id of a heavy route in TestRouter_HeavyRateLimit.
+const heavyRouteID = "0192f3a4-0000-7000-8000-0000000000ab"
+
+func TestRouter_HeavyRateLimit(t *testing.T) {
+	cfg := baseConfig()
+	cfg.RateLimitHeavy = 1
+	cfg.RateLimitHeavyDuration = time.Minute
+	e := newTestRouter(cfg)
+	send := func(method, path string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(method, constants.PathAPIBase+strings.ReplaceAll(path, ":id", heavyRouteID),
+			strings.NewReader(`{}`))
+		req.RemoteAddr = "192.0.2.10:5000"
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		req.Header.Set(echo.HeaderAuthorization, "Bearer planner-token")
+		req.Header.Set("Sec-Fetch-Site", "same-origin")
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		return rec
+	}
+
+	heavy := []struct{ method, path string }{
+		{http.MethodPost, constants.PathStaffingDrafts},
+		{http.MethodPost, constants.PathScenarios},
+		{http.MethodPost, constants.PathScenarioRerun},
+		{http.MethodPost, constants.PathTimesheetImport},
+		{http.MethodPost, constants.PathHolidayImport},
+		{http.MethodPut, constants.PathPersonCalendarFeed},
+		{http.MethodPost, constants.PathPersonCalendarFeedSync},
+	}
+	for _, route := range heavy {
+		t.Run(route.method+" "+route.path, func(t *testing.T) {
+			assert.NotEqual(t, http.StatusTooManyRequests, send(route.method, route.path).Code)
+			denied := send(route.method, route.path)
+			require.Equal(t, http.StatusTooManyRequests, denied.Code, denied.Body.String())
+			assert.Equal(t, "60", denied.Header().Get(echo.HeaderRetryAfter))
+		})
+	}
+
+	t.Run("other routes keep the per-IP limit only", func(t *testing.T) {
+		for i := 0; i < 3; i++ {
+			assert.Equal(t, http.StatusOK, get(e, constants.PathAPIBase+constants.PathMe, "planner-token").Code)
+		}
+	})
+}
+
 func TestRouter_People_RBAC(t *testing.T) {
 	e := newTestRouter(baseConfig())
 	tests := []struct {
