@@ -8,6 +8,7 @@ import { INSIGHTS_QUERY_KEY } from '@/utils/constants'
 import { acceptDraft, editDraft, generateDraft, getDraft, listOpenDrafts, rejectDraft } from './api'
 import { DRAFT_SUPERSEDED, draftQueryKey, OPEN_DRAFTS_QUERY_KEY, PLAN_VERSION_CONFLICT } from './constants'
 import type { Draft, DraftAcceptance, DraftEdit } from './types'
+import { applySetHours } from './utils'
 
 /** Open drafts for the inbox and the sidebar count; enabled only for roles that may see drafts. */
 export function useOpenDrafts(enabled = true) {
@@ -49,11 +50,25 @@ export function useGenerateDraft() {
 export function useEditDraft(id: string) {
   const store = useStoreDraft()
   const reload = useReloadSuperseded(id)
+  const queryClient = useQueryClient()
+  const key = draftQueryKey(id)
   return useMutation({
     mutationFn: (edit: DraftEdit) => editDraft(id, edit),
     meta: { quietErrorCodes: [DRAFT_SUPERSEDED] },
+    // Hour changes show at once, so the grid's colours follow the keyboard; the answer replaces them.
+    onMutate: async (edit) => {
+      const previous = queryClient.getQueryData<Draft>(key)
+      if (previous && edit.set && !edit.add && !edit.remove) {
+        await queryClient.cancelQueries({ queryKey: key })
+        queryClient.setQueryData(key, applySetHours(previous, edit.set))
+      }
+      return { previous }
+    },
     onSuccess: store,
-    onError: reload,
+    onError: (error, _edit, context) => {
+      if (context?.previous) queryClient.setQueryData(key, context.previous)
+      reload(error)
+    },
   })
 }
 
