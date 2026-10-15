@@ -1,6 +1,9 @@
 package models
 
-import "the-slot-finder/server/internal/metrics"
+import (
+	"the-slot-finder/server/internal/isoweek"
+	"the-slot-finder/server/internal/metrics"
+)
 
 // ProgramOverview is a program's progress, cost figures and staffing by expertise. It is
 // computed, not stored.
@@ -34,9 +37,18 @@ type PersonOverload struct {
 	Weeks  []HeatmapCell
 }
 
+// SustainedOverload is a person over 100 % for SUSTAINED_OVERLOAD_WEEKS or more weeks in a
+// row: the first such run in the coming weeks.
+type SustainedOverload struct {
+	Person Person
+	From   isoweek.Week
+	Weeks  int
+}
+
 // Risks is the team's one list: projects that are understaffed, at risk or behind on
-// delivery, and people over 100 % in the coming weeks.
+// delivery, people over 100 % for weeks in a row, and people over 100 % in the coming weeks.
 type Risks struct {
-	Projects []ProjectRisk
-	People   []PersonOverload
+	Projects  []ProjectRisk
+	Sustained []SustainedOverload
+	People    []PersonOverload
 }

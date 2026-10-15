@@ -182,3 +182,24 @@ func BehindOnDelivery(scope, elapsed *float64, threshold float64) bool {
 func AtRisk(gap float64, weeksToDeadline, horizon int, lastPhaseLate bool) bool {
 	return lastPhaseLate || (gap > epsilon && weeksToDeadline <= horizon)
 }
+
+// SustainedOverload finds the first run of at least minWeeks consecutive weeks over 100 %
+// (README §7, sustained overload) in a person's weeks in order: its start index and full length.
+func SustainedOverload(overloaded []bool, minWeeks int) (start, length int, found bool) {
+	minWeeks = max(minWeeks, 1)
+	run := 0
+	for i, over := range overloaded {
+		if over {
+			run++
+			continue
+		}
+		if run >= minWeeks {
+			return i - run, run, true
+		}
+		run = 0
+	}
+	if run >= minWeeks {
+		return len(overloaded) - run, run, true
+	}
+	return 0, 0, false
+}

@@ -74,12 +74,18 @@ func newMetricsServiceWithActuals(t *testing.T, actual map[string]float64) Insig
 // newMetricsServiceWith builds the metrics fixture service with these actual hours and this
 // authz service, and returns its project repository for more expectations.
 func newMetricsServiceWith(t *testing.T, actual map[string]float64, authz AuthzService) (InsightsService, *MockProjectRepository) {
+	return newMetricsServiceWithConfig(t, actual, authz, 3)
+}
+
+// newMetricsServiceWithConfig is newMetricsServiceWith with this many weeks in a row for a sustained overload.
+func newMetricsServiceWithConfig(t *testing.T, actual map[string]float64, authz AuthzService, sustainedWeeks int,
+) (InsightsService, *MockProjectRepository) {
 	plans, programs, projects, people, absences := metricsFixture(t)
 	actuals := new(MockActualHoursRepository)
 	actuals.On("SumByProject", mock.Anything, mock.Anything).Return(actual, nil)
 	actuals.On("ListInRange", mock.Anything, mock.Anything, mock.Anything).Return([]models.ActualHours{}, nil).Maybe()
 	cfg := heatmapConfig()
-	cfg.ScopeLagThreshold, cfg.AlertHorizonWeeks = 20, 4
+	cfg.ScopeLagThreshold, cfg.AlertHorizonWeeks, cfg.SustainedOverloadWeeks = 20, 4, sustainedWeeks
 	return ProvideInsightsService(plans, people, absences, programs, projects, actuals, authz,
 		clock.NewFixed(time.Date(2026, time.November, 15, 9, 0, 0, 0, time.UTC)), cfg), projects
 }
@@ -129,9 +135,21 @@ func TestInsightsService_Risks(t *testing.T) {
 	assert.Equal(t, "2026-W47", risks.People[0].Weeks[0].Week.String())
 	assert.Equal(t, "Quinn", risks.People[1].Person.Name)
 	assert.Len(t, risks.People[1].Weeks, 1, "W44 is before the coming weeks")
+	assert.Empty(t, risks.Sustained, "nobody is over 100 % three weeks in a row")
 
 	_, err = newMetricsService(t).Risks(asRole("kc-specialist", constants.RoleSpecialist))
 	requireStatus(t, err, http.StatusForbidden)
+}
+
+func TestInsightsService_Risks_SustainedOverload(t *testing.T) {
+	service, _ := newMetricsServiceWithConfig(t, map[string]float64{}, ProvideAuthzService(leadPeople{}), 1)
+	risks, err := service.Risks(asRole("kc-planner", constants.RolePlanner))
+	require.NoError(t, err)
+	require.Len(t, risks.Sustained, 2, "with one week enough, each overloaded person counts")
+	assert.Equal(t, "Bo", risks.Sustained[0].Person.Name)
+	assert.Equal(t, "2026-W47", risks.Sustained[0].From.String())
+	assert.Equal(t, 1, risks.Sustained[0].Weeks)
+	assert.Equal(t, "2026-W48", risks.Sustained[1].From.String())
 }
 
 func TestInsightsService_ActualHours(t *testing.T) {

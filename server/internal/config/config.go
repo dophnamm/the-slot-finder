@@ -211,6 +211,8 @@ type Config struct {
 	// points, and how close a deadline turns a gap into at risk.
 	ScopeLagThreshold float64
 	AlertHorizonWeeks int
+	// SustainedOverloadWeeks is how many weeks in a row over 100 % make a sustained overload.
+	SustainedOverloadWeeks int
 }
 
 // Load loads configuration from environment variables
@@ -341,6 +343,8 @@ func Load() (*Config, error) {
 
 		ScopeLagThreshold: getEnvAsFloat("SCOPE_LAG_THRESHOLD", 20),
 		AlertHorizonWeeks: getEnvAsInt("ALERT_HORIZON_WEEKS", 4),
+
+		SustainedOverloadWeeks: getEnvAsInt("SUSTAINED_OVERLOAD_WEEKS", 3),
 	}
 
 	weekdays, err := parseWeekdays(getEnv("WORKING_WEEKDAYS", defaultWorkingWeekdays))
