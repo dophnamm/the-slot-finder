@@ -528,6 +528,20 @@ const docTemplate = `{
                                 }
                             }
                         }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.RateLimitResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1322,6 +1336,20 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.RateLimitResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
                     "503": {
                         "description": "Service Unavailable",
                         "schema": {
@@ -1450,6 +1478,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.RateLimitResponse"
+                                },
                                 "meta": {
                                     "$ref": "#/definitions/dtos.Meta"
                                 }
@@ -3112,6 +3154,20 @@ const docTemplate = `{
                                 }
                             }
                         }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.RateLimitResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -3265,6 +3321,20 @@ const docTemplate = `{
                                 }
                             }
                         }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.RateLimitResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -3318,6 +3388,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.RateLimitResponse"
+                                },
                                 "meta": {
                                     "$ref": "#/definitions/dtos.Meta"
                                 }
@@ -3631,6 +3715,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.RateLimitResponse"
+                                },
                                 "meta": {
                                     "$ref": "#/definitions/dtos.Meta"
                                 }
@@ -5538,6 +5636,21 @@ const docTemplate = `{
                         "cancelled"
                     ],
                     "example": "incoming"
+                }
+            }
+        },
+        "dtos.RateLimitResponse": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "retry_after": {
+                    "description": "RetryAfter is in whole seconds, as in the Retry-After header.",
+                    "type": "integer"
+                },
+                "window": {
+                    "type": "string"
                 }
             }
         },

@@ -37,6 +37,7 @@ func ProvideHolidayImportHandler(holidays services.HolidayImportService, validat
 // @Success 200 {object} object{meta=dtos.Meta,data=dtos.HolidayImportResponse}
 // @Failure 400 {object} object{meta=dtos.Meta}
 // @Failure 403 {object} object{meta=dtos.Meta}
+// @Failure 429 {object} object{meta=dtos.Meta,data=dtos.RateLimitResponse}
 // @Router /holidays/import [post]
 func (h *HolidayImportHandler) Import(c *echo.Context) error {
 	var req dtos.ImportHolidaysRequest

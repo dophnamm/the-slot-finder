@@ -36,6 +36,7 @@ func draftResponse(view *services.DraftView) dtos.DraftResponse {
 // @Param body body dtos.GenerateDraftRequest true "Projects to staff"
 // @Success 201 {object} object{meta=dtos.Meta,data=dtos.DraftResponse}
 // @Failure 409 {object} object{meta=dtos.Meta}
+// @Failure 429 {object} object{meta=dtos.Meta,data=dtos.RateLimitResponse}
 // @Router /staffing-drafts [post]
 func (h *StaffingHandler) Generate(c *echo.Context) error {
 	var req dtos.GenerateDraftRequest

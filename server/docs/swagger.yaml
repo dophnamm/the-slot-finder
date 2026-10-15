@@ -1331,6 +1331,16 @@ definitions:
         example: incoming
         type: string
     type: object
+  dtos.RateLimitResponse:
+    properties:
+      limit:
+        type: integer
+      retry_after:
+        description: RetryAfter is in whole seconds, as in the Retry-After header.
+        type: integer
+      window:
+        type: string
+    type: object
   dtos.ReorderProjectsRequest:
     properties:
       project_ids:
@@ -2171,6 +2181,15 @@ paths:
               meta:
                 $ref: '#/definitions/dtos.Meta'
             type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.RateLimitResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
       security:
       - BearerAuth: []
       summary: Import holidays from a calendar
@@ -2723,6 +2742,15 @@ paths:
               meta:
                 $ref: '#/definitions/dtos.Meta'
             type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.RateLimitResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
         "503":
           description: Service Unavailable
           schema:
@@ -2768,6 +2796,15 @@ paths:
           description: Not Found
           schema:
             properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.RateLimitResponse'
               meta:
                 $ref: '#/definitions/dtos.Meta'
             type: object
@@ -3859,6 +3896,15 @@ paths:
               meta:
                 $ref: '#/definitions/dtos.Meta'
             type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.RateLimitResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
       security:
       - BearerAuth: []
       summary: Create a what-if scenario
@@ -3956,6 +4002,15 @@ paths:
               meta:
                 $ref: '#/definitions/dtos.Meta'
             type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.RateLimitResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
       security:
       - BearerAuth: []
       summary: Run a scenario again
@@ -3990,6 +4045,15 @@ paths:
           description: Conflict
           schema:
             properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.RateLimitResponse'
               meta:
                 $ref: '#/definitions/dtos.Meta'
             type: object
@@ -4196,6 +4260,15 @@ paths:
           description: Request Entity Too Large
           schema:
             properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.RateLimitResponse'
               meta:
                 $ref: '#/definitions/dtos.Meta'
             type: object
