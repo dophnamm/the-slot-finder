@@ -12,7 +12,6 @@ import { ProgramsPage } from '@/pages/programs'
 import { ProjectDetailPage } from '@/pages/project-detail'
 import { ScenarioDetailPage } from '@/pages/scenario-detail'
 import { ScenariosPage } from '@/pages/scenarios'
-import { SignedOutPage } from '@/pages/signed-out'
 import { StaffingDraftPage } from '@/pages/staffing-draft'
 import { AppLayout } from './app-layout'
 import type { BreadcrumbHandle, BreadcrumbKind } from './breadcrumbs'
@@ -24,7 +23,6 @@ import { RequirePermission } from './require-permission'
 const crumb = (breadcrumb: BreadcrumbKind): BreadcrumbHandle => ({ breadcrumb })
 
 export const router = createBrowserRouter([
-  { path: ROUTES.signedOut, Component: SignedOutPage },
   { path: ROUTES.authCallback, Component: AuthCallbackPage },
   {
     Component: RequireAuth,
