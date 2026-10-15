@@ -128,6 +128,7 @@ const (
 	MsgAssignmentExists        = "This person already covers this demand in the draft"
 	MsgDemandNotInDraft        = "The demand is not covered by this draft"
 	MsgWeekOutsideWindow       = "The week is outside the demand's window"
+	MsgWeekInThePast           = "Weeks before the current week cannot be changed"
 	MsgHeatmapRetrieved        = "Heatmap retrieved"
 	MsgWeekRangeTooLongFormat  = "The range may cover at most %d weeks"
 	MsgEventsListed            = "Change events retrieved"

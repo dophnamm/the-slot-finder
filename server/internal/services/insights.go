@@ -143,7 +143,7 @@ func (s *insightsService) heatmap(ctx context.Context, in HeatmapInput, scope Pe
 	}
 
 	weeks := isoweek.Range(from, to)
-	load := loadByPersonWeek(baseline.Assignments)
+	load := loadByPersonWeek(withoutFreedHours(baseline.Assignments, isoweek.Of(s.clock.Now())))
 	worked := workedByPersonWeek(actuals)
 	rows := make([]models.HeatmapRow, 0, len(people))
 	for _, p := range people {

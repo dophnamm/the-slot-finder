@@ -67,6 +67,7 @@ const (
 	TeamMemberNotFound = "TEAM_MEMBER_NOT_FOUND"
 	PersonNotInTeam    = "PERSON_NOT_IN_TEAM"
 	WeekOutsideWindow  = "WEEK_OUTSIDE_WINDOW"
+	WeekInThePast      = "WEEK_IN_THE_PAST"
 	WeekRangeTooLong   = "WEEK_RANGE_TOO_LONG"
 	DraftSuperseded    = "DRAFT_SUPERSEDED"
 	ScenarioNotFound   = "SCENARIO_NOT_FOUND"

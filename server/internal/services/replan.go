@@ -222,7 +222,7 @@ func (s *replanService) replan(ctx context.Context, baseline, open *models.Plan,
 	for i, p := range projects {
 		ids[i] = p.ID
 	}
-	draft, err := buildDraft(baseline, req.Demands, result, ids, nil)
+	draft, err := buildDraft(baseline, req.Demands, result, ids, nil, isoweek.Of(s.clock.Now()))
 	if err != nil {
 		return nil, err
 	}
@@ -291,8 +291,10 @@ func restoreHandEdits(draft, open *models.Plan, inOpen map[string]bool) {
 }
 
 // conflicts finds the projects whose baseline hours no longer fit: a person over capacity ×
-// PLANNING_MAX_UTILIZATION in a week, or hours outside the demand's window.
+// PLANNING_MAX_UTILIZATION in a week, or hours outside the demand's window. Weeks before the
+// current one are history and hours of projects that are not plannable are not load.
 func (s *draftBuilder) conflicts(ctx context.Context, assignments []models.Assignment, extra []models.Absence) ([]string, error) {
+	assignments = futureOnly(assignments, isoweek.Of(s.clock.Now()))
 	from, to, ok := allocationRange(assignments)
 	if !ok {
 		return nil, nil
