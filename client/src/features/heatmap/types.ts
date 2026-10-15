@@ -31,6 +31,13 @@ export interface HeatmapRow {
   primary_expertise_id: string
   primary_expertise: string
   cells: HeatmapCell[]
+  /** The first run of overloaded weeks long enough to warn about; null when there is none. */
+  sustained_overload: OverloadRun | null
+}
+
+export interface OverloadRun {
+  from_week: string
+  weeks: number
 }
 
 export interface HeatmapData {
