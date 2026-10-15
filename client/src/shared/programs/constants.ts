@@ -1,3 +1,4 @@
+import type { TermName } from '@/shared/components/term'
 import type { PlainKey } from '@/shared/i18n'
 import type { BadgeVariant } from '@/shared/ui/badge'
 import { MAX_PAGE_SIZE } from '@/utils/constants'
@@ -64,8 +65,10 @@ export const PROGRESS_WARNINGS: readonly {
   flag: keyof Pick<ProgressMetrics, 'at_risk' | 'understaffed' | 'behind_on_delivery' | 'over_planned' | 'past_end'>
   label: PlainKey
   badge: BadgeVariant
+  /** A warning whose word has a definition to show on hover. */
+  term?: TermName
 }[] = [
-  { flag: 'at_risk', label: 'At risk', badge: 'red' },
+  { flag: 'at_risk', label: 'At risk', badge: 'red', term: 'atRisk' },
   { flag: 'understaffed', label: 'Understaffed', badge: 'amber' },
   { flag: 'behind_on_delivery', label: 'Behind on delivery', badge: 'pink' },
   { flag: 'over_planned', label: 'Over-planned', badge: 'violet' },

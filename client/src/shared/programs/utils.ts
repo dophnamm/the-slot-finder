@@ -41,6 +41,6 @@ export function activeWarnings(metrics: ProgressMetrics) {
 /** The burn to show: from actual hours once the project has any, else planned burn. */
 export function burnMetric(metrics: ProgressMetrics): BurnMetric {
   return metrics.burn_percent === null
-    ? { label: BURN_LABELS.planned, value: metrics.planned_burn_percent }
+    ? { label: BURN_LABELS.planned, term: 'plannedBurnPercent', value: metrics.planned_burn_percent }
     : { label: BURN_LABELS.actual, value: metrics.burn_percent }
 }

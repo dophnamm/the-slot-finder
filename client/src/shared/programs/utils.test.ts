@@ -26,7 +26,7 @@ const metrics = (overrides: Partial<ProgressMetrics>): ProgressMetrics => ({
 
 describe('burnMetric', () => {
   it('shows planned burn until the project has actual hours', () => {
-    expect(burnMetric(metrics({}))).toEqual({ label: 'Planned burn', value: 20 })
+    expect(burnMetric(metrics({}))).toEqual({ label: 'Planned burn', term: 'plannedBurnPercent', value: 20 })
   })
 
   it('shows burn from actual hours once they exist, even at 0 %', () => {

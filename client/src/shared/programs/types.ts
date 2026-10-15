@@ -1,9 +1,12 @@
+import type { TermName } from '@/shared/components/term'
 import type { PlainKey } from '@/shared/i18n'
 import type { AssignmentKind } from '@/shared/staffing'
 
 /** The burn a progress view shows, with its label. */
 export interface BurnMetric {
   label: PlainKey
+  /** Planned burn has a definition to show; actual burn needs none. */
+  term?: TermName
   value: number | null
 }
 
