@@ -4545,6 +4545,21 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.DraftBandsResponse": {
+            "type": "object",
+            "properties": {
+                "near_full_from": {
+                    "description": "NearFullFrom: from this share up to 100 % the week is near full; over 100 % it is overloaded.",
+                    "type": "number",
+                    "example": 0.85
+                },
+                "underused_below": {
+                    "description": "UnderusedBelow: under this share of capacity the week is underused.",
+                    "type": "number",
+                    "example": 0.5
+                }
+            }
+        },
         "dtos.DraftDemandResponse": {
             "type": "object",
             "properties": {
@@ -4662,6 +4677,14 @@ const docTemplate = `{
                     "description": "Auto is true for a re-plan draft that change events created; TriggeredBy lists them.",
                     "type": "boolean"
                 },
+                "bands": {
+                    "description": "Bands are the limits for colouring a week; the client adds the hours of the cell it edits to\nOtherHours of the person's weeks in Load.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dtos.DraftBandsResponse"
+                        }
+                    ]
+                },
                 "base_version": {
                     "description": "BaseVersion is the baseline version the draft was built on; send it back to accept.",
                     "type": "integer",
@@ -4692,6 +4715,13 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "load": {
+                    "description": "Load lists every active person's capacity and other hours for each week the draft spans.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.DraftWeekLoadResponse"
+                    }
                 },
                 "projects": {
                     "type": "array",
@@ -4751,6 +4781,28 @@ const docTemplate = `{
                 "week": {
                     "type": "string",
                     "example": "2026-W42"
+                }
+            }
+        },
+        "dtos.DraftWeekLoadResponse": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "description": "Capacity is the person's bookable hours that week.",
+                    "type": "number",
+                    "example": 32
+                },
+                "other_hours": {
+                    "description": "OtherHours are the hours the plan gives the person on demand this draft does not cover.",
+                    "type": "number",
+                    "example": 8
+                },
+                "person_id": {
+                    "type": "string"
+                },
+                "week": {
+                    "type": "string",
+                    "example": "2026-W48"
                 }
             }
         },
