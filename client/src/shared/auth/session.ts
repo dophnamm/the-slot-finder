@@ -57,7 +57,7 @@ export function completeSignIn() {
 }
 
 /**
- * Ends the Keycloak session and comes back to the Signed out page. The app stays as it is while
+ * Ends the Keycloak session and comes back to the sign-in page. The app stays as it is while
  * the browser leaves: clearing the session first would make RequireAuth start a sign-in that
  * races the sign-out. If Keycloak cannot be reached, the session ends in this tab only.
  */

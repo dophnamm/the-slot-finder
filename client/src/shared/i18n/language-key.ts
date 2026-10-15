@@ -395,10 +395,8 @@ export type LanguageKey = {
   'Short {hours} h': string
   'Show details': string
   'Sign in': string
-  'Sign in again': string
   'Sign out': string
   'Signed in as {name}': string
-  'Signed out': string
   'Signing you in…': string
   Skills: string
   Someone: string
@@ -480,7 +478,6 @@ export type LanguageKey = {
   'You can’t see this person': string
   'You can’t see this program': string
   'You can’t see this project': string
-  'You have signed out.': string
   'Your account is not linked to a person yet. Ask a planner to add you with the same email.': string
   'Your hours by week, leave and holidays.': string
   'Your role cannot open this page.': string

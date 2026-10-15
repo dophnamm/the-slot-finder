@@ -1,1 +1,0 @@
-export { SignedOutPage } from './component'
