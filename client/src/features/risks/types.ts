@@ -22,7 +22,15 @@ export interface OverloadedPerson {
   weeks: OverloadedWeek[]
 }
 
+/** A person over 100 % for several weeks in a row, from a week. */
+export interface SustainedOverload {
+  person: PersonRef
+  from_week: string
+  weeks: number
+}
+
 export interface RisksData {
   projects: RiskProject[]
+  sustained_overload: SustainedOverload[]
   people: OverloadedPerson[]
 }
