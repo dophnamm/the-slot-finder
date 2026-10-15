@@ -1,4 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { FORBIDDEN_CODE } from '@/shared/api/constants'
 import {
   applyProgramAction,
   createProgram,
@@ -29,8 +30,13 @@ export function usePrograms(page: number) {
   })
 }
 
+/** One program; a 403 stays quiet because the program page says so itself. */
 export function useProgram(id: string) {
-  return useQuery({ queryKey: programQueryKey(id), queryFn: () => getProgram(id) })
+  return useQuery({
+    queryKey: programQueryKey(id),
+    queryFn: () => getProgram(id),
+    meta: { quietErrorCodes: [FORBIDDEN_CODE] },
+  })
 }
 
 /** Everyone with baseline hours on the program; refetched with programs after a draft is accepted. */

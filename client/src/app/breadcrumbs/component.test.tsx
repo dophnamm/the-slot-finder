@@ -5,14 +5,16 @@ import { ROUTES } from '@/resources/routes'
 import { Breadcrumbs } from './component'
 import type { BreadcrumbHandle } from './types'
 
-vi.mock('@/shared/programs', () => ({
-  useProgram: () => ({ data: { name: 'Acme Commerce Platform' } }),
-  useProject: () => ({ data: { name: 'Checkout Revamp', program_id: 'g1', program_name: 'Acme Commerce Platform' } }),
-}))
-const { useCurrentUser, usePerson } = vi.hoisted(() => ({
+const { useCurrentUser, usePerson, useProgram, useProject } = vi.hoisted(() => ({
   useCurrentUser: vi.fn(),
   usePerson: vi.fn(() => ({ data: { name: 'Alex Nguyen' }, error: null })),
+  useProgram: vi.fn(() => ({ data: { name: 'Acme Commerce Platform' }, error: null })),
+  useProject: vi.fn(() => ({
+    data: { name: 'Checkout Revamp', program_id: 'g1', program_name: 'Acme Commerce Platform' },
+    error: null,
+  })),
 }))
+vi.mock('@/shared/programs', () => ({ useProgram, useProject }))
 vi.mock('@/shared/people', () => ({ usePerson }))
 vi.mock('@/shared/auth', () => ({ useCurrentUser }))
 
@@ -22,6 +24,7 @@ function renderAt(path: string) {
     [
       { path: ROUTES.people, element: <Breadcrumbs />, handle: handle('people') },
       { path: ROUTES.personDetail, element: <Breadcrumbs />, handle: handle('personDetail') },
+      { path: ROUTES.programDetail, element: <Breadcrumbs />, handle: handle('programDetail') },
       { path: ROUTES.projectDetail, element: <Breadcrumbs />, handle: handle('projectDetail') },
       { path: ROUTES.staffingDraft, element: <Breadcrumbs />, handle: handle('staffingDraft') },
     ],
@@ -65,6 +68,20 @@ describe('Breadcrumbs', () => {
     usePerson.mockReturnValueOnce({ data: undefined, error: { status: 403 } } as never)
     renderAt('/people/u9')
     expect(screen.getByText('Person').getAttribute('aria-current')).toBe('page')
+  })
+
+  it('names the crumb Program when the program cannot be loaded', () => {
+    useCurrentUser.mockReturnValue({ data: { role: 'lead' } })
+    useProgram.mockReturnValueOnce({ data: undefined, error: { status: 403 } } as never)
+    renderAt('/programs/g9')
+    expect(screen.getByText('Program').getAttribute('aria-current')).toBe('page')
+  })
+
+  it('names the crumb Project when the project cannot be loaded', () => {
+    useCurrentUser.mockReturnValue({ data: { role: 'lead' } })
+    useProject.mockReturnValueOnce({ data: undefined, error: { status: 403 } } as never)
+    renderAt('/programs/g9/projects/p9')
+    expect(screen.getByText('Project').getAttribute('aria-current')).toBe('page')
   })
 
   it('shows a skeleton bar while the name of the person loads', () => {

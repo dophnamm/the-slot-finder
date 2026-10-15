@@ -13,6 +13,8 @@ export type LanguageKey = {
   'A customer engagement that groups projects under one timeline.': string
   'A later end week moves every later phase by the same number of weeks.': string
   'A manager sees the people in the teams of the programs they manage.': string
+  'A manager sees the programs they manage or lead a project in.': string
+  'A manager sees the projects of the programs they manage or lead a project in.': string
   'A new project starts as incoming until a staffing draft is accepted.': string
   'A planner adds the people this program’s projects are staffed from.': string
   'A program groups a customer’s projects under one timeline.': string
@@ -476,6 +478,8 @@ export type LanguageKey = {
   Worked: string
   'Worked {hours} h': string
   'You can’t see this person': string
+  'You can’t see this program': string
+  'You can’t see this project': string
   'You have signed out.': string
   'Your account is not linked to a person yet. Ask a planner to add you with the same email.': string
   'Your hours by week, leave and holidays.': string
