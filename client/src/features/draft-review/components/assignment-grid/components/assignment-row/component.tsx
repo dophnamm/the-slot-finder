@@ -1,6 +1,8 @@
-import { Lock, LockOpen, Trash2 } from 'lucide-react'
+import { CalendarRange, Lock, LockOpen, Trash2 } from 'lucide-react'
+import { IconHint } from '@/shared/components/icon-hint'
+import { Term } from '@/shared/components/term'
 import { useTranslation } from '@/shared/i18n'
-import { ASSIGNMENT_KIND_BADGE, ASSIGNMENT_KIND_LABELS, STRETCH_KIND } from '@/shared/staffing'
+import { ASSIGNMENT_KIND_BADGE, ASSIGNMENT_KIND_LABELS, ASSIGNMENT_KIND_TERMS, STRETCH_KIND } from '@/shared/staffing'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { TableCell, TableRow } from '@/shared/ui/table'
@@ -20,6 +22,7 @@ export function AssignmentRow({
   onSetHours,
   onToggleLock,
   onRemove,
+  onAllocate,
 }: AssignmentRowProps) {
   const { t } = useTranslation()
   const byWeek = allocationsByWeek(assignment)
@@ -28,9 +31,12 @@ export function AssignmentRow({
   const stretch = assignment.kind === STRETCH_KIND
   const allLocked = assignment.allocations.length > 0 && assignment.allocations.every((alloc) => alloc.locked)
 
+  const lockLabel = allLocked ? t('Unlock hours') : t('Lock hours')
+
   const handleCommit = (week: string, hours: number) => onSetHours(assignment, week, hours)
   const handleToggleLock = () => onToggleLock(assignment)
   const handleRemove = () => onRemove(assignment)
+  const handleAllocate = () => onAllocate(assignment)
 
   return (
     <TableRow className={ASSIGNMENT_ROW_CLASS}>
@@ -40,9 +46,11 @@ export function AssignmentRow({
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-medium">{assignment.person.name}</span>
               <Badge variant={ASSIGNMENT_KIND_BADGE[assignment.kind]}>
-                {t(ASSIGNMENT_KIND_LABELS[assignment.kind])}
+                <Term term={ASSIGNMENT_KIND_TERMS[assignment.kind]}>{t(ASSIGNMENT_KIND_LABELS[assignment.kind])}</Term>
               </Badge>
-              <span className="text-xs text-muted-foreground">{t('{hours} h', { hours: assignment.total_hours })}</span>
+              <span className="text-xs text-muted-foreground">
+                {t('{hours} hrs', { hours: assignment.total_hours })}
+              </span>
             </div>
             <span className="truncate text-xs text-muted-foreground" title={reason}>
               {reason}
@@ -50,24 +58,39 @@ export function AssignmentRow({
           </div>
           {editable && (
             <div className="flex shrink-0 gap-1">
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={allLocked ? t('Unlock hours') : t('Lock hours')}
-                disabled={busy || stretch || assignment.allocations.length === 0}
-                onClick={handleToggleLock}
-              >
-                {allLocked ? <Lock /> : <LockOpen />}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={t('Remove from the draft')}
-                disabled={busy}
-                onClick={handleRemove}
-              >
-                <Trash2 />
-              </Button>
+              <IconHint label={t('Allocate hours')}>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t('Allocate hours')}
+                  disabled={busy || stretch}
+                  onClick={handleAllocate}
+                >
+                  <CalendarRange />
+                </Button>
+              </IconHint>
+              <IconHint label={lockLabel}>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={lockLabel}
+                  disabled={busy || stretch || assignment.allocations.length === 0}
+                  onClick={handleToggleLock}
+                >
+                  {allLocked ? <Lock /> : <LockOpen />}
+                </Button>
+              </IconHint>
+              <IconHint label={t('Remove from the draft')}>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t('Remove from the draft')}
+                  disabled={busy}
+                  onClick={handleRemove}
+                >
+                  <Trash2 />
+                </Button>
+              </IconHint>
             </div>
           )}
         </div>

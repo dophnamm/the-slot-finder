@@ -1,0 +1,1 @@
+export { AllocateHoursDialog } from './component'

@@ -8,4 +8,6 @@ export interface AssignmentRowProps {
   onSetHours: (assignment: Assignment, week: string, hours: number) => void
   onToggleLock: (assignment: Assignment) => void
   onRemove: (assignment: Assignment) => void
+  /** Opens the dialog that sets many weeks at once. */
+  onAllocate: (assignment: Assignment) => void
 }

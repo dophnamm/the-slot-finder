@@ -58,7 +58,7 @@ export function GroupHeaderRow({ group, weeks, people, peopleLoading, editable, 
               })}
             </span>
             <span className="text-xs text-muted-foreground">
-              {t('{start} – {end} · level {level}+ · {assigned} of {hours} h', {
+              {t('{start} – {end} · level {level}+ · {assigned} of {hours} hrs', {
                 start: demand.from_week,
                 end: demand.to_week,
                 level: demand.min_level,
