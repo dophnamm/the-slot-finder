@@ -99,8 +99,8 @@ type AuthzService interface {
 	// lead role and their person record is one of leadIDs (nil entries are ignored).
 	RequireLeadOf(ctx context.Context, check Check, leadIDs ...*string) (request.Principal, error)
 	// VisiblePeople says whose people data the signed-in user may read: everyone for a
-	// planner; for a manager (lead) the teams of the programs they lead and themselves; for
-	// anyone else themselves only.
+	// planner; for a manager (lead) themselves and the teams of the programs they read (see
+	// ProgramReader); for anyone else themselves only.
 	VisiblePeople(ctx context.Context) (PeopleScope, error)
 	// RequireVisiblePerson lets the signed-in user through when VisiblePeople allows personID,
 	// and answers 403 otherwise.
@@ -141,7 +141,7 @@ func (s PeopleScope) IDs() []string {
 	return ids
 }
 
-// TeamLookup finds everyone in the teams of the programs a person leads.
+// TeamLookup finds everyone in the teams of the programs a person leads or leads a project in.
 type TeamLookup interface {
 	PersonIDsLedBy(ctx context.Context, leadID string) ([]string, error)
 }

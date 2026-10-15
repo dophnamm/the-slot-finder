@@ -17,7 +17,8 @@ type ProgramTeamRepository interface {
 	Remove(ctx context.Context, programID, personID string) (bool, error)
 	// PersonIDsByProgram returns the team of each of these programs, as person ids.
 	PersonIDsByProgram(ctx context.Context, programIDs []string) (map[string][]string, error)
-	// PersonIDsLedBy returns everyone in the teams of the programs this person leads.
+	// PersonIDsLedBy returns everyone in the teams of the programs this person leads or leads a
+	// project in.
 	PersonIDsLedBy(ctx context.Context, leadID string) ([]string, error)
 }
 
@@ -71,8 +72,7 @@ func (r *programTeamRepository) PersonIDsLedBy(ctx context.Context, leadID strin
 	var ids []string
 	err := r.db.From(ctx).Model(&models.ProgramTeamMember{}).
 		Distinct("program_team_members.person_id").
-		Joins("JOIN programs ON programs.id = program_team_members.program_id AND programs.deleted_at IS NULL").
-		Where("programs.lead_id = ?", leadID).
+		Where("program_team_members.program_id IN (?)", programIDsLedBy(r.db.From(ctx), leadID)).
 		Order("program_team_members.person_id ASC").
 		Pluck("program_team_members.person_id", &ids).Error
 	return ids, err
