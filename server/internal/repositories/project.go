@@ -50,8 +50,9 @@ type ProjectRepository interface {
 	MaxPriority(ctx context.Context, programID string) (int, error)
 	// SetPriorities sets the priority of each project id.
 	SetPriorities(ctx context.Context, priorities map[string]int) error
-	// CancelOpen cancels a program's projects that are not done or cancelled yet.
-	CancelOpen(ctx context.Context, programID string) error
+	// CancelOpen cancels a program's projects that are not done or cancelled yet and returns
+	// their ids.
+	CancelOpen(ctx context.Context, programID string) ([]string, error)
 	// ListForMetrics returns the projects that are not cancelled, of one program or all when
 	// programID is empty, with program, lead, phases and demand.
 	ListForMetrics(ctx context.Context, programID string) ([]models.Project, error)
@@ -199,10 +200,16 @@ func (r *projectRepository) SetPriorities(ctx context.Context, priorities map[st
 	return nil
 }
 
-func (r *projectRepository) CancelOpen(ctx context.Context, programID string) error {
-	return r.db.From(ctx).Model(&models.Project{}).
-		Where("program_id = ? AND status NOT IN ?", programID, []string{constants.ProjectStatusDone, constants.ProjectStatusCancelled}).
-		Update("status", constants.ProjectStatusCancelled).Error
+func (r *projectRepository) CancelOpen(ctx context.Context, programID string) ([]string, error) {
+	open := func() *gorm.DB {
+		return r.db.From(ctx).Model(&models.Project{}).
+			Where("program_id = ? AND status NOT IN ?", programID, []string{constants.ProjectStatusDone, constants.ProjectStatusCancelled})
+	}
+	var ids []string
+	if err := open().Order("id ASC").Pluck("id", &ids).Error; err != nil || len(ids) == 0 {
+		return nil, err
+	}
+	return ids, open().Update("status", constants.ProjectStatusCancelled).Error
 }
 
 func (r *projectRepository) ListByIDs(ctx context.Context, ids []string) ([]models.Project, error) {

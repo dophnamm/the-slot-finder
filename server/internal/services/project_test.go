@@ -123,8 +123,10 @@ func (m *MockProjectRepository) DeleteDemands(ctx context.Context, ids []string)
 	return m.Called(ctx, ids).Error(0)
 }
 
-func (m *MockProjectRepository) CancelOpen(ctx context.Context, programID string) error {
-	return m.Called(ctx, programID).Error(0)
+func (m *MockProjectRepository) CancelOpen(ctx context.Context, programID string) ([]string, error) {
+	args := m.Called(ctx, programID)
+	ids, _ := args.Get(0).([]string)
+	return ids, args.Error(1)
 }
 
 func projectOrNil(v any) *models.Project {
@@ -396,17 +398,45 @@ func TestProjectService_ApplyAction(t *testing.T) {
 }
 
 func TestProgramService_CancelCascades(t *testing.T) {
-	programs := new(MockProgramRepository)
-	projects := new(MockProjectRepository)
-	programs.On("FindWithLead", mock.Anything, programID).Return(program(constants.ProgramStatusOpen, nil), nil)
-	programs.On("Save", mock.Anything, mock.Anything).Return(nil)
-	projects.On("CancelOpen", mock.Anything, programID).Return(nil)
+	tests := []struct {
+		name       string
+		cancelled  []string
+		wantEvents int
+	}{
+		{name: "records one event for the projects it cancelled", cancelled: []string{projectID, "0192f3a4-0000-7000-8000-0000000000e2"}, wantEvents: 1},
+		{name: "records nothing when no project was open", cancelled: nil, wantEvents: 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			programs, projects, events := new(MockProgramRepository), new(MockProjectRepository), &recordedEvents{}
+			programs.On("FindWithLead", mock.Anything, programID).Return(program(constants.ProgramStatusOpen, nil), nil)
+			programs.On("Save", mock.Anything, mock.Anything).Return(nil)
+			projects.On("CancelOpen", mock.Anything, programID).Return(tt.cancelled, nil)
 
-	people := leadPeople{}
-	service := ProvideProgramService(programs, projects, people, ProvideAuthzService(people), passthroughTx{})
-	_, err := service.ApplyAction(asRole("kc-planner", constants.RolePlanner), programID, constants.ProgramActionCancel)
-	require.NoError(t, err)
-	projects.AssertExpectations(t)
+			people := leadPeople{}
+			service := ProvideProgramService(programs, projects, people, ProvideAuthzService(people), passthroughTx{}, events)
+			_, err := service.ApplyAction(asRole("kc-planner", constants.RolePlanner), programID, constants.ProgramActionCancel)
+			require.NoError(t, err)
+			projects.AssertExpectations(t)
+			require.Len(t, events.events, tt.wantEvents)
+			if tt.wantEvents == 1 {
+				assert.Equal(t, constants.EventProjectStatusChanged, events.events[0].Type)
+				assert.Equal(t, tt.cancelled, events.events[0].ProjectIDs)
+				assert.Equal(t, constants.StatusKindProgram, events.events[0].Payload.(StatusChange).Kind)
+			}
+		})
+	}
+
+	t.Run("a program that is not cancelled records nothing", func(t *testing.T) {
+		programs, projects, events := new(MockProgramRepository), new(MockProjectRepository), &recordedEvents{}
+		programs.On("FindWithLead", mock.Anything, programID).Return(program(constants.ProgramStatusOpen, nil), nil)
+		programs.On("Save", mock.Anything, mock.Anything).Return(nil)
+		people := leadPeople{}
+		service := ProvideProgramService(programs, projects, people, ProvideAuthzService(people), passthroughTx{}, events)
+		_, err := service.ApplyAction(asRole("kc-planner", constants.RolePlanner), programID, constants.ProgramActionHold)
+		require.NoError(t, err)
+		assert.Empty(t, events.events)
+	})
 }
 
 func (m *MockProjectRepository) ListByIDs(ctx context.Context, ids []string) ([]models.Project, error) {

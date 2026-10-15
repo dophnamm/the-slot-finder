@@ -222,3 +222,46 @@ func TestProjectService_RecordsSlips(t *testing.T) {
 		}
 	})
 }
+
+func TestProjectService_RecordsStatusChange(t *testing.T) {
+	planner := asRole("kc-planner", constants.RolePlanner)
+	people := knownExpertisePeople{}
+	tests := []struct {
+		name       string
+		from       string
+		action     string
+		wantStatus string
+	}{
+		{name: "cancel", from: constants.ProjectStatusActive, action: constants.ProjectActionCancel, wantStatus: constants.ProjectStatusCancelled},
+		{name: "hold", from: constants.ProjectStatusActive, action: constants.ProjectActionHold, wantStatus: constants.ProjectStatusOnHold},
+		{name: "complete", from: constants.ProjectStatusActive, action: constants.ProjectActionComplete, wantStatus: constants.ProjectStatusDone},
+		{name: "resume", from: constants.ProjectStatusOnHold, action: constants.ProjectActionResume, wantStatus: constants.ProjectStatusIncoming},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo, events := new(MockProjectRepository), &recordedEvents{}
+			project := buildAndTest(t)
+			project.Status = tt.from
+			repo.On("FindDetail", mock.Anything, projectID).Return(project, nil)
+			repo.On("Save", mock.Anything, mock.Anything).Return(nil)
+			_, err := ProvideProjectService(repo, nil, people, ProvideAuthzService(people), passthroughTx{}, events).
+				ApplyAction(planner, projectID, tt.action)
+			require.NoError(t, err)
+			require.Len(t, events.events, 1)
+			assert.Equal(t, constants.EventProjectStatusChanged, events.events[0].Type)
+			assert.Equal(t, []string{projectID}, events.events[0].ProjectIDs)
+			change := events.events[0].Payload.(StatusChange)
+			assert.Equal(t, tt.from, change.OldStatus)
+			assert.Equal(t, tt.wantStatus, change.NewStatus)
+		})
+	}
+
+	t.Run("a failed event fails the action", func(t *testing.T) {
+		repo, events := new(MockProjectRepository), &recordedEvents{fail: stderrors.New("outbox down")}
+		repo.On("FindDetail", mock.Anything, projectID).Return(buildAndTest(t), nil)
+		repo.On("Save", mock.Anything, mock.Anything).Return(nil)
+		_, err := ProvideProjectService(repo, nil, people, ProvideAuthzService(people), passthroughTx{}, events).
+			ApplyAction(planner, projectID, constants.ProjectActionCancel)
+		require.Error(t, err)
+	})
+}

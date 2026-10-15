@@ -37,6 +37,16 @@ type AbsenceChange struct {
 	Status     string  `json:"absence_status"`
 }
 
+// StatusChange is the payload of ProjectStatusChanged. Kind is "project" or "program"; a
+// cancelled program records one event for all the projects it cancelled.
+type StatusChange struct {
+	Kind      string `json:"kind"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	OldStatus string `json:"old_status"`
+	NewStatus string `json:"new_status"`
+}
+
 // PhaseChange is the payload of PhaseSlipped.
 type PhaseChange struct {
 	ProjectID   string `json:"project_id"`
@@ -91,12 +101,23 @@ func ProvideEventService(events repositories.ChangeEventRepository, projects rep
 	return &eventService{events: events, projects: projects, authz: authz, clock: clk}
 }
 
+// eventRecorder writes events to the outbox. It needs no permission check, so services the
+// authorization depends on (people) can use it without a dependency cycle.
+type eventRecorder struct {
+	events repositories.ChangeEventRepository
+	clock  clock.Clock
+}
+
 // ProvideEventRecorder gives services that save changes the recording part of the event service.
-func ProvideEventRecorder(events EventService) EventRecorder {
-	return events
+func ProvideEventRecorder(events repositories.ChangeEventRepository, clk clock.Clock) EventRecorder {
+	return eventRecorder{events: events, clock: clk}
 }
 
 func (s *eventService) Record(ctx context.Context, in ChangeInput) error {
+	return eventRecorder{events: s.events, clock: s.clock}.Record(ctx, in)
+}
+
+func (s eventRecorder) Record(ctx context.Context, in ChangeInput) error {
 	payload, err := toPayload(in.Payload)
 	if err != nil {
 		return errors.InternalError(constants.MsgEventRecordFailed, err).WithOperation(opRecordEvent).WithResource(resourceEvent)

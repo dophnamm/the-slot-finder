@@ -141,7 +141,7 @@ func TestProgramService_Get_ByReader(t *testing.T) {
 	repo.On("FindWithLead", mock.Anything, programID).Return(program(constants.ProgramStatusOpen, &other), nil)
 	projects.On("LeadsProjectIn", mock.Anything, programID, leadPersonID).Return(false, nil)
 	people := leadPeople{}
-	_, err := ProvideProgramService(repo, projects, people, ProvideAuthzService(people), passthroughTx{}).Get(lead, programID)
+	_, err := ProvideProgramService(repo, projects, people, ProvideAuthzService(people), passthroughTx{}, &recordedEvents{}).Get(lead, programID)
 	requireStatus(t, err, http.StatusForbidden)
 
 	repo = new(MockProgramRepository)
