@@ -12,6 +12,7 @@ type HeatmapRequest struct {
 	From      string `json:"from" query:"from" validate:"omitempty,isoweek"`
 	To        string `json:"to" query:"to" validate:"omitempty,isoweek"`
 	Expertise string `json:"expertise" query:"expertise" validate:"omitempty,uuid"`
+	ProgramID string `json:"program_id" query:"program_id" validate:"omitempty,uuid"`
 }
 
 // Normalize trims the values.
@@ -19,6 +20,7 @@ func (r *HeatmapRequest) Normalize() {
 	r.From = strings.TrimSpace(r.From)
 	r.To = strings.TrimSpace(r.To)
 	r.Expertise = strings.TrimSpace(r.Expertise)
+	r.ProgramID = strings.TrimSpace(r.ProgramID)
 }
 
 // ExpertiseHoursResponse is the part of a week's load on one expertise.

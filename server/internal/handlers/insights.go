@@ -25,15 +25,18 @@ func ProvideInsightsHandler(insights services.InsightsService, validate *validat
 
 // Heatmap godoc
 // @Summary Team heatmap
-// @Description Person × week load, capacity, utilization band and hours per expertise from the baseline. Weeks default to the current week and HEATMAP_DEFAULT_WEEKS; a range over HEATMAP_MAX_WEEKS gets WEEK_RANGE_TOO_LONG. With expertise, keeps people who hold it or work on it in the range.
+// @Description Person × week load, capacity, utilization band and hours per expertise from the baseline. Weeks default to the current week and HEATMAP_DEFAULT_WEEKS; a range over HEATMAP_MAX_WEEKS gets WEEK_RANGE_TOO_LONG. With expertise, keeps people who hold it or work on it in the range. With program_id, keeps the people of that program's team; a manager may filter only by a program they may read.
 // @Tags Insights
 // @Produce json
 // @Security BearerAuth
 // @Param from query string false "First week" example(2026-W42)
 // @Param to query string false "Last week" example(2026-W53)
 // @Param expertise query string false "Expertise id"
+// @Param program_id query string false "Program id: only the people of its team"
 // @Success 200 {object} object{meta=dtos.Meta,data=dtos.HeatmapResponse}
 // @Failure 400 {object} object{meta=dtos.Meta}
+// @Failure 403 {object} object{meta=dtos.Meta}
+// @Failure 404 {object} object{meta=dtos.Meta}
 // @Router /insights/heatmap [get]
 func (h *InsightsHandler) Heatmap(c *echo.Context) error {
 	var req dtos.HeatmapRequest
@@ -44,7 +47,7 @@ func (h *InsightsHandler) Heatmap(c *echo.Context) error {
 	if err := h.validate.Struct(req); err != nil {
 		return h.ValidationErrorResponse(c, constants.MsgInvalidRequest, errors.ParseValidationErrors(err))
 	}
-	in := services.HeatmapInput{ExpertiseID: req.Expertise}
+	in := services.HeatmapInput{ExpertiseID: req.Expertise, ProgramID: req.ProgramID}
 	var err error
 	if in.From, err = optionalWeek(req.From); err != nil {
 		return h.HandleError(c, err)

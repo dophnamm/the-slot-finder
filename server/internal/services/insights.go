@@ -28,19 +28,23 @@ const (
 	resourceMetrics   = "metrics"
 )
 
-// HeatmapInput asks for the heatmap of a week range, optionally for one expertise. A nil
-// week takes its default: the current week, and the HEATMAP_DEFAULT_WEEKS that follow it.
+// HeatmapInput asks for the heatmap of a week range, optionally for one expertise or for the
+// team of one program. A nil week takes its default: the current week, and the
+// HEATMAP_DEFAULT_WEEKS that follow it.
 type HeatmapInput struct {
 	From        *isoweek.Week
 	To          *isoweek.Week
 	ExpertiseID string
+	ProgramID   string
+	// team is the people of ProgramID, set by Heatmap once it has checked the caller may read it.
+	team map[string]bool
 }
 
 // InsightsService computes read-only views over the baseline, such as the team heatmap.
 type InsightsService interface {
 	// Heatmap is every active person's load, capacity, utilization band and hours per
 	// expertise per week. With an expertise, it keeps people who hold that skill or work on
-	// it in the range.
+	// it in the range. With a program, it keeps the program's team, for whoever may read it.
 	Heatmap(ctx context.Context, in HeatmapInput) (*models.Heatmap, error)
 	// ProgramOverview is a program's progress and cost figures summed over its projects that
 	// are not cancelled, with staffing by expertise.
@@ -61,6 +65,7 @@ type insightsService struct {
 	absences repositories.AbsenceRepository
 	programs repositories.ProgramRepository
 	projects repositories.ProjectRepository
+	teams    repositories.ProgramTeamRepository
 	actuals  repositories.ActualHoursRepository
 	authz    AuthzService
 	clock    clock.Clock
@@ -70,10 +75,11 @@ type insightsService struct {
 // ProvideInsightsService creates the insights service.
 func ProvideInsightsService(plans repositories.PlanRepository, people repositories.PersonRepository,
 	absences repositories.AbsenceRepository, programs repositories.ProgramRepository, projects repositories.ProjectRepository,
-	actuals repositories.ActualHoursRepository, authz AuthzService, clk clock.Clock, cfg *config.Config,
+	teams repositories.ProgramTeamRepository, actuals repositories.ActualHoursRepository, authz AuthzService, clk clock.Clock,
+	cfg *config.Config,
 ) InsightsService {
 	return &insightsService{plans: plans, people: people, absences: absences, programs: programs, projects: projects,
-		actuals: actuals, authz: authz, clock: clk, cfg: cfg}
+		teams: teams, actuals: actuals, authz: authz, clock: clk, cfg: cfg}
 }
 
 func (s *insightsService) Heatmap(ctx context.Context, in HeatmapInput) (*models.Heatmap, error) {
@@ -84,7 +90,32 @@ func (s *insightsService) Heatmap(ctx context.Context, in HeatmapInput) (*models
 	if err != nil {
 		return nil, err
 	}
+	if in.ProgramID != "" {
+		if in.team, err = s.programTeam(ctx, in.ProgramID); err != nil {
+			return nil, err
+		}
+	}
 	return s.heatmap(ctx, in, scope)
+}
+
+// programTeam is the people of a program's team, for a caller who may read the program.
+func (s *insightsService) programTeam(ctx context.Context, programID string) (map[string]bool, error) {
+	program, err := s.programs.FindWithLead(ctx, programID)
+	if err != nil {
+		return nil, notFoundOrDatabase(err, constants.ProgramNotFound, constants.MsgProgramNotFound, resourceProgram, opHeatmap)
+	}
+	if err := requireProgramReader(ctx, s.authz, s.projects, program, opHeatmap); err != nil {
+		return nil, err
+	}
+	byProgram, err := s.teams.PersonIDsByProgram(ctx, []string{programID})
+	if err != nil {
+		return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opHeatmap).WithResource(resourceHeatmap)
+	}
+	team := make(map[string]bool, len(byProgram[programID]))
+	for _, id := range byProgram[programID] {
+		team[id] = true
+	}
+	return team, nil
 }
 
 // heatmap builds the heatmap of the people in scope, without the permission check, for
@@ -116,7 +147,7 @@ func (s *insightsService) heatmap(ctx context.Context, in HeatmapInput, scope Pe
 	worked := workedByPersonWeek(actuals)
 	rows := make([]models.HeatmapRow, 0, len(people))
 	for _, p := range people {
-		if !scope.Allows(p.ID) {
+		if !scope.Allows(p.ID) || (in.team != nil && !in.team[p.ID]) {
 			continue
 		}
 		row := s.heatmapRow(p, weeks, absences, load[p.ID], worked[p.ID])

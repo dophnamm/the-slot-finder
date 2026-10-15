@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 )
 
 func TestUtilizationBand(t *testing.T) {
@@ -107,7 +108,7 @@ func newInsightsService(plans *MockPlanRepository, people *MockPersonRepository,
 func newInsightsServiceWithActuals(plans *MockPlanRepository, people *MockPersonRepository, absences *MockAbsenceRepository,
 	actuals *MockActualHoursRepository,
 ) InsightsService {
-	return ProvideInsightsService(plans, people, absences, nil, nil, actuals, ProvideAuthzService(leadPeople{}),
+	return ProvideInsightsService(plans, people, absences, nil, nil, nil, actuals, ProvideAuthzService(leadPeople{}),
 		clock.NewFixed(time.Date(2026, time.October, 14, 9, 0, 0, 0, time.UTC)), heatmapConfig())
 }
 
@@ -189,7 +190,7 @@ func TestInsightsService_Heatmap(t *testing.T) {
 func TestInsightsService_Heatmap_ManagerSeesTheirTeams(t *testing.T) {
 	plans, people, absences := heatmapFixture(t)
 	authz := ProvideTeamAuthzService(leadPeople{}, ledTeams{leadPersonID: {engPersonID}})
-	service := ProvideInsightsService(plans, people, absences, nil, nil, actualHoursRows(), authz,
+	service := ProvideInsightsService(plans, people, absences, nil, nil, nil, actualHoursRows(), authz,
 		clock.NewFixed(time.Date(2026, time.October, 14, 9, 0, 0, 0, time.UTC)), heatmapConfig())
 	from, to := mustWeek(t, "2026-W42"), mustWeek(t, "2026-W43")
 
@@ -223,4 +224,62 @@ func TestInsightsService_Heatmap_ActualHours(t *testing.T) {
 	assert.InDelta(t, 0, *quinn[1].ActualHours, hoursEpsilon)
 	actuals.AssertNumberOfCalls(t, "ListInRange", 1)
 	actuals.AssertCalled(t, "ListInRange", mock.Anything, from, to)
+}
+
+func TestInsightsService_Heatmap_ProgramTeam(t *testing.T) {
+	from, to := mustWeek(t, "2026-W42"), mustWeek(t, "2026-W43")
+	team := &memoryTeams{members: map[string][]string{metricsProgramID: {engPersonID, pmPersonID}}}
+	build := func(t *testing.T, authz AuthzService, programLead string, leadsAProject bool) InsightsService {
+		plans, people, absences := heatmapFixture(t)
+		programs, projects := new(MockProgramRepository), new(MockProjectRepository)
+		programs.On("FindWithLead", mock.Anything, metricsProgramID).
+			Return(&models.Program{BaseModel: models.BaseModel{ID: metricsProgramID}, LeadID: &programLead}, nil)
+		programs.On("FindWithLead", mock.Anything, otherProgramID).Return(nil, gorm.ErrRecordNotFound)
+		projects.On("LeadsProjectIn", mock.Anything, metricsProgramID, leadPersonID).Return(leadsAProject, nil).Maybe()
+		return ProvideInsightsService(plans, people, absences, programs, projects, team, actualHoursRows(), authz,
+			clock.NewFixed(time.Date(2026, time.October, 14, 9, 0, 0, 0, time.UTC)), heatmapConfig())
+	}
+	names := func(h *models.Heatmap) []string {
+		out := []string{}
+		for _, row := range h.Rows {
+			out = append(out, row.Person.Name)
+		}
+		return out
+	}
+
+	t.Run("a planner sees the team of the program only", func(t *testing.T) {
+		svc := build(t, ProvideAuthzService(leadPeople{}), leadPersonID, false)
+		heatmap, err := svc.Heatmap(asRole("kc-planner", constants.RolePlanner), HeatmapInput{From: &from, To: &to, ProgramID: metricsProgramID})
+		require.NoError(t, err)
+		assert.Equal(t, []string{"Pat", "Erin"}, names(heatmap))
+	})
+
+	t.Run("a program without a team shows nobody", func(t *testing.T) {
+		svc := build(t, ProvideAuthzService(leadPeople{}), leadPersonID, false)
+		empty := &memoryTeams{members: map[string][]string{}}
+		svc.(*insightsService).teams = empty
+		heatmap, err := svc.Heatmap(asRole("kc-planner", constants.RolePlanner), HeatmapInput{From: &from, To: &to, ProgramID: metricsProgramID})
+		require.NoError(t, err)
+		assert.Empty(t, heatmap.Rows)
+	})
+
+	t.Run("a manager keeps to the intersection with the teams they lead", func(t *testing.T) {
+		authz := ProvideTeamAuthzService(leadPeople{}, ledTeams{leadPersonID: {engPersonID}})
+		svc := build(t, authz, leadPersonID, false)
+		heatmap, err := svc.Heatmap(asRole("kc-lead", constants.RoleLead), HeatmapInput{From: &from, To: &to, ProgramID: metricsProgramID})
+		require.NoError(t, err)
+		assert.Equal(t, []string{"Erin"}, names(heatmap))
+	})
+
+	t.Run("a manager outside the program is refused", func(t *testing.T) {
+		svc := build(t, ProvideAuthzService(leadPeople{}), otherPersonID2, false)
+		_, err := svc.Heatmap(asRole("kc-lead", constants.RoleLead), HeatmapInput{From: &from, To: &to, ProgramID: metricsProgramID})
+		requireStatus(t, err, http.StatusForbidden)
+	})
+
+	t.Run("an unknown program", func(t *testing.T) {
+		svc := build(t, ProvideAuthzService(leadPeople{}), leadPersonID, false)
+		_, err := svc.Heatmap(asRole("kc-planner", constants.RolePlanner), HeatmapInput{From: &from, To: &to, ProgramID: otherProgramID})
+		requireAppError(t, err, constants.ProgramNotFound, http.StatusNotFound)
+	})
 }
