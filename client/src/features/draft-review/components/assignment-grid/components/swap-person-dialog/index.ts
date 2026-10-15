@@ -1,0 +1,1 @@
+export { SwapPersonDialog } from './component'

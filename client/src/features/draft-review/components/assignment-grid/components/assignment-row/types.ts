@@ -15,4 +15,6 @@ export interface AssignmentRowProps {
   onRemove: (assignment: Assignment) => void
   /** Opens the dialog that sets many weeks at once. */
   onAllocate: (assignment: Assignment) => void
+  /** Opens the dialog that swaps the person for another from the program team. */
+  onSwap: (assignment: Assignment) => void
 }

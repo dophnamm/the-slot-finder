@@ -1,0 +1,1 @@
+export { AlternativeRow } from './component'
