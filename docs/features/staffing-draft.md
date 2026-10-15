@@ -10,7 +10,7 @@
 - PLAN (`baseline` and `draft`), ASSIGNMENT, ALLOCATION.
 - `internal/engine` (standard library only) with the **greedy** strategy:
   - **Hard constraints:** expertise at ≥ minimum level · weekly hours ≤ capacity × `maxUtilization` · at most `maxExpertisesPerPersonWeek` expertises per person per week · no allocation below `minHoursPerWeek` except a demand's last remainder · only inside the demand's window · locked allocations untouched · never a stretch assignment
-  - **Soft objectives:** priority and deadline order · primary-expertise match · load near `targetUtilization` · continuity on the same project
+  - **Soft objectives:** priority and deadline order · primary-expertise match · load near `targetUtilization` · continuity on the same project · level close to the demand's minimum level (soft: every level above the minimum lowers the score, nobody is excluded)
   - **Layout:** `flat` profile, and `headcount` seats with one person per seat when possible
   - **Output:** a reason on every assignment, and `unmet` with a reason code
 - Draft generation for chosen projects, review, edit (add or remove a person, change weekly hours, lock), stretch by hand (flagged, confirmed on accept), reject.
@@ -66,8 +66,9 @@ At startup the server creates an empty published baseline (version 0) if none ex
 - The same input always gives the same output: ties break by person id.
 
 **As built**
-- Candidates rank by: holds the whole seat, then primary-expertise match, then the weighted score (deadline coverage, primary fit, balance, stability, continuity), then person id. So a primary person wins whenever one can hold the seat, and a cross-expertise person wins when no primary person can.
+- Candidates rank by: holds the whole seat, then primary-expertise match, then the weighted score (deadline coverage, primary fit, balance, stability, continuity, levelFit), then person id. So a primary person wins whenever one can hold the seat, and a cross-expertise person wins when no primary person can.
 - The planning service passes each demand's window as its list of ISO weeks, so the engine does no week arithmetic. `PLANNING_HOUR_STEP` (default 1) rounds allocations to whole hours.
+- A demand never gets more distinct people than its `headcount`: once it has that many, only people already on it can take more hours, and what they cannot hold stays unmet (`NO_CAPACITY_BEFORE_DEADLINE`).
 - Headcount is lowered when a seat would be smaller than one minimum week. Per demand, at most one allocation is below `minHoursPerWeek`: the last remainder.
 - `BLOCKED_BY_LOCKED` when the locked hours of qualified people inside the window are at least the missing hours; otherwise `NO_CAPACITY_BEFORE_DEADLINE`.
 - Existing assignments: for demand outside the request they are fixed load; for requested demand, locked allocations are kept and unlocked ones are planned again, preferring the same person (stability).

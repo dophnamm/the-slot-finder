@@ -226,7 +226,7 @@ Error example (HTTP 409):
     "minHoursPerWeek": 8,
     "maxAlternatives": 3,
     "weights": { "deadline": 1.0, "primaryFit": 0.8, "tagFit": 0.5, "preference": 0.4,
-                 "balance": 0.6, "stability": 0.5, "continuity": 0.3 }
+                 "balance": 0.6, "stability": 0.5, "continuity": 0.3, "levelFit": 0.4 }
   },
   "people": [
     { "id": "p1",
@@ -284,7 +284,7 @@ Error example (HTTP 409):
 **Greedy strategy (MVP):**
 1. Sort demand by priority (high first), then deadline (earliest first), then scarcity of the expertise and its required tags.
 2. For each demand, keep candidates who are in the demand's `candidates` set (its program team; no set means anyone), have the demand's expertise, primary or secondary, at level ≥ `minLevel`, and every tag in `requiredTags`. They also need free capacity inside the demand's window and must stay within `maxExpertisesPerPersonWeek`.
-3. Score candidates using `weights`: primary-expertise match (`primaryFit`), preferred tags (`tagFit`), the preferred person (`preference`), free capacity, continuity (same project, then program, then client), load kept near `targetUtilization`. A cross-expertise person wins only when no primary person can cover the hours in time, or when using them clearly balances load. The reason says which. The next `maxAlternatives` candidates are kept as `alternatives`.
+3. Score candidates using `weights`: primary-expertise match (`primaryFit`), preferred tags (`tagFit`), the preferred person (`preference`), free capacity, continuity (same project, then program, then client), load kept near `targetUtilization`, level fit (`levelFit` = 1 / (1 + levels above the minimum)). A cross-expertise person wins only when no primary person can cover the hours in time, or when using them clearly balances load. The reason says which. The next `maxAlternatives` candidates are kept as `alternatives`.
 4. Split `hours` into `headcount` seats of about `hours ÷ headcount`. Spread each seat's hours across the window by `profile` (`flat`, `front`, `back`). Keep one person per seat; split a seat between two people only when nobody has the capacity, and say so in the reason.
 5. Never allocate less than `minHoursPerWeek` in a week, except a demand's last remainder.
 6. Record any shortfall in `unmet` with a reason code. Never throw.
@@ -378,7 +378,7 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `PLANNING_MIN_HOURS_PER_WEEK` | `minHoursPerWeek`: smallest weekly allocation, except a demand's last remainder | 8 |
 | `PLANNING_HOUR_STEP` | `hourStep`: rounds weekly allocations (1 = whole hours, 0 = exact) | 1 |
 | `PLANNING_MAX_ALTERNATIVES` | `maxAlternatives`: runner-ups kept per assignment | 3 |
-| `PLANNING_WEIGHT_<NAME>` | One per weight: `DEADLINE`, `PRIMARY_FIT`, `TAG_FIT`, `PREFERENCE`, `BALANCE`, `STABILITY`, `CONTINUITY` | as in the sample request |
+| `PLANNING_WEIGHT_<NAME>` | One per weight: `DEADLINE`, `PRIMARY_FIT`, `TAG_FIT`, `PREFERENCE`, `BALANCE`, `STABILITY`, `CONTINUITY`, `LEVEL_FIT` | as in the sample request (`LEVEL_FIT` 0.4) |
 | `PLANNING_REPLAN_STABILITY_WEIGHT` | The raised `stability` weight used for re-plans | 2.0 |
 | `DEFAULT_NON_PROJECT_HOURS` | `PERSON.non_project_hours` when a person is created without one | 4 |
 | `COUNT_PLANNED_ABSENCE` | Whether `planned` absence reduces capacity (`approved` always does) | true |
