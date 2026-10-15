@@ -16,6 +16,15 @@ type HeatmapRow struct {
 	// PrimaryExpertise is the person's primary skill; rows are grouped by it.
 	PrimaryExpertise Expertise
 	Cells            []HeatmapCell
+	// Sustained is the first run of SUSTAINED_OVERLOAD_WEEKS or more overloaded weeks in the
+	// range; nil when there is none.
+	Sustained *OverloadRun
+}
+
+// OverloadRun is consecutive overloaded weeks, from one week.
+type OverloadRun struct {
+	From  isoweek.Week
+	Weeks int
 }
 
 // HeatmapCell is one person in one week.
