@@ -8,6 +8,7 @@ export const ROUTES = {
   // Nested like the breadcrumbs, so the sidebar marks Programs on a project and Intake on a draft.
   projectDetail: '/programs/:programId/projects/:id',
   staffingDraft: '/intake/staffing-drafts/:id',
+  drafts: '/drafts',
   scenarios: '/scenarios',
   scenarioDetail: '/scenarios/:id',
   people: '/people',

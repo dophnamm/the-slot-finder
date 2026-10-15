@@ -7,6 +7,7 @@ export const STATIC_TRAILS: Partial<Record<BreadcrumbKind, StaticCrumb[]>> = {
   programs: [{ label: 'Programs' }],
   intake: [{ label: 'Intake' }],
   staffingDraft: [{ label: 'Intake', to: ROUTES.intake }, { label: 'Staffing draft' }],
+  drafts: [{ label: 'Drafts' }],
   scenarios: [{ label: 'Scenarios' }],
   people: [{ label: 'People' }],
   events: [{ label: 'Events' }],

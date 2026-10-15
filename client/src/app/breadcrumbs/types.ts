@@ -8,6 +8,7 @@ export type BreadcrumbKind =
   | 'projectDetail'
   | 'intake'
   | 'staffingDraft'
+  | 'drafts'
   | 'scenarios'
   | 'scenarioDetail'
   | 'people'

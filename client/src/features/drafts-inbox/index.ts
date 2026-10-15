@@ -1,0 +1,1 @@
+export { DraftsInbox } from './component'

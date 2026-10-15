@@ -1,7 +1,10 @@
 import { NavLink } from 'react-router'
+import { can } from '@/resources/rbac'
 import { ROUTES } from '@/resources/routes'
 import { useCurrentUser } from '@/shared/auth'
 import { useTranslation } from '@/shared/i18n'
+import { useOpenDrafts } from '@/shared/staffing'
+import { Badge } from '@/shared/ui/badge'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { LOADING_REVEAL_CLASS } from '@/utils/constants'
 import { cn, range } from '@/utils/functions'
@@ -16,6 +19,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const { t } = useTranslation()
   const { data: user, isPending } = useCurrentUser()
   const navItems = visibleNavItems(user?.role)
+  const { data: openDrafts = [] } = useOpenDrafts(can(user?.role, 'staffing-drafts:view'))
 
   return (
     <div className="flex h-full w-full flex-col bg-background text-foreground">
@@ -34,6 +38,11 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           <NavLink key={to} to={to} end={to === ROUTES.dashboard} className={navLinkClassName} onClick={onNavigate}>
             <Icon className="size-4 shrink-0" />
             {t(label)}
+            {to === ROUTES.drafts && openDrafts.length > 0 && (
+              <Badge variant="secondary" className="ml-auto tabular-nums">
+                {openDrafts.length}
+              </Badge>
+            )}
           </NavLink>
         ))}
       </nav>
