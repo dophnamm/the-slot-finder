@@ -98,6 +98,8 @@ Files per module follow the pattern `handlers/<module>.go`, `services/<module>.g
 
 All paths below are under **`/api/v1`**. Every endpoint except health checks requires a Keycloak JWT (`Authorization: Bearer`); unsafe methods also need `X-CSRF-Token`. The Server checks permissions on every call: the role through `RequireRole` in the router, and per-program rules ("lead (own)", internal assistant) in the service. The `lead` role is shown as **Manager**: "lead (own)" means the manager of that program. A manager sees only the people in the teams of the programs they manage, plus themselves ("lead (team)" below); `AuthzService.VisiblePeople` answers that for the people list and detail, schedules, the heatmap and the risks.
 
+**Rate limits.** Every request counts against `RATE_LIMIT` per `RATE_LIMIT_DURATION` for its client IP. The routes that run the planning engine, read an uploaded file or fetch a URL also count against `RATE_LIMIT_HEAVY` per `RATE_LIMIT_HEAVY_DURATION` for each signed-in user on each route: `POST /staffing-drafts`, `POST /scenarios`, `POST /scenarios/{id}/rerun`, `POST /timesheets/import`, `POST /holidays/import`, `PUT /people/{id}/calendar-feed` and `POST /people/{id}/calendar-feed/sync`. Over either limit the Server answers `429 RATE_LIMIT_EXCEEDED`, with a `Retry-After` header and `{ limit, window, retry_after }` in `data` (`retry_after` in seconds). The counters live in memory, one set per Server instance.
+
 **Identity and people**
 
 | Method | Path | Purpose | Roles |
@@ -390,6 +392,8 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `CALENDAR_SYNC_WEEKS` | How far ahead calendar events are read | 26 |
 | `CALENDAR_LEAVE_KEYWORDS` | Title words that mark an event as out of office, ignoring case | OOO, Out of office, Vacation, Annual leave, Nghỉ phép |
 | `CALENDAR_FETCH_TIMEOUT` · `CALENDAR_MAX_BYTES` | Limits on one calendar fetch | 10s · 5MB |
+| `RATE_LIMIT` · `RATE_LIMIT_DURATION` | Requests allowed per client IP on every route, and the window (0 turns it off) | 20 · 1s |
+| `RATE_LIMIT_HEAVY` · `RATE_LIMIT_HEAVY_DURATION` | Requests allowed per signed-in user on each heavy route (see the API section), and the window (0 turns it off) | 20 · 30s |
 | `WORKING_WEEKDAYS` | Days that count when absence hours are computed | Mon–Fri |
 | `HEATMAP_DEFAULT_WEEKS` · `HEATMAP_MAX_WEEKS` | Weeks shown by default on the heatmap, and the largest range allowed | 12 · 52 |
 | `ALERT_HORIZON_WEEKS` | A deadline this close turns a gap into **at risk** | 4 |

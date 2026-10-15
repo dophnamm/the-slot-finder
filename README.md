@@ -741,6 +741,7 @@ sequenceDiagram
 | **Errors** | Every response, success or error, uses one envelope: `{ meta: { error_code, message, code, page, page_size, total }, data }`, with a meaningful HTTP status. Field errors go in `data` |
 | **Audit** | Accept, publish, edit and lock of allocations, budget and forecast changes, assistant changes: who, when, value before and after. An action taken through the AI assistant (later) records the user as the actor and `via = ai_assistant` |
 | **Time** | Stored in UTC. Weeks follow ISO-8601. The organization's timezone is configuration |
+| **Rate limits** | Every request counts against an allowance per client IP. Routes that run the planning engine, read an uploaded file or fetch a URL also count against a tighter allowance per signed-in user and route. Over a limit the Server answers `429` with `Retry-After`, and the Client says how long to wait instead of retrying |
 | **Links from users** | A calendar link is a secret and a fetch target. It is stored encrypted and never logged or returned. The Server fetches it over https from allowed hosts only, never to a private IP, with a timeout and a size cap |
 | **Observability** | Structured logs with a request id; metrics for engine run time and `unmet` count |
 
