@@ -321,14 +321,14 @@ func (s *scenarioService) compute(ctx context.Context, assumptions []models.Scen
 
 	var plan *models.Plan
 	if demands, _, _ := engineDemands(projects); len(demands) == 0 {
-		plan, err = buildDraft(baseline, nil, engine.Result{}, projectIDs(projects), actor)
+		plan, err = buildDraft(baseline, nil, engine.Result{}, projectIDs(projects), actor, isoweek.Of(s.clock.Now()))
 	} else {
 		existing := shiftedAssignments(baseline.Assignments, shifts)
 		req, snapErr := s.snapshot(ctx, projects, existing, s.policy(s.cfg.PlanningReplanStabilityWeight), extra)
 		if snapErr != nil {
 			return nil, snapErr
 		}
-		plan, err = buildDraft(baseline, req.Demands, engine.Propose(req), projectIDs(projects), actor)
+		plan, err = buildDraft(baseline, req.Demands, engine.Propose(req), projectIDs(projects), actor, isoweek.Of(s.clock.Now()))
 	}
 	if err != nil {
 		return nil, errors.InternalError(constants.MsgScenarioSaveFailed, err).WithOperation(op).WithResource(resourceScenario)

@@ -215,7 +215,7 @@ func TestBuildDraft(t *testing.T) {
 		Unmet: []engine.Unmet{{DemandID: demandID, Hours: 52, Reason: engine.UnmetNoCapacity}},
 	}
 
-	draft, err := buildDraft(baseline, []engine.Demand{{ID: demandID}}, result, []string{projectID}, nil)
+	draft, err := buildDraft(baseline, []engine.Demand{{ID: demandID}}, result, []string{projectID}, nil, mustWeek(t, "2026-W42"))
 	require.NoError(t, err)
 	require.Len(t, draft.Assignments, 2)
 	assert.Equal(t, otherDemandID, draft.Assignments[0].DemandID, "other demand is copied")
@@ -275,6 +275,28 @@ func TestStaffingService_Edit(t *testing.T) {
 	}
 	juniorQA := &models.Person{BaseModel: models.BaseModel{ID: otherPersonID2},
 		Skills: []models.PersonSkill{{ExpertiseID: expQAID, Level: 1, IsPrimary: true}}}
+
+	t.Run("weeks before the current week cannot be added or changed", func(t *testing.T) {
+		tests := []struct {
+			name  string
+			input EditDraftInput
+		}{
+			{name: "add", input: EditDraftInput{Add: []AddAssignmentInput{{PersonID: otherPersonID2, DemandID: demandID,
+				Allocations: []WeekHours{{Week: mustWeek(t, "2026-W47"), Hours: 10}}}}}},
+			{name: "set", input: EditDraftInput{Set: []SetAllocationInput{{AssignmentID: draftAssignmentID, Week: mustWeek(t, "2026-W47"), Hours: 10}}}},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				m := newStaffingMocks()
+				m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(qaAssignment(t, 20)), nil)
+				m.projects.On("FindDetail", mock.Anything, projectID).Return(projectWithExpertise(t), nil)
+				m.people.On("FindWithSkills", mock.Anything, otherPersonID2).Return(juniorQA, nil)
+				m.plans.On("Touch", mock.Anything, staffingDraftID, inWeek48).Return(nil).Maybe()
+				_, err := m.serviceAt(inWeek48).Edit(planner, staffingDraftID, tt.input)
+				requireAppError(t, err, constants.WeekInThePast, http.StatusBadRequest)
+			})
+		}
+	})
 
 	t.Run("a below-level person becomes a locked stretch assignment", func(t *testing.T) {
 		m := newStaffingMocks()

@@ -198,7 +198,7 @@ func (s *staffingService) Generate(ctx context.Context, in GenerateDraftInput) (
 	if err != nil {
 		return nil, errors.DatabaseError(constants.MsgDraftSaveFailed, err).WithOperation(opGenerateDraft).WithResource(resourceDraft)
 	}
-	draft, err := buildDraft(baseline, req.Demands, result, in.ProjectIDs, personIDOf(actor))
+	draft, err := buildDraft(baseline, req.Demands, result, in.ProjectIDs, personIDOf(actor), isoweek.Of(s.clock.Now()))
 	if err != nil {
 		return nil, errors.InternalError(constants.MsgDraftSaveFailed, err).WithOperation(opGenerateDraft).WithResource(resourceDraft)
 	}
@@ -280,16 +280,21 @@ func (s *draftBuilder) loadProjects(ctx context.Context, ids []string, op string
 }
 
 // snapshot builds the engine request: the projects' demand with their windows, every active
-// person with their capacity over those weeks, and the baseline as the starting plan. Extra
+// person with their capacity over those weeks, and the baseline as the starting plan. Only weeks
+// from the current one on are planned (planFrom), and hours of projects that are not plannable
+// any more are not load (withoutFreedHours). Extra
 // absences (a scenario's assumptions) lower capacity as if they were approved leave.
 func (s *draftBuilder) snapshot(ctx context.Context, projects []models.Project, existing []models.Assignment, policy engine.Policy,
 	extra []models.Absence,
 ) (engine.Request, error) {
-	demands, from, to := engineDemands(projects)
+	demands, _, _ := engineDemands(projects)
 	if len(demands) == 0 {
 		return engine.Request{}, errors.NewAppError(constants.NoDemandToStaff, constants.MsgNoDemandToStaff, errors.ErrorTypeConflict,
 			http.StatusConflict).WithOperation(opGenerateDraft).WithResource(resourceDraft)
 	}
+	current := isoweek.Of(s.clock.Now())
+	demands, starting := planFrom(demands, withoutFreedHours(existing, current), current)
+	from, to := windowOf(demands, current)
 	people, err := s.people.ListActive(ctx)
 	if err != nil {
 		return engine.Request{}, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opGenerateDraft).WithResource(resourceDraft)
@@ -309,7 +314,7 @@ func (s *draftBuilder) snapshot(ctx context.Context, projects []models.Project, 
 		Policy:   policy,
 		People:   s.enginePeople(people, append(absences, extra...), isoweek.Range(from, to)),
 		Demands:  demands,
-		Existing: engineExisting(existing),
+		Existing: engineExisting(starting),
 	}, nil
 }
 
@@ -396,8 +401,11 @@ func engineExisting(assignments []models.Assignment) []engine.ExistingAssignment
 
 // buildDraft is the baseline with the covered demand planned again: assignments of other
 // demand are copied as they are, and the engine's assignments replace those of the covered
-// demand. A kept assignment keeps who added it by hand.
-func buildDraft(baseline *models.Plan, demands []engine.Demand, result engine.Result, projectIDs []string, actor *string) (*models.Plan, error) {
+// demand, which keeps the baseline's hours of weeks before current as they were. A kept
+// assignment keeps who added it by hand.
+func buildDraft(baseline *models.Plan, demands []engine.Demand, result engine.Result, projectIDs []string, actor *string,
+	current isoweek.Week,
+) (*models.Plan, error) {
 	covered := map[string]bool{}
 	for _, d := range demands {
 		covered[d.ID] = true
@@ -424,6 +432,7 @@ func buildDraft(baseline *models.Plan, demands []engine.Demand, result engine.Re
 		}
 		draft.Assignments = append(draft.Assignments, assignment)
 	}
+	keepPast(draft, baseline, covered, current)
 	for _, u := range result.Unmet {
 		draft.Unmet = append(draft.Unmet, models.PlanUnmet{DemandID: u.DemandID, Hours: u.Hours, Reason: string(u.Reason)})
 	}
@@ -488,7 +497,7 @@ func (s *staffingService) draftLoad(ctx context.Context, plan *models.Plan, proj
 	if err != nil {
 		return models.DraftLoad{}, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(op).WithResource(resourceDraft)
 	}
-	return buildDraftLoad(s.enginePeople(people, absences, weeks), plan.Assignments, coveredDemand(projects), weeks,
+	return buildDraftLoad(s.enginePeople(people, absences, weeks), withoutFreedHours(plan.Assignments, isoweek.Of(s.clock.Now())), coveredDemand(projects), weeks,
 		s.cfg.UtilizationUnderusedBelow, s.cfg.UtilizationNearFullFrom), nil
 }
 
@@ -518,6 +527,33 @@ func buildDraftLoad(people []engine.Person, assignments []models.Assignment, cov
 		}
 	}
 	return load
+}
+
+// keepPast puts the baseline's allocations of weeks before current back on the covered demand
+// as they were: the engine plans from the current week on and never sees them.
+func keepPast(draft, baseline *models.Plan, covered map[string]bool, current isoweek.Week) {
+	byPair := map[[2]string]int{}
+	for i, a := range draft.Assignments {
+		byPair[[2]string{a.PersonID, a.DemandID}] = i
+	}
+	for _, a := range baseline.Assignments {
+		if !covered[a.DemandID] {
+			continue
+		}
+		past := beforeWeek(a.Allocations, current)
+		if len(past) == 0 {
+			continue
+		}
+		copied := copyAssignment(a)
+		copied.Allocations = past
+		i, ok := byPair[[2]string{a.PersonID, a.DemandID}]
+		if !ok {
+			byPair[[2]string{a.PersonID, a.DemandID}] = len(draft.Assignments)
+			draft.Assignments = append(draft.Assignments, copied)
+			continue
+		}
+		draft.Assignments[i].Allocations = append(copied.Allocations, draft.Assignments[i].Allocations...)
+	}
 }
 
 // diffPlans lists every person and demand whose hours differ between two plans, ordered by
@@ -672,7 +708,7 @@ func (s *staffingService) Edit(ctx context.Context, id string, in EditDraftInput
 	if err != nil {
 		return nil, errors.DatabaseError(constants.MsgDraftSaveFailed, err).WithOperation(opEditDraft).WithResource(resourceDraft)
 	}
-	added, err := s.newAssignments(ctx, plan, coveredDemand(projects), teams, in.Add, personIDOf(actor))
+	added, err := s.newAssignments(ctx, plan, coveredDemand(projects), teams, in.Add, personIDOf(actor), isoweek.Of(s.clock.Now()))
 	if err != nil {
 		return nil, err
 	}
@@ -688,7 +724,7 @@ func (s *staffingService) Edit(ctx context.Context, id string, in EditDraftInput
 				return err
 			}
 		}
-		return s.setAllocations(ctx, plan, coveredDemand(projects), in.Set)
+		return s.setAllocations(ctx, plan, coveredDemand(projects), in.Set, isoweek.Of(s.clock.Now()))
 	})
 	if err != nil {
 		return nil, asAppError(err, constants.MsgDraftSaveFailed, opEditDraft, resourceDraft)
@@ -699,7 +735,7 @@ func (s *staffingService) Edit(ctx context.Context, id string, in EditDraftInput
 // newAssignments checks and builds the assignments to add: a covered demand, a person not on
 // it yet, weeks inside its window. The kind comes from the person's skills; stretch is locked.
 func (s *staffingService) newAssignments(ctx context.Context, plan *models.Plan, covered map[string]demandInProject,
-	teams map[string]map[string]bool, adds []AddAssignmentInput, actor *string,
+	teams map[string]map[string]bool, adds []AddAssignmentInput, actor *string, current isoweek.Week,
 ) ([]models.Assignment, error) {
 	taken := map[[2]string]bool{}
 	for _, a := range plan.Assignments {
@@ -730,6 +766,9 @@ func (s *staffingService) newAssignments(ctx context.Context, plan *models.Plan,
 			assignment.Reason = append(assignment.Reason, reason)
 		}
 		for _, wh := range add.Allocations {
+			if wh.Week.Before(current) {
+				return nil, draftError(constants.WeekInThePast, constants.MsgWeekInThePast, http.StatusBadRequest, opEditDraft)
+			}
 			if !demand.contains(wh.Week) {
 				return nil, draftError(constants.WeekOutsideWindow, constants.MsgWeekOutsideWindow, http.StatusBadRequest, opEditDraft)
 			}
@@ -775,7 +814,9 @@ func (s *staffingService) removeAssignments(ctx context.Context, plan *models.Pl
 }
 
 // setAllocations changes weekly hours and locks; a stretch assignment stays locked.
-func (s *staffingService) setAllocations(ctx context.Context, plan *models.Plan, covered map[string]demandInProject, sets []SetAllocationInput) error {
+func (s *staffingService) setAllocations(ctx context.Context, plan *models.Plan, covered map[string]demandInProject, sets []SetAllocationInput,
+	current isoweek.Week,
+) error {
 	for _, set := range sets {
 		assignment := findAssignment(plan, set.AssignmentID)
 		if assignment == nil {
@@ -784,6 +825,9 @@ func (s *staffingService) setAllocations(ctx context.Context, plan *models.Plan,
 		demand, ok := covered[assignment.DemandID]
 		if !ok {
 			return draftError(constants.DemandNotInDraft, constants.MsgDemandNotInDraft, http.StatusBadRequest, opEditDraft)
+		}
+		if set.Week.Before(current) {
+			return draftError(constants.WeekInThePast, constants.MsgWeekInThePast, http.StatusBadRequest, opEditDraft)
 		}
 		if !demand.contains(set.Week) {
 			return draftError(constants.WeekOutsideWindow, constants.MsgWeekOutsideWindow, http.StatusBadRequest, opEditDraft)
