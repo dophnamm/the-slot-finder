@@ -3,10 +3,10 @@ import { request } from '@/shared/api/http'
 import type { Assignment } from '@/shared/staffing'
 import type { HeatmapData, HeatmapQuery } from './types'
 
-export function getHeatmap({ from, to, expertise }: HeatmapQuery) {
+export function getHeatmap({ from, to, expertise, programId }: HeatmapQuery) {
   return request<HeatmapData>({
     url: INSIGHTS_ENDPOINTS.heatmap,
-    params: { from, to, expertise: expertise || undefined },
+    params: { from, to, expertise: expertise || undefined, program_id: programId || undefined },
   })
 }
 

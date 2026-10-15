@@ -7,7 +7,7 @@ import type { HeatmapQuery } from './types'
 /** The heatmap for the filters; it refreshes when a staffing draft is accepted. */
 export function useHeatmap(query: HeatmapQuery) {
   return useQuery({
-    queryKey: [...INSIGHTS_QUERY_KEY, HEATMAP_QUERY_NAME, query.from, query.to, query.expertise],
+    queryKey: [...INSIGHTS_QUERY_KEY, HEATMAP_QUERY_NAME, query.from, query.to, query.expertise, query.programId],
     queryFn: () => getHeatmap(query),
     placeholderData: keepPreviousData,
   })

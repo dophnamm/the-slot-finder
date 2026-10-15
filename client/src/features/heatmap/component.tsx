@@ -21,11 +21,13 @@ export function Heatmap() {
   const from = useHeatmapFilters((state) => state.from)
   const weeks = useHeatmapFilters((state) => state.weeks)
   const expertiseId = useHeatmapFilters((state) => state.expertiseId)
+  const programId = useHeatmapFilters((state) => state.programId)
   const search = useHeatmapFilters((state) => state.search)
   const { data, isPending, isPlaceholderData } = useHeatmap({
     from,
     to: addIsoWeeks(from, weeks - 1),
     expertise: expertiseId,
+    programId,
   })
   const query = useDebouncedValue(search, SEARCH_DEBOUNCE_MS)
   const rows = filterRows(data?.rows ?? [], query)

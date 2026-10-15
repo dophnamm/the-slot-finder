@@ -43,6 +43,8 @@ export interface HeatmapQuery {
   to: string
   /** Expertise id; empty for everyone. */
   expertise: string
+  /** Program id: only the people of its team; empty for every program. */
+  programId: string
 }
 
 /** Rows that share a primary expertise; the server already orders them. */
@@ -56,10 +58,12 @@ export interface HeatmapFiltersState {
   from: string
   weeks: number
   expertiseId: string
+  programId: string
   /** Name or expertise text; rows are filtered in the browser. */
   search: string
   setFrom: (from: string) => void
   setWeeks: (weeks: number) => void
   setExpertiseId: (expertiseId: string) => void
+  setProgramId: (programId: string) => void
   setSearch: (search: string) => void
 }
