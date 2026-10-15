@@ -1,5 +1,6 @@
 import type { ChangeEvent } from '@/shared/events'
 import type { PersonRef, ProjectStatus } from '@/shared/programs'
+import type { UtilizationBands } from '@/shared/utilization'
 
 /** They match the server's constants/plan.go and the engine's codes. */
 export type PlanStatus = 'draft' | 'published' | 'rejected' | 'superseded'
@@ -71,6 +72,14 @@ export interface OpenDraft {
   unmet_count: number
 }
 
+/** A person's capacity in a week and the hours the plan gives them on demand outside the draft. */
+export interface DraftWeekLoad {
+  person_id: string
+  week: string
+  capacity: number
+  other_hours: number
+}
+
 /** A covered demand with the hours the draft gives it. */
 export interface DraftDemand {
   id: string
@@ -121,6 +130,10 @@ export interface Draft {
   triggered_by: ChangeEvent[]
   /** The newer version of a re-plan draft that replaced this one. */
   superseded_by: string | null
+  /** The limits that turn a week's load over capacity into a band. */
+  bands: UtilizationBands
+  /** Every active person's capacity and other hours for each week the draft spans. */
+  load: DraftWeekLoad[]
 }
 
 export interface WeekHours {
