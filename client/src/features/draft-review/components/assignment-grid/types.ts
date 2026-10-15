@@ -16,3 +16,9 @@ export interface WeekLoad {
   capacity: number
   rest: number
 }
+
+/** The hours being dragged: one week of one assignment. */
+export interface DragSource {
+  assignment: Assignment
+  week: string
+}
