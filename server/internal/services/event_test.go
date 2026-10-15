@@ -265,3 +265,128 @@ func TestProjectService_RecordsStatusChange(t *testing.T) {
 		require.Error(t, err)
 	})
 }
+
+func TestPeopleService_RecordsCapacityChange(t *testing.T) {
+	start := time.Date(2026, time.January, 5, 0, 0, 0, 0, time.UTC)
+	later := time.Date(2026, time.February, 2, 0, 0, 0, 0, time.UTC)
+	tests := []struct {
+		name       string
+		input      UpdatePersonInput
+		wantFields []string
+	}{
+		{name: "weekly hours", input: UpdatePersonInput{WeeklyHours: new(32.0)}, wantFields: []string{"weekly_hours"}},
+		{name: "non-project hours", input: UpdatePersonInput{NonProjectHours: new(6.0)}, wantFields: []string{"non_project_hours"}},
+		{name: "start date", input: UpdatePersonInput{StartDate: DateChange{Set: true, Value: &later}}, wantFields: []string{"start_date"}},
+		{name: "end date set", input: UpdatePersonInput{EndDate: DateChange{Set: true, Value: &later}}, wantFields: []string{"end_date"}},
+		{name: "deactivated", input: UpdatePersonInput{Active: new(false)}, wantFields: []string{"active"}},
+		{name: "several at once", input: UpdatePersonInput{WeeklyHours: new(24.0), Active: new(false)}, wantFields: []string{"weekly_hours", "active"}},
+		{name: "same value again", input: UpdatePersonInput{WeeklyHours: new(40.0), StartDate: DateChange{Set: true, Value: &start}}},
+		{name: "name and role do not move capacity", input: UpdatePersonInput{Name: new("Alex B."), Role: new(constants.RoleLead)}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo, events := new(MockPersonRepository), &recordedEvents{}
+			existing := &models.Person{BaseModel: models.BaseModel{ID: personID}, Name: "Alex", WeeklyHours: 40, NonProjectHours: 4,
+				StartDate: &start, Active: true}
+			repo.On("FindWithSkills", mock.Anything, personID).Return(existing, nil)
+			repo.On("Save", mock.Anything, mock.Anything).Return(nil)
+			_, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig(), events).Update(context.Background(), personID, tt.input)
+			require.NoError(t, err)
+			if tt.wantFields == nil {
+				assert.Empty(t, events.events)
+				return
+			}
+			require.Len(t, events.events, 1)
+			assert.Equal(t, constants.EventPersonCapacityChanged, events.events[0].Type)
+			change := events.events[0].Payload.(PersonCapacityChange)
+			assert.Equal(t, personID, change.PersonID)
+			assert.Equal(t, tt.wantFields, change.Fields)
+		})
+	}
+
+	t.Run("a failed event fails the update", func(t *testing.T) {
+		repo, events := new(MockPersonRepository), &recordedEvents{fail: stderrors.New("outbox down")}
+		repo.On("FindWithSkills", mock.Anything, personID).Return(&models.Person{BaseModel: models.BaseModel{ID: personID}, WeeklyHours: 40}, nil)
+		repo.On("Save", mock.Anything, mock.Anything).Return(nil)
+		_, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig(), events).Update(context.Background(), personID,
+			UpdatePersonInput{WeeklyHours: new(20.0)})
+		require.Error(t, err)
+	})
+}
+
+func TestProjectService_ReplacePhasesAndDemandsRecordEvents(t *testing.T) {
+	planner := asRole("kc-planner", constants.RolePlanner)
+	people := knownExpertisePeople{}
+	phase := func(project *models.Project, index int, end string, t *testing.T) PhaseInput {
+		p := project.Phases[index]
+		return PhaseInput{ID: &p.ID, Name: p.Name, StartWeek: p.StartWeek, EndWeek: mustWeek(t, end)}
+	}
+
+	phases := []struct {
+		name       string
+		build, tst string // end weeks of Build (W47) and Test (W51)
+		want       []string
+	}{
+		{name: "a phase end moving later records PhaseSlipped", build: "2026-W49", tst: "2026-W51", want: []string{"2026-W49"}},
+		{name: "two phases slipping record one event each", build: "2026-W49", tst: "2026-W52", want: []string{"2026-W49", "2026-W52"}},
+		{name: "an end moving earlier records nothing", build: "2026-W45", tst: "2026-W51"},
+		{name: "unchanged ends record nothing", build: "2026-W47", tst: "2026-W51"},
+	}
+	for _, tt := range phases {
+		t.Run(tt.name, func(t *testing.T) {
+			repo, events := new(MockProjectRepository), &recordedEvents{}
+			project := buildAndTest(t)
+			repo.On("FindDetail", mock.Anything, projectID).Return(project, nil)
+			repo.On("CountDemandsInPhases", mock.Anything, mock.Anything).Return(int64(0), nil)
+			repo.On("DeletePhases", mock.Anything, mock.Anything).Return(nil)
+			repo.On("SavePhases", mock.Anything, mock.Anything).Return(nil)
+			_, err := ProvideProjectService(repo, nil, people, ProvideAuthzService(people), passthroughTx{}, events).
+				ReplacePhases(planner, projectID, []PhaseInput{phase(project, 0, tt.build, t), phase(project, 1, tt.tst, t)})
+			require.NoError(t, err)
+			var got []string
+			for _, e := range events.events {
+				assert.Equal(t, constants.EventPhaseSlipped, e.Type)
+				assert.Equal(t, []string{projectID}, e.ProjectIDs)
+				got = append(got, e.Payload.(PhaseChange).NewEndWeek)
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+
+	demandCases := []struct {
+		name    string
+		change  func(d *DemandInput)
+		wantEvt bool
+	}{
+		{name: "the same demand again records nothing", change: func(*DemandInput) {}},
+		{name: "more hours records DemandChanged", change: func(d *DemandInput) { d.TotalHours = 120 }, wantEvt: true},
+		{name: "another level records DemandChanged", change: func(d *DemandInput) { d.MinLevel = 4 }, wantEvt: true},
+		{name: "another headcount records DemandChanged", change: func(d *DemandInput) { d.Headcount = 3 }, wantEvt: true},
+		{name: "another phase records DemandChanged", change: func(d *DemandInput) { d.PhaseID = nil }, wantEvt: true},
+	}
+	for _, tt := range demandCases {
+		t.Run(tt.name, func(t *testing.T) {
+			repo, events := new(MockProjectRepository), &recordedEvents{}
+			project := buildAndTest(t)
+			project.Demands[0].MinLevel, project.Demands[0].Headcount, project.Demands[0].TotalHours = 2, 1, 60
+			project.Demands[0].Profile = constants.DemandProfileFlat
+			repo.On("FindDetail", mock.Anything, projectID).Return(project, nil)
+			repo.On("DeleteDemands", mock.Anything, mock.Anything).Return(nil)
+			repo.On("SaveDemands", mock.Anything, mock.Anything).Return(nil)
+			d := project.Demands[0]
+			in := DemandInput{ID: &d.ID, ExpertiseID: d.ExpertiseID, PhaseID: d.PhaseID, MinLevel: 2, Headcount: 1, TotalHours: 60,
+				Profile: constants.DemandProfileFlat}
+			tt.change(&in)
+			_, err := ProvideProjectService(repo, nil, people, ProvideAuthzService(people), passthroughTx{}, events).
+				ReplaceDemands(planner, projectID, []DemandInput{in})
+			require.NoError(t, err)
+			if !tt.wantEvt {
+				assert.Empty(t, events.events)
+				return
+			}
+			require.Len(t, events.events, 1)
+			assert.Equal(t, constants.EventDemandChanged, events.events[0].Type)
+			assert.Equal(t, []string{projectID}, events.events[0].ProjectIDs)
+		})
+	}
+}

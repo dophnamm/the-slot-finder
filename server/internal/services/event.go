@@ -47,6 +47,26 @@ type StatusChange struct {
 	NewStatus string `json:"new_status"`
 }
 
+// DemandChange is the payload of DemandChanged.
+type DemandChange struct {
+	ProjectID string `json:"project_id"`
+	Project   string `json:"project"`
+}
+
+// PersonCapacityChange is the payload of PersonCapacityChanged; Fields are the changed fields.
+type PersonCapacityChange struct {
+	PersonID   string   `json:"person_id"`
+	PersonName string   `json:"person_name"`
+	Fields     []string `json:"fields"`
+}
+
+// TeamChange is the payload of TeamChanged; Change is constants.TeamChangeAdded or Removed.
+type TeamChange struct {
+	ProgramID string `json:"program_id"`
+	PersonID  string `json:"person_id"`
+	Change    string `json:"change"`
+}
+
 // PhaseChange is the payload of PhaseSlipped.
 type PhaseChange struct {
 	ProjectID   string `json:"project_id"`

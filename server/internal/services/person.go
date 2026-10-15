@@ -99,14 +99,15 @@ type PeopleService interface {
 }
 
 type peopleService struct {
-	repo repositories.PersonRepository
-	tx   db.TxManager
-	cfg  *config.Config
+	repo   repositories.PersonRepository
+	tx     db.TxManager
+	cfg    *config.Config
+	events EventRecorder
 }
 
 // ProvidePeopleService creates the people service.
-func ProvidePeopleService(repo repositories.PersonRepository, tx db.TxManager, cfg *config.Config) PeopleService {
-	return &peopleService{repo: repo, tx: tx, cfg: cfg}
+func ProvidePeopleService(repo repositories.PersonRepository, tx db.TxManager, cfg *config.Config, events EventRecorder) PeopleService {
+	return &peopleService{repo: repo, tx: tx, cfg: cfg, events: events}
 }
 
 // ProvidePersonFinder exposes the people service to services that only need to find a person.
@@ -179,6 +180,7 @@ func (s *peopleService) Update(ctx context.Context, id string, in UpdatePersonIn
 		return nil, err
 	}
 
+	before := *person
 	if in.Name != nil {
 		person.Name = *in.Name
 	}
@@ -206,7 +208,19 @@ func (s *peopleService) Update(ctx context.Context, id string, in UpdatePersonIn
 
 	// Skills change only through ReplaceSkills; Save must not touch them.
 	person.Skills = nil
-	if err := s.repo.Save(ctx, person); err != nil {
+	// A change to capacity is an event in the same transaction, so a re-plan sees it.
+	err = s.tx.Do(ctx, func(ctx context.Context) error {
+		if err := s.repo.Save(ctx, person); err != nil {
+			return err
+		}
+		fields := capacityFieldsChanged(before, *person)
+		if len(fields) == 0 {
+			return nil
+		}
+		return s.events.Record(ctx, ChangeInput{Type: constants.EventPersonCapacityChanged,
+			Payload: PersonCapacityChange{PersonID: person.ID, PersonName: person.Name, Fields: fields}})
+	})
+	if err != nil {
 		return nil, errors.DatabaseError(constants.MsgPersonUpdateFailed, err).
 			WithOperation(opUpdatePerson).WithResource(resourcePerson)
 	}
@@ -366,4 +380,33 @@ func notFoundOrDatabase(err error, code, message, resource, op string) error {
 			WithOperation(op).WithResource(resource)
 	}
 	return errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(op).WithResource(resource)
+}
+
+// capacityFieldsChanged names the fields that move a person's capacity and differ between the
+// two versions: weekly hours, non-project hours, start and end date, active.
+func capacityFieldsChanged(before, after models.Person) []string {
+	var fields []string
+	if before.WeeklyHours != after.WeeklyHours {
+		fields = append(fields, "weekly_hours")
+	}
+	if before.NonProjectHours != after.NonProjectHours {
+		fields = append(fields, "non_project_hours")
+	}
+	if !samePersonDate(before.StartDate, after.StartDate) {
+		fields = append(fields, "start_date")
+	}
+	if !samePersonDate(before.EndDate, after.EndDate) {
+		fields = append(fields, "end_date")
+	}
+	if before.Active != after.Active {
+		fields = append(fields, "active")
+	}
+	return fields
+}
+
+func samePersonDate(a, b *time.Time) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return sameDate(*a, *b)
 }
