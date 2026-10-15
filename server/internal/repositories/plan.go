@@ -69,6 +69,8 @@ type PlanRepository interface {
 	// ListPersonAssignments returns a person's assignments in a plan with their allocations
 	// from one week through another.
 	ListPersonAssignments(ctx context.Context, planID, personID string, from, to isoweek.Week) ([]models.Assignment, error)
+	// ListOpenDrafts returns every staffing draft still open, without its assignments, newest first.
+	ListOpenDrafts(ctx context.Context) ([]models.Plan, error)
 	// ListScenarios returns every scenario without its assignments, newest first.
 	ListScenarios(ctx context.Context) ([]models.Plan, error)
 	// FindScenario returns a scenario with its assignments.
@@ -215,6 +217,13 @@ func (r *planRepository) ListPersonAssignments(ctx context.Context, planID, pers
 		Order("demand_id ASC").
 		Find(&assignments).Error
 	return assignments, err
+}
+
+func (r *planRepository) ListOpenDrafts(ctx context.Context) ([]models.Plan, error) {
+	var plans []models.Plan
+	err := r.db.From(ctx).Where("kind = ? AND status = ?", constants.PlanKindDraft, constants.PlanStatusDraft).
+		Order("created_at DESC").Order("id DESC").Find(&plans).Error
+	return plans, err
 }
 
 func (r *planRepository) ListScenarios(ctx context.Context) ([]models.Plan, error) {

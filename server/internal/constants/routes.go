@@ -44,6 +44,7 @@ const (
 	PathPhase               = "/phases/:id"
 
 	PathCurrentPlan       = "/plans/current"
+	PathPlanDrafts        = "/plans/drafts"
 	PathPersonAssignments = "/people/:id/assignments"
 	PathStaffingDrafts    = "/staffing-drafts"
 	PathStaffingDraft     = "/staffing-drafts/:id"

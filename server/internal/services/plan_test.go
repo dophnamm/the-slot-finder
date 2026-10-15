@@ -92,6 +92,11 @@ func (m *MockPlanRepository) FindOpenAutoDraft(ctx context.Context, version int)
 	return planOrNil(args.Get(0)), args.Error(1)
 }
 
+func (m *MockPlanRepository) ListOpenDrafts(ctx context.Context) ([]models.Plan, error) {
+	args := m.Called(ctx)
+	return args.Get(0).([]models.Plan), args.Error(1)
+}
+
 func (m *MockPlanRepository) ListScenarios(ctx context.Context) ([]models.Plan, error) {
 	args := m.Called(ctx)
 	return args.Get(0).([]models.Plan), args.Error(1)

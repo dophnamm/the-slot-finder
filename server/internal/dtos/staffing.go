@@ -134,6 +134,28 @@ type DraftResponse struct {
 	SupersededBy *string `json:"superseded_by"`
 }
 
+// OpenDraftResponse is one row of the drafts inbox, GET /plans/drafts.
+type OpenDraftResponse struct {
+	ID string `json:"id"`
+	// BaseVersion is the baseline version the draft was built on; Stale is true when the baseline in force differs.
+	BaseVersion    int  `json:"base_version" example:"3"`
+	CurrentVersion int  `json:"current_version" example:"3"`
+	Stale          bool `json:"stale"`
+	// Auto is true for a re-plan draft that change events created.
+	Auto      bool                   `json:"auto"`
+	CreatedAt time.Time              `json:"created_at"`
+	Projects  []DraftProjectResponse `json:"projects"`
+	// UnmetCount is how many demands the engine could not cover when the draft was generated.
+	UnmetCount int `json:"unmet_count" example:"1"`
+}
+
+// NewOpenDraftResponse maps an open draft with its projects and the baseline version in force.
+func NewOpenDraftResponse(plan models.Plan, projects []models.Project, currentVersion int, auto bool) OpenDraftResponse {
+	return OpenDraftResponse{ID: plan.ID, BaseVersion: plan.Version, CurrentVersion: currentVersion,
+		Stale: plan.Version != currentVersion, Auto: auto, CreatedAt: plan.CreatedAt, Projects: newDraftProjects(projects),
+		UnmetCount: len(plan.Unmet)}
+}
+
 // NewDraftResponse maps a draft with its projects, the weeks they span, the baseline
 // version in force, the changes against it and each program's team.
 func NewDraftResponse(plan models.Plan, projects []models.Project, weeks []isoweek.Week, currentVersion int,
