@@ -287,6 +287,7 @@ export type LanguageKey = {
   'Nothing real has changed. To make it real, move the phases on the project’s page or add the leave on the People page; a re-plan draft follows.': string
   'Nothing was saved. Fix these rows and import again.': string
   'Objectives, one per line': string
+  'of {scope} points': string
   'On hold': string
   'One objective per line, e.g. Ship the new checkout.': string
   'Only the program team is listed. People with the expertise at the minimum level come first; the others would be stretch.': string

@@ -24,6 +24,7 @@ import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { formatDate } from '@/utils/functions'
 import { Fact } from './components/fact'
+import { ScopePoints } from './components/scope-points'
 import { CONFIRMED_PROJECT_ACTIONS } from './constants'
 import type { ProjectSummaryProps } from './types'
 
@@ -85,7 +86,7 @@ export function ProjectSummary({ projectId }: ProjectSummaryProps) {
         </Fact>
         <Fact label={t('Lead')}>{project.lead?.name ?? t('No lead')}</Fact>
         <Fact label={t('Scope')}>
-          {t('{done} of {scope} points done', { done: project.done_points, scope: project.scope_points })}
+          <ScopePoints project={project} editable={editable && isOpenStatus(project.status)} />
         </Fact>
         <Fact label={t('Earliest start')}>
           {t('{date} ({week})', { date: formatDate(project.start_earliest), week: project.start_week })}
