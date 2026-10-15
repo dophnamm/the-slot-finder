@@ -5,8 +5,14 @@ import { translate } from '@/shared/i18n'
 import { PROGRAMS_QUERY_KEY, PROJECTS_QUERY_KEY } from '@/shared/programs'
 import { SCENARIOS_QUERY_KEY } from '@/shared/scenarios'
 import { INSIGHTS_QUERY_KEY } from '@/utils/constants'
-import { acceptDraft, editDraft, generateDraft, getDraft, listOpenDrafts, rejectDraft } from './api'
-import { DRAFT_SUPERSEDED, draftQueryKey, OPEN_DRAFTS_QUERY_KEY, PLAN_VERSION_CONFLICT } from './constants'
+import { acceptDraft, editDraft, generateDraft, getDraft, listAlternatives, listOpenDrafts, rejectDraft } from './api'
+import {
+  alternativesQueryKey,
+  DRAFT_SUPERSEDED,
+  draftQueryKey,
+  OPEN_DRAFTS_QUERY_KEY,
+  PLAN_VERSION_CONFLICT,
+} from './constants'
 import type { Draft, DraftAcceptance, DraftEdit } from './types'
 import { applySetHours } from './utils'
 
@@ -17,6 +23,15 @@ export function useOpenDrafts(enabled = true) {
 
 export function useDraft(id: string) {
   return useQuery({ queryKey: draftQueryKey(id), queryFn: () => getDraft(id) })
+}
+
+/** Who could take over an assignment; read when the swap dialog opens, so it is never served stale. */
+export function useAlternatives(id: string, assignmentId: string) {
+  return useQuery({
+    queryKey: alternativesQueryKey(id, assignmentId),
+    queryFn: () => listAlternatives(id, assignmentId),
+    gcTime: 0,
+  })
 }
 
 /** Every draft call returns the draft as it is now; keep that copy instead of refetching. */

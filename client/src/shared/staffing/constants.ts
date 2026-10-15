@@ -6,6 +6,9 @@ import type { AssignmentKind, PlanChangeKind, PlanStatus, UnmetReason } from './
 
 export const draftQueryKey = (id: string) => ['staffing-drafts', id] as const
 
+export const alternativesQueryKey = (id: string, assignmentId: string) =>
+  ['staffing-drafts', id, 'alternatives', assignmentId] as const
+
 /** The drafts inbox; generating, accepting or rejecting a draft refetches it. */
 export const OPEN_DRAFTS_QUERY_KEY = ['staffing-drafts', 'open'] as const
 
