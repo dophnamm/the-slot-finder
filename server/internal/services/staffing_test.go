@@ -535,3 +535,134 @@ func TestBuildDraftLoad(t *testing.T) {
 	}
 	assert.Equal(t, want, got.Weeks)
 }
+
+func TestRankAlternatives(t *testing.T) {
+	w46, w47 := "2026-W46", "2026-W47"
+	demand := engine.Demand{ID: demandID, Expertise: "QA", MinLevel: 2, Weeks: []string{w46, w47},
+		Candidates: map[string]bool{"ana": true, "bo": true, "cy": true, "di": true, "flo": true}}
+	capacity := map[string]float64{w46: 32, w47: 32}
+	person := func(id string, skills ...engine.Skill) engine.Person {
+		return engine.Person{ID: id, Skills: skills, Capacity: capacity}
+	}
+	qa := func(level int, primary bool) engine.Skill {
+		return engine.Skill{Expertise: "QA", Level: level, Primary: primary}
+	}
+	people := []engine.Person{
+		person("ana", qa(3, true)),
+		person("bo", engine.Skill{Expertise: "Engineer", Level: 4, Primary: true}, qa(2, false)),
+		person("cy", qa(1, true)), // below the level: that would be stretch, never offered
+		person("di", qa(3, true)), // already covers the demand
+		person("ed", qa(3, true)), // not in the program team
+		person("flo", engine.Skill{Expertise: "Engineer", Level: 4, Primary: true}),
+	}
+	names := map[string]string{"ana": "Ana", "bo": "Bo", "cy": "Cy", "di": "Di", "ed": "Ed", "flo": "Flo"}
+	hours := func(person, demand, week string, h float64) models.Assignment {
+		return models.Assignment{PersonID: person, DemandID: demand,
+			Allocations: []models.Allocation{{Week: mustWeek(t, week), Hours: h}}}
+	}
+	assignments := []models.Assignment{
+		hours("di", demandID, w46, 10),
+		hours("ana", otherDemandID, w46, 20), // elsewhere in the plan: counts against Ana's free hours
+		hours("ana", otherDemandID, w47, 40), // over capacity: free hours never go below 0
+	}
+
+	t.Run("qualified people of the team who are not on the demand, most free hours first", func(t *testing.T) {
+		got := rankAlternatives(demand, people, names, assignments, 5)
+
+		require.Len(t, got, 2)
+		assert.Equal(t, "bo", got[0].PersonID)
+		assert.Equal(t, constants.AssignmentKindCrossExpertise, got[0].Kind)
+		assert.InDelta(t, 64, got[0].FreeHours, hoursEpsilon)
+		assert.InDelta(t, 64, got[0].CapacityHours, hoursEpsilon)
+		assert.Equal(t, "ana", got[1].PersonID)
+		assert.Equal(t, constants.AssignmentKindPrimary, got[1].Kind)
+		assert.InDelta(t, 12, got[1].FreeHours, hoursEpsilon)
+		assert.Equal(t, "Ana", got[1].PersonName)
+		assert.NotEmpty(t, got[1].Reason)
+	})
+
+	t.Run("the limit cuts the list", func(t *testing.T) {
+		got := rankAlternatives(demand, people, names, assignments, 1)
+
+		require.Len(t, got, 1)
+		assert.Equal(t, "bo", got[0].PersonID)
+	})
+
+	t.Run("nobody qualifies gives an empty list", func(t *testing.T) {
+		got := rankAlternatives(demand, people[2:3], names, assignments, 5)
+
+		assert.NotNil(t, got)
+		assert.Empty(t, got)
+	})
+}
+
+func TestStaffingService_Alternatives(t *testing.T) {
+	planner := asRole("kc-planner", constants.RolePlanner)
+	other := models.Person{BaseModel: models.BaseModel{ID: otherPersonID2}, Name: "Oli", WeeklyHours: 40, NonProjectHours: 4, Active: true,
+		Skills: []models.PersonSkill{{PersonID: otherPersonID2, Level: 3, IsPrimary: true, Expertise: models.Expertise{Name: "QA"}}}}
+	build := func() staffingMocks {
+		m := newStaffingMocks()
+		m.people.ExpectedCalls = nil
+		m.people.On("ListActive", mock.Anything).Return([]models.Person{qaPerson(), other}, nil)
+		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(qaAssignment(t, 60)), nil)
+		m.projects.On("FindDetail", mock.Anything, projectID).Return(qaProject(t), nil)
+		return m
+	}
+
+	t.Run("offers the qualified person who is not on the demand", func(t *testing.T) {
+		got, err := build().service().Alternatives(planner, staffingDraftID, draftAssignmentID)
+
+		require.NoError(t, err)
+		require.Len(t, got, 1)
+		assert.Equal(t, otherPersonID2, got[0].PersonID)
+		assert.InDelta(t, 216, got[0].FreeHours, hoursEpsilon, "six weeks of 36 hours")
+	})
+
+	t.Run("an assignment that is not in the draft", func(t *testing.T) {
+		_, err := build().service().Alternatives(planner, staffingDraftID, otherPersonID2)
+
+		requireAppError(t, err, constants.AssignmentNotFound, http.StatusNotFound)
+	})
+
+	t.Run("a lead of other projects is refused", func(t *testing.T) {
+		m := build()
+		project := qaProject(t)
+		project.LeadID = new(otherPersonID2)
+		m.projects.ExpectedCalls = nil
+		m.projects.On("FindDetail", mock.Anything, projectID).Return(project, nil)
+
+		_, err := m.service().Alternatives(asRole("kc-lead", constants.RoleLead), staffingDraftID, draftAssignmentID)
+
+		requireStatus(t, err, http.StatusForbidden)
+	})
+}
+
+func TestStaffingService_Edit_Swap(t *testing.T) {
+	planner := asRole("kc-planner", constants.RolePlanner)
+	m := newStaffingMocks()
+	project := qaProject(t)
+	project.Demands[0].ExpertiseID = expQAID
+	m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(qaAssignment(t, 40)), nil)
+	m.projects.On("FindDetail", mock.Anything, projectID).Return(project, nil)
+	m.people.On("FindWithSkills", mock.Anything, otherPersonID2).Return(&models.Person{BaseModel: models.BaseModel{ID: otherPersonID2},
+		Skills: []models.PersonSkill{{ExpertiseID: expQAID, Level: 3, IsPrimary: true}}}, nil)
+	m.plans.On("Touch", mock.Anything, staffingDraftID, acceptedAt).Return(nil)
+	m.plans.On("DeleteAssignment", mock.Anything, draftAssignmentID).Return(nil)
+	var added *models.Assignment
+	m.plans.On("CreateAssignment", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+		added = args.Get(1).(*models.Assignment)
+	}).Return(nil)
+	m.plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(2), nil)
+
+	_, err := m.service().Edit(planner, staffingDraftID, EditDraftInput{
+		Remove: []string{draftAssignmentID},
+		Add: []AddAssignmentInput{{PersonID: otherPersonID2, DemandID: demandID,
+			Allocations: []WeekHours{{Week: mustWeek(t, "2026-W46"), Hours: 40}}}},
+	})
+
+	require.NoError(t, err, "a swap is one remove and one add in the same edit")
+	require.NotNil(t, added)
+	assert.Equal(t, otherPersonID2, added.PersonID)
+	assert.Equal(t, constants.AssignmentKindPrimary, added.Kind)
+	m.plans.AssertCalled(t, "DeleteAssignment", mock.Anything, draftAssignmentID)
+}

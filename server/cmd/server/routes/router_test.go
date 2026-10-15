@@ -269,6 +269,7 @@ func TestRouter_People_RBAC(t *testing.T) {
 		{name: "specialist cannot generate a staffing draft", method: http.MethodPost, path: constants.PathStaffingDrafts, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot accept a staffing draft", method: http.MethodPost, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa/accept", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot edit a staffing draft", method: http.MethodPatch, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa/assignments", token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot list alternatives for an assignment", method: http.MethodGet, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa/assignments/0192f3a4-0000-7000-8000-0000000000bb/alternatives", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read a staffing draft", method: http.MethodGet, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the change history", method: http.MethodGet, path: constants.PathEvents, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the risks", method: http.MethodGet, path: constants.PathRisks, token: "specialist-token", wantStatus: http.StatusForbidden},

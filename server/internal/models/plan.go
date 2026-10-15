@@ -89,6 +89,19 @@ type PlanChange struct {
 	After  float64
 }
 
+// Alternative is a person who could take over an assignment, with the hours they have free
+// over its demand window. It is computed for review, not stored.
+type Alternative struct {
+	PersonID   string
+	PersonName string
+	// Kind is primary or cross_expertise; a person below the required level is never offered.
+	Kind string
+	// FreeHours is capacity minus the plan's hours over the window, week by week, never below 0.
+	FreeHours     float64
+	CapacityHours float64
+	Reason        []string
+}
+
 // PersonWeekLoad is one person's capacity in a week and the hours the plan gives them outside
 // a draft's covered demand. It is computed for review, not stored.
 type PersonWeekLoad struct {

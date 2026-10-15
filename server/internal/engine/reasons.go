@@ -32,6 +32,12 @@ func (p *planner) reasons(d Demand, c candidate, ranked []candidate) []string {
 	return append(out, p.loadReason(c.person, d, c.covered))
 }
 
+// SkillReason is the sentence that says why a person's skill fits a demand, as the engine
+// words it in a proposal.
+func SkillReason(person *Person, d Demand, skill Skill) string {
+	return skillReason(person, d, skill)
+}
+
 func skillReason(person *Person, d Demand, skill Skill) string {
 	if skill.Primary {
 		return fmt.Sprintf("%s (primary) level %d ≥ %d", d.Expertise, skill.Level, d.MinLevel)

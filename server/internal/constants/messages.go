@@ -117,6 +117,7 @@ const (
 	MsgProjectNotPlannable     = "Only incoming, planned or active projects can be staffed"
 	MsgNoDemandToStaff         = "The chosen projects have no demand to staff; add demand first"
 	MsgDraftUpdated            = "Staffing draft updated"
+	MsgAlternativesListed      = "Alternatives retrieved"
 	MsgDraftAccepted           = "Staffing draft accepted; it is now the baseline"
 	MsgDraftRejected           = "Staffing draft rejected"
 	MsgDraftNotEditable        = "Only a staffing draft that is still a draft can be changed"

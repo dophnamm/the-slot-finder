@@ -98,6 +98,27 @@ type DraftDemandResponse struct {
 	TeamIDs []string `json:"team_ids"`
 }
 
+// AlternativeResponse is a person who could take over an assignment.
+type AlternativeResponse struct {
+	Person PersonRef `json:"person"`
+	Kind   string    `json:"kind" enums:"primary,cross_expertise"`
+	// FreeHours is the person's capacity minus the plan's hours over the demand's window.
+	FreeHours     float64 `json:"free_hours" example:"48"`
+	CapacityHours float64 `json:"capacity_hours" example:"120"`
+	// Reason says why their skill fits the demand, as a proposal words it.
+	Reason []string `json:"reason"`
+}
+
+// NewAlternativeResponses maps the alternatives; the list is never nil.
+func NewAlternativeResponses(alternatives []models.Alternative) []AlternativeResponse {
+	out := make([]AlternativeResponse, 0, len(alternatives))
+	for _, a := range alternatives {
+		out = append(out, AlternativeResponse{Person: PersonRef{ID: a.PersonID, Name: a.PersonName}, Kind: a.Kind,
+			FreeHours: a.FreeHours, CapacityHours: a.CapacityHours, Reason: a.Reason})
+	}
+	return out
+}
+
 // PlanChangeResponse is how one person's hours on one demand change against the baseline.
 type PlanChangeResponse struct {
 	Person      PersonRef `json:"person"`
