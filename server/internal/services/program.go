@@ -96,13 +96,14 @@ type programService struct {
 	people   PeopleService
 	authz    AuthzService
 	tx       db.TxManager
+	events   EventRecorder
 }
 
 // ProvideProgramService creates the program service.
 func ProvideProgramService(programs repositories.ProgramRepository, projects repositories.ProjectRepository,
-	people PeopleService, authz AuthzService, tx db.TxManager,
+	people PeopleService, authz AuthzService, tx db.TxManager, events EventRecorder,
 ) ProgramService {
-	return &programService{programs: programs, projects: projects, people: people, authz: authz, tx: tx}
+	return &programService{programs: programs, projects: projects, people: people, authz: authz, tx: tx, events: events}
 }
 
 func (s *programService) List(ctx context.Context, in ListProgramsInput) (*dtos.DataResponse[models.Program], error) {
@@ -210,17 +211,25 @@ func (s *programService) ApplyAction(ctx context.Context, id, action string) (*m
 		return nil, err
 	}
 
+	previous := program.Status
 	program.Status = next
 	program.Lead = nil
-	// Cancelling a program cancels its open projects in the same transaction.
+	// Cancelling a program cancels its open projects, and records one event for them, in the same
+	// transaction.
 	err = s.tx.Do(ctx, func(ctx context.Context) error {
 		if err := s.programs.Save(ctx, program); err != nil {
 			return err
 		}
-		if next == constants.ProgramStatusCancelled {
-			return s.projects.CancelOpen(ctx, program.ID)
+		if next != constants.ProgramStatusCancelled {
+			return nil
 		}
-		return nil
+		cancelled, err := s.projects.CancelOpen(ctx, program.ID)
+		if err != nil || len(cancelled) == 0 {
+			return err
+		}
+		return s.events.Record(ctx, ChangeInput{Type: constants.EventProjectStatusChanged, ProjectIDs: cancelled,
+			Payload: StatusChange{Kind: constants.StatusKindProgram, ID: program.ID, Name: program.Name,
+				OldStatus: previous, NewStatus: constants.ProgramStatusCancelled}})
 	})
 	if err != nil {
 		return nil, errors.DatabaseError(constants.MsgProgramSaveFailed, err).WithOperation(opProgramAction).WithResource(resourceProgram)

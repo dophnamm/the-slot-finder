@@ -51,7 +51,7 @@ func TestProgramVisibility_Postgres(t *testing.T) {
 	people := selfFinder{"kc-lee": lee.ID}
 	authz := ProvideAuthzService(people)
 	projects, programRepo := repositories.ProvideProjectRepository(pdb), repositories.ProvideProgramRepository(pdb)
-	programs := ProvideProgramService(programRepo, projects, leadPeople{}, authz, db.ProvideTxManager(pdb))
+	programs := ProvideProgramService(programRepo, projects, leadPeople{}, authz, db.ProvideTxManager(pdb), &recordedEvents{})
 	projectService := ProvideProjectService(projects, programRepo, knownExpertisePeople{}, authz, db.ProvideTxManager(pdb), &recordedEvents{})
 	manager, planner := asRole("kc-lee", constants.RoleLead), asRole("kc-planner", constants.RolePlanner)
 	page := ListProgramsInput{Page: 1, PageSize: 20}

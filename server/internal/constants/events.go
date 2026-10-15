@@ -6,6 +6,9 @@ const (
 	EventAbsenceRemoved = "AbsenceRemoved"
 	EventPhaseSlipped   = "PhaseSlipped"
 	EventProjectSlipped = "ProjectSlipped"
+	// EventProjectStatusChanged: a project or program changed status; hours of a project that
+	// is no longer plannable free capacity.
+	EventProjectStatusChanged = "ProjectStatusChanged"
 )
 
 // Change event statuses. The runner claims pending events and ends them as no_impact or

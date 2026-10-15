@@ -345,9 +345,18 @@ func (s *projectService) ApplyAction(ctx context.Context, id, action string) (*m
 	if err != nil {
 		return nil, err
 	}
+	previous := project.Status
 	project.Status = next
-	if err := s.saveProject(ctx, project, opProjectAction); err != nil {
-		return nil, err
+	// The status decides whether the project's hours are load, so the change is an event.
+	err = s.tx.Do(ctx, func(ctx context.Context) error {
+		if err := s.saveProject(ctx, project, opProjectAction); err != nil {
+			return err
+		}
+		return s.events.Record(ctx, ChangeInput{Type: constants.EventProjectStatusChanged, ProjectIDs: []string{project.ID},
+			Payload: StatusChange{Kind: constants.StatusKindProject, ID: project.ID, Name: project.Name, OldStatus: previous, NewStatus: next}})
+	})
+	if err != nil {
+		return nil, asAppError(err, constants.MsgProjectSaveFailed, opProjectAction, resourceProject)
 	}
 	return s.find(ctx, id, opProjectAction)
 }

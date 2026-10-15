@@ -94,7 +94,7 @@ func (leadPeople) Get(_ context.Context, id string) (*models.Person, error) {
 
 func newProgramService(repo *MockProgramRepository) ProgramService {
 	people := leadPeople{}
-	return ProvideProgramService(repo, nil, people, ProvideAuthzService(people), passthroughTx{})
+	return ProvideProgramService(repo, nil, people, ProvideAuthzService(people), passthroughTx{}, &recordedEvents{})
 }
 
 func program(status string, leadID *string) *models.Program {

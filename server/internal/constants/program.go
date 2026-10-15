@@ -26,6 +26,9 @@ const (
 	ProjectStatusOnHold    = "on_hold"
 	ProjectStatusDone      = "done"
 	ProjectStatusCancelled = "cancelled"
+	// StatusKindProject and StatusKindProgram say what a StatusChange event is about.
+	StatusKindProject = "project"
+	StatusKindProgram = "program"
 )
 
 // ProjectStatuses lists every project status, e.g. for the ?status= filter.
