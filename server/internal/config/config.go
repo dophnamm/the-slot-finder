@@ -167,6 +167,7 @@ type Config struct {
 	PlanningWeightBalance              float64
 	PlanningWeightStability            float64
 	PlanningWeightContinuity           float64
+	PlanningWeightLevelFit             float64
 
 	// Heatmap range and utilization bands (server/README §8). Overloaded is always over 100 %.
 	HeatmapDefaultWeeks       int
@@ -312,6 +313,7 @@ func Load() (*Config, error) {
 		PlanningWeightBalance:              getEnvAsFloat("PLANNING_WEIGHT_BALANCE", 0.6),
 		PlanningWeightStability:            getEnvAsFloat("PLANNING_WEIGHT_STABILITY", 0.5),
 		PlanningWeightContinuity:           getEnvAsFloat("PLANNING_WEIGHT_CONTINUITY", 0.3),
+		PlanningWeightLevelFit:             getEnvAsFloat("PLANNING_WEIGHT_LEVEL_FIT", 0.4),
 
 		HeatmapDefaultWeeks:       getEnvAsInt("HEATMAP_DEFAULT_WEEKS", 12),
 		HeatmapMaxWeeks:           getEnvAsInt("HEATMAP_MAX_WEEKS", 52),

@@ -326,6 +326,7 @@ func (s *draftBuilder) policy(stability float64) engine.Policy {
 			Balance:    s.cfg.PlanningWeightBalance,
 			Stability:  stability,
 			Continuity: s.cfg.PlanningWeightContinuity,
+			LevelFit:   s.cfg.PlanningWeightLevelFit,
 		},
 	}
 }

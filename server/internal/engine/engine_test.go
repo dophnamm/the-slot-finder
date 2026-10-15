@@ -17,7 +17,7 @@ const (
 func testPolicy() Policy {
 	return Policy{
 		TargetUtilization: 0.8, MaxUtilization: 1, MaxExpertisesPerPersonWeek: 2, MinHoursPerWeek: 8, HourStep: 1,
-		Weights: Weights{Deadline: 1, PrimaryFit: 0.8, Balance: 0.6, Stability: 0.5, Continuity: 0.3},
+		Weights: Weights{Deadline: 1, PrimaryFit: 0.8, Balance: 0.6, Stability: 0.5, Continuity: 0.3, LevelFit: 0.4},
 	}
 }
 
@@ -123,7 +123,25 @@ func TestPropose_HeadcountGivesOnePersonPerSeat(t *testing.T) {
 	assert.Empty(t, result.Unmet)
 }
 
-func TestPropose_SplitsASeatWhenNobodyHoldsItAll(t *testing.T) {
+func TestPropose_SplitsASeatWithinHeadcount(t *testing.T) {
+	window := weekRange(42, 4)
+	d := demand("d1", qa, 2, 60, window)
+	d.Headcount = 2
+	req := Request{Policy: testPolicy(),
+		People: []Person{
+			person("q1", 10, window, Skill{Expertise: qa, Level: 3, Primary: true}),
+			person("q2", 10, window, Skill{Expertise: qa, Level: 3, Primary: true}),
+		},
+		Demands: []Demand{d},
+	}
+
+	result := Propose(req)
+	require.Len(t, result.Assignments, 2)
+	assert.InDelta(t, 60, totalHours(result.Assignments[0])+totalHours(result.Assignments[1]), epsilon)
+	assert.Empty(t, result.Unmet)
+}
+
+func TestPropose_NeverMorePeopleThanHeadcount(t *testing.T) {
 	window := weekRange(42, 4)
 	req := Request{Policy: testPolicy(),
 		People: []Person{
@@ -134,13 +152,25 @@ func TestPropose_SplitsASeatWhenNobodyHoldsItAll(t *testing.T) {
 	}
 
 	result := Propose(req)
-	require.Len(t, result.Assignments, 2)
-	first, second := result.Assignments[0], result.Assignments[1]
-	assert.InDelta(t, 40, totalHours(first), epsilon)
-	assert.Contains(t, first.Reason, "covers 40 of 60 h: nobody had the whole seat free in 2026-W42–2026-W45")
-	assert.Equal(t, map[string]float64{"2026-W42": 10, "2026-W45": 10}, hoursByWeek(second))
-	assert.Contains(t, second.Reason, "seat split: nobody had 60 h free in 2026-W42–2026-W45; covers 20 h")
-	assert.Empty(t, result.Unmet)
+	require.Len(t, result.Assignments, 1)
+	assert.InDelta(t, 40, totalHours(result.Assignments[0]), epsilon)
+	require.Len(t, result.Unmet, 1)
+	assert.InDelta(t, 20, result.Unmet[0].Hours, epsilon)
+}
+
+func TestPropose_PrefersTheLevelClosestToTheMinimum(t *testing.T) {
+	window := weekRange(42, 4)
+	req := Request{Policy: testPolicy(),
+		People: []Person{
+			person("a-senior", 36, window, Skill{Expertise: qa, Level: 5, Primary: true}),
+			person("b-fit", 36, window, Skill{Expertise: qa, Level: 2, Primary: true}),
+		},
+		Demands: []Demand{demand("d1", qa, 2, 40, window)},
+	}
+
+	result := Propose(req)
+	require.Len(t, result.Assignments, 1)
+	assert.Equal(t, "b-fit", result.Assignments[0].PersonID)
 }
 
 func TestPropose_Unmet(t *testing.T) {
@@ -225,14 +255,14 @@ func TestPropose_ReplanKeepsWhatStillFits(t *testing.T) {
 	}
 
 	result := Propose(req)
-	require.Len(t, result.Assignments, 3, "both seats are held, so the 20 h gap goes to one person")
-	alex, sam := result.Assignments[0], result.Assignments[2]
+	require.Len(t, result.Assignments, 2, "both seats are held, so the 20 h gap goes to a holder, not a third person")
+	alex := result.Assignments[0]
 	assert.Equal(t, "alex", alex.PersonID)
 	assert.Equal(t, map[string]float64{"2026-W44": 12, "2026-W45": 32, "2026-W46": 32, "2026-W47": 32, "2026-W48": 32}, hoursByWeek(alex),
 		"Alex keeps every hour that still fits")
 	assert.InDelta(t, 160, totalHours(result.Assignments[1]), epsilon, "Bao keeps his seat")
-	assert.InDelta(t, 20, totalHours(sam), epsilon, "only the 20 h lost to leave move")
-	assert.Empty(t, result.Unmet)
+	assert.Equal(t, []Unmet{{DemandID: "d1", Hours: 20, Reason: UnmetNoCapacity}}, result.Unmet,
+		"Bao has 4 h a week left, under the minimum, so the 20 h lost to leave stay unmet")
 }
 
 func TestPropose_HigherPriorityGoesFirst(t *testing.T) {
