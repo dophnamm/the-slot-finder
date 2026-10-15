@@ -168,7 +168,7 @@ flowchart TB
 
   integ -->|"import"| data
   integ -->|"calendar sync: out-of-office → planned leave"| avail
-  data -.->|"domain events: PersonLeft, SkillChanged, AbsenceAdded, CapacityChanged,<br/>ProgramSlipped, ProjectSlipped, PhaseSlipped, DemandChanged"| events
+  data -.->|"domain events: PersonLeft, SkillChanged, AbsenceAdded, CapacityChanged,<br/>ProgramSlipped, ProjectSlipped, PhaseSlipped, DemandChanged,<br/>ProjectStatusChanged, PersonCapacityChanged, TeamChanged"| events
   events -->|"triggers re-plan"| planning
   planning -->|"reads snapshot"| data
   insights -->|"reads plan + capacity + programs"| planning
@@ -467,7 +467,7 @@ erDiagram
 
   CHANGE_EVENT {
     uuid id PK
-    string type "ProgramSlipped / ProjectSlipped / PhaseSlipped / AbsenceAdded / CapacityChanged / DemandChanged / PersonLeft"
+    string type "ProgramSlipped / ProjectSlipped / PhaseSlipped / AbsenceAdded / AbsenceRemoved / CapacityChanged / DemandChanged / PersonLeft / ProjectStatusChanged / PersonCapacityChanged / TeamChanged"
     json payload
     datetime occurred_at
     string status "pending / no_impact / draft_created"
@@ -493,6 +493,8 @@ erDiagram
 - `load(person, week) = Σ allocation.hours` over **all** their assignments in the **baseline**, whatever the expertise
 - `load(person, week, expertise)`: the same sum, split by the demand's expertise. Shows which expertises a person spends their week on
 - `utilization = load ÷ capacity`. Bands: under 50% underused · 50–85% healthy · 85–100% near full · over 100% **overloaded** (band limits are config, see [`server/README.md`](server/README.md#8-settings))
+- From the current ISO week on, `load` counts only **plannable** projects: not `on_hold`, `done` or `cancelled`. Earlier weeks keep all their hours as history. The stored plan is not changed, so a project put back to `active` keeps its hours
+- Past weeks are fixed: a draft or re-plan never adds, removes or moves hours before the current ISO week. The baseline's earlier hours count as delivered towards the demand and are copied into the draft as they are; the engine plans only the rest
 
 **Derived values for programs and projects** are defined in [section 7](#7-metrics).
 
@@ -518,7 +520,7 @@ erDiagram
 **Phases carry the dependencies between expertises:**
 - A project is split into ordered phases, each with a week range set by the lead. A phase may overlap the previous one, e.g. testing starts in the last build week.
 - Each demand belongs to one phase and is staffed only inside that phase's weeks. A demand without a phase (typically PM) spans the project, from its start to its deadline week.
-- **Slip propagation:** when a phase's end week moves later by N weeks, the server moves every later phase of that project by N weeks in the same transaction. It then records one `PhaseSlipped` change event, which triggers a re-plan. Moving a phase earlier does not pull the later ones; the lead moves them on purpose.
+- **Slip propagation:** when a phase's end week moves later by N weeks, the server moves every later phase of that project by N weeks in the same transaction. It then records one `PhaseSlipped` change event per phase it moved, which triggers a re-plan. Moving a phase earlier does not pull the later ones; the lead moves them on purpose.
 - If the last phase ends after the deadline, the project is flagged **at risk**. The deadline itself is never moved automatically.
 
 ```text
@@ -646,6 +648,7 @@ sequenceDiagram
 - An event that arrives while an auto draft is open is **merged**: the draft is regenerated from the current baseline plus all its linked events. The Planner's manual assignments and locked allocations are carried over. The previous version becomes `superseded`, so the Planner never reviews two drafts that disagree.
 - An edit, accept or reject sent to a superseded version gets `409` with `DRAFT_SUPERSEDED`. The Client reloads the latest version and the Planner retries.
 - Accepting or dismissing the draft closes it; the next event starts a new one.
+- **Impact.** A batch ends as `no_impact` unless the baseline has a conflict (a person over `PLANNING_MAX_UTILIZATION` in a week, or hours outside the demand's window), or its events open projects. `DemandChanged`, `TeamChanged` and a `ProjectStatusChanged` to a plannable status open the projects they name. Freed capacity (`ProjectStatusChanged` to a non-plannable status, `PersonCapacityChanged`) opens every project. Events that open projects this way only open plannable projects whose baseline hours are below their budget hours (understaffed).
 
 ### 8.3 Lifecycles
 
