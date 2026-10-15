@@ -123,12 +123,12 @@ export function ProjectRow({ project, reorder }: ProjectRowProps) {
       </TableCell>
       <TableCell className="text-right text-sm tabular-nums">
         {metrics &&
-          (metrics.next_week_hours > 0 ? t('{hours} h', { hours: metrics.next_week_hours }) : NO_UPCOMING_HOURS)}
+          (metrics.next_week_hours > 0 ? t('{hours} hrs', { hours: metrics.next_week_hours }) : NO_UPCOMING_HOURS)}
       </TableCell>
       <TableCell className="text-right text-sm tabular-nums">
         {metrics &&
           (metrics.next_three_weeks_hours > 0
-            ? t('{hours} h', { hours: metrics.next_three_weeks_hours })
+            ? t('{hours} hrs', { hours: metrics.next_three_weeks_hours })
             : NO_UPCOMING_HOURS)}
       </TableCell>
       <TableCell>{project.lead?.name ?? t('No lead')}</TableCell>

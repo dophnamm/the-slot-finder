@@ -24,7 +24,7 @@ export function CellDetail({ cell, person }: CellDetailProps) {
         </span>
       </div>
       <span>
-        {t('{load} of {capacity} h · {band}', {
+        {t('Planned {load} of {capacity} hrs · {band}', {
           load: cell.load,
           capacity: cell.capacity,
           band: t(BAND_LABELS[cell.band]),
@@ -67,7 +67,7 @@ export function CellDetail({ cell, person }: CellDetailProps) {
               </span>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1">
-              <span>{t('{hours} h', { hours: weekHours(assignment, cell.week) })}</span>
+              <span>{t('{hours} hrs', { hours: weekHours(assignment, cell.week) })}</span>
               <Badge variant={ASSIGNMENT_KIND_BADGE[assignment.kind]}>
                 {t(ASSIGNMENT_KIND_LABELS[assignment.kind])}
               </Badge>

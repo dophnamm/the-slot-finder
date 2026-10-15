@@ -24,7 +24,7 @@ export function AbsenceRow({ absence, onDelete, onApprove, approving = false }: 
           <AbsenceSourceBadge source={absence.source} />
         </div>
       </TableCell>
-      <TableCell>{t('{hours} h per day', { hours: absence.hours_per_day })}</TableCell>
+      <TableCell>{t('{hours} hrs per day', { hours: absence.hours_per_day })}</TableCell>
       <TableCell>
         <Badge variant={absence.status === 'approved' ? 'green' : 'amber'}>
           {t(ABSENCE_STATUS_LABELS[absence.status])}

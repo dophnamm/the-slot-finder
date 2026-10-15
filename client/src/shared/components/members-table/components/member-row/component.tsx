@@ -23,7 +23,7 @@ export function MemberRow({ member, programId }: MemberRowProps) {
           {member.expertises.map((row) => (
             <Fragment key={`${row.expertise_id}:${row.kind}`}>
               <Badge variant={expertiseBadge(row.expertise_id)}>
-                {t('{expertise} · {hours} h', { expertise: row.expertise, hours: row.hours })}
+                {t('{expertise} · {hours} hrs', { expertise: row.expertise, hours: row.hours })}
               </Badge>
               {row.kind !== PRIMARY_KIND && (
                 <Badge variant={ASSIGNMENT_KIND_BADGE[row.kind]}>{t(ASSIGNMENT_KIND_LABELS[row.kind])}</Badge>
@@ -32,7 +32,7 @@ export function MemberRow({ member, programId }: MemberRowProps) {
           ))}
         </div>
       </TableCell>
-      <TableCell className="text-right tabular-nums">{t('{hours} h', { hours: member.total_hours })}</TableCell>
+      <TableCell className="text-right tabular-nums">{t('{hours} hrs', { hours: member.total_hours })}</TableCell>
       <TableCell className="text-sm">{formatIsoWeekSpan(member.from_week, member.to_week)}</TableCell>
       <TableCell>
         <div className="flex flex-wrap gap-x-3 gap-y-1">

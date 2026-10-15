@@ -39,9 +39,9 @@ export function ScenarioRow({ scenario }: ScenarioRowProps) {
         </div>
       </TableCell>
       <TableCell className="text-right tabular-nums">{summary.people_changed}</TableCell>
-      <TableCell className="text-right tabular-nums">{t('{hours} h', { hours: summary.hours_moved })}</TableCell>
+      <TableCell className="text-right tabular-nums">{t('{hours} hrs', { hours: summary.hours_moved })}</TableCell>
       <TableCell className={cn('text-right tabular-nums', summary.unmet_hours > 0 && 'text-destructive')}>
-        {t('{hours} h', { hours: summary.unmet_hours })}
+        {t('{hours} hrs', { hours: summary.unmet_hours })}
       </TableCell>
     </LinkRow>
   )

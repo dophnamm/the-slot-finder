@@ -24,7 +24,7 @@ export function HeatmapCell({ cell, person, current, worked }: HeatmapCellProps)
           title={
             worked === null
               ? undefined
-              : t('Planned {planned} h · Worked {actual} h', { planned: cell.load, actual: worked })
+              : t('Planned {planned} hrs · Worked {actual} hrs', { planned: cell.load, actual: worked })
           }
           className={cn(
             'mx-auto flex h-14 w-20 flex-col items-center justify-center rounded-md text-xs hover:ring-2 hover:ring-ring',
@@ -38,7 +38,7 @@ export function HeatmapCell({ cell, person, current, worked }: HeatmapCellProps)
               <span className="text-sm font-semibold">
                 {cell.utilization === null ? '—' : t('{percent}%', { percent: percent(cell.utilization) })}
               </span>
-              <span>{t('{load}/{capacity} h', { load: cell.load, capacity: cell.capacity })}</span>
+              <span>{t('{load}/{capacity} hrs', { load: cell.load, capacity: cell.capacity })}</span>
               {crossHours.map((hours) => (
                 <span key={hours.expertise_id} className="truncate text-muted-foreground">
                   {t('+{expertise} {hours}', { expertise: hours.expertise, hours: hours.hours })}
@@ -47,7 +47,7 @@ export function HeatmapCell({ cell, person, current, worked }: HeatmapCellProps)
             </>
           ) : (
             <>
-              <span className="text-sm font-semibold">{t('{hours} h', { hours: worked })}</span>
+              <span className="text-sm font-semibold">{t('{hours} hrs', { hours: worked })}</span>
               <span className="text-muted-foreground">{t('Worked')}</span>
             </>
           )}
