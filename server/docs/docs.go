@@ -553,7 +553,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Person × week load, capacity, utilization band and hours per expertise from the baseline. Weeks default to the current week and HEATMAP_DEFAULT_WEEKS; a range over HEATMAP_MAX_WEEKS gets WEEK_RANGE_TOO_LONG. With expertise, keeps people who hold it or work on it in the range.",
+                "description": "Person × week load, capacity, utilization band and hours per expertise from the baseline. Weeks default to the current week and HEATMAP_DEFAULT_WEEKS; a range over HEATMAP_MAX_WEEKS gets WEEK_RANGE_TOO_LONG. With expertise, keeps people who hold it or work on it in the range. With program_id, keeps the people of that program's team; a manager may filter only by a program they may read.",
                 "produces": [
                     "application/json"
                 ],
@@ -581,6 +581,12 @@ const docTemplate = `{
                         "description": "Expertise id",
                         "name": "expertise",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Program id: only the people of its team",
+                        "name": "program_id",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -600,6 +606,28 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "properties": {

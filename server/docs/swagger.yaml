@@ -2285,7 +2285,9 @@ paths:
       description: Person × week load, capacity, utilization band and hours per expertise
         from the baseline. Weeks default to the current week and HEATMAP_DEFAULT_WEEKS;
         a range over HEATMAP_MAX_WEEKS gets WEEK_RANGE_TOO_LONG. With expertise, keeps
-        people who hold it or work on it in the range.
+        people who hold it or work on it in the range. With program_id, keeps the
+        people of that program's team; a manager may filter only by a program they
+        may read.
       parameters:
       - description: First week
         example: 2026-W42
@@ -2301,6 +2303,10 @@ paths:
         in: query
         name: expertise
         type: string
+      - description: 'Program id: only the people of its team'
+        in: query
+        name: program_id
+        type: string
       produces:
       - application/json
       responses:
@@ -2315,6 +2321,20 @@ paths:
             type: object
         "400":
           description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
           schema:
             properties:
               meta:
