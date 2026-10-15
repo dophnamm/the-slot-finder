@@ -16,7 +16,7 @@ export function HolidayRow({ holiday, canDelete, onDelete }: HolidayRowProps) {
         {holiday.name || <span className="font-normal text-muted-foreground">{t('Holiday')}</span>}
       </TableCell>
       <TableCell>{formatDateRange(holiday.from_date, holiday.to_date)}</TableCell>
-      <TableCell>{t('{hours} h per day', { hours: holiday.hours_per_day })}</TableCell>
+      <TableCell>{t('{hours} hrs per day', { hours: holiday.hours_per_day })}</TableCell>
       <TableCell className="text-right">
         {canDelete && (
           <Button variant="ghost" size="icon-sm" aria-label={t('Remove holiday')} onClick={handleDelete}>

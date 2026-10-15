@@ -31,7 +31,7 @@ export function ProgramPreview({ programId }: ProgramPreviewProps) {
             <div key={figure.label} className="flex flex-col">
               <dt className="text-xs text-muted-foreground">{t(figure.label)}</dt>
               <dd className={cn('font-semibold tabular-nums', figure.warning && 'text-destructive')}>
-                {t('{hours} h', { hours: figure.hours })}
+                {t('{hours} hrs', { hours: figure.hours })}
               </dd>
             </div>
           ))}

@@ -63,7 +63,7 @@ describe('ProjectRow', () => {
   it('shows the planned hours of next week and of the next three weeks, a dash for none', () => {
     renderRow(METRICS)
     const cells = screen.getAllByRole('cell').map((cell) => cell.textContent)
-    expect(cells).toContain(translate('{hours} h', { hours: 40 }))
+    expect(cells).toContain(translate('{hours} hrs', { hours: 40 }))
     expect(cells).toContain(NO_UPCOMING_HOURS)
   })
 })

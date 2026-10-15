@@ -36,9 +36,9 @@ function renderCell(worked: number | null) {
 describe('HeatmapCell', () => {
   it('shows worked hours in a past week, with the planned load in the tooltip and a marker', () => {
     const trigger = renderCell(26)
-    expect(trigger.textContent).toContain(translate('{hours} h', { hours: 26 }))
+    expect(trigger.textContent).toContain(translate('{hours} hrs', { hours: 26 }))
     expect(trigger.getAttribute('title')).toBe(
-      translate('Planned {planned} h · Worked {actual} h', { planned: 32, actual: 26 }),
+      translate('Planned {planned} hrs · Worked {actual} hrs', { planned: 32, actual: 26 }),
     )
     expect(trigger.className).toContain(WORKED_CELL_CLASS.split(' ')[0])
   })
@@ -46,7 +46,7 @@ describe('HeatmapCell', () => {
   it('shows the planned utilization otherwise', () => {
     const trigger = renderCell(null)
     expect(trigger.textContent).toContain(translate('{percent}%', { percent: 89 }))
-    expect(trigger.textContent).toContain(translate('{load}/{capacity} h', { load: 32, capacity: 36 }))
+    expect(trigger.textContent).toContain(translate('{load}/{capacity} hrs', { load: 32, capacity: 36 }))
     expect(trigger.getAttribute('title')).toBeNull()
   })
 })

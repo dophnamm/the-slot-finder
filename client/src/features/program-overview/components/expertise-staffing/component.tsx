@@ -3,6 +3,7 @@ import { MetricBar } from '@/shared/components/metric-bar'
 import { Section } from '@/shared/components/section'
 import { TableEmpty } from '@/shared/components/table-empty'
 import { TableLoading } from '@/shared/components/table-loading'
+import { Term } from '@/shared/components/term'
 import { useTranslation } from '@/shared/i18n'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 import { cn } from '@/utils/functions'
@@ -24,8 +25,12 @@ export function ExpertiseStaffing({ rows, isPending }: ExpertiseStaffingProps) {
             <TableHead>{t('Expertise')}</TableHead>
             <TableHead className="text-right">{t('Budget')}</TableHead>
             <TableHead className="text-right">{t('Planned')}</TableHead>
-            <TableHead className="text-right">{t('Gap')}</TableHead>
-            <TableHead className="w-48">{t('Staffing')}</TableHead>
+            <TableHead className="text-right">
+              <Term term="gapHours">{t('Gap')}</Term>
+            </TableHead>
+            <TableHead className="w-48">
+              <Term term="staffingPercent">{t('Staffing')}</Term>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -33,13 +38,13 @@ export function ExpertiseStaffing({ rows, isPending }: ExpertiseStaffingProps) {
             <TableRow key={row.expertise_id}>
               <TableCell className="font-medium">{row.expertise}</TableCell>
               <TableCell className="text-right tabular-nums">
-                {t('{hours} h', { hours: Math.round(row.budget_hours) })}
+                {t('{hours} hrs', { hours: Math.round(row.budget_hours) })}
               </TableCell>
               <TableCell className="text-right tabular-nums">
-                {t('{hours} h', { hours: Math.round(row.planned_hours) })}
+                {t('{hours} hrs', { hours: Math.round(row.planned_hours) })}
               </TableCell>
               <TableCell className={cn('text-right tabular-nums', row.understaffed && 'text-destructive')}>
-                {t('{hours} h', { hours: Math.round(row.gap_hours) })}
+                {t('{hours} hrs', { hours: Math.round(row.gap_hours) })}
               </TableCell>
               <TableCell>
                 <MetricBar compact label={t('Staffing')} value={row.staffing_percent} warning={row.understaffed} />

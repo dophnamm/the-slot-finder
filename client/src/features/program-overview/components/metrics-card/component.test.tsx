@@ -45,6 +45,6 @@ describe('MetricsCard', () => {
     render(<MetricsCard overview={overview(metrics({ actual_hours: 100, burn_percent: 25 }))} />)
     expect(screen.getByText('Burn')).toBeTruthy()
     expect(screen.queryByText('Planned burn')).toBeNull()
-    expect(screen.getByText('Actual').nextElementSibling?.textContent).toBe('100 h')
+    expect(screen.getByText('Actual').nextElementSibling?.textContent).toBe('100 hrs')
   })
 })

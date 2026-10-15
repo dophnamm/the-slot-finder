@@ -1,4 +1,5 @@
 import { MetricBar } from '@/shared/components/metric-bar'
+import { Term } from '@/shared/components/term'
 import { Section } from '@/shared/components/section'
 import { useTranslation } from '@/shared/i18n'
 import { activeWarnings, burnMetric } from '@/shared/programs'
@@ -60,14 +61,19 @@ export function MetricsCard({ overview }: MetricsCardProps) {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricBar label={t('Time')} value={metrics.time_percent} warning={metrics.past_end} />
         <MetricBar label={t('Scope')} value={metrics.scope_percent} warning={metrics.behind_on_delivery} />
-        <MetricBar label={t(burn.label)} value={burn.value} />
-        <MetricBar label={t('Staffing')} value={metrics.staffing_percent} warning={metrics.understaffed} />
+        <MetricBar label={t(burn.label)} term={burn.term} value={burn.value} />
+        <MetricBar
+          label={t('Staffing')}
+          term="staffingPercent"
+          value={metrics.staffing_percent}
+          warning={metrics.understaffed}
+        />
       </div>
       {warnings.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {warnings.map((warning) => (
             <Badge key={warning.flag} variant={warning.badge}>
-              {t(warning.label)}
+              <Term term={warning.term}>{t(warning.label)}</Term>
             </Badge>
           ))}
         </div>
@@ -78,7 +84,7 @@ export function MetricsCard({ overview }: MetricsCardProps) {
         <Figure label={t('Planned to date')} hours={metrics.planned_to_date_hours} />
         {metrics.actual_hours !== null && <Figure label={t('Actual')} hours={metrics.actual_hours} />}
         <Figure label={t('Forecast')} hours={metrics.forecast_hours} />
-        <Figure label={t('Gap')} hours={metrics.gap_hours} warning={metrics.understaffed} />
+        <Figure label={t('Gap')} term="gapHours" hours={metrics.gap_hours} warning={metrics.understaffed} />
       </dl>
     </Section>
   )

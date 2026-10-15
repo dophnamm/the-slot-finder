@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Section } from '@/shared/components/section'
 import { TableEmpty } from '@/shared/components/table-empty'
 import { TableLoading } from '@/shared/components/table-loading'
+import { Term } from '@/shared/components/term'
 import { useTranslation } from '@/shared/i18n'
 import { useScenarios } from '@/shared/scenarios'
 import { Button } from '@/shared/ui/button'
@@ -36,9 +37,13 @@ export function Scenarios() {
       <Table scroll="both">
         <TableHeader>
           <TableRow>
-            <TableHead>{t('Scenario')}</TableHead>
+            <TableHead>
+              <Term term="scenario">{t('Scenario')}</Term>
+            </TableHead>
             <TableHead>{t('Assumptions')}</TableHead>
-            <TableHead>{t('Baseline')}</TableHead>
+            <TableHead>
+              <Term term="baseline">{t('Baseline')}</Term>
+            </TableHead>
             <TableHead className="text-right">{t('People changed')}</TableHead>
             <TableHead className="text-right">{t('Hours moved')}</TableHead>
             <TableHead className="text-right">{t('Unmet')}</TableHead>
