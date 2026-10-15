@@ -10,3 +10,9 @@ export interface DemandGroup {
   demand: DraftDemand
   assignments: Assignment[]
 }
+
+/** A person's capacity in a week and the hours they carry there apart from one assignment. */
+export interface WeekLoad {
+  capacity: number
+  rest: number
+}

@@ -13,7 +13,7 @@ import { AssignmentRow } from './components/assignment-row'
 import { GroupHeaderRow } from './components/group-header-row'
 import { LABEL_COLUMNS, PERSON_COLUMN_CLASS, WEEK_COLUMN_CLASS } from './constants'
 import type { AssignmentGridProps } from './types'
-import { groupByDemand, inWindow, lockChanges } from './utils'
+import { groupByDemand, inWindow, lockChanges, weekLoads } from './utils'
 
 /** Person × week hours, grouped by demand; planners edit hours, lock weeks, add and remove people. */
 export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
@@ -49,7 +49,7 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
     <Section
       title={t('Assignments')}
       description={t(
-        'Hours per ISO week. Locked hours stay as they are when a draft is generated again; stretch is always locked.',
+        'Hours per ISO week. Locked hours stay as they are when a draft is generated again; stretch is always locked. A week is coloured by the whole load of the person, as on the heatmap.',
       )}
     >
       <Table>
@@ -83,6 +83,8 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
                   key={assignment.id}
                   assignment={assignment}
                   weeks={draft.weeks}
+                  loads={weekLoads(draft, assignment)}
+                  bands={draft.bands}
                   editable={editable}
                   busy={edit.isPending}
                   onSetHours={handleSetHours}
