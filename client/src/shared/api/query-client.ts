@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { signOutLocally } from '@/shared/auth/session'
 import { translate } from '@/shared/i18n'
 import { QUERY_RETRY, QUERY_STALE_TIME_MS } from '@/utils/constants'
-import { FORBIDDEN_STATUS, UNAUTHORIZED_STATUS } from './constants'
+import { NO_RETRY_STATUSES, TOO_MANY_REQUESTS_STATUS, UNAUTHORIZED_STATUS } from './constants'
 import type { ApiError } from './types'
 
 declare module '@tanstack/react-query' {
@@ -14,6 +14,21 @@ declare module '@tanstack/react-query' {
     queryMeta: { quietErrorCodes?: readonly string[] }
     mutationMeta: { quietErrorCodes?: readonly string[] }
   }
+}
+
+/** Seconds to wait, from the `data` of a 429 answer, when the server sent them. */
+function retryAfterSeconds(details: unknown) {
+  if (typeof details !== 'object' || details === null || !('retry_after' in details)) return undefined
+  const seconds = details.retry_after
+  return typeof seconds === 'number' && seconds > 0 ? seconds : undefined
+}
+
+/** The toast text for a failed request. After too many requests it says how long to wait. */
+function errorMessage(error: ApiError) {
+  const seconds = error.status === TOO_MANY_REQUESTS_STATUS ? retryAfterSeconds(error.details) : undefined
+  if (seconds === undefined) return error.message
+  if (seconds === 1) return translate('Too many requests. Try again in {seconds} second.', { seconds })
+  return translate('Too many requests. Try again in {seconds} seconds.', { seconds })
 }
 
 /**
@@ -27,7 +42,7 @@ function notifyError(error: ApiError) {
     void signOutLocally()
     return
   }
-  toast.error(error.message)
+  toast.error(errorMessage(error))
 }
 
 /** Like notifyError, except for the codes the query shows itself. */
@@ -47,9 +62,9 @@ function notifyMutationError(
   notifyError(error)
 }
 
-/** Retries a failed query, except when the session has ended or the user may not see it. */
+/** Retries a failed query, except when the session has ended, the user may not see it, or the server asks to wait. */
 function shouldRetry(failureCount: number, error: ApiError) {
-  return error.status !== UNAUTHORIZED_STATUS && error.status !== FORBIDDEN_STATUS && failureCount < QUERY_RETRY
+  return !NO_RETRY_STATUSES.has(error.status) && failureCount < QUERY_RETRY
 }
 
 export const queryClient = new QueryClient({
