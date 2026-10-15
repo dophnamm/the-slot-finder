@@ -17,6 +17,8 @@ import { allocationsByWeek } from './utils'
 export function AssignmentRow({
   assignment,
   weeks,
+  loads,
+  bands,
   editable,
   busy,
   onSetHours,
@@ -102,6 +104,9 @@ export function AssignmentRow({
           hours={byWeek.get(week)?.hours ?? 0}
           locked={byWeek.get(week)?.locked ?? false}
           inWindow={inWindow(week, demand.from_week, demand.to_week)}
+          capacity={loads.get(week)?.capacity ?? 0}
+          otherHours={loads.get(week)?.rest ?? 0}
+          bands={bands}
           editable={editable && !busy}
           onCommit={handleCommit}
         />

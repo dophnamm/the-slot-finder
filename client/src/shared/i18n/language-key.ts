@@ -213,7 +213,7 @@ export type LanguageKey = {
   'Hours moved': string
   'Hours must be a number from 0 to the weekly limit.': string
   'Hours per day': string
-  'Hours per ISO week. Locked hours stay as they are when a draft is generated again; stretch is always locked.': string
+  'Hours per ISO week. Locked hours stay as they are when a draft is generated again; stretch is always locked. A week is coloured by the whole load of the person, as on the heatmap.': string
   'Hours per week': string
   'Hours the planning engine could not place in this scenario.': string
   'ICS file': string

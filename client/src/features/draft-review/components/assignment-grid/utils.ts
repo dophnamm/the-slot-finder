@@ -1,5 +1,5 @@
 import type { Assignment, Draft, DraftEdit } from '@/shared/staffing'
-import type { DemandGroup } from './types'
+import type { DemandGroup, WeekLoad } from './types'
 
 /** Assignments grouped under their demand, in the draft's demand order. */
 export function groupByDemand(draft: Draft): DemandGroup[] {
@@ -23,4 +23,17 @@ export function lockChanges(assignment: Assignment): NonNullable<DraftEdit['set'
 /** ISO week labels have a fixed width, so text order is week order. */
 export function inWindow(week: string, from: string, to: string): boolean {
   return week >= from && week <= to
+}
+
+/** For each week of the draft: the person's capacity, and the hours they carry apart from this assignment (other demand and their other assignments in the draft). */
+export function weekLoads(draft: Draft, assignment: Assignment): Map<string, WeekLoad> {
+  const own = draft.load.filter((entry) => entry.person_id === assignment.person.id)
+  return new Map(
+    own.map((entry) => {
+      const elsewhereInDraft = draft.assignments
+        .filter((other) => other.id !== assignment.id && other.person.id === assignment.person.id)
+        .reduce((sum, other) => sum + (other.allocations.find((alloc) => alloc.week === entry.week)?.hours ?? 0), 0)
+      return [entry.week, { capacity: entry.capacity, rest: entry.other_hours + elsewhereInDraft }]
+    }),
+  )
 }
