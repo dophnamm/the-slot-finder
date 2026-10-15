@@ -13,7 +13,7 @@ One spec per feature, in build order. Each spec holds the goal, scope, server an
 | 5 | [Team heatmap](team-heatmap.md) | Person × week heatmap, utilization bands | 14 Oct | staffing-draft | Done |
 | 6 | [Re-plan on change](replan-on-change.md) | Absence or phase slip → ChangeEvent → outbox runner → re-plan draft with diff, banner on the program page | 15 Oct | staffing-draft | Done |
 | 7 | [Program metrics](program-metrics.md) | Time, Scope, Planned burn, Staffing with gap, risks list | 16 Oct | staffing-draft | Done |
-| 8 | [Sign-in theme](sign-in-theme.md) | Keycloak login theme in the app's look, no extra sign-in click, a Signed out page | before 17 Oct | sign-in | Done |
+| 8 | [Sign-in theme](sign-in-theme.md) | Keycloak login theme in the app's look, no extra sign-in click, sign-out goes straight back to sign-in | before 17 Oct | sign-in | Done |
 | 9 | [Program quick view](program-quick-view.md) | Expand a program in the list to see its figures, projects and members; Members tab | 16–17 Oct | program-metrics | Done |
 | 10 | [Scenarios](scenarios.md) | What-if: move a project or add leave, see the changes, churn and unmet demand without touching the baseline | 12–13 Oct | staffing-draft, replan-on-change | Done |
 | 11 | [Member calendar](member-calendar.md) | A person page and My schedule with a month calendar: absences, holidays, weekly load against capacity, hours per project | 13–14 Oct | people-and-skills, team-heatmap | Done |

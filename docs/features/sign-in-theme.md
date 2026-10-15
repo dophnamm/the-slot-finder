@@ -22,7 +22,7 @@ A **Keycloak login theme** named `slot-finder`: FreeMarker templates that extend
   - styled states: wrong username or password, account temporarily locked (brute-force protection is on), expired login page, generic error and info pages
   - `resources/css/login.css`: colours, radius and spacing copied from `client/src/index.css` as CSS custom properties in one place
   - `resources/fonts/`: the app's font (Geist, OFL), served by Keycloak
-  - `resources/img/logo.svg` and `messages/messages_en.properties` ("Sign in to The Slot Finder", field labels, error texts)
+  - `resources/img/logo.svg` and `messages/messages_en.properties` ("Sign in to The Slot Finder", field labels and placeholders, error texts)
 - Keycloak setup:
   - docker compose mounts the themes folder into `/opt/keycloak/themes` (read-only)
   - `realm.json` sets `loginTheme` from `KEYCLOAK_LOGIN_THEME` (`slot-finder` in `.env.example`), so a fresh realm import uses it
@@ -30,16 +30,16 @@ A **Keycloak login theme** named `slot-finder`: FreeMarker templates that extend
   - `start-dev` already disables theme caching, so template edits show on reload
 - Client:
   - A signed-out user who opens any page goes straight to the themed sign-in page (`RequireAuth` calls `signIn(returnTo)`); the intermediate page with the "Sign in with Keycloak" button goes away
-  - After sign-out, Keycloak returns to a new **Signed out** page in the app with a "Sign in again" button, so the app does not sign straight back in
+  - After sign-out, Keycloak returns to the dashboard, which goes straight on to the sign-in page. (A **Signed out** page with a "Sign in again" button came first; it was dropped on 2026-10-15.)
   - If Keycloak cannot be reached, the app shows a short error with "Try again" instead of a blank page
 
 **As built**
-- The header shows a small square mark (`resources/img/logo.svg`, also the favicon) next to the text "The Slot Finder". The client has no logo of its own yet.
+- The header shows the app's mark, the blue square with a 2×2 grid of week cells (one filled) from the sidebar, next to the text "The Slot Finder". `resources/img/logo.svg` is also the favicon here and in the client (`client/public/favicon.svg`).
 - The pages are **light only**. The app never turns on its `.dark` tokens, so a dark sign-in page would not match it; the dark tokens come back when the app gets a theme switch.
 - `template.ftl` is Keycloak 26.4's base template with our header and favicon, plus a `subtitle` section under the title. `login.ftl` and `login-page-expired.ftl` are our own; error and info pages use base templates with our classes and texts.
 - A lockout shows the same "Wrong username or password." as a wrong password. Keycloak does this on purpose so nobody can find out which accounts exist.
 - `make keycloak-theme` recreates the Keycloak container if the compose file changed, waits until it is healthy, then sets `loginTheme` with `kcadm.sh`.
-- Client: `RequireAuth` calls `signIn(returnTo)` once per mount (`use-sign-in-redirect.ts`) and shows "Try again" if it fails. `AuthPanel` (shared) is the centred card for the callback, the Signed out page and that error.
+- Client: `RequireAuth` calls `signIn(returnTo)` once per mount (`use-sign-in-redirect.ts`) and shows "Try again" if it fails. `AuthPanel` (shared) is the centred card on the gray page for the callback and that error.
 - `signOut()` stops listening for "user unloaded" before `signoutRedirect()`. Otherwise the cleared session made `RequireAuth` start a sign-in that raced the sign-out.
 - Loop guard: automatic sign-ins are counted per tab (`shared/auth/sign-in-attempts.ts`). After `AUTO_SIGN_IN_LIMIT` (3) within `AUTO_SIGN_IN_WINDOW_MS` (60 s) with no successful `/me`, the app stops and says the server keeps rejecting the sign-in. A successful `/me` or a click on "Try again" clears the count.
 
@@ -57,7 +57,7 @@ A **Keycloak login theme** named `slot-finder`: FreeMarker templates that extend
 ## Client
 
 - `RequireAuth`: signed out → `signIn(returnTo)`; keeps `returnTo` so the user lands where they started.
-- Routes: `/signed-out` (new, public) replaces the current `/login` button page; `post_logout_redirect_uri` points to it.
+- Routes: `post_logout_redirect_uri` points to the dashboard (`/`), so `RequireAuth` sends the signed-out user on to the sign-in page. The `/signed-out` page that came first was removed on 2026-10-15.
 - Texts through `t()`; the "Sign in with Keycloak" key is removed.
 
 ## Acceptance criteria
@@ -66,7 +66,7 @@ A **Keycloak login theme** named `slot-finder`: FreeMarker templates that extend
 2. The sign-in page shows The Slot Finder's name and logo, the app's font and colours, and no Keycloak name or logo.
 3. A wrong password shows an inline error in the same style; after the brute-force limit, the lockout message is styled too.
 4. After signing in, the user is on the page they first asked for.
-5. Signing out lands on the app's **Signed out** page; it stays there until "Sign in again" is clicked.
+5. Signing out lands on the sign-in page, with no extra click.
 6. `make reset-data && make up` uses the theme with no manual step; on existing data, `make keycloak-theme` switches it on.
 7. Keycloak's own sign-in flow still runs: PKCE, brute-force protection and session handling are unchanged.
 
@@ -77,11 +77,11 @@ A **Keycloak login theme** named `slot-finder`: FreeMarker templates that extend
 - [x] Compose mount, `KEYCLOAK_LOGIN_THEME`, `loginTheme` in `realm.json`, `make keycloak-theme`
 
 **Client**
-- [x] `RequireAuth` redirects straight to sign-in; `/signed-out` page; post-logout redirect; unreachable-Keycloak error
+- [x] `RequireAuth` redirects straight to sign-in; post-logout redirect to the dashboard; unreachable-Keycloak error
 - [x] Remove the button page and its texts
 
 **Tests**
-- [x] Component tests for the Signed out page and the redirect in `RequireAuth`
+- [x] Component tests for the redirect in `RequireAuth`, and the post sign-out address (`user-manager.test.ts`)
 - [x] Browser check: sign in, wrong password, lockout, sign out, Keycloak unreachable, phone width
 
 **Estimate:** about one day.
