@@ -80,6 +80,16 @@ export interface DraftWeekLoad {
   other_hours: number
 }
 
+/** Someone who could take over an assignment, with the hours they have free over the demand's window. */
+export interface Alternative {
+  person: PersonRef
+  kind: Exclude<AssignmentKind, 'stretch'>
+  free_hours: number
+  capacity_hours: number
+  /** Why their skill fits the demand. */
+  reason: string[]
+}
+
 /** A covered demand with the hours the draft gives it. */
 export interface DraftDemand {
   id: string

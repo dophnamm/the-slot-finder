@@ -14,6 +14,7 @@ export {
   UNMET_REASON_LABELS,
 } from './constants'
 export type {
+  Alternative,
   Allocation,
   Assignment,
   AssignmentKind,
@@ -30,4 +31,12 @@ export type {
   WeekHours,
 } from './types'
 export { canEditDraft, canStaff, shortfall } from './utils'
-export { useAcceptDraft, useDraft, useEditDraft, useGenerateDraft, useOpenDrafts, useRejectDraft } from './use-staffing'
+export {
+  useAcceptDraft,
+  useAlternatives,
+  useDraft,
+  useEditDraft,
+  useGenerateDraft,
+  useOpenDrafts,
+  useRejectDraft,
+} from './use-staffing'

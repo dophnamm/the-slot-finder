@@ -5,6 +5,8 @@ export const STAFFING_ENDPOINTS = {
   open: '/plans/drafts',
   draft,
   assignments: (id: string) => `${draft(id)}/assignments`,
+  alternatives: (id: string, assignmentId: string) =>
+    `${draft(id)}/assignments/${encodeURIComponent(assignmentId)}/alternatives`,
   accept: (id: string) => `${draft(id)}/accept`,
   reject: (id: string) => `${draft(id)}/reject`,
 } as const

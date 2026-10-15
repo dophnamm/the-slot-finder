@@ -254,6 +254,7 @@ export type LanguageKey = {
   'Move {name}': string
   Moved: string
   'Moved, not saved yet': string
+  'Moves the hours of {name} on {expertise} to someone from the program team.': string
   'My absences': string
   'My schedule': string
   Name: string
@@ -294,6 +295,7 @@ export type LanguageKey = {
   'No project needs attention.': string
   'No projects yet.': string
   'No scenarios yet. Create one to try a change.': string
+  'Nobody else qualifies.': string
   'Nobody has hours on this program yet.': string
   'Nobody has the minimum level': string
   'Nobody has this expertise': string
@@ -446,6 +448,9 @@ export type LanguageKey = {
   'Summed over {count} projects that are not cancelled.': string
   Superseded: string
   'Sustained overload ({count})': string
+  'Swap in': string
+  'Swap person': string
+  'Swapped {from} for {to}.': string
   'Sync now': string
   Team: string
   'Team heatmap': string
@@ -460,6 +465,7 @@ export type LanguageKey = {
   'The link does not return a calendar. Your organization may block secret calendar links.': string
   'The people this program’s projects are staffed from. A draft proposes only them.': string
   'The plan in force: the staffing everyone works to until a newer draft is accepted.': string
+  'The program team has nobody else with this expertise at this level.': string
   'The real plan is not affected.': string
   'The same person, project and week appear more than once.': string
   'The server is unreachable.': string
@@ -540,6 +546,7 @@ export type LanguageKey = {
   '{expertise} · {hours} hrs': string
   '{expertise} · {program}': string
   '{expertise}, {hours} hrs per week, {nonProject} hrs of them non-project': string
+  '{free} of {capacity} hrs free in the window': string
   '{gap} hrs short of {budget} hrs': string
   '{hours} hrs': string
   '{hours} hrs non-project': string
