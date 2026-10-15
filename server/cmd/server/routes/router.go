@@ -141,17 +141,20 @@ func Router(
 	// Feature routes: under v1, each with `authenticated` and a RequireRole using a role list
 	// from constants/roles.go. Middlewares are set per route so unknown paths still return 404.
 	authenticated := middlewares.AuthMiddleware(verifier, cfg)
+	// Routes that run the planning engine, read an uploaded file or fetch a URL also get a tighter
+	// allowance per signed-in user. It goes last, so it counts only requests that may run.
+	heavy := middlewares.HeavyRateLimit(cfg)
 	v1.GET(constants.PathMe, identityHandler.Me, authenticated, middlewares.RequireRole(constants.CurrentUserViewRoles...))
 
 	registerPeopleRoutes(v1, authenticated, personHandler, absenceHandler)
-	registerCalendarFeedRoutes(v1, authenticated, calendarFeedHandler)
+	registerCalendarFeedRoutes(v1, authenticated, heavy, calendarFeedHandler)
 	registerTeamRoutes(v1, authenticated, teamHandler)
 	v1.POST(constants.PathHolidayImport, holidayImportHandler.Import, authenticated,
-		middlewares.RequireRole(constants.HolidayManageRoles...))
+		middlewares.RequireRole(constants.HolidayManageRoles...), heavy)
 	// A specialist reads only their own schedule (checked in the service).
 	v1.GET(constants.PathPersonSchedule, scheduleHandler.Get, authenticated, middlewares.RequireRole(constants.PersonScheduleRoles...))
 	registerProgramRoutes(v1, authenticated, programHandler, projectHandler)
-	registerPlanRoutes(v1, authenticated, planHandler, staffingHandler)
+	registerPlanRoutes(v1, authenticated, heavy, planHandler, staffingHandler)
 	v1.GET(constants.PathHeatmap, insightsHandler.Heatmap, authenticated, middlewares.RequireRole(constants.InsightRoles...))
 	v1.GET(constants.PathRisks, insightsHandler.Risks, authenticated, middlewares.RequireRole(constants.InsightRoles...))
 	v1.GET(constants.PathProgramOverview, insightsHandler.ProgramOverview, authenticated, middlewares.RequireRole(constants.ProgramRoles...))
@@ -159,21 +162,21 @@ func Router(
 	v1.GET(constants.PathEvents, eventHandler.List, authenticated, middlewares.RequireRole(constants.EventViewRoles...))
 
 	v1.GET(constants.PathScenarios, scenarioHandler.List, authenticated, middlewares.RequireRole(constants.ScenarioRoles...))
-	v1.POST(constants.PathScenarios, scenarioHandler.Create, authenticated, middlewares.RequireRole(constants.ScenarioRoles...))
+	v1.POST(constants.PathScenarios, scenarioHandler.Create, authenticated, middlewares.RequireRole(constants.ScenarioRoles...), heavy)
 	v1.GET(constants.PathScenario, scenarioHandler.Get, authenticated, middlewares.RequireRole(constants.ScenarioRoles...))
 	v1.DELETE(constants.PathScenario, scenarioHandler.Delete, authenticated, middlewares.RequireRole(constants.ScenarioRoles...))
-	v1.POST(constants.PathScenarioRerun, scenarioHandler.Rerun, authenticated, middlewares.RequireRole(constants.ScenarioRoles...))
+	v1.POST(constants.PathScenarioRerun, scenarioHandler.Rerun, authenticated, middlewares.RequireRole(constants.ScenarioRoles...), heavy)
 
 	// Timesheets: planners download the template and import actual hours.
 	timesheetRoles := middlewares.RequireRole(constants.TimesheetRoles...)
 	v1.GET(constants.PathTimesheetTemplate, timesheetHandler.Template, authenticated, timesheetRoles)
-	v1.POST(constants.PathTimesheetImport, timesheetHandler.Import, authenticated, timesheetRoles)
+	v1.POST(constants.PathTimesheetImport, timesheetHandler.Import, authenticated, timesheetRoles, heavy)
 
 	return r
 }
 
 // registerPlanRoutes adds the baseline, people's assignments and staffing drafts.
-func registerPlanRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc, planHandler *handlers.PlanHandler,
+func registerPlanRoutes(v1 *echo.Group, authenticated, heavy echo.MiddlewareFunc, planHandler *handlers.PlanHandler,
 	staffingHandler *handlers.StaffingHandler,
 ) {
 	viewRoles := middlewares.RequireRole(constants.PlanViewRoles...)
@@ -185,7 +188,7 @@ func registerPlanRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc, planH
 
 	// Staffing drafts: planners generate and change any; a manager (lead) those whose projects
 	// all belong to programs they lead (checked in the service).
-	v1.POST(constants.PathStaffingDrafts, staffingHandler.Generate, authenticated, draftRoles)
+	v1.POST(constants.PathStaffingDrafts, staffingHandler.Generate, authenticated, draftRoles, heavy)
 	v1.GET(constants.PathStaffingDraft, staffingHandler.Get, authenticated, viewRoles)
 	v1.PATCH(constants.PathDraftAssignments, staffingHandler.Edit, authenticated, draftRoles)
 	v1.POST(constants.PathDraftAccept, staffingHandler.Accept, authenticated, draftRoles)
@@ -214,12 +217,12 @@ func registerPeopleRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc,
 }
 
 // registerCalendarFeedRoutes adds a person's calendar link (self or planner, checked in the service).
-func registerCalendarFeedRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc, h *handlers.CalendarFeedHandler) {
+func registerCalendarFeedRoutes(v1 *echo.Group, authenticated, heavy echo.MiddlewareFunc, h *handlers.CalendarFeedHandler) {
 	roles := middlewares.RequireRole(constants.CalendarFeedRoles...)
 	v1.GET(constants.PathPersonCalendarFeed, h.Get, authenticated, roles)
-	v1.PUT(constants.PathPersonCalendarFeed, h.Connect, authenticated, roles)
+	v1.PUT(constants.PathPersonCalendarFeed, h.Connect, authenticated, roles, heavy)
 	v1.DELETE(constants.PathPersonCalendarFeed, h.Disconnect, authenticated, roles)
-	v1.POST(constants.PathPersonCalendarFeedSync, h.Sync, authenticated, roles)
+	v1.POST(constants.PathPersonCalendarFeedSync, h.Sync, authenticated, roles, heavy)
 }
 
 // registerProgramRoutes adds programs, projects, phases and demand.
