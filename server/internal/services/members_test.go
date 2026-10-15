@@ -70,7 +70,8 @@ func TestInsightsService_ProgramMembers(t *testing.T) {
 			Allocations: []models.Allocation{{Week: mustWeek(t, "2026-W47"), Hours: 40}}}}
 		plans, programs := new(MockPlanRepository), new(MockProgramRepository)
 		plans.On("FindBaseline", mock.Anything).Return(baseline, nil)
-		programs.On("FindWithLead", mock.Anything, metricsProgramID).Return(&models.Program{BaseModel: models.BaseModel{ID: metricsProgramID}}, nil)
+		leadID := leadPersonID
+		programs.On("FindWithLead", mock.Anything, metricsProgramID).Return(&models.Program{BaseModel: models.BaseModel{ID: metricsProgramID}, LeadID: &leadID}, nil)
 		svc := ProvideInsightsService(plans, nil, nil, programs, nil, nil, ProvideAuthzService(leadPeople{}), nil, heatmapConfig())
 
 		members, err := svc.ProgramMembers(lead, metricsProgramID)

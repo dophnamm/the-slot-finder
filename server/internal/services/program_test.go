@@ -50,8 +50,8 @@ func (m *MockProgramRepository) Updates(ctx context.Context, entity *models.Prog
 	return m.Called(ctx, entity).Error(0)
 }
 
-func (m *MockProgramRepository) List(ctx context.Context, page *dtos.PageableRequest) (*dtos.DataResponse[models.Program], error) {
-	args := m.Called(ctx, page)
+func (m *MockProgramRepository) List(ctx context.Context, page *dtos.PageableRequest, readerID *string) (*dtos.DataResponse[models.Program], error) {
+	args := m.Called(ctx, page, readerID)
 	return args.Get(0).(*dtos.DataResponse[models.Program]), args.Error(1)
 }
 

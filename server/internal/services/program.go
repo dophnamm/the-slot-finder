@@ -106,10 +106,15 @@ func ProvideProgramService(programs repositories.ProgramRepository, projects rep
 }
 
 func (s *programService) List(ctx context.Context, in ListProgramsInput) (*dtos.DataResponse[models.Program], error) {
-	if _, err := s.authz.Require(ctx, CanUsePrograms); err != nil {
+	reader, err := s.authz.ProgramReader(ctx)
+	if err != nil {
 		return nil, err
 	}
-	page, err := s.programs.List(ctx, &dtos.PageableRequest{Page: in.Page, PageSize: in.PageSize})
+	request := &dtos.PageableRequest{Page: in.Page, PageSize: in.PageSize}
+	if !reader.All && reader.LeadID == "" {
+		return emptyPage[models.Program](request), nil
+	}
+	page, err := s.programs.List(ctx, request, readerLeadID(reader))
 	if err != nil {
 		return nil, errors.DatabaseError(constants.MsgProgramListFailed, err).WithOperation(opListPrograms).WithResource(resourceProgram)
 	}
@@ -120,7 +125,14 @@ func (s *programService) Get(ctx context.Context, id string) (*models.Program, e
 	if _, err := s.authz.Require(ctx, CanUsePrograms); err != nil {
 		return nil, err
 	}
-	return s.find(ctx, id, opGetProgram)
+	program, err := s.find(ctx, id, opGetProgram)
+	if err != nil {
+		return nil, err
+	}
+	if err := requireProgramReader(ctx, s.authz, s.projects, program, opGetProgram); err != nil {
+		return nil, err
+	}
+	return program, nil
 }
 
 func (s *programService) Create(ctx context.Context, in CreateProgramInput) (*models.Program, error) {

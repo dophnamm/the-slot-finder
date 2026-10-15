@@ -27,6 +27,7 @@ func ProvideProgramHandler(programs services.ProgramService, validate *validator
 
 // List godoc
 // @Summary List programs
+// @Description A manager gets the programs they lead or lead a project in.
 // @Tags Programs
 // @Produce json
 // @Security BearerAuth
@@ -49,11 +50,13 @@ func (h *ProgramHandler) List(c *echo.Context) error {
 
 // Get godoc
 // @Summary Get a program
+// @Description A manager reaches only the programs they lead or lead a project in.
 // @Tags Programs
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Program id"
 // @Success 200 {object} object{meta=dtos.Meta,data=dtos.ProgramResponse}
+// @Failure 403 {object} object{meta=dtos.Meta}
 // @Failure 404 {object} object{meta=dtos.Meta}
 // @Router /programs/{id} [get]
 func (h *ProgramHandler) Get(c *echo.Context) error {

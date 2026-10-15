@@ -605,7 +605,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Open projects that are understaffed, at risk or behind on delivery, and people over 100 % in the next HEATMAP_DEFAULT_WEEKS weeks.",
+                "description": "Open projects that are understaffed, at risk or behind on delivery, and people over 100 % in the next HEATMAP_DEFAULT_WEEKS weeks. A manager gets the projects of the programs they lead or lead a project in.",
                 "produces": [
                     "application/json"
                 ],
@@ -1745,6 +1745,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "A manager gets the programs they lead or lead a project in.",
                 "produces": [
                     "application/json"
                 ],
@@ -1850,6 +1851,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "A manager reaches only the programs they lead or lead a project in.",
                 "produces": [
                     "application/json"
                 ],
@@ -1875,6 +1877,17 @@ const docTemplate = `{
                                 "data": {
                                     "$ref": "#/definitions/dtos.ProgramResponse"
                                 },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
                                 "meta": {
                                     "$ref": "#/definitions/dtos.Meta"
                                 }
@@ -2043,7 +2056,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Everyone with baseline hours on the program's projects, most hours first: hours per expertise and assignment kind, first and last week, and the projects.",
+                "description": "Everyone with baseline hours on the program's projects, most hours first: hours per expertise and assignment kind, first and last week, and the projects. A manager reaches only the programs they lead or lead a project in.",
                 "produces": [
                     "application/json"
                 ],
@@ -2077,6 +2090,17 @@ const docTemplate = `{
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -2088,7 +2112,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Time, Scope, Planned burn and Staffing with their warnings, cost figures (budget, planned, forecast, gap, planned to date) and staffing by expertise, summed over projects that are not cancelled.",
+                "description": "Time, Scope, Planned burn and Staffing with their warnings, cost figures (budget, planned, forecast, gap, planned to date) and staffing by expertise, summed over projects that are not cancelled. A manager reaches only the programs they lead or lead a project in.",
                 "produces": [
                     "application/json"
                 ],
@@ -2114,6 +2138,17 @@ const docTemplate = `{
                                 "data": {
                                     "$ref": "#/definitions/dtos.ProgramOverviewResponse"
                                 },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
                                 "meta": {
                                     "$ref": "#/definitions/dtos.Meta"
                                 }
@@ -2220,7 +2255,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Projects by priority, then deadline, each with its current phase, at_risk and metrics (Time, Scope, Planned burn, Staffing).",
+                "description": "Projects by priority, then deadline, each with its current phase, at_risk and metrics (Time, Scope, Planned burn, Staffing). A manager reaches only the programs they lead or lead a project in.",
                 "produces": [
                     "application/json"
                 ],
@@ -2249,6 +2284,17 @@ const docTemplate = `{
                                         "$ref": "#/definitions/dtos.ProjectResponse"
                                     }
                                 },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
                                 "meta": {
                                     "$ref": "#/definitions/dtos.Meta"
                                 }
@@ -2545,7 +2591,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Filter by status, e.g. ?status=incoming for the intake queue.",
+                "description": "Filter by status, e.g. ?status=incoming for the intake queue. A manager gets the projects of the programs they lead or lead a project in.",
                 "produces": [
                     "application/json"
                 ],
@@ -2609,7 +2655,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "The project with its phases and demand; each demand lists the weeks it may be staffed in.",
+                "description": "The project with its phases and demand; each demand lists the weeks it may be staffed in. A manager reaches only the programs they lead or lead a project in.",
                 "produces": [
                     "application/json"
                 ],
@@ -2635,6 +2681,17 @@ const docTemplate = `{
                                 "data": {
                                     "$ref": "#/definitions/dtos.ProjectDetailResponse"
                                 },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
                                 "meta": {
                                     "$ref": "#/definitions/dtos.Meta"
                                 }

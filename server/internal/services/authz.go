@@ -105,6 +105,18 @@ type AuthzService interface {
 	// RequireVisiblePerson lets the signed-in user through when VisiblePeople allows personID,
 	// and answers 403 otherwise.
 	RequireVisiblePerson(ctx context.Context, personID string) (request.Principal, error)
+	// ProgramReader says whose programs the signed-in user may read: every program for a
+	// planner, and for a manager (lead) the programs they lead or lead a project in. Anyone
+	// else gets a 403 error.
+	ProgramReader(ctx context.Context) (ProgramReader, error)
+}
+
+// ProgramReader is whose programs the signed-in user may read.
+type ProgramReader struct {
+	// All is true for a planner, who reads every program.
+	All bool
+	// LeadID is a manager's person id; empty when they have no person record, so they read none.
+	LeadID string
 }
 
 // PeopleScope is whose people data the signed-in user may read.
@@ -270,4 +282,26 @@ func (s authzService) RequireVisiblePerson(ctx context.Context, personID string)
 			WithOperation(opAuthorize).WithResource(resourcePrincipal)
 	}
 	return principal, nil
+}
+
+func (s authzService) ProgramReader(ctx context.Context) (ProgramReader, error) {
+	principal, err := s.Require(ctx, CanUsePrograms)
+	if err != nil {
+		return ProgramReader{}, err
+	}
+	if CanManageAllPrograms(principal) {
+		return ProgramReader{All: true}, nil
+	}
+	if s.people == nil {
+		return ProgramReader{}, nil
+	}
+	self, err := s.people.FindForPrincipal(ctx, principal)
+	if err != nil {
+		return ProgramReader{}, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).
+			WithOperation(opAuthorize).WithResource(resourcePrincipal)
+	}
+	if self == nil {
+		return ProgramReader{}, nil
+	}
+	return ProgramReader{LeadID: self.ID}, nil
 }
