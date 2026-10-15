@@ -7,11 +7,11 @@ afterEach(cleanup)
 describe('WorkedHours', () => {
   it('shows the hours a timesheet recorded', () => {
     render(<WorkedHours hours={34.5} />)
-    expect(screen.getByText('Worked 34.5 h')).toBeTruthy()
+    expect(screen.getByText('34.5')).toBeTruthy()
   })
 
-  it('shows nothing before any import', () => {
+  it('shows a dash before any import', () => {
     const { container } = render(<WorkedHours hours={null} />)
-    expect(container.textContent).toBe('')
+    expect(container.textContent).toBe('Worked —')
   })
 })

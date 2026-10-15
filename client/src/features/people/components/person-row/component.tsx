@@ -31,9 +31,9 @@ export function PersonRow({ person, onEdit, onShowAbsences }: PersonRowProps) {
       <TableCell>{t(ROLE_LABELS[person.role])}</TableCell>
       <TableCell>
         <div className="flex flex-col">
-          <span>{t('{hours} h per week', { hours: person.weekly_hours })}</span>
+          <span>{t('{hours} hrs per week', { hours: person.weekly_hours })}</span>
           <span className="text-xs text-muted-foreground">
-            {t('{hours} h non-project', { hours: person.non_project_hours })}
+            {t('{hours} hrs non-project', { hours: person.non_project_hours })}
           </span>
         </div>
       </TableCell>

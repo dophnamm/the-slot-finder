@@ -40,7 +40,7 @@ export function PersonDetailPage() {
         title={person?.name}
         description={
           person &&
-          t('{expertise}, {hours} h per week, {nonProject} h of them non-project', {
+          t('{expertise}, {hours} hrs per week, {nonProject} hrs of them non-project', {
             expertise: primary?.expertise ?? t('No primary expertise'),
             hours: person.weekly_hours,
             nonProject: person.non_project_hours,

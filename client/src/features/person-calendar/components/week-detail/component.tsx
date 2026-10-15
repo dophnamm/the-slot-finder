@@ -16,7 +16,7 @@ export function WeekDetail({ week, canOpenProjects }: WeekDetailProps) {
           {t('{week} ({dates})', { week: week.week, dates: formatIsoWeekRange(week.week) })}
         </span>
         <span className="text-muted-foreground">
-          {t('{load} of {capacity} h · {band}', {
+          {t('Planned {load} of {capacity} hrs · {band}', {
             load: week.load,
             capacity: week.capacity,
             band: t(BAND_LABELS[week.band]),
@@ -40,7 +40,7 @@ export function WeekDetail({ week, canOpenProjects }: WeekDetailProps) {
                 {t('{expertise} · {program}', { expertise: project.expertise, program: project.program_name })}
               </span>
             </div>
-            <span className="shrink-0">{t('{hours} h', { hours: project.hours })}</span>
+            <span className="shrink-0">{t('{hours} hrs', { hours: project.hours })}</span>
           </li>
         ))}
       </ul>

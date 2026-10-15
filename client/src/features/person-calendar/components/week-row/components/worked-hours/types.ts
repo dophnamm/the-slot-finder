@@ -1,4 +1,4 @@
 export interface WorkedHoursProps {
-  /** Recorded actual hours of the week; null hides the line. */
+  /** Recorded actual hours of the week; null shows a dash. */
   hours: number | null
 }

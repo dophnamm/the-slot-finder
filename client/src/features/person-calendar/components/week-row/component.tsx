@@ -21,7 +21,7 @@ export function WeekRow({ week, days, month, selected, onSelect }: WeekRowProps)
         <DayCell key={cell.day.date} day={cell.day} working={cell.working} month={month} />
       ))}
       <TableCell className="text-right">
-        <div className="flex flex-col items-end gap-0.5">
+        <div className="flex items-center justify-around gap-2 whitespace-nowrap">
           <button
             type="button"
             aria-pressed={selected}
@@ -30,8 +30,11 @@ export function WeekRow({ week, days, month, selected, onSelect }: WeekRowProps)
             onClick={handleSelect}
           >
             {week.band === OVERLOADED_BAND && <TriangleAlert className="size-3.5" aria-hidden />}
-            {t('{load}/{capacity} h', { load: week.load, capacity: week.capacity })}
+            {t('Planned')} <strong className="font-semibold">{week.load}</strong>
           </button>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {t('Capacity')} <strong className="font-semibold text-foreground">{week.capacity}</strong>
+          </span>
           <WorkedHours hours={week.actual_hours} />
         </div>
       </TableCell>

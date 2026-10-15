@@ -8,7 +8,13 @@ import { cn, currentMonth, formatIsoWeekday, formatMonth, monthIsoWeeks } from '
 import { MonthNav } from './components/month-nav'
 import { WeekDetail } from './components/week-detail'
 import { WeekRow } from './components/week-row'
-import { CALENDAR_LABEL_COLUMNS, CALENDAR_WEEKDAYS, DAY_COLUMN_CLASS, DAY_OFF_CLASS } from './constants'
+import {
+  CALENDAR_LABEL_COLUMNS,
+  CALENDAR_WEEKDAYS,
+  DAY_COLUMN_CLASS,
+  DAY_OFF_CLASS,
+  WORKLOAD_COLUMN_CLASS,
+} from './constants'
 import type { PersonCalendarProps } from './types'
 import { daysByDate, findWeek, weekCells } from './utils'
 
@@ -47,7 +53,7 @@ export function PersonCalendar({ personId, canOpenProjects }: PersonCalendarProp
                 {formatIsoWeekday(weekday)}
               </TableHead>
             ))}
-            <TableHead className="text-right">{t('Load')}</TableHead>
+            <TableHead className={WORKLOAD_COLUMN_CLASS}>{t('Workload (hrs)')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
