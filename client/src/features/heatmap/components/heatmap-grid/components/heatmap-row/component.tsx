@@ -20,6 +20,11 @@ export function HeatmapRow({ row, expertiseId, currentWeek }: HeatmapRowProps) {
         <div className="flex flex-wrap items-center gap-2">
           <TextLink to={generatePath(ROUTES.personDetail, { id: row.person.id })}>{row.person.name}</TextLink>
           {notPrimary && <Badge variant="amber">{t('Not primary')}</Badge>}
+          {row.sustained_overload && (
+            <Badge variant="red" title={row.sustained_overload.from_week}>
+              {t('Over 100% for {count} weeks', { count: row.sustained_overload.weeks })}
+            </Badge>
+          )}
         </div>
       </TableCell>
       {row.cells.map((cell) => (

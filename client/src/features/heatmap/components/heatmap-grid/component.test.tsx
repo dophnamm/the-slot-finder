@@ -25,6 +25,7 @@ const data: HeatmapData = {
       person: { id: 'e1', name: 'Erin' },
       primary_expertise_id: 'eng',
       primary_expertise: 'Engineer',
+      sustained_overload: null,
       cells: [
         cell('2026-W42', {
           load: 32,
@@ -42,6 +43,7 @@ const data: HeatmapData = {
       person: { id: 'q1', name: 'Quinn' },
       primary_expertise_id: 'qa',
       primary_expertise: 'QA',
+      sustained_overload: { from_week: '2026-W43', weeks: 3 },
       cells: [
         cell('2026-W42', { tentative: true, capacity: 28 }),
         cell('2026-W43', { load: 44, capacity: 40, utilization: 1.1, band: 'overloaded' }),
@@ -103,5 +105,10 @@ describe('HeatmapGrid', () => {
   it('marks people whose primary expertise is not the filtered one', () => {
     renderGrid('qa')
     expect(screen.getAllByText('Not primary')).toHaveLength(1)
+  })
+
+  it('flags a person who is overloaded for weeks in a row', () => {
+    renderGrid('')
+    expect(screen.getAllByText('Over 100% for 3 weeks')).toHaveLength(1)
   })
 })

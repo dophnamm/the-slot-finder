@@ -329,6 +329,7 @@ export type LanguageKey = {
   'Out-of-office events': string
   'Out-of-office events in a Google or Outlook calendar become planned leave for a planner to approve.': string
   'Outlook: Settings → Calendar → Shared calendars → Publish a calendar → ICS link.': string
+  'Over 100% for {count} weeks': string
   'Over-planned': string
   Overloaded: string
   'Overloaded people': string

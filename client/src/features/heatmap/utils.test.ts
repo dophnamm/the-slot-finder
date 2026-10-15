@@ -7,6 +7,7 @@ const row = (name: string, expertise: string): HeatmapRow => ({
   primary_expertise_id: expertise,
   primary_expertise: expertise,
   cells: [],
+  sustained_overload: null,
 })
 
 describe('groupByExpertise', () => {
