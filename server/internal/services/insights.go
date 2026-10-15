@@ -364,6 +364,9 @@ func (s *insightsService) ProgramOverview(ctx context.Context, programID string)
 	if err != nil {
 		return nil, notFoundOrDatabase(err, constants.ProgramNotFound, constants.MsgProgramNotFound, resourceProgram, opProgramOverview)
 	}
+	if err := requireProgramReader(ctx, s.authz, s.projects, program, opProgramOverview); err != nil {
+		return nil, err
+	}
 	projects, planned, actual, today, err := s.metricsData(ctx, programID, opProgramOverview)
 	if err != nil {
 		return nil, err
@@ -414,8 +417,12 @@ func (s *insightsService) ProgramMembers(ctx context.Context, programID string) 
 	if _, err := s.authz.Require(ctx, CanUsePrograms); err != nil {
 		return nil, err
 	}
-	if _, err := s.programs.FindWithLead(ctx, programID); err != nil {
+	program, err := s.programs.FindWithLead(ctx, programID)
+	if err != nil {
 		return nil, notFoundOrDatabase(err, constants.ProgramNotFound, constants.MsgProgramNotFound, resourceProgram, opProgramMembers)
+	}
+	if err := requireProgramReader(ctx, s.authz, s.projects, program, opProgramMembers); err != nil {
+		return nil, err
 	}
 	baseline, err := findBaseline(ctx, s.plans, opProgramMembers, true)
 	if err != nil {
@@ -522,13 +529,18 @@ func (s *insightsService) Risks(ctx context.Context) (*models.Risks, error) {
 	if _, err := s.authz.Require(ctx, CanViewInsights); err != nil {
 		return nil, err
 	}
+	reader, err := s.authz.ProgramReader(ctx)
+	if err != nil {
+		return nil, err
+	}
 	projects, planned, actual, today, err := s.metricsData(ctx, "", opRisks)
 	if err != nil {
 		return nil, err
 	}
+	readable := readablePrograms(projects, reader)
 	risks := &models.Risks{Projects: []models.ProjectRisk{}, People: []models.PersonOverload{}}
 	for _, p := range projects {
-		if p.Status == constants.ProjectStatusDone {
+		if p.Status == constants.ProjectStatusDone || !readable(p.ProgramID) {
 			continue
 		}
 		progress := metrics.Compute(s.projectInput(p, planned, actual, today), s.settings())

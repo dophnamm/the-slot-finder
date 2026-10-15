@@ -32,12 +32,13 @@ func (h *ProjectHandler) thisWeek() isoweek.Week { return isoweek.Of(h.clock.Now
 
 // ListByProgram godoc
 // @Summary A program's projects
-// @Description Projects by priority, then deadline, each with its current phase, at_risk and metrics (Time, Scope, Planned burn, Staffing).
+// @Description Projects by priority, then deadline, each with its current phase, at_risk and metrics (Time, Scope, Planned burn, Staffing). A manager reaches only the programs they lead or lead a project in.
 // @Tags Projects
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Program id"
 // @Success 200 {object} object{meta=dtos.Meta,data=[]dtos.ProjectResponse}
+// @Failure 403 {object} object{meta=dtos.Meta}
 // @Router /programs/{id}/projects [get]
 func (h *ProjectHandler) ListByProgram(c *echo.Context) error {
 	programID, ok := h.pathID(c)
@@ -57,7 +58,7 @@ func (h *ProjectHandler) ListByProgram(c *echo.Context) error {
 
 // List godoc
 // @Summary Projects across programs
-// @Description Filter by status, e.g. ?status=incoming for the intake queue.
+// @Description Filter by status, e.g. ?status=incoming for the intake queue. A manager gets the projects of the programs they lead or lead a project in.
 // @Tags Projects
 // @Produce json
 // @Security BearerAuth
@@ -85,12 +86,13 @@ func (h *ProjectHandler) List(c *echo.Context) error {
 
 // Get godoc
 // @Summary Get a project
-// @Description The project with its phases and demand; each demand lists the weeks it may be staffed in.
+// @Description The project with its phases and demand; each demand lists the weeks it may be staffed in. A manager reaches only the programs they lead or lead a project in.
 // @Tags Projects
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Project id"
 // @Success 200 {object} object{meta=dtos.Meta,data=dtos.ProjectDetailResponse}
+// @Failure 403 {object} object{meta=dtos.Meta}
 // @Failure 404 {object} object{meta=dtos.Meta}
 // @Router /projects/{id} [get]
 func (h *ProjectHandler) Get(c *echo.Context) error {

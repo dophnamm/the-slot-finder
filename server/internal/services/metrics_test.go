@@ -27,7 +27,8 @@ const (
 // metricsFixture is a program from 1 Oct to 31 Dec with two projects, seen on 15 Nov (W46):
 // Checkout needs 160 h QA and 240 h Engineer and has 320 h planned; Loyalty has no budget.
 func metricsFixture(t *testing.T) (*MockPlanRepository, *MockProgramRepository, *MockProjectRepository, *MockPersonRepository, *MockAbsenceRepository) {
-	program := &models.Program{BaseModel: models.BaseModel{ID: metricsProgramID}, Name: "Acme", Status: constants.ProgramStatusOpen,
+	leadID := leadPersonID
+	program := &models.Program{BaseModel: models.BaseModel{ID: metricsProgramID}, Name: "Acme", Status: constants.ProgramStatusOpen, LeadID: &leadID,
 		StartDate: time.Date(2026, time.October, 1, 0, 0, 0, 0, time.UTC), EndDate: time.Date(2026, time.December, 31, 0, 0, 0, 0, time.UTC)}
 	checkout := models.Project{BaseModel: models.BaseModel{ID: checkoutID}, ProgramID: metricsProgramID, Name: "Checkout",
 		Status: constants.ProjectStatusPlanned, StartEarliest: time.Date(2026, time.October, 12, 0, 0, 0, 0, time.UTC),
@@ -66,14 +67,21 @@ func newMetricsService(t *testing.T) InsightsService {
 
 // newMetricsServiceWithActuals is newMetricsService with these actual hours per project id.
 func newMetricsServiceWithActuals(t *testing.T, actual map[string]float64) InsightsService {
+	service, _ := newMetricsServiceWith(t, actual, ProvideAuthzService(leadPeople{}))
+	return service
+}
+
+// newMetricsServiceWith builds the metrics fixture service with these actual hours and this
+// authz service, and returns its project repository for more expectations.
+func newMetricsServiceWith(t *testing.T, actual map[string]float64, authz AuthzService) (InsightsService, *MockProjectRepository) {
 	plans, programs, projects, people, absences := metricsFixture(t)
 	actuals := new(MockActualHoursRepository)
 	actuals.On("SumByProject", mock.Anything, mock.Anything).Return(actual, nil)
 	actuals.On("ListInRange", mock.Anything, mock.Anything, mock.Anything).Return([]models.ActualHours{}, nil).Maybe()
 	cfg := heatmapConfig()
 	cfg.ScopeLagThreshold, cfg.AlertHorizonWeeks = 20, 4
-	return ProvideInsightsService(plans, people, absences, programs, projects, actuals, ProvideAuthzService(leadPeople{}),
-		clock.NewFixed(time.Date(2026, time.November, 15, 9, 0, 0, 0, time.UTC)), cfg)
+	return ProvideInsightsService(plans, people, absences, programs, projects, actuals, authz,
+		clock.NewFixed(time.Date(2026, time.November, 15, 9, 0, 0, 0, time.UTC)), cfg), projects
 }
 
 func TestInsightsService_ProgramOverview(t *testing.T) {

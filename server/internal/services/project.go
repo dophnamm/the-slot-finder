@@ -150,7 +150,11 @@ func (s *projectService) ListByProgram(ctx context.Context, programID string) ([
 	if _, err := s.authz.Require(ctx, CanUsePrograms); err != nil {
 		return nil, err
 	}
-	if _, err := s.findProgram(ctx, programID, opListProjects); err != nil {
+	program, err := s.findProgram(ctx, programID, opListProjects)
+	if err != nil {
+		return nil, err
+	}
+	if err := requireProgramReader(ctx, s.authz, s.projects, program, opListProjects); err != nil {
 		return nil, err
 	}
 	projects, err := s.projects.ListByProgram(ctx, programID)
@@ -161,10 +165,15 @@ func (s *projectService) ListByProgram(ctx context.Context, programID string) ([
 }
 
 func (s *projectService) ListByStatus(ctx context.Context, in ListProjectsInput) (*dtos.DataResponse[models.Project], error) {
-	if _, err := s.authz.Require(ctx, CanUsePrograms); err != nil {
+	reader, err := s.authz.ProgramReader(ctx)
+	if err != nil {
 		return nil, err
 	}
-	page, err := s.projects.ListByStatus(ctx, in.Status, &dtos.PageableRequest{Page: in.Page, PageSize: in.PageSize})
+	request := &dtos.PageableRequest{Page: in.Page, PageSize: in.PageSize}
+	if !reader.All && reader.LeadID == "" {
+		return emptyPage[models.Project](request), nil
+	}
+	page, err := s.projects.ListByStatus(ctx, in.Status, readerLeadID(reader), request)
 	if err != nil {
 		return nil, errors.DatabaseError(constants.MsgProjectListFailed, err).WithOperation(opListProjects).WithResource(resourceProject)
 	}
@@ -175,7 +184,14 @@ func (s *projectService) Get(ctx context.Context, id string) (*models.Project, e
 	if _, err := s.authz.Require(ctx, CanUsePrograms); err != nil {
 		return nil, err
 	}
-	return s.find(ctx, id, opGetProject)
+	project, err := s.find(ctx, id, opGetProject)
+	if err != nil {
+		return nil, err
+	}
+	if err := requireProgramReader(ctx, s.authz, s.projects, programOf(project), opGetProject); err != nil {
+		return nil, err
+	}
+	return project, nil
 }
 
 func (s *projectService) Create(ctx context.Context, in CreateProjectInput) (*models.Project, error) {

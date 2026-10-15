@@ -30,7 +30,10 @@ type ProjectRepository interface {
 	// ListByProgram returns a program's projects by priority, then deadline, with lead and phases.
 	ListByProgram(ctx context.Context, programID string) ([]models.Project, error)
 	// ListByStatus returns projects across programs, e.g. the intake queue; empty status means all.
-	ListByStatus(ctx context.Context, status string, page *dtos.PageableRequest) (*dtos.DataResponse[models.Project], error)
+	// With readerID it keeps the programs that person leads or leads a project in.
+	ListByStatus(ctx context.Context, status string, readerID *string, page *dtos.PageableRequest) (*dtos.DataResponse[models.Project], error)
+	// LeadsProjectIn reports whether the person leads one of the program's projects.
+	LeadsProjectIn(ctx context.Context, programID, personID string) (bool, error)
 	// FindDetail returns one project with its program, lead, phases and demand.
 	FindDetail(ctx context.Context, id string) (*models.Project, error)
 	FindPhase(ctx context.Context, id string) (*models.ProjectPhase, error)
@@ -88,14 +91,24 @@ func (r *projectRepository) ListForMetrics(ctx context.Context, programID string
 	return projects, err
 }
 
-func (r *projectRepository) ListByStatus(ctx context.Context, status string, page *dtos.PageableRequest) (*dtos.DataResponse[models.Project], error) {
+func (r *projectRepository) ListByStatus(ctx context.Context, status string, readerID *string, page *dtos.PageableRequest) (*dtos.DataResponse[models.Project], error) {
 	query := r.db.From(ctx).
 		Preload(projectProgramPreload).Preload(projectLeadPreload).Preload(projectPhasesPreload, phasesInOrder).
 		Order("priority ASC").Order("deadline ASC").Order("id ASC")
 	if status != "" {
 		query = query.Where("status = ?", status)
 	}
+	if readerID != nil {
+		query = query.Where("projects.program_id IN (?)", programIDsLedBy(r.db.From(ctx), *readerID))
+	}
 	return r.find(query, page)
+}
+
+func (r *projectRepository) LeadsProjectIn(ctx context.Context, programID, personID string) (bool, error) {
+	var count int64
+	err := r.db.From(ctx).Model(&models.Project{}).
+		Where("program_id = ? AND lead_id = ?", programID, personID).Count(&count).Error
+	return count > 0, err
 }
 
 func (r *projectRepository) FindDetail(ctx context.Context, id string) (*models.Project, error) {

@@ -73,12 +73,13 @@ func optionalWeek(value string) (*isoweek.Week, error) {
 
 // ProgramOverview godoc
 // @Summary A program's overview
-// @Description Time, Scope, Planned burn and Staffing with their warnings, cost figures (budget, planned, forecast, gap, planned to date) and staffing by expertise, summed over projects that are not cancelled.
+// @Description Time, Scope, Planned burn and Staffing with their warnings, cost figures (budget, planned, forecast, gap, planned to date) and staffing by expertise, summed over projects that are not cancelled. A manager reaches only the programs they lead or lead a project in.
 // @Tags Programs
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Program id"
 // @Success 200 {object} object{meta=dtos.Meta,data=dtos.ProgramOverviewResponse}
+// @Failure 403 {object} object{meta=dtos.Meta}
 // @Router /programs/{id}/overview [get]
 func (h *InsightsHandler) ProgramOverview(c *echo.Context) error {
 	id, ok := h.pathID(c)
@@ -94,12 +95,13 @@ func (h *InsightsHandler) ProgramOverview(c *echo.Context) error {
 
 // ProgramMembers godoc
 // @Summary A program's members
-// @Description Everyone with baseline hours on the program's projects, most hours first: hours per expertise and assignment kind, first and last week, and the projects.
+// @Description Everyone with baseline hours on the program's projects, most hours first: hours per expertise and assignment kind, first and last week, and the projects. A manager reaches only the programs they lead or lead a project in.
 // @Tags Programs
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Program id"
 // @Success 200 {object} object{meta=dtos.Meta,data=[]dtos.ProgramMemberResponse}
+// @Failure 403 {object} object{meta=dtos.Meta}
 // @Router /programs/{id}/members [get]
 func (h *InsightsHandler) ProgramMembers(c *echo.Context) error {
 	id, ok := h.pathID(c)
@@ -115,7 +117,7 @@ func (h *InsightsHandler) ProgramMembers(c *echo.Context) error {
 
 // Risks godoc
 // @Summary Risks
-// @Description Open projects that are understaffed, at risk or behind on delivery, and people over 100 % in the next HEATMAP_DEFAULT_WEEKS weeks.
+// @Description Open projects that are understaffed, at risk or behind on delivery, and people over 100 % in the next HEATMAP_DEFAULT_WEEKS weeks. A manager gets the projects of the programs they lead or lead a project in.
 // @Tags Insights
 // @Produce json
 // @Security BearerAuth
