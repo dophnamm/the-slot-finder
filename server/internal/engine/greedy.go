@@ -240,6 +240,17 @@ func (p *planner) seatCount(d Demand, remaining float64, holders int) int {
 	return seats
 }
 
+// holds reports whether the person already has hours on the demand.
+func (p *planner) holds(personID, demandID string) bool {
+	a, ok := p.result[assignmentKey{personID: personID, demandID: demandID}]
+	return ok && len(a.Allocations) > 0
+}
+
+// levelFit is 1 at the minimum level and falls by one step per level above it.
+func levelFit(level, minLevel int) float64 {
+	return 1 / float64(1+max(0, level-minLevel))
+}
+
 // holders is how many people already have hours on the demand, kept from the starting plan.
 func (p *planner) holders(demandID string) int {
 	n := 0
@@ -297,12 +308,14 @@ func (p *planner) placeRemainder(d Demand, left float64, qualified []*Person) fl
 	return math.Max(0, left)
 }
 
-// rank scores everyone who can take hours of the seat. A person who holds the whole seat
+// rank scores everyone who can take hours of the seat, except a new person once the demand
+// already has Headcount people. A person who holds the whole seat
 // comes first, then a primary-expertise match, then the higher score, then the lower id.
 func (p *planner) rank(d Demand, need float64, qualified []*Person, skip map[string]bool, mode layoutMode) []candidate {
 	var out []candidate
+	holders, cap := p.holders(d.ID), max(1, d.Headcount)
 	for _, person := range qualified {
-		if skip[person.ID] {
+		if skip[person.ID] || (holders >= cap && !p.holds(person.ID, d.ID)) {
 			continue
 		}
 		hours := flatLayout(need, p.freeHours(person, d), p.policy.MinHoursPerWeek, p.policy.HourStep, mode)
@@ -338,7 +351,7 @@ func (p *planner) score(d Demand, c candidate, need float64) float64 {
 		primary = 1
 	}
 	return w.Deadline*(c.covered/need) + w.PrimaryFit*primary + w.Balance*p.balance(c.person, d, c.covered) +
-		w.Continuity*p.continuity(c.person.ID, d) + w.Stability*boolScore(p.previous[d.ID][c.person.ID])
+		w.Continuity*p.continuity(c.person.ID, d) + w.LevelFit*levelFit(c.skill.Level, d.MinLevel) + w.Stability*boolScore(p.previous[d.ID][c.person.ID])
 }
 
 // balance is 1 when the person's load over the window lands on the target utilization.

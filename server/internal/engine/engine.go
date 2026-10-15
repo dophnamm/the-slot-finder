@@ -44,6 +44,9 @@ type Weights struct {
 	Stability float64
 	// Continuity rewards a person already on the same project, then the same program.
 	Continuity float64
+	// LevelFit rewards a skill level close to the demand's minimum level; every level above
+	// the minimum lowers the reward. A soft preference: it never excludes anyone.
+	LevelFit float64
 }
 
 // Policy holds the planning settings; the caller copies them from config.
