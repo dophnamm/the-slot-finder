@@ -68,6 +68,7 @@
 - `/staffing-drafts/:id`: the existing draft review, plus "triggered by" with the linked events. On `409 DRAFT_SUPERSEDED` it reloads the latest version.
 - Feature folders: `features/replan-banner`, `features/change-history`; `features/draft-review` gains the triggers.
 - As built: `shared/events` holds the API and refetches every 15 s, since changes are handled in the background. `EventSummary` (shared) writes one sentence per change. A superseded draft shows a link to the newer version rather than redirecting on its own.
+- As built, `ProjectStatusChanged`, `DemandChanged`, `PersonCapacityChanged` and `TeamChanged` also record change events in the same transaction, and only the events that open projects or free capacity widen the re-plan scope (server README section 6).
 
 ## Acceptance criteria
 
