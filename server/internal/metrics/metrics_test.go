@@ -214,3 +214,31 @@ func TestCompute_UpcomingHours(t *testing.T) {
 	assert.InDelta(t, 40, p.NextWeekHours, 1e-9)
 	assert.InDelta(t, 90, p.NextThreeWeeksHours, 1e-9)
 }
+
+func TestSustainedOverload(t *testing.T) {
+	const minWeeks = 3
+	over, ok := true, false
+	tests := []struct {
+		name       string
+		overloaded []bool
+		wantStart  int
+		wantLength int
+		wantFound  bool
+	}{
+		{name: "no weeks"},
+		{name: "never overloaded", overloaded: []bool{ok, ok, ok, ok}},
+		{name: "a run shorter than the minimum", overloaded: []bool{over, over, ok, over, over}},
+		{name: "exactly the minimum", overloaded: []bool{ok, over, over, over, ok}, wantStart: 1, wantLength: 3, wantFound: true},
+		{name: "a longer run keeps its full length", overloaded: []bool{over, over, over, over, over}, wantLength: 5, wantFound: true},
+		{name: "the first long run wins", overloaded: []bool{over, over, over, ok, over, over, over, over}, wantLength: 3, wantFound: true},
+		{name: "a run at the end", overloaded: []bool{ok, over, ok, over, over, over}, wantStart: 3, wantLength: 3, wantFound: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			start, length, found := SustainedOverload(tt.overloaded, minWeeks)
+			assert.Equal(t, tt.wantFound, found)
+			assert.Equal(t, tt.wantStart, start)
+			assert.Equal(t, tt.wantLength, length)
+		})
+	}
+}

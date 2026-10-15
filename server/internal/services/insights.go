@@ -538,7 +538,7 @@ func (s *insightsService) Risks(ctx context.Context) (*models.Risks, error) {
 		return nil, err
 	}
 	readable := readablePrograms(projects, reader)
-	risks := &models.Risks{Projects: []models.ProjectRisk{}, People: []models.PersonOverload{}}
+	risks := &models.Risks{Projects: []models.ProjectRisk{}, Sustained: []models.SustainedOverload{}, People: []models.PersonOverload{}}
 	for _, p := range projects {
 		if p.Status == constants.ProjectStatusDone || !readable(p.ProgramID) {
 			continue
@@ -566,10 +566,15 @@ func (s *insightsService) Risks(ctx context.Context) (*models.Risks, error) {
 	}
 	for _, row := range heatmap.Rows {
 		var weeks []models.HeatmapCell
-		for _, cell := range row.Cells {
+		overloaded := make([]bool, len(row.Cells))
+		for i, cell := range row.Cells {
 			if cell.Band == constants.BandOverloaded {
 				weeks = append(weeks, cell)
+				overloaded[i] = true
 			}
+		}
+		if start, length, ok := metrics.SustainedOverload(overloaded, s.cfg.SustainedOverloadWeeks); ok {
+			risks.Sustained = append(risks.Sustained, models.SustainedOverload{Person: row.Person, From: row.Cells[start].Week, Weeks: length})
 		}
 		if len(weeks) > 0 {
 			risks.People = append(risks.People, models.PersonOverload{Person: row.Person, Weeks: weeks})

@@ -138,15 +138,24 @@ type OverloadedPersonResponse struct {
 	Weeks  []OverloadedWeekResponse `json:"weeks"`
 }
 
-// RisksResponse is the team's one list of risks.
+// SustainedOverloadResponse is a person over 100 % for weeks in a row, from a week.
+type SustainedOverloadResponse struct {
+	Person   PersonRef `json:"person"`
+	FromWeek string    `json:"from_week" example:"2026-W44"`
+	Weeks    int       `json:"weeks" example:"3"`
+}
+
+// RisksResponse is the team's one list of risks; a sustained overload comes before single overloaded weeks.
 type RisksResponse struct {
-	Projects []RiskProjectResponse      `json:"projects"`
-	People   []OverloadedPersonResponse `json:"people"`
+	Projects          []RiskProjectResponse       `json:"projects"`
+	SustainedOverload []SustainedOverloadResponse `json:"sustained_overload"`
+	People            []OverloadedPersonResponse  `json:"people"`
 }
 
 // NewRisksResponse maps the risks list.
 func NewRisksResponse(r models.Risks) RisksResponse {
-	out := RisksResponse{Projects: make([]RiskProjectResponse, 0, len(r.Projects)), People: make([]OverloadedPersonResponse, 0, len(r.People))}
+	out := RisksResponse{Projects: make([]RiskProjectResponse, 0, len(r.Projects)),
+		SustainedOverload: make([]SustainedOverloadResponse, 0, len(r.Sustained)), People: make([]OverloadedPersonResponse, 0, len(r.People))}
 	for _, p := range r.Projects {
 		item := RiskProjectResponse{ID: p.Project.ID, Name: p.Project.Name, ProgramID: p.Project.ProgramID, Status: p.Project.Status,
 			DeadlineWeek: p.Project.DeadlineWeek().String(), Metrics: NewProgressResponse(p.Metrics)}
@@ -154,6 +163,10 @@ func NewRisksResponse(r models.Risks) RisksResponse {
 			item.Program = p.Project.Program.Name
 		}
 		out.Projects = append(out.Projects, item)
+	}
+	for _, s := range r.Sustained {
+		out.SustainedOverload = append(out.SustainedOverload, SustainedOverloadResponse{Person: PersonRef{ID: s.Person.ID, Name: s.Person.Name},
+			FromWeek: s.From.String(), Weeks: s.Weeks})
 	}
 	for _, p := range r.People {
 		weeks := make([]OverloadedWeekResponse, 0, len(p.Weeks))
