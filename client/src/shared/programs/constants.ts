@@ -18,6 +18,9 @@ export const LEAD_OPTIONS_QUERY_KEY = ['lead-options'] as const
 /** Programs shown per page of the list. */
 export const PROGRAMS_PAGE_SIZE = 20
 
+/** Enough for every program in a select. */
+export const PROGRAM_OPTIONS_PAGE_SIZE = MAX_PAGE_SIZE
+
 /** Enough for every lead candidate. */
 export const LEAD_OPTIONS_PAGE_SIZE = MAX_PAGE_SIZE
 
