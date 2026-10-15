@@ -30,6 +30,19 @@ var staffedProjects = []string{"Checkout Revamp", "Data Migration", "Patient App
 var seedPlanner = request.Principal{Subject: "seed", Username: constants.RolePlanner, Name: "Pat Planner",
 	Email: "planner@slot-finder.local", Role: constants.RolePlanner, Roles: []string{constants.RolePlanner}}
 
+// overtime puts one person over capacity for three weeks in a row in the seeded baseline, so the
+// risks list shows a sustained overload (the engine itself never plans anyone over 100 %).
+var overtime = struct {
+	personEmail string
+	weeks       []time.Time
+	// hours over the person's weekly capacity in each week
+	hours float64
+}{
+	personEmail: "bao@slot-finder.local",
+	weeks:       []time.Time{day(2026, time.November, 2), day(2026, time.November, 9), day(2026, time.November, 16)},
+	hours:       6,
+}
+
 type seedScenario struct {
 	name string
 	// shift_project
@@ -83,6 +96,13 @@ func seedPlans(database *db.PostgresDB, cfg *config.Config) (planResult, error) 
 		if err := staffBaseline(ctx, database.DB, staffing, baseline.Version); err != nil {
 			return result, err
 		}
+		staffed, err := plans.FindBaselineSummary(ctx)
+		if err != nil {
+			return result, fmt.Errorf("baseline: %w", err)
+		}
+		if err := addOvertime(database.DB, staffed.ID); err != nil {
+			return result, err
+		}
 		result.staffed = true
 	}
 
@@ -128,6 +148,40 @@ func staffBaseline(ctx context.Context, tx *gorm.DB, staffing services.StaffingS
 	}
 	if _, err := staffing.Accept(ctx, draft.Plan.ID, services.AcceptDraftInput{BaseVersion: version, ConfirmStretch: true}); err != nil {
 		return fmt.Errorf("accept staffing draft: %w", err)
+	}
+	return nil
+}
+
+// addOvertime raises the person's largest baseline allocation in each overtime week until the
+// week's load is the overtime hours above their weekly capacity.
+func addOvertime(tx *gorm.DB, baselineID string) error {
+	var person models.Person
+	if err := tx.Where("email = ?", overtime.personEmail).First(&person).Error; err != nil {
+		return fmt.Errorf("person %s: %w", overtime.personEmail, err)
+	}
+	capacity := person.WeeklyHours - person.NonProjectHours
+	for _, week := range overtime.weeks {
+		var allocations []models.Allocation
+		err := tx.Joins("JOIN assignments ON assignments.id = allocations.assignment_id").
+			Where("assignments.plan_id = ? AND assignments.person_id = ? AND allocations.week_start = ?", baselineID, person.ID, week).
+			Order("allocations.hours DESC").Find(&allocations).Error
+		if err != nil {
+			return fmt.Errorf("overtime: %w", err)
+		}
+		if len(allocations) == 0 {
+			return fmt.Errorf("overtime: %s has no hours in the week of %s", person.Name, week.Format(time.DateOnly))
+		}
+		load := 0.0
+		for _, a := range allocations {
+			load += a.Hours
+		}
+		extra := capacity + overtime.hours - load
+		if extra <= 0 {
+			continue
+		}
+		if err := tx.Model(&allocations[0]).Update("hours", allocations[0].Hours+extra).Error; err != nil {
+			return fmt.Errorf("overtime: %w", err)
+		}
 	}
 	return nil
 }
