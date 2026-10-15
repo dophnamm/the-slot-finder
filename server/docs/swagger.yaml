@@ -503,6 +503,18 @@ definitions:
         example: 120
         type: number
     type: object
+  dtos.DraftBandsResponse:
+    properties:
+      near_full_from:
+        description: 'NearFullFrom: from this share up to 100 % the week is near full;
+          over 100 % it is overloaded.'
+        example: 0.85
+        type: number
+      underused_below:
+        description: 'UnderusedBelow: under this share of capacity the week is underused.'
+        example: 0.5
+        type: number
+    type: object
   dtos.DraftDemandResponse:
     properties:
       assigned_hours:
@@ -593,6 +605,12 @@ definitions:
         description: Auto is true for a re-plan draft that change events created;
           TriggeredBy lists them.
         type: boolean
+      bands:
+        allOf:
+        - $ref: '#/definitions/dtos.DraftBandsResponse'
+        description: |-
+          Bands are the limits for colouring a week; the client adds the hours of the cell it edits to
+          OtherHours of the person's weeks in Load.
       base_version:
         description: BaseVersion is the baseline version the draft was built on; send
           it back to accept.
@@ -617,6 +635,12 @@ definitions:
         type: boolean
       id:
         type: string
+      load:
+        description: Load lists every active person's capacity and other hours for
+          each week the draft spans.
+        items:
+          $ref: '#/definitions/dtos.DraftWeekLoadResponse'
+        type: array
       projects:
         items:
           $ref: '#/definitions/dtos.DraftProjectResponse'
@@ -660,6 +684,23 @@ definitions:
         type: string
     required:
     - week
+    type: object
+  dtos.DraftWeekLoadResponse:
+    properties:
+      capacity:
+        description: Capacity is the person's bookable hours that week.
+        example: 32
+        type: number
+      other_hours:
+        description: OtherHours are the hours the plan gives the person on demand
+          this draft does not cover.
+        example: 8
+        type: number
+      person_id:
+        type: string
+      week:
+        example: 2026-W48
+        type: string
     type: object
   dtos.EditDraftRequest:
     properties:
