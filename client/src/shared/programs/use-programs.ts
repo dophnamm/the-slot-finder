@@ -13,6 +13,7 @@ import {
 import {
   LEAD_OPTIONS_QUERY_KEY,
   LEAD_ROLES,
+  PROGRAM_OPTIONS_PAGE_SIZE,
   PROGRAMS_PAGE_SIZE,
   PROGRAMS_QUERY_KEY,
   PROJECTS_QUERY_KEY,
@@ -27,6 +28,15 @@ export function usePrograms(page: number) {
     queryKey: [...PROGRAMS_QUERY_KEY, 'page', page],
     queryFn: () => listPrograms(page, PROGRAMS_PAGE_SIZE),
     placeholderData: keepPreviousData,
+  })
+}
+
+/** Every program the user may read, for a select; a manager gets only theirs. */
+export function useProgramOptions() {
+  return useQuery({
+    queryKey: [...PROGRAMS_QUERY_KEY, 'options'],
+    queryFn: () => listPrograms(1, PROGRAM_OPTIONS_PAGE_SIZE),
+    select: (result) => result.data,
   })
 }
 

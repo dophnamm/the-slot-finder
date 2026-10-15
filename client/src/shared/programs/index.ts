@@ -3,6 +3,7 @@ export {
   FINAL_STATUSES,
   PROGRAM_ACTIONS,
   PROGRAM_STATUS_LABELS,
+  PROGRAM_OPTIONS_PAGE_SIZE,
   PROGRAMS_PAGE_SIZE,
   PROGRAMS_QUERY_KEY,
   PROJECT_ACTIONS,
@@ -43,6 +44,7 @@ export {
   useProgramAction,
   useProgramMembers,
   useProgramOverview,
+  useProgramOptions,
   usePrograms,
   useSaveProgram,
 } from './use-programs'

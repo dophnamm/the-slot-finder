@@ -54,6 +54,7 @@ export type LanguageKey = {
   Added: string
   After: string
   'All expertises': string
+  'All programs': string
   'Allocate hours': string
   Approve: string
   Approved: string
