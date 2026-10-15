@@ -1780,6 +1780,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/plans/drafts": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Every staffing draft that is still open, newest first, manual and auto re-plan. A manager (lead) sees only drafts whose projects all belong to programs they manage.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Staffing drafts"
+                ],
+                "summary": "Open staffing drafts",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/dtos.OpenDraftResponse"
+                                    }
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/programs": {
             "get": {
                 "security": [
@@ -5024,6 +5071,44 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.OpenDraftResponse": {
+            "type": "object",
+            "properties": {
+                "auto": {
+                    "description": "Auto is true for a re-plan draft that change events created.",
+                    "type": "boolean"
+                },
+                "base_version": {
+                    "description": "BaseVersion is the baseline version the draft was built on; Stale is true when the baseline in force differs.",
+                    "type": "integer",
+                    "example": 3
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "current_version": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "id": {
+                    "type": "string"
+                },
+                "projects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.DraftProjectResponse"
+                    }
+                },
+                "stale": {
+                    "type": "boolean"
+                },
+                "unmet_count": {
+                    "description": "UnmetCount is how many demands the engine could not cover when the draft was generated.",
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
         "dtos.OverloadedPersonResponse": {
             "type": "object",
             "properties": {
@@ -5753,6 +5838,12 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dtos.RiskProjectResponse"
                     }
+                },
+                "sustained_overload": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.SustainedOverloadResponse"
+                    }
                 }
             }
         },
@@ -6189,6 +6280,22 @@ const docTemplate = `{
                 },
                 "primary": {
                     "type": "boolean"
+                }
+            }
+        },
+        "dtos.SustainedOverloadResponse": {
+            "type": "object",
+            "properties": {
+                "from_week": {
+                    "type": "string",
+                    "example": "2026-W44"
+                },
+                "person": {
+                    "$ref": "#/definitions/dtos.PersonRef"
+                },
+                "weeks": {
+                    "type": "integer",
+                    "example": 3
                 }
             }
         },

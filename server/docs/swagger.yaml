@@ -887,6 +887,35 @@ definitions:
         example: 18
         type: integer
     type: object
+  dtos.OpenDraftResponse:
+    properties:
+      auto:
+        description: Auto is true for a re-plan draft that change events created.
+        type: boolean
+      base_version:
+        description: BaseVersion is the baseline version the draft was built on; Stale
+          is true when the baseline in force differs.
+        example: 3
+        type: integer
+      created_at:
+        type: string
+      current_version:
+        example: 3
+        type: integer
+      id:
+        type: string
+      projects:
+        items:
+          $ref: '#/definitions/dtos.DraftProjectResponse'
+        type: array
+      stale:
+        type: boolean
+      unmet_count:
+        description: UnmetCount is how many demands the engine could not cover when
+          the draft was generated.
+        example: 1
+        type: integer
+    type: object
   dtos.OverloadedPersonResponse:
     properties:
       person:
@@ -1409,6 +1438,10 @@ definitions:
         items:
           $ref: '#/definitions/dtos.RiskProjectResponse'
         type: array
+      sustained_overload:
+        items:
+          $ref: '#/definitions/dtos.SustainedOverloadResponse'
+        type: array
     type: object
   dtos.ScenarioChangeResponse:
     properties:
@@ -1726,6 +1759,17 @@ definitions:
         type: boolean
     required:
     - expertise_id
+    type: object
+  dtos.SustainedOverloadResponse:
+    properties:
+      from_week:
+        example: 2026-W44
+        type: string
+      person:
+        $ref: '#/definitions/dtos.PersonRef'
+      weeks:
+        example: 3
+        type: integer
     type: object
   dtos.TeamMemberResponse:
     properties:
@@ -2998,6 +3042,37 @@ paths:
       summary: The baseline
       tags:
       - Planning
+  /plans/drafts:
+    get:
+      description: Every staffing draft that is still open, newest first, manual and
+        auto re-plan. A manager (lead) sees only drafts whose projects all belong
+        to programs they manage.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/dtos.OpenDraftResponse'
+                type: array
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Open staffing drafts
+      tags:
+      - Staffing drafts
   /programs:
     get:
       description: A manager gets the programs they lead or lead a project in.
