@@ -5168,6 +5168,14 @@ const docTemplate = `{
                 },
                 "primary_expertise_id": {
                     "type": "string"
+                },
+                "sustained_overload": {
+                    "description": "SustainedOverload is the first run of overloaded weeks in the range, long enough to\nwarn about; null when there is none.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dtos.OverloadRunResponse"
+                        }
+                    ]
                 }
             }
         },
@@ -5291,6 +5299,19 @@ const docTemplate = `{
                     "description": "UnmetCount is how many demands the engine could not cover when the draft was generated.",
                     "type": "integer",
                     "example": 1
+                }
+            }
+        },
+        "dtos.OverloadRunResponse": {
+            "type": "object",
+            "properties": {
+                "from_week": {
+                    "type": "string",
+                    "example": "2026-W44"
+                },
+                "weeks": {
+                    "type": "integer",
+                    "example": 3
                 }
             }
         },

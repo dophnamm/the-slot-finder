@@ -890,6 +890,12 @@ definitions:
         type: string
       primary_expertise_id:
         type: string
+      sustained_overload:
+        allOf:
+        - $ref: '#/definitions/dtos.OverloadRunResponse'
+        description: |-
+          SustainedOverload is the first run of overloaded weeks in the range, long enough to
+          warn about; null when there is none.
     type: object
   dtos.HolidayImportResponse:
     properties:
@@ -979,6 +985,15 @@ definitions:
         description: UnmetCount is how many demands the engine could not cover when
           the draft was generated.
         example: 1
+        type: integer
+    type: object
+  dtos.OverloadRunResponse:
+    properties:
+      from_week:
+        example: 2026-W44
+        type: string
+      weeks:
+        example: 3
         type: integer
     type: object
   dtos.OverloadedPersonResponse:
