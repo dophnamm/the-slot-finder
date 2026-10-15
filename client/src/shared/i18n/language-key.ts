@@ -124,6 +124,7 @@ export type LanguageKey = {
   Default: string
   Delete: string
   'Delete this scenario?': string
+  'Delivered scope points as a share of all scope points.': string
   Demand: string
   'Demand removed.': string
   'Demand saved.': string
@@ -209,6 +210,7 @@ export type LanguageKey = {
   'Holidays lower everyone’s capacity on those days.': string
   Home: string
   Hours: string
+  'Hours actually worked as a share of budget hours.': string
   'Hours allocated.': string
   'Hours by week against capacity, with leave and holidays by day.': string
   'Hours in this program': string
@@ -219,6 +221,7 @@ export type LanguageKey = {
   'Hours per ISO week. Locked hours stay as they are when a draft is generated again; stretch is always locked. A week is coloured by the whole load of the person, as on the heatmap.': string
   'Hours per week': string
   'Hours the planning engine could not place in this scenario.': string
+  'How much of the schedule has passed: days since the start as a share of the whole span.': string
   'ICS file': string
   Import: string
   'Import holidays': string
@@ -357,6 +360,7 @@ export type LanguageKey = {
   Planned: string
   'Planned again:': string
   'Planned burn': string
+  "Planned hours as a share of a person's capacity in a week; over 100% is overloaded.": string
   'Planned hours as a share of budget hours.': string
   'Planned hours in the weeks up to now as a share of budget hours.': string
   'Planned leave this week, not approved yet.': string
@@ -510,6 +514,7 @@ export type LanguageKey = {
   'Unmet demands': string
   'Until {date}': string
   'Use the secret iCal address from Google Calendar or Outlook. It starts with https://.': string
+  Utilization: string
   'Version {version}': string
   Waiting: string
   Week: string

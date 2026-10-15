@@ -30,6 +30,10 @@ describe('burnMetric', () => {
   })
 
   it('shows burn from actual hours once they exist, even at 0 %', () => {
-    expect(burnMetric(metrics({ actual_hours: 0, burn_percent: 0 }))).toEqual({ label: 'Burn', value: 0 })
+    expect(burnMetric(metrics({ actual_hours: 0, burn_percent: 0 }))).toEqual({
+      label: 'Burn',
+      term: 'burnPercent',
+      value: 0,
+    })
   })
 })

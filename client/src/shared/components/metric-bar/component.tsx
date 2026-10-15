@@ -13,10 +13,10 @@ export function MetricBar({ label, term, value, warning = false, compact = false
   return (
     <div className={cn('flex min-w-24 flex-col', compact ? 'gap-0.5 text-xs' : 'gap-1 text-sm')}>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-muted-foreground">
+        <span className="min-w-0 text-muted-foreground">
           <Term term={term}>{label}</Term>
         </span>
-        <span className={cn('font-medium tabular-nums', warning && 'text-destructive')}>{shown}</span>
+        <span className={cn('shrink-0 font-medium tabular-nums', warning && 'text-destructive')}>{shown}</span>
       </div>
       <Progress
         value={value === null ? 0 : Math.min(value, FULL_PERCENT)}
