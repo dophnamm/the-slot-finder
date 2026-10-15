@@ -86,7 +86,7 @@ func newMetricsServiceWithConfig(t *testing.T, actual map[string]float64, authz 
 	actuals.On("ListInRange", mock.Anything, mock.Anything, mock.Anything).Return([]models.ActualHours{}, nil).Maybe()
 	cfg := heatmapConfig()
 	cfg.ScopeLagThreshold, cfg.AlertHorizonWeeks, cfg.SustainedOverloadWeeks = 20, 4, sustainedWeeks
-	return ProvideInsightsService(plans, people, absences, programs, projects, actuals, authz,
+	return ProvideInsightsService(plans, people, absences, programs, projects, nil, actuals, authz,
 		clock.NewFixed(time.Date(2026, time.November, 15, 9, 0, 0, 0, time.UTC)), cfg), projects
 }
 
