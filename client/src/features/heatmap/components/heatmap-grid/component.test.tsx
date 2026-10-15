@@ -109,6 +109,6 @@ describe('HeatmapGrid', () => {
 
   it('flags a person who is overloaded for weeks in a row', () => {
     renderGrid('')
-    expect(screen.getAllByText('Over 100% for 3 weeks')).toHaveLength(1)
+    expect(screen.getAllByText('Overloaded 3 weeks in a row')).toHaveLength(1)
   })
 })

@@ -7,6 +7,7 @@ import { TableCell, TableRow } from '@/shared/ui/table'
 import { workedHours } from '../../../../utils'
 import { PERSON_COLUMN_CLASS } from '../../constants'
 import { HeatmapCell } from '../heatmap-cell'
+import { OverloadBadge } from '../overload-badge'
 import type { HeatmapRowProps } from './types'
 
 /** One person across the weeks; with an expertise filter, a non-primary match is marked. */
@@ -20,11 +21,7 @@ export function HeatmapRow({ row, expertiseId, currentWeek }: HeatmapRowProps) {
         <div className="flex flex-wrap items-center gap-2">
           <TextLink to={generatePath(ROUTES.personDetail, { id: row.person.id })}>{row.person.name}</TextLink>
           {notPrimary && <Badge variant="amber">{t('Not primary')}</Badge>}
-          {row.sustained_overload && (
-            <Badge variant="red" title={row.sustained_overload.from_week}>
-              {t('Over 100% for {count} weeks', { count: row.sustained_overload.weeks })}
-            </Badge>
-          )}
+          {row.sustained_overload && <OverloadBadge run={row.sustained_overload} />}
         </div>
       </TableCell>
       {row.cells.map((cell) => (

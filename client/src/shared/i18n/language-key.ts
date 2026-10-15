@@ -191,6 +191,7 @@ export type LanguageKey = {
   'From calendar': string
   'From week': string
   'From {date}': string
+  'From {week}, within the weeks shown': string
   Gap: string
   'Generate a new draft': string
   'Go to your home page': string
@@ -329,11 +330,11 @@ export type LanguageKey = {
   'Out-of-office events': string
   'Out-of-office events in a Google or Outlook calendar become planned leave for a planner to approve.': string
   'Outlook: Settings → Calendar → Shared calendars → Publish a calendar → ICS link.': string
-  'Over 100% for {count} weeks': string
   'Over-planned': string
   Overloaded: string
   'Overloaded people': string
   'Overloaded people ({count})': string
+  'Overloaded {count} weeks in a row': string
   Overview: string
   'Page not found': string
   'Page {page} of {pages}': string
