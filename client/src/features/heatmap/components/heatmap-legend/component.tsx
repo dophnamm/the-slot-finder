@@ -1,3 +1,4 @@
+import { Term } from '@/shared/components/term'
 import { useTranslation } from '@/shared/i18n'
 import { cn } from '@/utils/functions'
 import { BAND_CLASSES, BAND_LABELS, BAND_ORDER, WORKED_CELL_CLASS } from '../../constants'
@@ -8,6 +9,9 @@ export function HeatmapLegend() {
 
   return (
     <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+      <span className="flex items-center gap-1.5 border-r pr-4 font-medium text-foreground">
+        <Term term="utilization">{t('Utilization')}</Term>
+      </span>
       {BAND_ORDER.map((band) => (
         <span key={band} className="flex items-center gap-1.5">
           <span className={cn('size-3 rounded-sm', BAND_CLASSES[band])} />

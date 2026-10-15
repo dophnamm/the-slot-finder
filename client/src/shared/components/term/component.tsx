@@ -16,7 +16,7 @@ export function Term({ term, children }: TermProps) {
       <Tooltip>
         <TooltipTrigger
           aria-label={t('What does this mean?')}
-          className="inline-flex cursor-help rounded-full text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          className="-m-1 inline-flex cursor-help rounded-full p-1 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Info className="size-3.5" />
         </TooltipTrigger>
