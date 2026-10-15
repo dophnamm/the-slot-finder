@@ -189,6 +189,7 @@ func registerPlanRoutes(v1 *echo.Group, authenticated, heavy echo.MiddlewareFunc
 	// Staffing drafts: planners generate and change any; a manager (lead) those whose projects
 	// all belong to programs they lead (checked in the service).
 	v1.POST(constants.PathStaffingDrafts, staffingHandler.Generate, authenticated, draftRoles, heavy)
+	v1.GET(constants.PathPlanDrafts, staffingHandler.ListOpen, authenticated, viewRoles)
 	v1.GET(constants.PathStaffingDraft, staffingHandler.Get, authenticated, viewRoles)
 	v1.PATCH(constants.PathDraftAssignments, staffingHandler.Edit, authenticated, draftRoles)
 	v1.POST(constants.PathDraftAccept, staffingHandler.Accept, authenticated, draftRoles)

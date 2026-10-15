@@ -442,3 +442,60 @@ func TestStaffingService_Reject(t *testing.T) {
 	require.NoError(t, err)
 	m.plans.AssertExpectations(t)
 }
+
+func TestStaffingService_ListOpen(t *testing.T) {
+	const (
+		ownDraftID       = "0192f3a4-0000-7000-8000-0000000000c8"
+		otherDraftID     = "0192f3a4-0000-7000-8000-0000000000c9"
+		ownProjectID     = "0192f3a4-0000-7000-8000-0000000000e8"
+		foreignProjectID = "0192f3a4-0000-7000-8000-0000000000e9"
+	)
+	own, other := leadPersonID, otherPersonID2
+	projectIn := func(id string, programLead *string) *models.Project {
+		return &models.Project{BaseModel: models.BaseModel{ID: id}, Program: &models.Program{LeadID: programLead}}
+	}
+	setup := func() staffingMocks {
+		m := newStaffingMocks()
+		m.plans.On("ListOpenDrafts", mock.Anything).Return([]models.Plan{
+			{BaseModel: models.BaseModel{ID: ownDraftID}, Version: 2, ProjectIDs: []string{ownProjectID},
+				Unmet: []models.PlanUnmet{{}}},
+			{BaseModel: models.BaseModel{ID: otherDraftID}, Version: 3, ProjectIDs: []string{ownProjectID, foreignProjectID}},
+		}, nil)
+		m.plans.On("FindBaselineSummary", mock.Anything).Return(publishedBaseline(3), nil)
+		m.projects.On("FindDetail", mock.Anything, ownProjectID).Return(projectIn(ownProjectID, &own), nil)
+		m.projects.On("FindDetail", mock.Anything, foreignProjectID).Return(projectIn(foreignProjectID, &other), nil)
+		return m
+	}
+
+	t.Run("a planner sees every open draft", func(t *testing.T) {
+		drafts, err := setup().service().ListOpen(asRole("kc-planner", constants.RolePlanner))
+		require.NoError(t, err)
+		require.Len(t, drafts, 2)
+		assert.Equal(t, ownDraftID, drafts[0].Plan.ID)
+		assert.Len(t, drafts[0].Projects, 1)
+		assert.False(t, drafts[0].Auto)
+	})
+
+	t.Run("a manager sees only drafts whose projects are all in programs they lead", func(t *testing.T) {
+		drafts, err := setup().service().ListOpen(asRole("kc-lead", constants.RoleLead))
+		require.NoError(t, err)
+		require.Len(t, drafts, 1)
+		assert.Equal(t, ownDraftID, drafts[0].Plan.ID)
+	})
+
+	t.Run("a draft that change events created is auto", func(t *testing.T) {
+		m := setup()
+		m.events = new(MockChangeEventRepository)
+		m.events.On("ListByDraft", mock.Anything, ownDraftID).Return([]models.ChangeEvent{{}}, nil)
+		m.events.On("ListByDraft", mock.Anything, otherDraftID).Return([]models.ChangeEvent{}, nil)
+		drafts, err := m.service().ListOpen(asRole("kc-planner", constants.RolePlanner))
+		require.NoError(t, err)
+		assert.True(t, drafts[0].Auto)
+		assert.False(t, drafts[1].Auto)
+	})
+
+	t.Run("a specialist cannot list drafts", func(t *testing.T) {
+		_, err := newStaffingMocks().service().ListOpen(asRole("kc-specialist", constants.RoleSpecialist))
+		requireStatus(t, err, http.StatusForbidden)
+	})
+}

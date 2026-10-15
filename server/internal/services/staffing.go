@@ -27,6 +27,7 @@ import (
 const (
 	opGenerateDraft = "generate_draft"
 	opGetDraft      = "get_draft"
+	opListDrafts    = "list_drafts"
 	opEditDraft     = "edit_draft"
 	opAcceptDraft   = "accept_draft"
 	opRejectDraft   = "reject_draft"
@@ -104,6 +105,9 @@ type StaffingService interface {
 	Generate(ctx context.Context, in GenerateDraftInput) (*DraftView, error)
 	// Get returns a draft for planners and for leads of a project it covers.
 	Get(ctx context.Context, id string) (*DraftView, error)
+	// ListOpen returns the open drafts newest first: every one for a planner, and for a manager
+	// (lead) those whose projects all belong to programs they lead, as for the draft actions.
+	ListOpen(ctx context.Context) ([]OpenDraft, error)
 	// Edit adds or removes assignments and changes weekly hours and locks. The server sets
 	// each added assignment's kind; a stretch assignment is locked.
 	Edit(ctx context.Context, id string, in EditDraftInput) (*DraftView, error)
@@ -113,6 +117,16 @@ type StaffingService interface {
 	Accept(ctx context.Context, id string, in AcceptDraftInput) (*DraftView, error)
 	// Reject discards a draft.
 	Reject(ctx context.Context, id string) (*DraftView, error)
+}
+
+// OpenDraft is an open staffing draft as listed in the drafts inbox.
+type OpenDraft struct {
+	Plan     models.Plan
+	Projects []models.Project
+	// BaselineVersion is the baseline in force now; a draft built on another one is stale.
+	BaselineVersion int
+	// Auto is true for a re-plan draft that change events created.
+	Auto bool
 }
 
 // draftBuilder reads what the engine needs and builds its request; staffing drafts and
@@ -199,6 +213,49 @@ func (s *staffingService) Get(ctx context.Context, id string) (*DraftView, error
 		return nil, err
 	}
 	return view, nil
+}
+
+func (s *staffingService) ListOpen(ctx context.Context) ([]OpenDraft, error) {
+	principal, err := s.authz.Require(ctx, CanViewPlans)
+	if err != nil {
+		return nil, err
+	}
+	var selfID string
+	if !CanManagePlans(principal) {
+		self, err := s.finder.FindForPrincipal(ctx, principal)
+		if err != nil {
+			return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opListDrafts).WithResource(resourceDraft)
+		}
+		if self == nil {
+			return []OpenDraft{}, nil
+		}
+		selfID = self.ID
+	}
+	plans, err := s.plans.ListOpenDrafts(ctx)
+	if err != nil {
+		return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opListDrafts).WithResource(resourceDraft)
+	}
+	baseline, err := findBaseline(ctx, s.plans, opListDrafts, false)
+	if err != nil {
+		return nil, err
+	}
+	// shortcut: two lookups per open draft; fine while a handful are open, batch them if the inbox grows.
+	drafts := make([]OpenDraft, 0, len(plans))
+	for _, plan := range plans {
+		projects, err := s.loadProjects(ctx, plan.ProjectIDs, opListDrafts)
+		if err != nil {
+			return nil, err
+		}
+		if selfID != "" && !leadsAllPrograms(selfID, projects) {
+			continue
+		}
+		events, err := s.events.ListByDraft(ctx, plan.ID)
+		if err != nil {
+			return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opListDrafts).WithResource(resourceDraft)
+		}
+		drafts = append(drafts, OpenDraft{Plan: plan, Projects: projects, BaselineVersion: baseline.Version, Auto: len(events) > 0})
+	}
+	return drafts, nil
 }
 
 // loadProjects reads each project with its phases, demand and program.
@@ -860,12 +917,23 @@ func (s *staffingService) requireDraftRights(ctx context.Context, projects []mod
 	if err != nil {
 		return request.Principal{}, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opAuthorize).WithResource(resourceDraft)
 	}
-	for _, p := range projects {
-		if self == nil || p.Program == nil || p.Program.LeadID == nil || *p.Program.LeadID != self.ID {
-			return request.Principal{}, forbidden
-		}
+	if self == nil || !leadsAllPrograms(self.ID, projects) {
+		return request.Principal{}, forbidden
 	}
 	return principal, nil
+}
+
+// leadsAllPrograms reports whether the person leads the program of every project; never for no projects.
+func leadsAllPrograms(personID string, projects []models.Project) bool {
+	if len(projects) == 0 {
+		return false
+	}
+	for _, p := range projects {
+		if p.Program == nil || p.Program.LeadID == nil || *p.Program.LeadID != personID {
+			return false
+		}
+	}
+	return true
 }
 
 // teamCandidates is each program's team as the engine's candidate set; without a team

@@ -54,6 +54,27 @@ func (h *StaffingHandler) Generate(c *echo.Context) error {
 	return h.CreatedResponse(c, constants.MsgDraftCreated, draftResponse(view))
 }
 
+// ListOpen godoc
+// @Summary Open staffing drafts
+// @Description Every staffing draft that is still open, newest first, manual and auto re-plan. A manager (lead) sees only drafts whose projects all belong to programs they manage.
+// @Tags Staffing drafts
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} object{meta=dtos.Meta,data=[]dtos.OpenDraftResponse}
+// @Failure 403 {object} object{meta=dtos.Meta}
+// @Router /plans/drafts [get]
+func (h *StaffingHandler) ListOpen(c *echo.Context) error {
+	drafts, err := h.staffing.ListOpen(c.Request().Context())
+	if err != nil {
+		return h.HandleError(c, err)
+	}
+	items := make([]dtos.OpenDraftResponse, 0, len(drafts))
+	for _, d := range drafts {
+		items = append(items, dtos.NewOpenDraftResponse(d.Plan, d.Projects, d.BaselineVersion, d.Auto))
+	}
+	return h.SuccessResponse(c, constants.MsgDraftsListed, items, nil)
+}
+
 // Get godoc
 // @Summary A staffing draft
 // @Description The draft's assignments for the covered demand, coverage and unmet reasons, and changes against the baseline in force.

@@ -111,6 +111,7 @@ const (
 	MsgWeekRangeInvalid        = "to must not be before from"
 	MsgDraftCreated            = "Staffing draft created"
 	MsgDraftRetrieved          = "Staffing draft retrieved"
+	MsgDraftsListed            = "Open staffing drafts retrieved"
 	MsgDraftSaveFailed         = "Could not save the staffing draft"
 	MsgPlanNotFound            = "Staffing draft not found"
 	MsgProjectNotPlannable     = "Only incoming, planned or active projects can be staffed"
