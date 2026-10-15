@@ -102,7 +102,7 @@ describe('PersonCalendar', () => {
     renderCalendar()
     fireEvent.click(screen.getByRole('button', { name: 'Hours in 2026-W42' }))
     expect(screen.getByRole('link', { name: 'Checkout Revamp' }).getAttribute('href')).toBe('/programs/g1/projects/p1')
-    expect(screen.getAllByText('20 h')).toHaveLength(2)
+    expect(screen.getAllByText('20 hrs')).toHaveLength(2)
   })
 
   it('names the projects as plain text for someone who cannot open project pages', () => {

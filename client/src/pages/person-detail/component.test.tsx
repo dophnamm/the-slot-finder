@@ -45,7 +45,7 @@ describe('PersonDetailPage', () => {
   it('heads the page with the person and their hours', () => {
     renderPage('planner')
     expect(screen.getByText('Alex Nguyen')).toBeTruthy()
-    expect(screen.getByText('Engineer, 40 h per week, 4 h of them non-project')).toBeTruthy()
+    expect(screen.getByText('Engineer, 40 hrs per week, 4 hrs of them non-project')).toBeTruthy()
   })
 
   it('gives a planner the absences and the calendar sync in their own tabs', () => {
