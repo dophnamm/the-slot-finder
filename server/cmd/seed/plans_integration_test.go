@@ -54,6 +54,18 @@ func TestSeedPlans_Postgres(t *testing.T) {
 	var staffed int64
 	require.NoError(t, pdb.Model(&models.Project{}).Where("status = ?", constants.ProjectStatusPlanned).Count(&staffed).Error)
 	assert.Positive(t, staffed, "accepted projects move to planned")
+
+	var person models.Person
+	require.NoError(t, pdb.Where("email = ?", overtime.personEmail).First(&person).Error)
+	for _, week := range overtime.weeks {
+		var load float64
+		require.NoError(t, pdb.Raw(`SELECT COALESCE(SUM(allocations.hours), 0) FROM allocations
+			JOIN assignments ON assignments.id = allocations.assignment_id
+			WHERE assignments.plan_id = ? AND assignments.person_id = ? AND allocations.week_start = ?`,
+			baseline.ID, person.ID, week).Scan(&load).Error)
+		assert.Greater(t, load, person.WeeklyHours-person.NonProjectHours, "%s is over capacity in the week of %s",
+			person.Name, week.Format(time.DateOnly))
+	}
 	var saved []models.Plan
 	require.NoError(t, pdb.Where("kind = ?", constants.PlanKindScenario).Find(&saved).Error)
 	require.Len(t, saved, len(scenarios))
