@@ -52,7 +52,7 @@ export function TeamList() {
 ## Adding and editing records
 
 - **Adding or editing a record opens a form in a dialog**: an outline "Add …" button with a `Plus` icon in the card header, or the row's pencil button. A table row never turns into inputs, and nothing is added as a blank row: people must see that their click changed something. The one exception is a grid whose cells are visibly inputs and save as you type (the weekly hours of a staffing draft).
-- The dialog's form is one component for add and edit (title and button text differ); saving closes the dialog and shows a toast. Removing a row asks first (`window.confirm`) when it cannot be undone.
+- The dialog's form is one component for add and edit (title and button text differ); saving closes the dialog and shows a toast. Removing a row, or anything that cannot be undone, asks first with `await confirm({ title, description, confirmLabel, destructive })` from `@/shared/stores/confirm-store`: the app's own dialog, mounted once in `app-providers`. Never `window.confirm`, `alert` or `prompt`: lint rejects them.
 
 ## Never a component inside a component
 
