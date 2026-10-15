@@ -448,6 +448,8 @@ export type LanguageKey = {
   To: string
   'To week': string
   Today: string
+  'Too many requests. Try again in {seconds} second.': string
+  'Too many requests. Try again in {seconds} seconds.': string
   Training: string
   'Triggered by': string
   'Try a change, such as a project slipping or someone on leave, and see what it does to the plan. Nothing real changes.': string

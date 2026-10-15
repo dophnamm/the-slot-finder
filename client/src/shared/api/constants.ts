@@ -31,5 +31,11 @@ export const UNAUTHORIZED_STATUS = 401
 /** The server answers 403 when the user may not see or do this; asking again will not change it. */
 export const FORBIDDEN_STATUS = 403
 
+/** The server answers 429 after too many requests; asking again at once will not help. */
+export const TOO_MANY_REQUESTS_STATUS = 429
+
 /** The server's `error_code` for 403. */
 export const FORBIDDEN_CODE = 'FORBIDDEN'
+
+/** Statuses where asking again at once cannot succeed: the session ended, access is denied, or the server asks to wait. */
+export const NO_RETRY_STATUSES = new Set([UNAUTHORIZED_STATUS, FORBIDDEN_STATUS, TOO_MANY_REQUESTS_STATUS])
