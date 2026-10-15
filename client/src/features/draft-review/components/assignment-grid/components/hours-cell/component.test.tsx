@@ -22,6 +22,11 @@ function renderCell(hours: number, editable = true) {
             otherHours={12}
             bands={BANDS}
             editable={editable}
+            draggable={false}
+            dropTarget={false}
+            onDragStart={vi.fn()}
+            onDragEnd={vi.fn()}
+            onDrop={vi.fn()}
             onCommit={vi.fn()}
           />
         </tr>

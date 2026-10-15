@@ -33,6 +33,10 @@ function renderRow(row: Assignment) {
           onRemove={vi.fn()}
           onAllocate={vi.fn()}
           onSwap={vi.fn()}
+          drag={null}
+          onDragStart={vi.fn()}
+          onDragEnd={vi.fn()}
+          onDropHours={vi.fn()}
         />
       </tbody>
     </table>,

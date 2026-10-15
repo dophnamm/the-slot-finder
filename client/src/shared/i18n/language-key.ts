@@ -142,6 +142,7 @@ export type LanguageKey = {
   'Drafts for this program’s projects staff only people in its team.': string
   'Drafts waiting for review, newest first. Re-plan drafts come from changes such as leave or a slipped phase.': string
   'Drag a row to change the order: the top project has the highest priority.': string
+  'Drag hours to another week or person.': string
   'Drag to change the order, or use the arrow keys.': string
   'e.g. 0': string
   'e.g. 120': string

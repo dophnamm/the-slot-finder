@@ -8,7 +8,7 @@ import { Button } from '@/shared/ui/button'
 import { TableCell, TableRow } from '@/shared/ui/table'
 import { cn } from '@/utils/functions'
 import { ASSIGNMENT_PERSON_CELL_CLASS, ASSIGNMENT_ROW_CLASS, PERSON_COLUMN_CLASS } from '../../constants'
-import { inWindow } from '../../utils'
+import { inWindow, moveHours } from '../../utils'
 import { HoursCell } from '../hours-cell'
 import type { AssignmentRowProps } from './types'
 import { allocationsByWeek } from './utils'
@@ -20,6 +20,10 @@ export function AssignmentRow({
   loads,
   bands,
   editable,
+  drag,
+  onDragStart,
+  onDragEnd,
+  onDropHours,
   busy,
   onSetHours,
   onToggleLock,
@@ -37,6 +41,8 @@ export function AssignmentRow({
 
   const lockLabel = allLocked ? t('Unlock hours') : t('Lock hours')
 
+  const handleDragStart = (week: string) => onDragStart({ assignment, week })
+  const handleDrop = (week: string) => onDropHours({ assignment, week })
   const handleCommit = (week: string, hours: number) => onSetHours(assignment, week, hours)
   const handleToggleLock = () => onToggleLock(assignment)
   const handleRemove = () => onRemove(assignment)
@@ -122,6 +128,17 @@ export function AssignmentRow({
           otherHours={loads.get(week)?.rest ?? 0}
           bands={bands}
           editable={editable && !busy}
+          draggable={
+            editable &&
+            !busy &&
+            (byWeek.get(week)?.hours ?? 0) > 0 &&
+            !byWeek.get(week)?.locked &&
+            inWindow(week, demand.from_week, demand.to_week)
+          }
+          dropTarget={drag !== null && moveHours(drag, { assignment, week }) !== null}
+          onDragStart={handleDragStart}
+          onDragEnd={onDragEnd}
+          onDrop={handleDrop}
           onCommit={handleCommit}
         />
       ))}
