@@ -156,6 +156,7 @@ A manager (`lead`) reads only the programs they lead or lead a project in, and t
 | GET | `/plans/drafts` | Open staffing drafts, newest first: `base_version`, `current_version`, `stale`, `auto` (a re-plan draft), `created_at`, the covered `projects` with their programs, and `unmet_count` | planner, lead (drafts whose projects all belong to programs they manage) |
 | GET | `/staffing-drafts/{id}` | Draft with diff against the baseline, plan churn and reasons; each project carries `program_lead_id` and each demand its program team as `team_ids` (`null` puts no limit); `load` gives every active person's `capacity` and `other_hours` (hours on demand outside the draft) per week and `bands` the utilization limits, so the grid can colour a week from the hours being edited | planner, lead |
 | PATCH | `/staffing-drafts/{id}/assignments` | One batch `{ add, remove, set }`: add or remove an assignment (any person to a covered demand; the server sets `kind`), change weekly hours (0 removes the week), lock or unlock; a person outside the demand's program team gets `422 PERSON_NOT_IN_TEAM`. Swap to an alternative comes later | planner, lead (own) |
+| GET | `/staffing-drafts/{id}/assignments/{assignmentId}/alternatives` | Who could take over the assignment: members of the demand's program team who hold its expertise at the required level and do not cover it yet, with `free_hours` over the demand's window (capacity minus the plan's hours), most first, at most `DRAFT_ALTERNATIVES_LIMIT`. To swap, send one `remove` and one `add` with the same weekly hours in one PATCH above; it is applied in one transaction | planner, lead (own) |
 | POST | `/staffing-drafts/{id}/accept` | Publish (`{ baseVersion }`; `409 PLAN_VERSION_CONFLICT` if the baseline changed) | planner, lead (own) |
 | POST | `/staffing-drafts/{id}/reject` | Discard a draft | planner, lead (own) |
 | GET, POST | `/scenarios` | List scenarios (newest first, with stale flag and churn), or create one from `{ name, assumptions }` (`shift_project`, `add_absence`) and compute it on a copy of the baseline | planner |
@@ -403,6 +404,7 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `UTILIZATION_UNDERUSED_BELOW` · `UTILIZATION_NEAR_FULL_FROM` | Utilization band limits (overloaded is always over 100 %) | 0.5 · 0.85 |
 | `SCOPE_LAG_THRESHOLD` | Percentage points by which Scope % may trail Time % before **behind on delivery** (not scope points) | 20 |
 | `SUSTAINED_OVERLOAD_WEEKS` | Consecutive weeks over 100 % for **sustained overload** | 3 |
+| `DRAFT_ALTERNATIVES_LIMIT` | People a staffing draft offers to swap in for an assignment | 5 |
 
 ## 9. AI assistant (later)
 
