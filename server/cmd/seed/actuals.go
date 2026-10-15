@@ -34,7 +34,7 @@ func seedActuals(database *db.PostgresDB, cfg *config.Config) (int, error) {
 	}
 	people := repositories.ProvidePersonRepository(database)
 	tx := db.ProvideTxManager(database)
-	finder := services.ProvidePersonFinder(services.ProvidePeopleService(people, tx, cfg))
+	finder := services.ProvidePersonFinder(services.ProvidePeopleService(people, tx, cfg, services.ProvideEventRecorder(repositories.ProvideChangeEventRepository(database), clk)))
 	timesheets := services.ProvideTimesheetService(repositories.ProvideActualHoursRepository(database), people,
 		repositories.ProvideProjectRepository(database), repositories.ProvidePlanRepository(database),
 		services.ProvideAuthzService(finder), tx, clk, cfg)

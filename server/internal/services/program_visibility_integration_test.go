@@ -87,7 +87,7 @@ func TestProgramVisibility_Postgres(t *testing.T) {
 	assert.ElementsMatch(t, []string{lee.ID, ada.ID, bao.ID}, visible.IDs())
 
 	teams := ProvideProgramTeamService(teamRepo, programRepo, projects, repositories.ProvidePersonRepository(pdb),
-		repositories.ProvidePlanRepository(pdb), teamAuthz)
+		repositories.ProvidePlanRepository(pdb), teamAuthz, db.ProvideTxManager(pdb), &recordedEvents{})
 	_, err = teams.List(manager, beta.ID)
 	require.NoError(t, err, "a project they lead opens the program's team")
 	_, err = teams.List(manager, gamma.ID)

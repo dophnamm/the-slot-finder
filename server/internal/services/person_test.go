@@ -211,7 +211,7 @@ func TestPeopleService_Create(t *testing.T) {
 			if tt.input != nil {
 				tt.input(&in)
 			}
-			_, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig()).Create(context.Background(), in)
+			_, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig(), &recordedEvents{}).Create(context.Background(), in)
 			if tt.wantCode == "" {
 				require.NoError(t, err)
 			} else {
@@ -234,7 +234,7 @@ func TestPeopleService_Update(t *testing.T) {
 			return p.Name == "Alex" && p.WeeklyHours == 32 && p.EndDate == nil && p.Skills == nil
 		})).Return(nil)
 
-		_, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig()).Update(context.Background(), personID, UpdatePersonInput{
+		_, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig(), &recordedEvents{}).Update(context.Background(), personID, UpdatePersonInput{
 			WeeklyHours: new(32.0),
 			EndDate:     DateChange{Set: true},
 		})
@@ -245,7 +245,7 @@ func TestPeopleService_Update(t *testing.T) {
 	t.Run("not found", func(t *testing.T) {
 		repo := new(MockPersonRepository)
 		repo.On("FindWithSkills", mock.Anything, personID).Return(nil, gorm.ErrRecordNotFound)
-		_, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig()).Update(context.Background(), personID, UpdatePersonInput{})
+		_, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig(), &recordedEvents{}).Update(context.Background(), personID, UpdatePersonInput{})
 		requireAppError(t, err, constants.PersonNotFound, http.StatusNotFound)
 	})
 }
@@ -256,7 +256,7 @@ func TestPeopleService_LinkPrincipal(t *testing.T) {
 	t.Run("already linked", func(t *testing.T) {
 		repo := new(MockPersonRepository)
 		repo.On("FindByKeycloakID", mock.Anything, "kc-1").Return(&models.Person{Name: "Alex"}, nil)
-		person, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig()).LinkPrincipal(context.Background(), principal)
+		person, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig(), &recordedEvents{}).LinkPrincipal(context.Background(), principal)
 		require.NoError(t, err)
 		assert.Equal(t, "Alex", person.Name)
 		repo.AssertNotCalled(t, "Updates", mock.Anything, mock.Anything)
@@ -270,7 +270,7 @@ func TestPeopleService_LinkPrincipal(t *testing.T) {
 		repo.On("Updates", mock.Anything, mock.MatchedBy(func(p *models.Person) bool {
 			return p.ID == personID && p.KeycloakID != nil && *p.KeycloakID == "kc-1"
 		})).Return(nil)
-		person, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig()).LinkPrincipal(context.Background(), principal)
+		person, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig(), &recordedEvents{}).LinkPrincipal(context.Background(), principal)
 		require.NoError(t, err)
 		require.NotNil(t, person.KeycloakID)
 		repo.AssertExpectations(t)
@@ -280,7 +280,7 @@ func TestPeopleService_LinkPrincipal(t *testing.T) {
 		repo := new(MockPersonRepository)
 		repo.On("FindByKeycloakID", mock.Anything, "kc-1").Return(nil, gorm.ErrRecordNotFound)
 		repo.On("FindByEmail", mock.Anything, "alex@example.test").Return(nil, gorm.ErrRecordNotFound)
-		person, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig()).LinkPrincipal(context.Background(), principal)
+		person, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig(), &recordedEvents{}).LinkPrincipal(context.Background(), principal)
 		require.NoError(t, err)
 		assert.Nil(t, person)
 	})
@@ -294,7 +294,7 @@ func TestPeopleService_ReplaceSkills(t *testing.T) {
 		{PersonID: personID, ExpertiseID: expQA, Level: 2, IsPrimary: true},
 	}).Return(nil)
 
-	_, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig()).ReplaceSkills(context.Background(), personID,
+	_, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig(), &recordedEvents{}).ReplaceSkills(context.Background(), personID,
 		[]SkillInput{{ExpertiseID: expQA, Level: 2, Primary: true}})
 	require.NoError(t, err)
 	repo.AssertExpectations(t)

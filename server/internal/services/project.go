@@ -392,6 +392,7 @@ func (s *projectService) ReplacePhases(ctx context.Context, projectID string, ph
 		rows = append(rows, row)
 	}
 	removed := missingIDs(existing, kept)
+	slips := phaseSlips(project, rows)
 
 	err = s.tx.Do(ctx, func(ctx context.Context) error {
 		inUse, err := s.projects.CountDemandsInPhases(ctx, removed)
@@ -405,7 +406,15 @@ func (s *projectService) ReplacePhases(ctx context.Context, projectID string, ph
 		if err := s.projects.DeletePhases(ctx, removed); err != nil {
 			return err
 		}
-		return s.projects.SavePhases(ctx, rows)
+		if err := s.projects.SavePhases(ctx, rows); err != nil {
+			return err
+		}
+		for _, slip := range slips {
+			if err := s.events.Record(ctx, ChangeInput{Type: constants.EventPhaseSlipped, ProjectIDs: []string{project.ID}, Payload: slip}); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 	if err != nil {
 		return nil, asAppError(err, constants.MsgProjectSaveFailed, opReplacePhases, resourcePhase)
@@ -520,11 +529,19 @@ func (s *projectService) ReplaceDemands(ctx context.Context, projectID string, d
 	}
 
 	removed := missingIDs(existing, kept)
+	changed := demandsChanged(project.Demands, rows)
 	err = s.tx.Do(ctx, func(ctx context.Context) error {
 		if err := s.projects.DeleteDemands(ctx, removed); err != nil {
 			return err
 		}
-		return s.projects.SaveDemands(ctx, rows)
+		if err := s.projects.SaveDemands(ctx, rows); err != nil {
+			return err
+		}
+		if !changed {
+			return nil
+		}
+		return s.events.Record(ctx, ChangeInput{Type: constants.EventDemandChanged, ProjectIDs: []string{project.ID},
+			Payload: DemandChange{ProjectID: project.ID, Project: project.Name}})
 	})
 	if err != nil {
 		return nil, asAppError(err, constants.MsgProjectSaveFailed, opReplaceDemands, resourceDemand)
@@ -624,4 +641,52 @@ func asAppError(err error, message, op, resource string) error {
 		return appErr
 	}
 	return errors.DatabaseError(message, err).WithOperation(op).WithResource(resource)
+}
+
+// phaseSlips lists, for each existing phase whose end week moves later, the PhaseSlipped
+// payload that UpdatePhase would record. Moved later phases are already in the new rows.
+func phaseSlips(project *models.Project, rows []models.ProjectPhase) []PhaseChange {
+	old := make(map[string]models.ProjectPhase, len(project.Phases))
+	for _, phase := range project.Phases {
+		old[phase.ID] = phase
+	}
+	var out []PhaseChange
+	for _, row := range rows {
+		before, ok := old[row.ID]
+		if !ok {
+			continue
+		}
+		if weeks := isoweek.WeeksBetween(before.EndWeek, row.EndWeek); weeks > 0 {
+			out = append(out, PhaseChange{ProjectID: project.ID, Project: project.Name, PhaseID: row.ID, Phase: row.Name,
+				OldEndWeek: before.EndWeek.String(), NewEndWeek: row.EndWeek.String(), Weeks: weeks})
+		}
+	}
+	return out
+}
+
+// demandsChanged reports whether the new rows differ from the project's demand: one added or
+// removed, or one with another expertise, phase, level, headcount, hours or profile.
+func demandsChanged(old, rows []models.Demand) bool {
+	if len(old) != len(rows) {
+		return true
+	}
+	byID := make(map[string]models.Demand, len(old))
+	for _, d := range old {
+		byID[d.ID] = d
+	}
+	for _, row := range rows {
+		d, ok := byID[row.ID]
+		if !ok || d.ExpertiseID != row.ExpertiseID || !samePhase(d.PhaseID, row.PhaseID) || d.MinLevel != row.MinLevel ||
+			d.Headcount != row.Headcount || d.TotalHours != row.TotalHours || d.Profile != row.Profile {
+			return true
+		}
+	}
+	return false
+}
+
+func samePhase(a, b *string) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return *a == *b
 }

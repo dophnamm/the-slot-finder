@@ -77,7 +77,7 @@ func seedPlans(database *db.PostgresDB, cfg *config.Config) (planResult, error) 
 	people := repositories.ProvidePersonRepository(database)
 	absences := repositories.ProvideAbsenceRepository(database)
 	tx := db.ProvideTxManager(database)
-	finder := services.ProvidePersonFinder(services.ProvidePeopleService(people, tx, cfg))
+	finder := services.ProvidePersonFinder(services.ProvidePeopleService(people, tx, cfg, services.ProvideEventRecorder(repositories.ProvideChangeEventRepository(database), clk)))
 	authz := services.ProvideAuthzService(finder)
 	teams := repositories.ProvideProgramTeamRepository(database)
 	staffing := services.ProvideStaffingService(plans, projects, people, absences, repositories.ProvideAuditRepository(database),

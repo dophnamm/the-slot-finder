@@ -66,7 +66,7 @@ func TestProgramTeams_Postgres(t *testing.T) {
 	plans := repositories.ProvidePlanRepository(pdb)
 	authz := ProvideTeamAuthzService(leadPeople{}, teamRepo)
 	teams := ProvideProgramTeamService(teamRepo, repositories.ProvideProgramRepository(pdb), repositories.ProvideProjectRepository(pdb),
-		personRepo, plans, authz)
+		personRepo, plans, authz, db.ProvideTxManager(pdb), &recordedEvents{})
 	staffing := ProvideStaffingService(plans, repositories.ProvideProjectRepository(pdb), personRepo,
 		repositories.ProvideAbsenceRepository(pdb), repositories.ProvideAuditRepository(pdb), repositories.ProvideChangeEventRepository(pdb),
 		leadPeople{}, authz, db.ProvideTxManager(pdb), clock.NewFixed(acceptedAt), testPlanningConfig(), teamRepo)

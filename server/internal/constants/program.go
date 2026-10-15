@@ -29,6 +29,9 @@ const (
 	// StatusKindProject and StatusKindProgram say what a StatusChange event is about.
 	StatusKindProject = "project"
 	StatusKindProgram = "program"
+	// TeamChangeAdded and TeamChangeRemoved say what a TeamChange event did.
+	TeamChangeAdded   = "added"
+	TeamChangeRemoved = "removed"
 )
 
 // ProjectStatuses lists every project status, e.g. for the ?status= filter.

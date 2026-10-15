@@ -4,8 +4,10 @@ import (
 	"context"
 	stderrors "errors"
 	"net/http"
+	"slices"
 
 	"the-slot-finder/server/internal/constants"
+	"the-slot-finder/server/internal/db"
 	"the-slot-finder/server/internal/errors"
 	"the-slot-finder/server/internal/models"
 	"the-slot-finder/server/internal/repositories"
@@ -39,14 +41,17 @@ type programTeamService struct {
 	people   repositories.PersonRepository
 	plans    repositories.PlanRepository
 	authz    AuthzService
+	tx       db.TxManager
+	events   EventRecorder
 }
 
 // ProvideProgramTeamService creates the program team service.
 func ProvideProgramTeamService(teams repositories.ProgramTeamRepository, programs repositories.ProgramRepository,
 	projects repositories.ProjectRepository, people repositories.PersonRepository, plans repositories.PlanRepository,
-	authz AuthzService,
+	authz AuthzService, tx db.TxManager, events EventRecorder,
 ) ProgramTeamService {
-	return &programTeamService{teams: teams, programs: programs, projects: projects, people: people, plans: plans, authz: authz}
+	return &programTeamService{teams: teams, programs: programs, projects: projects, people: people, plans: plans, authz: authz,
+		tx: tx, events: events}
 }
 
 func (s *programTeamService) List(ctx context.Context, programID string) ([]models.TeamMember, error) {
@@ -90,7 +95,18 @@ func (s *programTeamService) Add(ctx context.Context, programID, personID string
 	if _, err := s.people.FindWithSkills(ctx, personID); err != nil {
 		return notFoundOrDatabase(err, constants.PersonNotFound, constants.MsgPersonNotFound, resourcePerson, opAddTeamMember)
 	}
-	if err := s.teams.Add(ctx, &models.ProgramTeamMember{ProgramID: programID, PersonID: personID}); err != nil {
+	affected, err := s.plannableProjects(ctx, programID, opAddTeamMember)
+	if err != nil {
+		return err
+	}
+	err = s.tx.Do(ctx, func(ctx context.Context) error {
+		if err := s.teams.Add(ctx, &models.ProgramTeamMember{ProgramID: programID, PersonID: personID}); err != nil {
+			return err
+		}
+		return s.events.Record(ctx, ChangeInput{Type: constants.EventTeamChanged, ProjectIDs: affected,
+			Payload: TeamChange{ProgramID: programID, PersonID: personID, Change: constants.TeamChangeAdded}})
+	})
+	if err != nil {
 		if stderrors.Is(err, gorm.ErrDuplicatedKey) {
 			return errors.WrapError(err, constants.TeamMemberExists, constants.MsgTeamMemberExists, errors.ErrorTypeConflict,
 				http.StatusConflict).WithOperation(opAddTeamMember).WithResource(resourceTeam)
@@ -104,7 +120,19 @@ func (s *programTeamService) Remove(ctx context.Context, programID, personID str
 	if _, err := s.authz.Require(ctx, CanManageAllPrograms); err != nil {
 		return err
 	}
-	removed, err := s.teams.Remove(ctx, programID, personID)
+	affected, err := s.plannableProjects(ctx, programID, opRemoveTeamMember)
+	if err != nil {
+		return err
+	}
+	removed := false
+	err = s.tx.Do(ctx, func(ctx context.Context) error {
+		var err error
+		if removed, err = s.teams.Remove(ctx, programID, personID); err != nil || !removed {
+			return err
+		}
+		return s.events.Record(ctx, ChangeInput{Type: constants.EventTeamChanged, ProjectIDs: affected,
+			Payload: TeamChange{ProgramID: programID, PersonID: personID, Change: constants.TeamChangeRemoved}})
+	})
 	if err != nil {
 		return errors.DatabaseError(constants.MsgTeamSaveFailed, err).WithOperation(opRemoveTeamMember).WithResource(resourceTeam)
 	}
@@ -113,4 +141,20 @@ func (s *programTeamService) Remove(ctx context.Context, programID, personID str
 			http.StatusNotFound).WithOperation(opRemoveTeamMember).WithResource(resourceTeam)
 	}
 	return nil
+}
+
+// plannableProjects is the ids of the program's projects a draft may cover: the ones a team
+// change can affect.
+func (s *programTeamService) plannableProjects(ctx context.Context, programID, op string) ([]string, error) {
+	projects, err := s.projects.ListByProgram(ctx, programID)
+	if err != nil {
+		return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(op).WithResource(resourceTeam)
+	}
+	ids := make([]string, 0, len(projects))
+	for _, p := range projects {
+		if slices.Contains(constants.PlannableProjectStatuses, p.Status) {
+			ids = append(ids, p.ID)
+		}
+	}
+	return ids, nil
 }
