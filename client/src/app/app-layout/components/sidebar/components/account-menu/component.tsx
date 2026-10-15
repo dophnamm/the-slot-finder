@@ -55,7 +55,7 @@ export function AccountMenu() {
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="h-9 rounded-lg px-3" onClick={handleSignOut}>
+        <DropdownMenuItem variant="destructive" className="h-9 rounded-lg px-3" onClick={handleSignOut}>
           <LogOut />
           {t('Sign out')}
         </DropdownMenuItem>
