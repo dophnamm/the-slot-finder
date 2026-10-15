@@ -1,5 +1,6 @@
 import { generatePath } from 'react-router'
 import { ROUTES } from '@/resources/routes'
+import { Term } from '@/shared/components/term'
 import { TextLink } from '@/shared/components/text-link'
 import { useTranslation } from '@/shared/i18n'
 import { activeWarnings } from '@/shared/programs'
@@ -22,12 +23,12 @@ export function RiskProject({ project }: RiskProjectProps) {
       <div className="flex flex-wrap items-center gap-1">
         {activeWarnings(metrics).map((warning) => (
           <Badge key={warning.flag} variant={warning.badge}>
-            {t(warning.label)}
+            <Term term={warning.term}>{t(warning.label)}</Term>
           </Badge>
         ))}
         {metrics.understaffed && (
           <span className="text-xs text-muted-foreground">
-            {t('{gap} h short of {budget} h', {
+            {t('{gap} hrs short of {budget} hrs', {
               gap: Math.round(metrics.gap_hours),
               budget: Math.round(metrics.budget_hours),
             })}

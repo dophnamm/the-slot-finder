@@ -14,6 +14,7 @@ export function Risks() {
   const { data, isPending } = useRisks()
   const projects = data?.projects ?? []
   const people = data?.people ?? []
+  const sustained = data?.sustained_overload ?? []
 
   return (
     <Section
@@ -53,6 +54,22 @@ export function Risks() {
           ))}
         </ul>
       </section>
+      {sustained.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <h3 className="text-sm font-medium">{t('Sustained overload ({count})', { count: sustained.length })}</h3>
+          <ul className="flex flex-col divide-y">
+            {sustained.map((item) => (
+              <li key={item.person.id} className="py-3 text-sm text-destructive first:pt-0 last:pb-0">
+                {t('{name}: over 100 % for {weeks} weeks from {week}', {
+                  name: item.person.name,
+                  weeks: item.weeks,
+                  week: item.from_week,
+                })}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <section className="flex flex-col gap-2">
         <h3 className="text-sm font-medium">
           {isPending ? t('Overloaded people') : t('Overloaded people ({count})', { count: people.length })}

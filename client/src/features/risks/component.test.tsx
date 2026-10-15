@@ -48,6 +48,7 @@ const data: RisksData = {
       metrics: metrics({ behind_on_delivery: true, gap_hours: 0 }),
     },
   ],
+  sustained_overload: [{ person: { id: 'u2', name: 'Bao Tran' }, from_week: '2026-W45', weeks: 3 }],
   people: [
     { person: { id: 'u1', name: 'Bo' }, weeks: [{ week: '2026-W47', load: 44, capacity: 36, utilization: 1.22 }] },
   ],
@@ -68,9 +69,22 @@ describe('Risks', () => {
     expect(screen.getByText('Records Integration')).toBeTruthy()
     expect(screen.getAllByText('At risk')).toHaveLength(1)
     expect(screen.getAllByText('Understaffed')).toHaveLength(1)
-    expect(screen.getByText('80 h short of 400 h')).toBeTruthy()
+    expect(screen.getByText('80 hrs short of 400 hrs')).toBeTruthy()
     expect(screen.getByText('Behind on delivery')).toBeTruthy()
     expect(screen.getByText('Overloaded people (1)')).toBeTruthy()
-    expect(screen.getByText('W47: 44/36 h')).toBeTruthy()
+    expect(screen.getByText('W47: 44/36 hrs')).toBeTruthy()
+  })
+
+  it('lists sustained overload before single overloaded weeks', () => {
+    render(
+      <MemoryRouter>
+        <Risks />
+      </MemoryRouter>,
+    )
+    const sustained = screen.getByText('Sustained overload (1)')
+    expect(screen.getByText('Bao Tran: over 100 % for 3 weeks from 2026-W45')).toBeTruthy()
+    expect(sustained.compareDocumentPosition(screen.getByText('Overloaded people (1)'))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
   })
 })
