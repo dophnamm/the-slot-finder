@@ -109,6 +109,24 @@ type PlanChangeResponse struct {
 	Change      string    `json:"change" enums:"added,removed,changed"`
 }
 
+// DraftWeekLoadResponse is a person's capacity in a week and their hours outside the draft's demand.
+type DraftWeekLoadResponse struct {
+	PersonID string `json:"person_id"`
+	Week     string `json:"week" example:"2026-W48"`
+	// Capacity is the person's bookable hours that week.
+	Capacity float64 `json:"capacity" example:"32"`
+	// OtherHours are the hours the plan gives the person on demand this draft does not cover.
+	OtherHours float64 `json:"other_hours" example:"8"`
+}
+
+// DraftBandsResponse are the utilization limits that turn load ÷ capacity into a band.
+type DraftBandsResponse struct {
+	// UnderusedBelow: under this share of capacity the week is underused.
+	UnderusedBelow float64 `json:"underused_below" example:"0.5"`
+	// NearFullFrom: from this share up to 100 % the week is near full; over 100 % it is overloaded.
+	NearFullFrom float64 `json:"near_full_from" example:"0.85"`
+}
+
 // DraftResponse is a staffing draft for review.
 type DraftResponse struct {
 	ID     string `json:"id"`
@@ -132,6 +150,11 @@ type DraftResponse struct {
 	TriggeredBy []ChangeEventResponse `json:"triggered_by"`
 	// SupersededBy is the newer version of a re-plan draft that replaced this one.
 	SupersededBy *string `json:"superseded_by"`
+	// Bands are the limits for colouring a week; the client adds the hours of the cell it edits to
+	// OtherHours of the person's weeks in Load.
+	Bands DraftBandsResponse `json:"bands"`
+	// Load lists every active person's capacity and other hours for each week the draft spans.
+	Load []DraftWeekLoadResponse `json:"load"`
 }
 
 // OpenDraftResponse is one row of the drafts inbox, GET /plans/drafts.
@@ -157,9 +180,9 @@ func NewOpenDraftResponse(plan models.Plan, projects []models.Project, currentVe
 }
 
 // NewDraftResponse maps a draft with its projects, the weeks they span, the baseline
-// version in force, the changes against it and each program's team.
+// version in force, the changes against it, each program's team and the people's load.
 func NewDraftResponse(plan models.Plan, projects []models.Project, weeks []isoweek.Week, currentVersion int,
-	changes []models.PlanChange, events []models.ChangeEvent, teams map[string]map[string]bool,
+	changes []models.PlanChange, events []models.ChangeEvent, teams map[string]map[string]bool, load models.DraftLoad,
 ) DraftResponse {
 	covered := map[string]bool{}
 	for _, p := range projects {
@@ -193,7 +216,18 @@ func NewDraftResponse(plan models.Plan, projects []models.Project, weeks []isowe
 		Demands: newDraftDemands(projects, assigned, unmet, teams), Assignments: NewAssignmentResponses(assignments),
 		Changes: newPlanChanges(changes), HasStretch: hasStretch,
 		Auto: len(events) > 0, TriggeredBy: NewChangeEventResponses(events), SupersededBy: plan.SupersededBy,
+		Bands: DraftBandsResponse{UnderusedBelow: load.UnderusedBelow, NearFullFrom: load.NearFullFrom},
+		Load:  newDraftLoad(load.Weeks),
 	}
+}
+
+func newDraftLoad(weeks []models.PersonWeekLoad) []DraftWeekLoadResponse {
+	out := make([]DraftWeekLoadResponse, 0, len(weeks))
+	for _, w := range weeks {
+		out = append(out, DraftWeekLoadResponse{PersonID: w.PersonID, Week: w.Week.String(), Capacity: w.Capacity,
+			OtherHours: w.OtherHours})
+	}
+	return out
 }
 
 func newDraftProjects(projects []models.Project) []DraftProjectResponse {

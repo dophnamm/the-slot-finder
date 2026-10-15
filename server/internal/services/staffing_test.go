@@ -11,6 +11,7 @@ import (
 	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/dtos"
 	"the-slot-finder/server/internal/engine"
+	"the-slot-finder/server/internal/isoweek"
 	"the-slot-finder/server/internal/models"
 
 	"github.com/stretchr/testify/assert"
@@ -97,9 +98,13 @@ type staffingMocks struct {
 }
 
 func newStaffingMocks() staffingMocks {
-	return staffingMocks{plans: new(MockPlanRepository), projects: new(MockProjectRepository),
+	m := staffingMocks{plans: new(MockPlanRepository), projects: new(MockProjectRepository),
 		people: new(MockPersonRepository), absences: new(MockAbsenceRepository), audit: new(MockAuditRepository),
 		events: newEmptyEventRepository()}
+	// Showing a draft reads every active person's capacity for the load that colours its grid.
+	m.people.On("ListActive", mock.Anything).Return([]models.Person{qaPerson()}, nil).Maybe()
+	m.absences.On("ListOverlapping", mock.Anything, mock.Anything, mock.Anything).Return([]models.Absence{}, nil).Maybe()
+	return m
 }
 
 func (m staffingMocks) service() StaffingService {
@@ -180,6 +185,7 @@ func TestStaffingService_Get(t *testing.T) {
 		view, err := m.service().Get(asRole("kc-lead", constants.RoleLead), staffingDraftID)
 		require.NoError(t, err)
 		assert.Equal(t, staffingDraftID, view.Plan.ID)
+		assert.NotEmpty(t, view.Load.Weeks)
 	})
 
 	t.Run("a lead of other projects is refused", func(t *testing.T) {
@@ -498,4 +504,34 @@ func TestStaffingService_ListOpen(t *testing.T) {
 		_, err := newStaffingMocks().service().ListOpen(asRole("kc-specialist", constants.RoleSpecialist))
 		requireStatus(t, err, http.StatusForbidden)
 	})
+}
+
+func TestBuildDraftLoad(t *testing.T) {
+	w1, w2 := isoweek.Of(time.Date(2026, 11, 9, 0, 0, 0, 0, time.UTC)), isoweek.Of(time.Date(2026, 11, 16, 0, 0, 0, 0, time.UTC))
+	people := []engine.Person{
+		{ID: "ana", Capacity: map[string]float64{w1.String(): 32, w2.String(): 0}},
+		{ID: "bo", Capacity: map[string]float64{w1.String(): 40, w2.String(): 40}},
+	}
+	covered := map[string]demandInProject{"in-draft": {}}
+	hours := func(person, demand string, w isoweek.Week, h float64) models.Assignment {
+		return models.Assignment{PersonID: person, DemandID: demand, Allocations: []models.Allocation{{Week: w, Hours: h}}}
+	}
+	assignments := []models.Assignment{
+		hours("ana", "in-draft", w1, 20), // covered by the draft: the grid shows these hours itself
+		hours("ana", "elsewhere", w1, 8),
+		hours("ana", "else-too", w1, 4),
+		hours("ana", "elsewhere", w2, 6),
+	}
+
+	got := buildDraftLoad(people, assignments, covered, []isoweek.Week{w1, w2}, 0.5, 0.85)
+
+	assert.InDelta(t, 0.5, got.UnderusedBelow, hoursEpsilon)
+	assert.InDelta(t, 0.85, got.NearFullFrom, hoursEpsilon)
+	want := []models.PersonWeekLoad{
+		{PersonID: "ana", Week: w1, Capacity: 32, OtherHours: 12},
+		{PersonID: "ana", Week: w2, Capacity: 0, OtherHours: 6},
+		{PersonID: "bo", Week: w1, Capacity: 40},
+		{PersonID: "bo", Week: w2, Capacity: 40},
+	}
+	assert.Equal(t, want, got.Weeks)
 }

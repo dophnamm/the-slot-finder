@@ -97,6 +97,8 @@ type DraftView struct {
 	Events []models.ChangeEvent
 	// Teams is each program's team, by program id; a program missing from it puts no limit on who staffs it.
 	Teams map[string]map[string]bool
+	// Load is each active person's capacity and hours outside the draft per week, with the band limits.
+	Load models.DraftLoad
 }
 
 // StaffingService generates staffing drafts with the planning engine and shows them for review.
@@ -454,8 +456,61 @@ func (s *staffingService) view(ctx context.Context, id, op string) (*DraftView, 
 		return nil, err
 	}
 	_, from, to := engineDemands(projects)
-	return &DraftView{Plan: plan, Projects: projects, Weeks: isoweek.Range(from, to), BaselineVersion: baseline.Version,
-		Changes: diffPlans(baseline, plan), Events: events, Teams: teams}, nil
+	weeks := isoweek.Range(from, to)
+	load, err := s.draftLoad(ctx, plan, projects, weeks, op)
+	if err != nil {
+		return nil, err
+	}
+	return &DraftView{Plan: plan, Projects: projects, Weeks: weeks, BaselineVersion: baseline.Version,
+		Changes: diffPlans(baseline, plan), Events: events, Teams: teams, Load: load}, nil
+}
+
+// draftLoad gives every active person's capacity over the weeks and the hours the plan holds
+// for them outside the covered demand, so the grid can band a week from the hours it edits.
+func (s *staffingService) draftLoad(ctx context.Context, plan *models.Plan, projects []models.Project, weeks []isoweek.Week,
+	op string,
+) (models.DraftLoad, error) {
+	if len(weeks) == 0 {
+		return models.DraftLoad{UnderusedBelow: s.cfg.UtilizationUnderusedBelow, NearFullFrom: s.cfg.UtilizationNearFullFrom}, nil
+	}
+	people, err := s.people.ListActive(ctx)
+	if err != nil {
+		return models.DraftLoad{}, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(op).WithResource(resourceDraft)
+	}
+	absences, err := s.absences.ListOverlapping(ctx, weeks[0].Monday(), weeks[len(weeks)-1].Monday().AddDate(0, 0, daysInWeek-1))
+	if err != nil {
+		return models.DraftLoad{}, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(op).WithResource(resourceDraft)
+	}
+	return buildDraftLoad(s.enginePeople(people, absences, weeks), plan.Assignments, coveredDemand(projects), weeks,
+		s.cfg.UtilizationUnderusedBelow, s.cfg.UtilizationNearFullFrom), nil
+}
+
+// buildDraftLoad pairs each person's capacity with the hours of their assignments on demand the
+// draft does not cover; the covered demand's hours are what the grid itself shows.
+func buildDraftLoad(people []engine.Person, assignments []models.Assignment, covered map[string]demandInProject,
+	weeks []isoweek.Week, underusedBelow, nearFullFrom float64,
+) models.DraftLoad {
+	other := map[string]map[isoweek.Week]float64{}
+	for _, a := range assignments {
+		if _, in := covered[a.DemandID]; in {
+			continue
+		}
+		if other[a.PersonID] == nil {
+			other[a.PersonID] = map[isoweek.Week]float64{}
+		}
+		for _, alloc := range a.Allocations {
+			other[a.PersonID][alloc.Week] += alloc.Hours
+		}
+	}
+	load := models.DraftLoad{UnderusedBelow: underusedBelow, NearFullFrom: nearFullFrom,
+		Weeks: make([]models.PersonWeekLoad, 0, len(people)*len(weeks))}
+	for _, p := range people {
+		for _, w := range weeks {
+			load.Weeks = append(load.Weeks, models.PersonWeekLoad{PersonID: p.ID, Week: w,
+				Capacity: p.Capacity[w.String()], OtherHours: other[p.ID][w]})
+		}
+	}
+	return load
 }
 
 // diffPlans lists every person and demand whose hours differ between two plans, ordered by

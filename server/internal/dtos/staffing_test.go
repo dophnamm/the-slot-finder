@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"the-slot-finder/server/internal/isoweek"
 	"the-slot-finder/server/internal/models"
 
 	"github.com/stretchr/testify/assert"
@@ -24,7 +25,7 @@ func TestNewDraftResponse_TeamIDs(t *testing.T) {
 	}
 	teams := map[string]map[string]bool{"acme": {"bao": true, "alex": true}, "beta": {}}
 
-	got := NewDraftResponse(models.Plan{}, projects, nil, 1, nil, nil, teams)
+	got := NewDraftResponse(models.Plan{}, projects, nil, 1, nil, nil, teams, models.DraftLoad{})
 
 	require.Len(t, got.Demands, 3)
 	assert.Equal(t, []string{"alex", "bao"}, got.Demands[0].TeamIDs, "sorted team of the demand's program")
@@ -43,10 +44,22 @@ func TestNewDraftResponse_ProgramLeadID(t *testing.T) {
 		{BaseModel: models.BaseModel{ID: "p-beta"}, Program: &models.Program{Name: "Beta"}},
 	}
 
-	got := NewDraftResponse(models.Plan{}, projects, nil, 1, nil, nil, nil)
+	got := NewDraftResponse(models.Plan{}, projects, nil, 1, nil, nil, nil, models.DraftLoad{})
 
 	require.Len(t, got.Projects, 2)
 	require.NotNil(t, got.Projects[0].ProgramLeadID)
 	assert.Equal(t, lead, *got.Projects[0].ProgramLeadID, "the client shows draft actions to the program's manager")
 	assert.Nil(t, got.Projects[1].ProgramLeadID)
+}
+
+func TestNewDraftResponse_Load(t *testing.T) {
+	week := isoweek.Of(time.Date(2026, 11, 9, 0, 0, 0, 0, time.UTC))
+	load := models.DraftLoad{UnderusedBelow: 0.5, NearFullFrom: 0.85,
+		Weeks: []models.PersonWeekLoad{{PersonID: "ana", Week: week, Capacity: 32, OtherHours: 12}}}
+
+	got := NewDraftResponse(models.Plan{}, nil, nil, 1, nil, nil, nil, load)
+
+	assert.Equal(t, DraftBandsResponse{UnderusedBelow: 0.5, NearFullFrom: 0.85}, got.Bands)
+	assert.Equal(t, []DraftWeekLoadResponse{{PersonID: "ana", Week: week.String(), Capacity: 32, OtherHours: 12}}, got.Load)
+	assert.NotNil(t, NewDraftResponse(models.Plan{}, nil, nil, 1, nil, nil, nil, models.DraftLoad{}).Load)
 }

@@ -89,6 +89,23 @@ type PlanChange struct {
 	After  float64
 }
 
+// PersonWeekLoad is one person's capacity in a week and the hours the plan gives them outside
+// a draft's covered demand. It is computed for review, not stored.
+type PersonWeekLoad struct {
+	PersonID   string
+	Week       isoweek.Week
+	Capacity   float64
+	OtherHours float64
+}
+
+// DraftLoad is what a draft grid needs to colour its cells: every active person's weekly load
+// outside the draft, and the utilization limits that turn load into a band.
+type DraftLoad struct {
+	UnderusedBelow float64
+	NearFullFrom   float64
+	Weeks          []PersonWeekLoad
+}
+
 // Assignment is one person covering one demand in a plan, with weekly allocations.
 type Assignment struct {
 	BaseModel
