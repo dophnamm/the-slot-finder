@@ -313,9 +313,9 @@ func (p *planner) placeRemainder(d Demand, left float64, qualified []*Person) fl
 // comes first, then a primary-expertise match, then the higher score, then the lower id.
 func (p *planner) rank(d Demand, need float64, qualified []*Person, skip map[string]bool, mode layoutMode) []candidate {
 	var out []candidate
-	holders, cap := p.holders(d.ID), max(1, d.Headcount)
+	holders, seats := p.holders(d.ID), max(1, d.Headcount)
 	for _, person := range qualified {
-		if skip[person.ID] || (holders >= cap && !p.holds(person.ID, d.ID)) {
+		if skip[person.ID] || (holders >= seats && !p.holds(person.ID, d.ID)) {
 			continue
 		}
 		hours := flatLayout(need, p.freeHours(person, d), p.policy.MinHoursPerWeek, p.policy.HourStep, mode)
