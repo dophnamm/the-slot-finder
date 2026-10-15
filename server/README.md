@@ -96,7 +96,7 @@ Files per module follow the pattern `handlers/<module>.go`, `services/<module>.g
 
 ## 3. API (REST/JSON)
 
-All paths below are under **`/api/v1`**. Every endpoint except health checks requires a Keycloak JWT (`Authorization: Bearer`); unsafe methods also need `X-CSRF-Token`. The Server checks permissions on every call: the role through `RequireRole` in the router, and per-program rules ("lead (own)", internal assistant) in the service. The `lead` role is shown as **Manager**: "lead (own)" means the manager of that program. A manager sees only the people in the teams of the programs they manage, plus themselves ("lead (team)" below); `AuthzService.VisiblePeople` answers that for the people list and detail, schedules, the heatmap and the risks.
+All paths below are under **`/api/v1`**. Every endpoint except health checks requires a Keycloak JWT (`Authorization: Bearer`); unsafe methods also need `X-CSRF-Token`. The Server checks permissions on every call: the role through `RequireRole` in the router, and per-program rules ("lead (own)") in the service. The `lead` role is shown as **Manager**: "lead (own)" means the manager of that program. A manager sees only the people in the teams of the programs they manage, plus themselves ("lead (team)" below); `AuthzService.VisiblePeople` answers that for the people list and detail, schedules, the heatmap and the risks.
 
 **Rate limits.** Every request counts against `RATE_LIMIT` per `RATE_LIMIT_DURATION` for its client IP. The routes that run the planning engine, read an uploaded file or fetch a URL also count against `RATE_LIMIT_HEAVY` per `RATE_LIMIT_HEAVY_DURATION` for each signed-in user on each route: `POST /staffing-drafts`, `POST /scenarios`, `POST /scenarios/{id}/rerun`, `POST /timesheets/import`, `POST /holidays/import`, `PUT /people/{id}/calendar-feed` and `POST /people/{id}/calendar-feed/sync`. Over either limit the Server answers `429 RATE_LIMIT_EXCEEDED`, with a `Retry-After` header and `{ limit, window, retry_after }` in `data` (`retry_after` in seconds). The counters live in memory, one set per Server instance.
 
@@ -128,11 +128,11 @@ A manager (`lead`) reads only the programs they lead or lead a project in, and t
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
 | GET, POST | `/programs` | List or create programs | planner, lead |
-| GET | `/programs/{id}` | Program record: brief, timeline, status | planner, lead, internal assistant |
+| GET | `/programs/{id}` | Program record: brief, timeline, status | planner, lead |
 | PATCH | `/programs/{id}` | Edit a program. Moving the end date emits `ProgramSlipped` | planner, lead (own) |
 | POST | `/programs/{id}/actions/{hold\|resume\|start-closing\|close\|cancel}` | Change program state through an action. `cancel` also cancels the program's open projects | planner, lead (own) |
-| GET | `/programs/{id}/overview` | Header metrics (Time, Scope, Planned burn, Burn from actual hours, Staffing with warnings), cost figures (budget, planned, planned to date, actual, forecast, gap; EAC hours later), staffing by expertise | planner, lead, internal assistant |
-| GET | `/programs/{id}/projects` | Projects tab: rows in priority order with a `metrics` object (Time / Scope / Planned burn / Burn / Staffing and warnings, and the baseline hours planned next week and in the next three weeks: `next_week_hours`, `next_three_weeks_hours`); next milestone later | planner, lead, internal assistant |
+| GET | `/programs/{id}/overview` | Header metrics (Time, Scope, Planned burn, Burn from actual hours, Staffing with warnings), cost figures (budget, planned, planned to date, actual, forecast, gap; EAC hours later), staffing by expertise | planner, lead |
+| GET | `/programs/{id}/projects` | Projects tab: rows in priority order with a `metrics` object (Time / Scope / Planned burn / Burn / Staffing and warnings, and the baseline hours planned next week and in the next three weeks: `next_week_hours`, `next_three_weeks_hours`); next milestone later | planner, lead |
 | POST | `/programs/{id}/projects` | Add a project to the program; it goes last in the priority order unless `priority` is sent | planner, lead (own) |
 | PUT | `/programs/{id}/project-order` | Set the priority order: `{ project_ids }` lists every project of the program, highest priority first, and they get priority 1..N. `422 PROJECT_ORDER_MISMATCH` when the list is not exactly the program's projects | planner, lead (own) |
 | GET | `/programs/{id}/members` | The Programs list preview: everyone with baseline hours on the program's projects, most hours first, with hours per expertise and kind, first and last week, and projects (overall utilization later) | planner, lead |
@@ -143,7 +143,7 @@ A manager (`lead`) reads only the programs they lead or lead a project in, and t
 | GET | `/projects/{id}` | Project record with its phases, its demand (each row with the weeks it may be staffed in) and the program's lead | planner, lead |
 | PATCH | `/projects/{id}` | Edit a project, including `scope_points`, `done_points` and `confidence`. Moving the deadline emits `ProjectSlipped` | planner, lead (own) |
 | POST | `/projects/{id}/actions/{hold\|resume\|complete\|cancel}` | Change project state through an action | planner, lead (own) |
-| GET, PUT | `/projects/{id}/phases` | Ordered phases of a project (PUT replaces the whole list; removing a phase that still has demand gets `409 PHASE_IN_USE`) | planner, lead (own); GET also internal assistant |
+| GET, PUT | `/projects/{id}/phases` | Ordered phases of a project (PUT replaces the whole list; removing a phase that still has demand gets `409 PHASE_IN_USE`) | planner, lead (own) |
 | PATCH | `/phases/{id}` | Edit a phase. Moving its end week later shifts every later phase by the same weeks and emits `PhaseSlipped`. Returns every phase it changed | planner, lead (own) |
 | PUT | `/projects/{id}/demands` | Staffing demand: budget hours per expertise and level, each with an optional `phase_id`, a `profile`, required and preferred tags, and an optional preferred person | planner, lead (own) |
 
@@ -402,10 +402,14 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `ALERT_HORIZON_WEEKS` | A deadline this close turns a gap into **at risk** | 4 |
 | `UTILIZATION_UNDERUSED_BELOW` · `UTILIZATION_NEAR_FULL_FROM` | Utilization band limits (overloaded is always over 100 %) | 0.5 · 0.85 |
 | `SCOPE_LAG_THRESHOLD` | Percentage points by which Scope % may trail Time % before **behind on delivery** (not scope points) | 20 |
-| `EAC_MIN_SCOPE_PERCENT` | Scope % needed before EAC hours is shown | 10 |
 | `SUSTAINED_OVERLOAD_WEEKS` | Consecutive weeks over 100 % for **sustained overload** | 3 |
-| `BENCH_WEEKS` | Weeks ahead a person must stay underused to be on the bench list | 4 |
-| `FTE_WEEKLY_HOURS` | Hours in one FTE for capacity-forecast signals | 40 |
+
+## 9. AI assistant (later)
+
+**Later** settings (no config field yet):
+
+| Setting | Purpose | Default |
+|---|---|---|
 | `AI_ENABLED` | Turns the AI assistant (later) on | false |
 | `AI_PROVIDER` | Which LLM provider implementation to use | gemini |
 | `AI_API_KEY` | The provider's API key. A secret: never logged, never sent to the Client | empty |
@@ -416,7 +420,13 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `AI_UPLOAD_MAX_BYTES` | Largest document accepted by intake extraction | 5MB |
 | `AI_CHAT_MAX_TURNS` | Conversation turns sent with a chat message; older ones are dropped | 20 |
 
-## 9. AI assistant (later)
+**Later** settings for the capacity forecast and EAC (no config field yet):
+
+| Setting | Purpose | Default |
+|---|---|---|
+| `EAC_MIN_SCOPE_PERCENT` | Scope % needed before EAC hours is shown | 10 |
+| `BENCH_WEEKS` | Weeks ahead a person must stay underused to be on the bench list | 4 |
+| `FTE_WEEKLY_HOURS` | Hours in one FTE for capacity-forecast signals | 40 |
 
 Not in the MVP: it stays off until `AI_API_KEY` is set and the data policy question below is approved. The principle, capabilities and boundaries are in the [root README, section 15](../README.md#15-ai-assistant-later).
 
