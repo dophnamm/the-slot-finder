@@ -42,5 +42,5 @@ export function activeWarnings(metrics: ProgressMetrics) {
 export function burnMetric(metrics: ProgressMetrics): BurnMetric {
   return metrics.burn_percent === null
     ? { label: BURN_LABELS.planned, term: 'plannedBurnPercent', value: metrics.planned_burn_percent }
-    : { label: BURN_LABELS.actual, value: metrics.burn_percent }
+    : { label: BURN_LABELS.actual, term: 'burnPercent', value: metrics.burn_percent }
 }

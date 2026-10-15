@@ -59,8 +59,13 @@ export function MetricsCard({ overview }: MetricsCardProps) {
       contentClassName="gap-5"
     >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricBar label={t('Time')} value={metrics.time_percent} warning={metrics.past_end} />
-        <MetricBar label={t('Scope')} value={metrics.scope_percent} warning={metrics.behind_on_delivery} />
+        <MetricBar label={t('Time')} term="timePercent" value={metrics.time_percent} warning={metrics.past_end} />
+        <MetricBar
+          label={t('Scope')}
+          term="scopePercent"
+          value={metrics.scope_percent}
+          warning={metrics.behind_on_delivery}
+        />
         <MetricBar label={t(burn.label)} term={burn.term} value={burn.value} />
         <MetricBar
           label={t('Staffing')}
