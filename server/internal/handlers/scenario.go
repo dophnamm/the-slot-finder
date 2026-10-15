@@ -32,6 +32,7 @@ func ProvideScenarioHandler(scenarios services.ScenarioService, validate *valida
 // @Param body body dtos.CreateScenarioRequest true "Name and assumptions"
 // @Success 201 {object} object{meta=dtos.Meta,data=dtos.ScenarioDetailResponse}
 // @Failure 400 {object} object{meta=dtos.Meta}
+// @Failure 429 {object} object{meta=dtos.Meta,data=dtos.RateLimitResponse}
 // @Router /scenarios [post]
 func (h *ScenarioHandler) Create(c *echo.Context) error {
 	var req dtos.CreateScenarioRequest
@@ -107,6 +108,7 @@ func (h *ScenarioHandler) Get(c *echo.Context) error {
 // @Param id path string true "Scenario id"
 // @Success 200 {object} object{meta=dtos.Meta,data=dtos.ScenarioDetailResponse}
 // @Failure 404 {object} object{meta=dtos.Meta}
+// @Failure 429 {object} object{meta=dtos.Meta,data=dtos.RateLimitResponse}
 // @Router /scenarios/{id}/rerun [post]
 func (h *ScenarioHandler) Rerun(c *echo.Context) error {
 	id, ok := h.pathID(c)

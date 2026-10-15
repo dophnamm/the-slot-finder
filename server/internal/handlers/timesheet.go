@@ -76,6 +76,7 @@ func (h *TimesheetHandler) Template(c *echo.Context) error {
 // @Failure 400 {object} object{meta=dtos.Meta,data=object{problems=[]services.RowProblem}}
 // @Failure 403 {object} object{meta=dtos.Meta}
 // @Failure 413 {object} object{meta=dtos.Meta}
+// @Failure 429 {object} object{meta=dtos.Meta,data=dtos.RateLimitResponse}
 // @Router /timesheets/import [post]
 func (h *TimesheetHandler) Import(c *echo.Context) error {
 	header, err := c.FormFile(constants.TimesheetFormField)

@@ -60,6 +60,7 @@ func (h *CalendarFeedHandler) Get(c *echo.Context) error {
 // @Failure 400 {object} object{meta=dtos.Meta}
 // @Failure 403 {object} object{meta=dtos.Meta}
 // @Failure 503 {object} object{meta=dtos.Meta}
+// @Failure 429 {object} object{meta=dtos.Meta,data=dtos.RateLimitResponse}
 // @Router /people/{id}/calendar-feed [put]
 func (h *CalendarFeedHandler) Connect(c *echo.Context) error {
 	personID, ok := h.pathID(c)
@@ -113,6 +114,7 @@ func (h *CalendarFeedHandler) Disconnect(c *echo.Context) error {
 // @Success 200 {object} object{meta=dtos.Meta,data=dtos.CalendarFeedResponse}
 // @Failure 403 {object} object{meta=dtos.Meta}
 // @Failure 404 {object} object{meta=dtos.Meta}
+// @Failure 429 {object} object{meta=dtos.Meta,data=dtos.RateLimitResponse}
 // @Router /people/{id}/calendar-feed/sync [post]
 func (h *CalendarFeedHandler) Sync(c *echo.Context) error {
 	personID, ok := h.pathID(c)
