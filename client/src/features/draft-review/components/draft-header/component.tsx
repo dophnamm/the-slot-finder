@@ -5,8 +5,10 @@ import { ROUTES } from '@/resources/routes'
 import { useCurrentUser } from '@/shared/auth'
 import { EventSummary } from '@/shared/components/event-summary'
 import { Section } from '@/shared/components/section'
+import { Term } from '@/shared/components/term'
 import { TextLink } from '@/shared/components/text-link'
 import { useTranslation } from '@/shared/i18n'
+import { confirm } from '@/shared/stores/confirm-store'
 import {
   canStaff,
   type Draft,
@@ -41,22 +43,26 @@ export function DraftHeader({ draft, editable }: DraftHeaderProps) {
   const handleAccepted = () => toast.success(t('Draft accepted. It is now the baseline.'))
   const handleRejected = () => toast.success(t('Draft rejected.'))
   const handleOpen = (next: Draft) => navigate(generatePath(ROUTES.staffingDraft, { id: next.id }))
-  const handleAccept = () => {
-    if (!window.confirm(t('Accept this staffing draft? It becomes the baseline everyone plans against.'))) return
+  const handleAccept = async () => {
     const confirmStretch = draft.has_stretch
-    if (
-      confirmStretch &&
-      !window.confirm(
-        t(
-          'This draft has stretch assignments: people below the minimum level or without the expertise. Accept them anyway?',
-        ),
-      )
-    )
-      return
+    const confirmed = await confirm({
+      title: t('Accept this staffing draft?'),
+      description: t('It becomes the baseline everyone plans against.'),
+      warning: confirmStretch
+        ? t('This draft has stretch assignments: people below the minimum level or without the expertise.')
+        : undefined,
+      confirmLabel: t('Accept'),
+    })
+    if (!confirmed) return
     accept.mutate({ base_version: draft.base_version, confirm_stretch: confirmStretch }, { onSuccess: handleAccepted })
   }
-  const handleReject = () => {
-    if (!window.confirm(t('Reject this staffing draft?'))) return
+  const handleReject = async () => {
+    const confirmed = await confirm({
+      title: t('Reject this staffing draft?'),
+      confirmLabel: t('Reject'),
+      destructive: true,
+    })
+    if (!confirmed) return
     reject.mutate(undefined, { onSuccess: handleRejected })
   }
   const handleRegenerate = () =>
@@ -70,10 +76,14 @@ export function DraftHeader({ draft, editable }: DraftHeaderProps) {
       card
       title={
         <>
-          {t('Staffing draft')}
+          <Term term="staffingDraft">{t('Staffing draft')}</Term>
           <Badge variant={PLAN_STATUS_BADGE[draft.status]}>{t(PLAN_STATUS_LABELS[draft.status])}</Badge>
           {draft.auto && <Badge variant="violet">{t('Re-plan')}</Badge>}
-          {draft.has_stretch && <Badge variant="red">{t('Has stretch')}</Badge>}
+          {draft.has_stretch && (
+            <Badge variant="red">
+              <Term term="stretch">{t('Has stretch')}</Term>
+            </Badge>
+          )}
         </>
       }
       description={

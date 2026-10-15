@@ -1,17 +1,19 @@
 import { UserX } from 'lucide-react'
-import { Fragment } from 'react'
+import { Fragment, useState } from 'react'
+import { toast } from 'sonner'
 import { Section } from '@/shared/components/section'
 import { TableEmpty } from '@/shared/components/table-empty'
 import { useTranslation } from '@/shared/i18n'
-import { type Assignment, useEditDraft } from '@/shared/staffing'
+import { type Assignment, type DraftEdit, useEditDraft } from '@/shared/staffing'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 import { cn, formatIsoWeekRange, shortWeekLabel } from '@/utils/functions'
 import { useStaffablePeople } from '../../use-staffable-people'
+import { AllocateHoursDialog } from './components/allocate-hours-dialog'
 import { AssignmentRow } from './components/assignment-row'
 import { GroupHeaderRow } from './components/group-header-row'
 import { LABEL_COLUMNS, PERSON_COLUMN_CLASS, WEEK_COLUMN_CLASS } from './constants'
 import type { AssignmentGridProps } from './types'
-import { groupByDemand, lockChanges } from './utils'
+import { groupByDemand, inWindow, lockChanges } from './utils'
 
 /** Person × week hours, grouped by demand; planners edit hours, lock weeks, add and remove people. */
 export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
@@ -19,11 +21,27 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
   const edit = useEditDraft(draft.id)
   const { data: people = [], isPending: peopleLoading } = useStaffablePeople(editable)
   const groups = groupByDemand(draft)
+  const [allocating, setAllocating] = useState<Assignment | null>(null)
+  const allocateWeeks = allocating
+    ? draft.weeks.filter((week) => inWindow(week, allocating.demand.from_week, allocating.demand.to_week))
+    : []
 
   const handleSetHours = (assignment: Assignment, week: string, hours: number) =>
     edit.mutate({ set: [{ assignment_id: assignment.id, week, hours }] })
   const handleToggleLock = (assignment: Assignment) => edit.mutate({ set: lockChanges(assignment) })
   const handleRemove = (assignment: Assignment) => edit.mutate({ remove: [assignment.id] })
+  const handleAllocate = (assignment: Assignment) => setAllocating(assignment)
+  const handleAllocateCancel = () => setAllocating(null)
+  const handleAllocateSave = (changes: NonNullable<DraftEdit['set']>) =>
+    edit.mutate(
+      { set: changes },
+      {
+        onSuccess: () => {
+          setAllocating(null)
+          toast.success(t('Hours allocated.'))
+        },
+      },
+    )
   const handleAdd = (demandId: string, personId: string) =>
     edit.mutate({ add: [{ person_id: personId, demand_id: demandId, allocations: [] }] })
 
@@ -70,6 +88,7 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
                   onSetHours={handleSetHours}
                   onToggleLock={handleToggleLock}
                   onRemove={handleRemove}
+                  onAllocate={handleAllocate}
                 />
               ))}
             </Fragment>
@@ -83,6 +102,15 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
           )}
         </TableBody>
       </Table>
+      {allocating && (
+        <AllocateHoursDialog
+          assignment={allocating}
+          weeks={allocateWeeks}
+          busy={edit.isPending}
+          onSave={handleAllocateSave}
+          onCancel={handleAllocateCancel}
+        />
+      )}
     </Section>
   )
 }
