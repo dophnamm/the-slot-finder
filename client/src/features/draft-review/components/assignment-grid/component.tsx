@@ -11,6 +11,7 @@ import { useStaffablePeople } from '../../use-staffable-people'
 import { AllocateHoursDialog } from './components/allocate-hours-dialog'
 import { AssignmentRow } from './components/assignment-row'
 import { GroupHeaderRow } from './components/group-header-row'
+import { SwapPersonDialog } from './components/swap-person-dialog'
 import { LABEL_COLUMNS, PERSON_COLUMN_CLASS, WEEK_COLUMN_CLASS } from './constants'
 import type { AssignmentGridProps } from './types'
 import { groupByDemand, inWindow, lockChanges, weekLoads } from './utils'
@@ -22,6 +23,7 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
   const { data: people = [], isPending: peopleLoading } = useStaffablePeople(editable)
   const groups = groupByDemand(draft)
   const [allocating, setAllocating] = useState<Assignment | null>(null)
+  const [swapping, setSwapping] = useState<Assignment | null>(null)
   const allocateWeeks = allocating
     ? draft.weeks.filter((week) => inWindow(week, allocating.demand.from_week, allocating.demand.to_week))
     : []
@@ -42,6 +44,31 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
         },
       },
     )
+  const handleSwap = (assignment: Assignment) => setSwapping(assignment)
+  const handleSwapCancel = () => setSwapping(null)
+  const handleSwapChoose = (personId: string) => {
+    if (!swapping) return
+    const from = swapping.person.name
+    edit.mutate(
+      {
+        remove: [swapping.id],
+        add: [
+          {
+            person_id: personId,
+            demand_id: swapping.demand.id,
+            allocations: swapping.allocations.map(({ week, hours }) => ({ week, hours })),
+          },
+        ],
+      },
+      {
+        onSuccess: (updated) => {
+          const to = updated.assignments.find((a) => a.demand.id === swapping.demand.id && a.person.id === personId)
+          setSwapping(null)
+          toast.success(t('Swapped {from} for {to}.', { from, to: to?.person.name ?? '' }))
+        },
+      },
+    )
+  }
   const handleAdd = (demandId: string, personId: string) =>
     edit.mutate({ add: [{ person_id: personId, demand_id: demandId, allocations: [] }] })
 
@@ -91,6 +118,7 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
                   onToggleLock={handleToggleLock}
                   onRemove={handleRemove}
                   onAllocate={handleAllocate}
+                  onSwap={handleSwap}
                 />
               ))}
             </Fragment>
@@ -111,6 +139,15 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
           busy={edit.isPending}
           onSave={handleAllocateSave}
           onCancel={handleAllocateCancel}
+        />
+      )}
+      {swapping && (
+        <SwapPersonDialog
+          draftId={draft.id}
+          assignment={swapping}
+          busy={edit.isPending}
+          onChoose={handleSwapChoose}
+          onCancel={handleSwapCancel}
         />
       )}
     </Section>

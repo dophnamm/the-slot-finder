@@ -1,4 +1,4 @@
-import { CalendarRange, Lock, LockOpen, Trash2 } from 'lucide-react'
+import { ArrowLeftRight, CalendarRange, Lock, LockOpen, Trash2 } from 'lucide-react'
 import { IconHint } from '@/shared/components/icon-hint'
 import { Term } from '@/shared/components/term'
 import { useTranslation } from '@/shared/i18n'
@@ -25,12 +25,14 @@ export function AssignmentRow({
   onToggleLock,
   onRemove,
   onAllocate,
+  onSwap,
 }: AssignmentRowProps) {
   const { t } = useTranslation()
   const byWeek = allocationsByWeek(assignment)
   const { demand } = assignment
   const reason = assignment.reason.join(' · ')
   const stretch = assignment.kind === STRETCH_KIND
+  const anyLocked = assignment.allocations.some((alloc) => alloc.locked)
   const allLocked = assignment.allocations.length > 0 && assignment.allocations.every((alloc) => alloc.locked)
 
   const lockLabel = allLocked ? t('Unlock hours') : t('Lock hours')
@@ -39,6 +41,7 @@ export function AssignmentRow({
   const handleToggleLock = () => onToggleLock(assignment)
   const handleRemove = () => onRemove(assignment)
   const handleAllocate = () => onAllocate(assignment)
+  const handleSwap = () => onSwap(assignment)
 
   return (
     <TableRow className={ASSIGNMENT_ROW_CLASS}>
@@ -69,6 +72,17 @@ export function AssignmentRow({
                   onClick={handleAllocate}
                 >
                   <CalendarRange />
+                </Button>
+              </IconHint>
+              <IconHint label={t('Swap person')}>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t('Swap person')}
+                  disabled={busy || stretch || anyLocked}
+                  onClick={handleSwap}
+                >
+                  <ArrowLeftRight />
                 </Button>
               </IconHint>
               <IconHint label={lockLabel}>
