@@ -79,6 +79,30 @@ definitions:
         example: 2026-W42
         type: string
     type: object
+  dtos.AlternativeResponse:
+    properties:
+      capacity_hours:
+        example: 120
+        type: number
+      free_hours:
+        description: FreeHours is the person's capacity minus the plan's hours over
+          the demand's window.
+        example: 48
+        type: number
+      kind:
+        enum:
+        - primary
+        - cross_expertise
+        type: string
+      person:
+        $ref: '#/definitions/dtos.PersonRef'
+      reason:
+        description: Reason says why their skill fits the demand, as a proposal words
+          it.
+        items:
+          type: string
+        type: array
+    type: object
   dtos.AssignmentDemandResponse:
     properties:
       expertise:
@@ -4309,6 +4333,56 @@ paths:
       security:
       - BearerAuth: []
       summary: Change a staffing draft
+      tags:
+      - Staffing drafts
+  /staffing-drafts/{id}/assignments/{assignmentId}/alternatives:
+    get:
+      description: Members of the demand's program team who hold its expertise at
+        the required level and do not cover it yet, with the hours they have free
+        over the demand's window, most first. At most DRAFT_ALTERNATIVES_LIMIT. To
+        swap, send one remove and one add in the same PATCH of the draft's assignments.
+      parameters:
+      - description: Draft id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Assignment id
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/dtos.AlternativeResponse'
+                type: array
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: People who could take over an assignment
       tags:
       - Staffing drafts
   /staffing-drafts/{id}/reject:

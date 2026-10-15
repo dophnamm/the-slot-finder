@@ -3658,6 +3658,80 @@ const docTemplate = `{
                 }
             }
         },
+        "/staffing-drafts/{id}/assignments/{assignmentId}/alternatives": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Members of the demand's program team who hold its expertise at the required level and do not cover it yet, with the hours they have free over the demand's window, most first. At most DRAFT_ALTERNATIVES_LIMIT. To swap, send one remove and one add in the same PATCH of the draft's assignments.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Staffing drafts"
+                ],
+                "summary": "People who could take over an assignment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Draft id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Assignment id",
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/dtos.AlternativeResponse"
+                                    }
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/staffing-drafts/{id}/reject": {
             "post": {
                 "security": [
@@ -3986,6 +4060,37 @@ const docTemplate = `{
                 "week": {
                     "type": "string",
                     "example": "2026-W42"
+                }
+            }
+        },
+        "dtos.AlternativeResponse": {
+            "type": "object",
+            "properties": {
+                "capacity_hours": {
+                    "type": "number",
+                    "example": 120
+                },
+                "free_hours": {
+                    "description": "FreeHours is the person's capacity minus the plan's hours over the demand's window.",
+                    "type": "number",
+                    "example": 48
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "primary",
+                        "cross_expertise"
+                    ]
+                },
+                "person": {
+                    "$ref": "#/definitions/dtos.PersonRef"
+                },
+                "reason": {
+                    "description": "Reason says why their skill fits the demand, as a proposal words it.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
