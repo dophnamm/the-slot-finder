@@ -1,0 +1,1 @@
+export { ScopePoints } from './component'
