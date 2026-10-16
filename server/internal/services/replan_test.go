@@ -117,7 +117,7 @@ func TestReplanService_RunOnce(t *testing.T) {
 		events.AssertExpectations(t)
 	})
 
-	t.Run("a failed batch counts an attempt on every claimed event", func(t *testing.T) {
+	t.Run("a single failed event counts an attempt on that event only", func(t *testing.T) {
 		events, plans := new(MockChangeEventRepository), new(MockPlanRepository)
 		events.On("LockReplanning", mock.Anything).Return(nil)
 		events.On("ClaimPending", mock.Anything, eventTime, cutoff, 50).Return([]models.ChangeEvent{leave}, nil)
@@ -126,6 +126,32 @@ func TestReplanService_RunOnce(t *testing.T) {
 		n, err := newReplanService(plans, events, nil).RunOnce(t.Context())
 		require.Error(t, err)
 		assert.Equal(t, 1, n)
+		events.AssertExpectations(t)
+	})
+
+	t.Run("a failed batch is retried one event at a time, then the batch size returns", func(t *testing.T) {
+		second := models.ChangeEvent{BaseModel: models.BaseModel{ID: "e2"}, Type: leave.Type, Payload: leave.Payload}
+		events, plans := new(MockChangeEventRepository), new(MockPlanRepository)
+		events.On("LockReplanning", mock.Anything).Return(nil)
+		events.On("ClaimPending", mock.Anything, eventTime, cutoff, 50).Return([]models.ChangeEvent{leave, second, leave}, nil).Once()
+		events.On("ClaimPending", mock.Anything, eventTime, cutoff, 1).Return([]models.ChangeEvent{second}, nil).Once()
+		events.On("ClaimPending", mock.Anything, eventTime, cutoff, 50).Return([]models.ChangeEvent{}, nil).Once()
+		plans.On("FindBaseline", mock.Anything).Return(nil, stderrors.New("boom")).Once()
+		plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(1), nil).Once()
+		plans.On("FindOpenAutoDraft", mock.Anything, 1).Return(nil, gorm.ErrRecordNotFound)
+		events.On("Finish", mock.Anything, "e2", constants.EventStatusNoImpact, (*string)(nil), []string{}).Return(nil)
+		svc := newReplanService(plans, events, new(MockProjectRepository))
+
+		_, err := svc.RunOnce(t.Context())
+		require.Error(t, err)
+		events.AssertNotCalled(t, "RecordFailure", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+
+		n, err := svc.RunOnce(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, 1, n)
+
+		_, err = svc.RunOnce(t.Context())
+		require.NoError(t, err)
 		events.AssertExpectations(t)
 	})
 
