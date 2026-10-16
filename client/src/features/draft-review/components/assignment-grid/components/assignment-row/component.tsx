@@ -11,7 +11,7 @@ import { ASSIGNMENT_PERSON_CELL_CLASS, ASSIGNMENT_ROW_CLASS, PERSON_COLUMN_CLASS
 import { inWindow, moveHours } from '../../utils'
 import { HoursCell } from '../hours-cell'
 import type { AssignmentRowProps } from './types'
-import { allocationsByWeek } from './utils'
+import { allocationsByWeek, lockBlockedReason, swapBlockedReason } from './utils'
 
 /** One person on one demand: kind, reasons, weekly hours, lock and remove. */
 export function AssignmentRow({
@@ -40,6 +40,8 @@ export function AssignmentRow({
   const allLocked = assignment.allocations.length > 0 && assignment.allocations.every((alloc) => alloc.locked)
 
   const lockLabel = allLocked ? t('Unlock hours') : t('Lock hours')
+  const swapReason = swapBlockedReason(busy, stretch, anyLocked)
+  const lockReason = lockBlockedReason(busy, stretch, assignment.allocations.length > 0)
 
   const handleDragStart = (week: string) => onDragStart({ assignment, week })
   const handleDrop = (week: string) => onDropHours({ assignment, week })
@@ -80,27 +82,32 @@ export function AssignmentRow({
                   <CalendarRange />
                 </Button>
               </IconHint>
-              <IconHint label={t('Swap person')}>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={t('Swap person')}
-                  disabled={busy || stretch || anyLocked}
-                  onClick={handleSwap}
-                >
-                  <ArrowLeftRight />
-                </Button>
+              <IconHint label={swapReason ? t(swapReason) : t('Swap person')}>
+                {/* A disabled button gets no pointer events, so the hint sits on the wrapper. */}
+                <span className="inline-flex">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={t('Swap person')}
+                    disabled={swapReason !== null}
+                    onClick={handleSwap}
+                  >
+                    <ArrowLeftRight />
+                  </Button>
+                </span>
               </IconHint>
-              <IconHint label={lockLabel}>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={lockLabel}
-                  disabled={busy || stretch || assignment.allocations.length === 0}
-                  onClick={handleToggleLock}
-                >
-                  {allLocked ? <Lock /> : <LockOpen />}
-                </Button>
+              <IconHint label={lockReason ? t(lockReason) : lockLabel}>
+                <span className="inline-flex">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={lockLabel}
+                    disabled={lockReason !== null}
+                    onClick={handleToggleLock}
+                  >
+                    {allLocked ? <Lock /> : <LockOpen />}
+                  </Button>
+                </span>
               </IconHint>
               <IconHint label={t('Remove from the draft')}>
                 <Button
