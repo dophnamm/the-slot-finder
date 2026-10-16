@@ -89,8 +89,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  /* The accent: the blue that links already use, so buttons, links and focus share one colour. */
-  --primary: oklch(0.5 0.17 255);
+  /* The accent blue (#3FA6EE); links use a darker shade of it so the text stays readable. */
+  --primary: #3fa6ee;
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -103,12 +103,12 @@
   --healthy: oklch(0.723 0.219 149.579);
   --underused: oklch(0.685 0.169 237.323);
   /* Text links: a blue that reads as clickable on white and on muted rows. */
-  --link: oklch(0.5 0.17 255);
+  --link: oklch(0.5 0.14 243);
   /* A light gray page, so the white cards and the white sidebar stand apart from it. */
   --canvas: oklch(0.975 0.003 255);
   --nav-active: oklch(0.945 0.006 255);
-  --badge-blue: oklch(0.95 0.045 250);
-  --badge-blue-foreground: oklch(0.47 0.16 250);
+  --badge-blue: oklch(0.95 0.04 243);
+  --badge-blue-foreground: oklch(0.47 0.13 243);
   --badge-green: oklch(0.95 0.05 155);
   --badge-green-foreground: oklch(0.47 0.12 155);
   --badge-amber: oklch(0.95 0.06 75);
@@ -125,7 +125,7 @@
   --badge-gray-foreground: oklch(0.45 0 0);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.62 0.14 255);
+  --ring: #3fa6ee;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -149,7 +149,7 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.7 0.14 255);
+  --primary: #3fa6ee;
   --primary-foreground: oklch(0.145 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
@@ -161,11 +161,11 @@
   --warning: oklch(0.828 0.189 84.429);
   --healthy: oklch(0.792 0.209 151.711);
   --underused: oklch(0.746 0.16 232.661);
-  --link: oklch(0.76 0.13 250);
+  --link: oklch(0.76 0.12 243);
   --canvas: oklch(0.12 0 0);
   --nav-active: oklch(0.269 0 0);
-  --badge-blue: oklch(0.32 0.06 250);
-  --badge-blue-foreground: oklch(0.86 0.09 250);
+  --badge-blue: oklch(0.32 0.06 243);
+  --badge-blue-foreground: oklch(0.86 0.08 243);
   --badge-green: oklch(0.32 0.06 155);
   --badge-green-foreground: oklch(0.86 0.09 155);
   --badge-amber: oklch(0.32 0.06 75);
