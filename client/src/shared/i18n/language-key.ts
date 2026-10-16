@@ -404,6 +404,7 @@ export type LanguageKey = {
   Reject: string
   'Reject this staffing draft?': string
   Rejected: string
+  'Reload page': string
   Remove: string
   'Remove absence': string
   'Remove assumption': string
@@ -444,6 +445,7 @@ export type LanguageKey = {
   'Signed in as {name}': string
   'Signing you in…': string
   Someone: string
+  'Something went wrong.': string
   Specialist: string
   'Split the project into phases such as Discovery, Build and Test.': string
   Staffing: string
@@ -495,6 +497,7 @@ export type LanguageKey = {
   'This cannot be undone. Continue?': string
   'This cannot be undone. Open projects of a cancelled program are cancelled too. Continue?': string
   'This draft has stretch assignments: people below the minimum level or without the expertise.': string
+  'This screen hit an unexpected error. Reload the page; if it happens again, tell an admin.': string
   'This week': string
   Time: string
   Timeline: string
