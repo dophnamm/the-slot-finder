@@ -81,7 +81,6 @@ func Router(
 						monitoring.SetScopeData(scope, "method", c.Request().Method)
 						monitoring.SetScopeData(scope, "path", c.Request().URL.Path)
 						monitoring.SetScopeData(scope, "query", c.QueryParams())
-						monitoring.SetScopeData(scope, "headers", c.Request().Header)
 						monitoring.SetScopeData(scope, "body", c.Get(middlewares.LogBodyKey))
 
 						// Add environment context
