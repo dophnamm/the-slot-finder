@@ -47,7 +47,7 @@ Demo users, **for development only**. Their password is `KEYCLOAK_DEMO_PASSWORD`
 
 The server verifies access tokens locally against the realm's JWKS, cached and refreshed every `AUTH_JWKS_REFRESH_INTERVAL` (and on an unknown key id). It calls Keycloak only to fetch those keys, never per request. `KEYCLOAK_URL` is how the server reaches Keycloak; `KEYCLOAK_PUBLIC_URL` is the issuer in the tokens, as the browser sees it.
 
-**Sentry** is off (no `SENTRY_DSN`). Before setting `SENTRY_DSN`, fix the redaction of the request headers and body that the router's error hook attaches to Sentry events.
+**Sentry** is off (no `SENTRY_DSN`). Before an event leaves the server, `internal/monitoring/sentry.go` drops its request body, query string and cookies, every header whose name contains `authorization`, `cookie`, `token`, `secret` or `key`, and calendar feed links (hosts in `CALENDAR_ALLOWED_HOSTS`) in messages, exception values and tags.
 
 ## 1. Architecture style
 
@@ -116,7 +116,7 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | GET | `/people/{id}/assignments?from=&to=` | Everything a person owns in the baseline: project, demand, **expertise**, kind, hours per week | planner, lead, the person themselves |
 | GET | `/people/{id}/schedule?from=&to=` | One person's calendar: per week capacity, load, band, tentative flag, hours per project and actual hours; per day absences and holidays; the working weekdays | planner, lead (team), the person themselves |
 | GET, PUT, DELETE | `/people/{id}/calendar-feed` | A person's calendar link: its status (never the link itself), connect or replace (`{ url }`, checked and synced once), disconnect. `503 CALENDAR_SYNC_DISABLED` without `CALENDAR_FEED_KEY` | planner, the person themselves |
-| POST | `/people/{id}/calendar-feed/sync` | Sync that calendar now | planner, the person themselves |
+| POST | `/people/{id}/calendar-feed/sync` | Sync that calendar now; `409 CALENDAR_SYNC_RUNNING` while another sync of the same calendar runs | planner, the person themselves |
 | GET | `/expertises` | Expertise catalogue | everyone |
 | GET, POST | `/holidays` | Holidays per `location` (no location = company-wide), each with an optional `name` | GET everyone, POST planner |
 | POST | `/holidays/import` | Import holidays from an iCalendar file (multipart `file`) or a link (`url`: https, a calendar host only, never stored, logged or returned) between `from_date` and `to_date`, at `hours_per_day`. An event already imported (same UID) is skipped; returns `{ added, skipped }`. `400 HOLIDAY_SOURCE_INVALID` unless exactly one of file or link is sent | planner |
@@ -155,7 +155,7 @@ A manager (`lead`) reads only the programs they lead or lead a project in, and t
 | POST | `/staffing-drafts` | Generate a draft: `{ projectIds }` or `{ changeEventId }`. Each demand is staffed from its program's team only | planner, lead (every project's program is their own) |
 | GET | `/plans/drafts` | Open staffing drafts, newest first: `base_version`, `current_version`, `stale`, `auto` (a re-plan draft), `created_at`, the covered `projects` with their programs, and `unmet_count` | planner, lead (drafts whose projects all belong to programs they manage) |
 | GET | `/staffing-drafts/{id}` | Draft with diff against the baseline, plan churn and reasons; each project carries `program_lead_id` and each demand its program team as `team_ids` (`null` puts no limit); `load` gives every active person's `capacity` and `other_hours` (hours on other demand, of plannable projects only, from the current ISO week on) per week and `bands` the utilization limits, so the grid can colour a week from the hours being edited | planner, lead |
-| PATCH | `/staffing-drafts/{id}/assignments` | One batch `{ add, remove, set }`: add or remove an assignment (any person to a covered demand; the server sets `kind`), change weekly hours (0 removes the week), lock or unlock; a person outside the demand's program team gets `422 PERSON_NOT_IN_TEAM`. Adding or setting hours in a week before the current ISO week gets `400 WEEK_IN_THE_PAST`. Swap to an alternative comes later | planner, lead (own) |
+| PATCH | `/staffing-drafts/{id}/assignments` | One batch `{ add, remove, set }`: add or remove an assignment (any person to a covered demand; the server sets `kind`), change weekly hours (0 removes the week), lock or unlock; a person outside the demand's program team gets `422 PERSON_NOT_IN_TEAM`. Adding or setting hours in a week before the current ISO week gets `400 WEEK_IN_THE_PAST`, and so does removing an assignment that has hours in such a week. Swap to an alternative comes later | planner, lead (own) |
 | GET | `/staffing-drafts/{id}/assignments/{assignmentId}/alternatives` | Who could take over the assignment: members of the demand's program team who hold its expertise at the required level and do not cover it yet, with `free_hours` over the demand's window (capacity minus the plan's hours), most first, at most `DRAFT_ALTERNATIVES_LIMIT`. To swap, send one `remove` and one `add` with the same weekly hours in one PATCH above; it is applied in one transaction | planner, lead (own) |
 | POST | `/staffing-drafts/{id}/accept` | Publish (`{ baseVersion }`; `409 PLAN_VERSION_CONFLICT` if the baseline changed) | planner, lead (own) |
 | POST | `/staffing-drafts/{id}/reject` | Discard a draft | planner, lead (own) |
@@ -164,7 +164,7 @@ A manager (`lead`) reads only the programs they lead or lead a project in, and t
 | POST | `/scenarios/{id}/rerun` | Compute a scenario again, with the same assumptions, against the baseline in force | planner |
 | GET | `/insights/heatmap?from=&to=&expertise=&program_id=` | Person × week matrix. Each cell holds total hours plus hours per expertise; `expertise=` (an expertise id) keeps people who hold that expertise or work on it in the range; `program_id=` keeps the program's team (`403` for a manager who may not read the program, `404` for an unknown one). Each cell also has capacity, utilization, its band, a tentative flag for planned leave and `actual_hours`: the hours worked that week from imported timesheets, `null` when none were imported. Load counts plannable projects only, from the current ISO week on (section 5) | planner, lead (team) |
 | GET | `/insights/risks` | Understaffed and at-risk projects, delivery behind time, overloaded people in the next `HEATMAP_DEFAULT_WEEKS` weeks (a manager sees only their team's), and before them `sustained_overload`: each person over 100 % for `SUSTAINED_OVERLOAD_WEEKS` or more weeks in a row (`person`, `from_week`, `weeks`, the first such run); likely over budget and overdue milestones later. Load counts plannable projects only, from the current ISO week on (section 5) | planner, lead |
-| GET | `/events?program_id=` | Change history and processing status; the program page uses it for the re-plan banner | planner, lead |
+| GET | `/events?program_id=` | Change history and processing status; the program page uses it for the re-plan banner. A manager sees only events on the projects of their programs and events about themselves or the people in their teams (`person_id` in the payload); a manager without a person record gets an empty page. A planner sees all | planner, lead |
 | GET | `/timesheets/template?from=&to=` | CSV template: person × project × week with baseline hours in a range of past weeks, with planned hours and any actual hours already recorded | planner |
 | POST | `/timesheets/import` | Upload a filled-in template (multipart `file`). Every row is checked first; any failure gets `400 TIMESHEET_INVALID` with line, column and code, and nothing is saved | planner |
 
@@ -332,7 +332,7 @@ Jobs are rows in Postgres, run by a runner inside the server process, started an
 |---|---|---|
 | `replan` | ChangeEvents, batched over `REPLAN_DEBOUNCE` | Assesses impact. If there is a conflict, calls the engine, saves a staffing draft and alerts the Planner. If an auto draft is already open for the baseline, it regenerates that draft instead (see below) |
 | `import` | `POST /imports/*` | Reads the source, validates it, writes through each module's public interface |
-| `calendar-sync` | Every `CALENDAR_SYNC_INTERVAL`, or `POST /people/{id}/calendar-feed/sync` | Fetches each due calendar feed, keeps its out-of-office events, and creates, moves or deletes the matching planned leave through **availability**, which records the change events. Claims feeds with `FOR UPDATE SKIP LOCKED`. A failed fetch changes nothing and stores an error code |
+| `calendar-sync` | Every `CALENDAR_SYNC_INTERVAL`, or `POST /people/{id}/calendar-feed/sync` | Fetches each due calendar feed, keeps its out-of-office events, and creates, moves or deletes the matching planned leave through **availability**, which records the change events. Claims feeds with `FOR UPDATE SKIP LOCKED`. Each sync takes a Postgres advisory lock per feed until its transaction ends: the runner skips a locked feed, and "Sync now" answers `409 CALENDAR_SYNC_RUNNING`. Leave that a person deletes by hand is kept as `source = calendar_dismissed` with its event UID, so the sync does not create it again. A failed fetch changes nothing and stores an error code |
 | `notify` | `PlanPublished`, alerts | Sends Email/Slack messages to the affected members and to the program's assistants (internal and external) |
 
 **One open auto draft per baseline.** A draft is "auto" when change events link to it. When a new event arrives while one is open, `replan` regenerates it from the current baseline plus every linked event. Assignments the Planner added by hand and locked allocations are carried over. The old draft version becomes `superseded` and all events point to the new one. The worker saves the new version only if the old one has not changed since it read it; otherwise it regenerates again, so a Planner's edit is never dropped silently. An edit, accept or reject that reaches the old version afterwards gets `409 DRAFT_SUPERSEDED`.
@@ -432,9 +432,9 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `BENCH_WEEKS` | Weeks ahead a person must stay underused to be on the bench list | 4 |
 | `FTE_WEEKLY_HOURS` | Hours in one FTE for capacity-forecast signals | 40 |
 
-Not in the MVP: it stays off until `AI_API_KEY` is set and the data policy question below is approved. The principle, capabilities and boundaries are in the [root README, section 15](../README.md#15-ai-assistant-later).
+**Later**, not built yet: it stays off until `AI_API_KEY` is set and the data policy question below is approved. The principle, capabilities and boundaries are in the [root README, section 15](../README.md#15-ai-assistant-later).
 
-**Code:** `handlers/ai.go` and `services/ai.go` (the function-calling loop and tool definitions), and `internal/integration/llm` (a `Provider` interface plus one implementation per `AI_PROVIDER`; Gemini first). Nothing outside `integration/llm` knows which provider is used.
+**Code (later):** `handlers/ai.go` and `services/ai.go` (the function-calling loop and tool definitions), and `internal/integration/llm` (a `Provider` interface plus one implementation per `AI_PROVIDER`; Gemini first). Nothing outside `integration/llm` knows which provider is used.
 
 **Tools** (each wraps an existing service method):
 

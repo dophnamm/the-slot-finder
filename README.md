@@ -302,7 +302,7 @@ erDiagram
     decimal hours_per_day
     string type "leave / holiday / training"
     string status "planned / approved"
-    string source "manual / calendar"
+    string source "manual / calendar / calendar_dismissed"
     string external_uid "calendar event UID; null when manual"
   }
   CALENDAR_FEED {

@@ -37,7 +37,7 @@
 - Writing anything back to a calendar.
 
 **As built**
-- `calendar_feeds.next_sync_at`: the runner claims a feed by moving it one interval ahead, so no lock is held while it fetches.
+- `calendar_feeds.next_sync_at`: the runner claims a feed by moving it one interval ahead. Each sync then holds a Postgres advisory lock per feed until its transaction ends, so "Sync now" answers `409 CALENDAR_SYNC_RUNNING` while a sync of the same calendar runs, and the runner skips that feed.
 - Leave hours are rounded to two decimals, as absences store them, so an unchanged event never looks moved.
 - A moved event records `AbsenceRemoved` and `AbsenceAdded`. Approving goes through member-calendar's `POST /absences/{id}/approve`.
 - ICS is read with `github.com/arran4/golang-ical` v0.3.6.
@@ -64,7 +64,7 @@
 | POST | `/people/{id}/calendar-feed/sync` | Sync now | planner, the person themselves |
 
 **Tables** (one Atlas migration: `make migrate-generate name=calendar_feeds`)
-- `calendar_feeds`: `person_id` (unique), `url_ciphertext`, `host`, `last_synced_at`, `next_sync_at`, `last_error`, `events_found`, timestamps. The runner claims a calendar by moving its `next_sync_at` in a short transaction, so no lock is held while it downloads.
+- `calendar_feeds`: `person_id` (unique), `url_ciphertext`, `host`, `last_synced_at`, `next_sync_at`, `last_error`, `events_found`, timestamps. The runner claims a calendar by moving its `next_sync_at` in a short transaction; the sync itself runs in a transaction that holds the feed's advisory lock while it downloads.
 - `absences` gets `source` (`manual` by default, or `calendar`) and `external_uid` (unique per person when set).
 
 **Security.** The server fetches a URL that a user typed, so:

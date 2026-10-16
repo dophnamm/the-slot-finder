@@ -3,7 +3,7 @@
 **Goal:** a planner gives each program its team, and the program's manager staffs the program's projects from that team only. A manager sees the people of the programs they manage, not everyone in the company.
 
 **Roles:** planner (adds and removes team members, staffs anything), manager (the `lead` role, shown as **Manager**: reads and staffs the programs they manage), specialist (unchanged).
-**Target:** 14–15 Oct · **Depends on:** [programs-and-demand](programs-and-demand.md), [staffing-draft](staffing-draft.md), [member-calendar](member-calendar.md) · **Branch:** `feat/program-teams` · **Status:** In review
+**Target:** 14–15 Oct · **Depends on:** [programs-and-demand](programs-and-demand.md), [staffing-draft](staffing-draft.md), [member-calendar](member-calendar.md) · **Branch:** `feat/program-teams` · **Status:** Done
 
 ## In scope
 
