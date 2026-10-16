@@ -38,14 +38,6 @@ type TokenInfo struct {
 	TokenType    string `json:"token_type"`
 }
 
-// AuthorizationPermissions represents Keycloak UMA authorization data within a token (RPT)
-type AuthorizationPermissions struct {
-	Permissions []struct {
-		ResourceName string   `json:"rsname"`
-		Scopes       []string `json:"scopes"`
-	} `json:"permissions"`
-}
-
 // RoleClaim is the shape Keycloak uses for realm and client roles.
 type RoleClaim struct {
 	Roles []string `json:"roles"`
@@ -68,9 +60,6 @@ type TokenClaims struct {
 	FamilyName           string                            `json:"family_name"`
 	Scope                string                            `json:"scope"`
 	AllowedOrigins       []string                          `json:"allowed-origins"`
-
-	// Present in RPT tokens when Authorization Services are enabled
-	Authorization AuthorizationPermissions `json:"authorization"`
 }
 
 // Roles returns the realm roles plus the roles of clientID. It is safe on a nil receiver.
@@ -85,36 +74,6 @@ func (c *TokenClaims) Roles(clientID string) []string {
 	return roles
 }
 
-type JWT struct {
-	AccessToken      string `json:"access_token"`
-	IDToken          string `json:"id_token"`
-	ExpiresIn        int    `json:"expires_in"`
-	RefreshExpiresIn int    `json:"refresh_expires_in"`
-	RefreshToken     string `json:"refresh_token"`
-	TokenType        string `json:"token_type"`
-	NotBeforePolicy  int    `json:"not-before-policy"`
-	SessionState     string `json:"session_state"`
-	Scope            string `json:"scope"`
-}
-
-// RequestingPartyTokenOptions represents the options to obtain a requesting party token
-type RequestingPartyTokenOptions struct {
-	GrantType                     *string   `json:"grant_type,omitempty"`
-	Ticket                        *string   `json:"ticket,omitempty"`
-	ClaimToken                    *string   `json:"claim_token,omitempty"`
-	ClaimTokenFormat              *string   `json:"claim_token_format,omitempty"`
-	RPT                           *string   `json:"rpt,omitempty"`
-	Permissions                   *[]string `json:"-"`
-	PermissionResourceFormat      *string   `json:"permission_resource_format,omitempty"`
-	PermissionResourceMatchingURI *bool     `json:"permission_resource_matching_uri,string,omitempty"`
-	Audience                      *string   `json:"audience,omitempty"`
-	ResponseIncludeResourceName   *bool     `json:"response_include_resource_name,string,omitempty"`
-	ResponsePermissionsLimit      *uint32   `json:"response_permissions_limit,omitempty"`
-	SubmitRequest                 *bool     `json:"submit_request,string,omitempty"`
-	ResponseMode                  *string   `json:"response_mode,omitempty"`
-	SubjectToken                  *string   `json:"subject_token,omitempty"`
-}
-
 type SendVerificationMailParams struct {
 	ClientID    *string
 	RedirectURI *string
@@ -127,14 +86,9 @@ type Organization struct {
 
 // AuthService defines the interface for authentication operations
 type AuthService interface {
-	GetRealm() string
-	DecodeAccessToken(ctx context.Context, token string, realm string, claims *TokenClaims) (*TokenClaims, error)
 	ValidateToken(token string) (*gocloak.IntroSpectTokenResult, error)
 	ClientLogin() (*TokenInfo, error)
 	GetUserInfo(token string) (*User, error)
-
-	// Obtain an RPT (Requesting Party Token) using UMA to evaluate permissions
-	GetRequestingPartyToken(ctx context.Context, accessToken string, opts RequestingPartyTokenOptions) (*JWT, error)
 	CreateUser(ctx context.Context, adminToken string, userDto *dtos.CreateUserRequest) (*User, error)
 	SetPassword(ctx context.Context, adminToken string, userID string, password string, temporary bool) error
 	SendVerificationMail(ctx context.Context, adminToken string, userID string, params SendVerificationMailParams) error

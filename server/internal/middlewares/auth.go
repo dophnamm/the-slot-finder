@@ -94,54 +94,6 @@ func primaryRole(roles []string) string {
 	return ""
 }
 
-// RequireUMA enforces resource/scope via Keycloak Authorization Services (RPT)
-// It exchanges the user's access token for an RPT and checks authorization.permissions.
-func RequirePermission(cfg *config.Config, authService auth.AuthService, resource string, scope string) echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c *echo.Context) error {
-			// Extract access token
-			authHeader := c.Request().Header.Get("Authorization")
-			if !strings.HasPrefix(authHeader, bearerPrefix) {
-				return respondAuthError(c, http.StatusUnauthorized, constants.MsgAuthHeaderInvalid)
-			}
-			accessToken := strings.TrimPrefix(authHeader, bearerPrefix)
-			if accessToken == "" {
-				return respondAuthError(c, http.StatusUnauthorized, constants.MsgTokenRequired)
-			}
-
-			// Request RPT for the desired permission: resource#scope
-			perm := resource + "#" + scope
-			rpt, err := authService.GetRequestingPartyToken(c.Request().Context(), accessToken, auth.RequestingPartyTokenOptions{
-				Audience:    &cfg.KeycloakClientID,
-				Permissions: &[]string{perm},
-			})
-			if err != nil {
-				return respondAuthError(c, http.StatusForbidden, constants.MsgPermissionEvaluationFailed)
-			}
-
-			// Decode RPT to read authorization.permissions (use our claims)
-			var rptClaims auth.TokenClaims
-			_, err = authService.DecodeAccessToken(c.Request().Context(), rpt.AccessToken, authService.GetRealm(), &rptClaims)
-			if err != nil {
-				return respondAuthError(c, http.StatusForbidden, constants.MsgRPTClaimsInvalid)
-			}
-
-			// Check authorization.permissions contains resource and scope
-			for _, p := range rptClaims.Authorization.Permissions {
-				if p.ResourceName == resource {
-					for _, s := range p.Scopes {
-						if s == scope {
-							return next(c)
-						}
-					}
-				}
-			}
-
-			return respondAuthError(c, http.StatusForbidden, constants.MsgInsufficientPermissions)
-		}
-	}
-}
-
 // respondAuthError writes a 401 or 403 in the standard {meta, data} envelope.
 func respondAuthError(c *echo.Context, status int, message string) error {
 	code := constants.Unauthorized

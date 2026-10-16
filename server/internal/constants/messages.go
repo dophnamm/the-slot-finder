@@ -11,17 +11,15 @@ const (
 
 // Authentication and authorization messages.
 const (
-	MsgAuthHeaderRequired         = "Authorization header required"
-	MsgAuthHeaderInvalid          = "Invalid authorization header format"
-	MsgTokenRequired              = "Token required"
-	MsgTokenInvalid               = "Invalid token"
-	MsgTokenInactive              = "Token is not active"
-	MsgTokenClaimsInvalid         = "Invalid token claims"
-	MsgUserNotAuthenticated       = "User not authenticated"
-	MsgInsufficientPermissions    = "Insufficient permissions"
-	MsgPermissionEvaluationFailed = "Permission evaluation failed"
-	MsgRPTClaimsInvalid           = "Invalid RPT claims"
-	MsgCurrentUserRetrieved       = "Current user retrieved"
+	MsgAuthHeaderRequired      = "Authorization header required"
+	MsgAuthHeaderInvalid       = "Invalid authorization header format"
+	MsgTokenRequired           = "Token required"
+	MsgTokenInvalid            = "Invalid token"
+	MsgTokenInactive           = "Token is not active"
+	MsgTokenClaimsInvalid      = "Invalid token claims"
+	MsgUserNotAuthenticated    = "User not authenticated"
+	MsgInsufficientPermissions = "Insufficient permissions"
+	MsgCurrentUserRetrieved    = "Current user retrieved"
 )
 
 // People and skills messages.
