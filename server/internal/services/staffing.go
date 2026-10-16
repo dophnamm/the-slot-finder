@@ -716,7 +716,7 @@ func (s *staffingService) Edit(ctx context.Context, id string, in EditDraftInput
 		if err := s.plans.Touch(ctx, plan.ID, s.clock.Now().UTC()); err != nil {
 			return err
 		}
-		if err := s.removeAssignments(ctx, plan, in.Remove); err != nil {
+		if err := s.removeAssignments(ctx, plan, in.Remove, isoweek.Of(s.clock.Now())); err != nil {
 			return err
 		}
 		for i := range added {
@@ -801,10 +801,18 @@ func kindFor(person *models.Person, demand models.Demand) (kind, reason string) 
 	return constants.AssignmentKindStretch, fmt.Sprintf(constants.ReasonStretchNoSkillFormat, demand.Expertise.Name)
 }
 
-func (s *staffingService) removeAssignments(ctx context.Context, plan *models.Plan, ids []string) error {
+// removeAssignments refuses an assignment that holds hours before the current week, like
+// setAllocations does, because deleting it would cascade over the past.
+func (s *staffingService) removeAssignments(ctx context.Context, plan *models.Plan, ids []string, current isoweek.Week) error {
 	for _, id := range ids {
-		if findAssignment(plan, id) == nil {
+		assignment := findAssignment(plan, id)
+		if assignment == nil {
 			return draftError(constants.AssignmentNotFound, constants.MsgAssignmentNotFound, http.StatusNotFound, opEditDraft)
+		}
+		for _, alloc := range assignment.Allocations {
+			if alloc.Week.Before(current) && alloc.Hours > hoursEpsilon {
+				return draftError(constants.WeekInThePast, constants.MsgWeekInThePast, http.StatusBadRequest, opEditDraft)
+			}
 		}
 		if err := s.plans.DeleteAssignment(ctx, id); err != nil {
 			return err
