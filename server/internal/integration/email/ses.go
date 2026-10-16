@@ -36,7 +36,6 @@ func NewSESSender(config config.Config) (*SESSender, error) {
 				scope.SetTag("operation", "send_email")
 				monitoring.SetScopeData(scope, "step", "error")
 				monitoring.SetScopeData(scope, "error_details", err.Error())
-				monitoring.SetScopeData(scope, "config", config)
 				hub.CaptureException(errors.ExternalServiceError("failed to load AWS config", err))
 			})
 		}
@@ -44,7 +43,7 @@ func NewSESSender(config config.Config) (*SESSender, error) {
 		logger.Sugar.Errorw("Failed to load AWS config",
 			"service", "ses",
 			"operation", "send_email",
-			"config", config,
+			"region", config.AWSSESRegion,
 			"error", err.Error(),
 		)
 
@@ -115,7 +114,7 @@ func (s *SESSender) SendEmail(ctx context.Context, request EmailRequest) (*Email
 
 	// Build the input
 	input := &ses.SendEmailInput{
-		Source:      aws.String(s.config.AWSSESAccessKey),
+		Source:      aws.String(s.config.AWSSESFromEmail),
 		Destination: destination,
 		Message:     message,
 	}
@@ -129,8 +128,7 @@ func (s *SESSender) SendEmail(ctx context.Context, request EmailRequest) (*Email
 				scope.SetTag("operation", "send_email")
 				monitoring.SetScopeData(scope, "step", "error")
 				monitoring.SetScopeData(scope, "error_details", err.Error())
-				monitoring.SetScopeData(scope, "recipients", request.To)
-				monitoring.SetScopeData(scope, "subject", request.Subject)
+				monitoring.SetScopeData(scope, "recipients", len(request.To))
 				hub.CaptureException(errors.ExternalServiceError("failed to send email via SES", err))
 			})
 		}
@@ -138,7 +136,7 @@ func (s *SESSender) SendEmail(ctx context.Context, request EmailRequest) (*Email
 		logger.Sugar.Errorw("Failed to send email via SES",
 			"service", "ses",
 			"operation", "send_email",
-			"request", request,
+			"recipients", len(request.To),
 			"error", err.Error(),
 		)
 

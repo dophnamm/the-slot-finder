@@ -124,6 +124,7 @@ type Config struct {
 	AWSSESRegion    string
 	AWSSESAccessKey string
 	AWSSESSecretKey string
+	AWSSESFromEmail string
 
 	// Rate limiting configuration
 	RateLimit              int
@@ -291,6 +292,7 @@ func Load() (*Config, error) {
 		AWSSESRegion:                 getEnv("AWS_SES_REGION", ""),
 		AWSSESAccessKey:              getEnv("AWS_SES_ACCESS_KEY", ""),
 		AWSSESSecretKey:              getEnv("AWS_SES_SECRET_KEY", ""),
+		AWSSESFromEmail:              getEnv("AWS_SES_FROM_EMAIL", ""),
 		RateLimit:                    getEnvAsInt("RATE_LIMIT", 20),
 		RateLimitDuration:            getEnvAsDuration("RATE_LIMIT_DURATION", 1*time.Second),
 		RateLimitHeavy:               getEnvAsInt("RATE_LIMIT_HEAVY", 20),
