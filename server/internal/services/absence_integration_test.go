@@ -48,3 +48,31 @@ func TestAbsenceRepository_ApprovePlanned_Postgres(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, changed, "a holiday is never approved this way")
 }
+
+// Calendar leave deleted by hand is remembered by its event UID; leave the sync removed is not.
+func TestAbsenceRepository_DismissCalendarLeave_Postgres(t *testing.T) {
+	pdb := dbtest.NewPostgres(t)
+	dbtest.ApplyMigrations(t, pdb)
+	ctx := context.Background()
+	ada := models.Person{BaseModel: models.NewBaseModel(), Name: "Ada", Email: "ada@example.test", Role: constants.RoleSpecialist,
+		WeeklyHours: 40, Active: true}
+	require.NoError(t, pdb.Create(&ada).Error)
+	repo := repositories.ProvideAbsenceRepository(pdb)
+	leave := func(uid string) models.Absence {
+		return models.Absence{BaseModel: models.NewBaseModel(), PersonID: &ada.ID, FromDate: day(time.October, 22), ToDate: day(time.October, 22),
+			HoursPerDay: 8, Type: constants.AbsenceTypeLeave, Status: constants.AbsenceStatusPlanned, Source: constants.AbsenceSourceCalendar, ExternalUID: &uid}
+	}
+	byHand, bySync := leave("by-hand"), leave("by-sync")
+	require.NoError(t, pdb.Create(&byHand).Error)
+	require.NoError(t, pdb.Create(&bySync).Error)
+
+	require.NoError(t, repo.DismissCalendarLeave(ctx, &byHand))
+	require.NoError(t, repo.Delete(ctx, &bySync))
+
+	uids, err := repo.ListDismissedCalendarUIDs(ctx, ada.ID)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"by-hand"}, uids)
+	live, err := repo.ListCalendarLeave(ctx, ada.ID)
+	require.NoError(t, err)
+	assert.Empty(t, live)
+}

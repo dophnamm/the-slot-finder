@@ -32,6 +32,7 @@ func TestAvailabilityService_ApplyCalendarLeave(t *testing.T) {
 
 	repo := new(MockAbsenceRepository)
 	repo.On("ListCalendarLeave", mock.Anything, otherPersonID).Return([]models.Absence{past, kept, moved, gone}, nil)
+	repo.On("ListDismissedCalendarUIDs", mock.Anything, otherPersonID).Return([]string{"dismissed"}, nil)
 	repo.On("Create", mock.Anything, mock.MatchedBy(func(a *models.Absence) bool {
 		return *a.ExternalUID == "new" && a.Status == constants.AbsenceStatusPlanned && a.Source == constants.AbsenceSourceCalendar &&
 			a.Type == constants.AbsenceTypeLeave && a.HoursPerDay == 4
@@ -48,6 +49,7 @@ func TestAvailabilityService_ApplyCalendarLeave(t *testing.T) {
 		{UID: "kept", FromDate: day(9), ToDate: day(16), HoursPerDay: 8},
 		{UID: "moved", FromDate: day(22), ToDate: day(22), HoursPerDay: 8},
 		{UID: "new", FromDate: day(23), ToDate: day(23), HoursPerDay: 4},
+		{UID: "dismissed", FromDate: day(28), ToDate: day(28), HoursPerDay: 8},
 	}
 	result, err := service.ApplyCalendarLeave(context.Background(), window)
 
@@ -68,6 +70,7 @@ func TestAvailabilityService_ApplyCalendarLeave_PastAndHours(t *testing.T) {
 	approved := calendarAbsence("hours", day(19), day(20), 8, constants.AbsenceStatusApproved)
 	repo := new(MockAbsenceRepository)
 	repo.On("ListCalendarLeave", mock.Anything, otherPersonID).Return([]models.Absence{approved}, nil)
+	repo.On("ListDismissedCalendarUIDs", mock.Anything, otherPersonID).Return([]string{}, nil)
 	repo.On("Save", mock.Anything, mock.MatchedBy(func(a *models.Absence) bool {
 		return a.ID == approved.ID && a.HoursPerDay == 6.4 && a.Status == constants.AbsenceStatusApproved
 	})).Return(nil)

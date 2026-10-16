@@ -21,6 +21,11 @@ type AbsenceRepository interface {
 	ListOverlapping(ctx context.Context, from, to time.Time) ([]models.Absence, error)
 	// ListCalendarLeave returns a person's absences read from their calendar, oldest first.
 	ListCalendarLeave(ctx context.Context, personID string) ([]models.Absence, error)
+	// DismissCalendarLeave deletes calendar leave by hand and remembers its event UID, so a
+	// sync does not create it again.
+	DismissCalendarLeave(ctx context.Context, absence *models.Absence) error
+	// ListDismissedCalendarUIDs returns the event UIDs of a person's calendar leave deleted by hand.
+	ListDismissedCalendarUIDs(ctx context.Context, personID string) ([]string, error)
 	// DetachCalendarLeave turns a person's calendar leave into ordinary absences: source manual,
 	// no event UID.
 	DetachCalendarLeave(ctx context.Context, personID string) error
@@ -86,4 +91,19 @@ func (r *absenceRepository) ListCalendarLeave(ctx context.Context, personID stri
 		Order("from_date ASC").Order("id ASC").
 		Find(&absences).Error
 	return absences, err
+}
+
+func (r *absenceRepository) DismissCalendarLeave(ctx context.Context, absence *models.Absence) error {
+	if err := r.db.From(ctx).Model(absence).Update("source", constants.AbsenceSourceDismissed).Error; err != nil {
+		return err
+	}
+	return r.db.From(ctx).Delete(absence).Error
+}
+
+func (r *absenceRepository) ListDismissedCalendarUIDs(ctx context.Context, personID string) ([]string, error) {
+	var uids []string
+	err := r.db.From(ctx).Unscoped().Model(&models.Absence{}).
+		Where("person_id = ? AND source = ?", personID, constants.AbsenceSourceDismissed).
+		Pluck("external_uid", &uids).Error
+	return uids, err
 }
