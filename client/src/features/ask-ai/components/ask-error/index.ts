@@ -1,0 +1,1 @@
+export { AskError } from './component'

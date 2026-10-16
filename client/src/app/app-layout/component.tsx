@@ -1,6 +1,7 @@
 import { Menu } from 'lucide-react'
 import { useState } from 'react'
 import { Outlet } from 'react-router'
+import { AskAi } from '@/features/ask-ai'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Sheet, SheetContent, SheetTitle } from '@/shared/ui/sheet'
@@ -46,6 +47,7 @@ export function AppLayout() {
           </div>
         </main>
       </div>
+      <AskAi />
     </div>
   )
 }

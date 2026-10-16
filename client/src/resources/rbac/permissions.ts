@@ -25,6 +25,7 @@ export const PERMISSIONS = {
   'absences:approve': [ROLES.PLANNER],
   'calendar-feeds:manage': [ROLES.PLANNER],
   'holidays:manage': [ROLES.PLANNER],
+  'ai:ask': [ROLES.PLANNER, ROLES.LEAD],
   'events:view': [ROLES.PLANNER],
   'my-schedule:view': [ROLES.SPECIALIST],
 } as const satisfies Record<string, readonly Role[]>
