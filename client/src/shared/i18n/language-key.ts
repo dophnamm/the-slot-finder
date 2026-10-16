@@ -526,6 +526,7 @@ export type LanguageKey = {
   'Unmet demands': string
   'Until {date}': string
   'Use the secret iCal address from Google Calendar or Outlook. It starts with https://.': string
+  'Use whole hours': string
   Utilization: string
   'Version {version}': string
   'Wait until the change is saved.': string

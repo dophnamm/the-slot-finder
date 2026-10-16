@@ -7,7 +7,7 @@ import { Label } from '@/shared/ui/label'
 import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
 import { SKILL_LEVELS } from '@/utils/constants'
 import { DEMAND_LIMITS } from '../../constants'
-import { demandWindow, isValidDraft } from '../../utils'
+import { demandWindow, isHoursStep, isValidDraft } from '../../utils'
 import type { DemandDialogProps, DemandTextField } from './types'
 
 /** Adds or edits one demand; saving it saves the project's whole demand list. */
@@ -23,6 +23,7 @@ export function DemandDialog({
 }: DemandDialogProps) {
   const { t } = useTranslation()
   const [draft, setDraft] = useState(initial)
+  const hoursOff = !isHoursStep(draft.total_hours)
   const weeks = demandWindow(project, draft.phase_id || null)
 
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -123,11 +124,18 @@ export function DemandDialog({
                 type="number"
                 min={0}
                 max={DEMAND_LIMITS.maxHours}
-                step="any"
+                step={DEMAND_LIMITS.hoursStep}
                 value={draft.total_hours}
+                aria-invalid={hoursOff}
+                aria-describedby={hoursOff ? 'demand-hours-hint' : undefined}
                 onChange={handleChange}
                 required
               />
+              {hoursOff && (
+                <p id="demand-hours-hint" className="text-sm text-destructive">
+                  {t('Use whole hours')}
+                </p>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <span className="text-sm font-medium">{t('Weeks')}</span>
