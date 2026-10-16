@@ -74,12 +74,13 @@ func principalFromClaims(claims *auth.TokenClaims, clientID string) request.Prin
 	}
 	roles := claims.Roles(clientID)
 	return request.Principal{
-		Subject:  claims.Subject,
-		Username: claims.PreferredUsername,
-		Name:     claims.Name,
-		Email:    claims.Email,
-		Role:     primaryRole(roles),
-		Roles:    roles,
+		Subject:       claims.Subject,
+		Username:      claims.PreferredUsername,
+		Name:          claims.Name,
+		Email:         claims.Email,
+		EmailVerified: claims.EmailVerified,
+		Role:          primaryRole(roles),
+		Roles:         roles,
 	}
 }
 

@@ -72,6 +72,8 @@ type Principal struct {
 	Username string
 	Name     string
 	Email    string
+	// EmailVerified is the email_verified claim; only a verified email may link a person.
+	EmailVerified bool
 	// Role is the most privileged of Roles that the application knows.
 	Role  string
 	Roles []string
