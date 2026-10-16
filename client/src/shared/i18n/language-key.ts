@@ -23,6 +23,9 @@ export type LanguageKey = {
   'A program groups a customer’s projects under one timeline.': string
   'A project': string
   'A public holiday calendar from Google or Outlook, such as Holidays in Vietnam. The link is not saved.': string
+  'A re-plan will run shortly.': string
+  'A stretch assignment is always locked.': string
+  'A stretch assignment stays locked, so it cannot be swapped.': string
   'A week can hold at most {hours} hrs.': string
   'A what-if: the baseline planned again under changes you try; nothing real changes.': string
   'Absence added.': string
@@ -107,6 +110,7 @@ export type LanguageKey = {
   'Connect calendar': string
   'Connected to': string
   'Could not finish signing in.': string
+  'Could not load this.': string
   'Could not reach the sign-in service.': string
   Coverage: string
   Covered: string
@@ -274,6 +278,7 @@ export type LanguageKey = {
   'Next 3 weeks': string
   'Next month': string
   'Next week': string
+  'Next weeks': string
   'No absences yet.': string
   'No access': string
   'No assignments this week.': string
@@ -371,6 +376,7 @@ export type LanguageKey = {
   Planner: string
   Previous: string
   'Previous month': string
+  'Previous weeks': string
   Primary: string
   'Primary expertise': string
   'Priority {priority}': string
@@ -423,6 +429,7 @@ export type LanguageKey = {
   'Saving moves every later phase by 1 week.': string
   'Saving moves every later phase by {weeks} weeks.': string
   Scenario: string
+  'Scenario not found': string
   Scenarios: string
   Schedule: string
   Scope: string
@@ -436,7 +443,6 @@ export type LanguageKey = {
   'Sign out': string
   'Signed in as {name}': string
   'Signing you in…': string
-  Skills: string
   Someone: string
   Specialist: string
   'Split the project into phases such as Discovery, Build and Test.': string
@@ -480,8 +486,10 @@ export type LanguageKey = {
   'The Slot Finder': string
   'The week is after the current week.': string
   'Their baseline hours stay; the next draft plans without them.': string
+  'There are no hours to lock.': string
   'There is no program at this address.': string
   'There is no project at this address.': string
+  'There is no scenario at this address.': string
   'There is no screen at this address.': string
   'There is no staffing draft at this address.': string
   'This cannot be undone. Continue?': string
@@ -509,6 +517,7 @@ export type LanguageKey = {
   Underused: string
   'Unexpected error.': string
   'Unlock hours': string
+  'Unlock the hours before swapping.': string
   Unmet: string
   'Unmet demand': string
   'Unmet demands': string
@@ -516,13 +525,13 @@ export type LanguageKey = {
   'Use the secret iCal address from Google Calendar or Outlook. It starts with https://.': string
   Utilization: string
   'Version {version}': string
+  'Wait until the change is saved.': string
   Waiting: string
   Week: string
   'Weekly hours': string
   Weeks: string
   'Weeks (minus is earlier)': string
   'What does this mean?': string
-  'What-if scenarios': string
   When: string
   'Who gains or loses hours if this draft is accepted.': string
   'Whole project': string

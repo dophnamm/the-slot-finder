@@ -17,7 +17,7 @@ export function TeamTable({ members, isPending, programId, canManage, removingId
       <TableHeader>
         <TableRow>
           <TableHead>{t('Person')}</TableHead>
-          <TableHead>{t('Skills')}</TableHead>
+          <TableHead>{t('Expertise')}</TableHead>
           <TableHead className="text-right">{t('Hours in this program')}</TableHead>
           <TableHead>{t('Weeks')}</TableHead>
           <TableHead>{t('Projects')}</TableHead>
