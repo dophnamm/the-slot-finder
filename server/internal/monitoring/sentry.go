@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"time"
 
@@ -132,22 +133,59 @@ func InitSentry(cfg config.Config) {
 		AttachStacktrace: true,
 		EnableTracing:    true,
 		TracesSampleRate: 1.0,
-		BeforeSend: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
-			// Filter out sensitive information
-			if event.Request != nil {
-				// Remove sensitive headers
-				if event.Request.Headers != nil {
-					delete(event.Request.Headers, "Authorization")
-					delete(event.Request.Headers, "Cookie")
-				}
-			}
-			return event
+		BeforeSend: func(event *sentry.Event, _ *sentry.EventHint) *sentry.Event {
+			return scrubEvent(event, cfg.CalendarAllowedHosts)
 		},
 	})
 
 	if err != nil {
 		log.Fatalf("sentry.Init failed: %v", err)
 	}
+}
+
+// secretHeader matches the headers that carry credentials.
+var secretHeader = regexp.MustCompile(`(?i)authorization|cookie|token|secret|key`)
+
+// redactedCalendarLink replaces a calendar feed link: it is a secret address.
+const redactedCalendarLink = "[calendar link]"
+
+// scrubEvent removes what must not leave the server from an event: the request body, query
+// string and cookies, credential headers, and calendar feed links in messages and tags.
+func scrubEvent(event *sentry.Event, calendarHosts []string) *sentry.Event {
+	if event.Request != nil {
+		event.Request.Data = ""
+		event.Request.QueryString = ""
+		event.Request.Cookies = ""
+		for name := range event.Request.Headers {
+			if secretHeader.MatchString(name) {
+				delete(event.Request.Headers, name)
+			}
+		}
+	}
+	link := calendarLinkPattern(calendarHosts)
+	if link == nil {
+		return event
+	}
+	event.Message = link.ReplaceAllString(event.Message, redactedCalendarLink)
+	for i := range event.Exception {
+		event.Exception[i].Value = link.ReplaceAllString(event.Exception[i].Value, redactedCalendarLink)
+	}
+	for name, value := range event.Tags {
+		event.Tags[name] = link.ReplaceAllString(value, redactedCalendarLink)
+	}
+	return event
+}
+
+// calendarLinkPattern matches a link on one of the allowed calendar hosts; nil when there are none.
+func calendarLinkPattern(hosts []string) *regexp.Regexp {
+	if len(hosts) == 0 {
+		return nil
+	}
+	quoted := make([]string, len(hosts))
+	for i, host := range hosts {
+		quoted[i] = regexp.QuoteMeta(host)
+	}
+	return regexp.MustCompile(`(?i)https?://(?:` + strings.Join(quoted, "|") + `)\S*`)
 }
 
 // Flush buffered events before shutdown
