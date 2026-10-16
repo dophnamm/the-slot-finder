@@ -645,10 +645,14 @@ func (s *staffingService) openDraft(ctx context.Context, id, op string) (*models
 		return nil, draftError(constants.DraftSuperseded, constants.MsgDraftSuperseded, http.StatusConflict, op)
 	}
 	if plan.Kind != constants.PlanKindDraft || plan.Status != constants.PlanStatusDraft {
-		return nil, errors.NewAppError(constants.DraftNotEditable, constants.MsgDraftNotEditable, errors.ErrorTypeConflict,
-			http.StatusConflict).WithOperation(op).WithResource(resourceDraft)
+		return nil, draftNotEditable(op)
 	}
 	return plan, nil
+}
+
+func draftNotEditable(op string) error {
+	return errors.NewAppError(constants.DraftNotEditable, constants.MsgDraftNotEditable, errors.ErrorTypeConflict,
+		http.StatusConflict).WithOperation(op).WithResource(resourceDraft)
 }
 
 // coveredDemand maps each demand of the projects to its project.
@@ -701,8 +705,12 @@ func (s *staffingService) Edit(ctx context.Context, id string, in EditDraftInput
 		return nil, err
 	}
 	err = s.tx.Do(ctx, func(ctx context.Context) error {
-		if err := s.plans.Touch(ctx, plan.ID, s.clock.Now().UTC()); err != nil {
+		touched, err := s.plans.Touch(ctx, plan.ID, s.clock.Now().UTC())
+		if err != nil {
 			return err
+		}
+		if touched == 0 {
+			return draftNotEditable(opEditDraft)
 		}
 		if err := s.removeAssignments(ctx, plan, in.Remove, isoweek.Of(s.clock.Now())); err != nil {
 			return err
@@ -912,8 +920,12 @@ func (s *staffingService) Accept(ctx context.Context, id string, in AcceptDraftI
 		if superseded == 0 {
 			return versionConflict()
 		}
-		if err := s.plans.Publish(ctx, plan.ID, in.BaseVersion+1, now, personIDOf(actor)); err != nil {
+		published, err := s.plans.Publish(ctx, plan.ID, in.BaseVersion+1, now, personIDOf(actor))
+		if err != nil {
 			return err
+		}
+		if published == 0 {
+			return draftNotEditable(opAcceptDraft)
 		}
 		for _, p := range staffed {
 			update := models.Project{BaseModel: models.BaseModel{ID: p.ID}, Status: constants.ProjectStatusPlanned}
@@ -995,8 +1007,12 @@ func (s *staffingService) Reject(ctx context.Context, id string) (*DraftView, er
 	if _, err := s.requireDraftRights(ctx, projects); err != nil {
 		return nil, err
 	}
-	if err := s.plans.SetStatus(ctx, id, constants.PlanStatusRejected); err != nil {
+	changed, err := s.plans.SetStatus(ctx, id, constants.PlanStatusRejected)
+	if err != nil {
 		return nil, errors.DatabaseError(constants.MsgDraftSaveFailed, err).WithOperation(opRejectDraft).WithResource(resourceDraft)
+	}
+	if changed == 0 {
+		return nil, draftNotEditable(opRejectDraft)
 	}
 	return s.view(ctx, id, opRejectDraft)
 }

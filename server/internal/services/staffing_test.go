@@ -310,7 +310,7 @@ func TestStaffingService_Edit(t *testing.T) {
 				m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(qaAssignment(t, 20)), nil)
 				m.projects.On("FindDetail", mock.Anything, projectID).Return(projectWithExpertise(t), nil)
 				m.people.On("FindWithSkills", mock.Anything, otherPersonID2).Return(juniorQA, nil)
-				m.plans.On("Touch", mock.Anything, staffingDraftID, inWeek48).Return(nil).Maybe()
+				m.plans.On("Touch", mock.Anything, staffingDraftID, inWeek48).Return(int64(1), nil).Maybe()
 				_, err := m.serviceAt(inWeek48).Edit(planner, staffingDraftID, tt.input)
 				requireAppError(t, err, constants.WeekInThePast, http.StatusBadRequest)
 			})
@@ -322,7 +322,7 @@ func TestStaffingService_Edit(t *testing.T) {
 		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(), nil)
 		m.projects.On("FindDetail", mock.Anything, projectID).Return(projectWithExpertise(t), nil)
 		m.people.On("FindWithSkills", mock.Anything, otherPersonID2).Return(juniorQA, nil)
-		m.plans.On("Touch", mock.Anything, staffingDraftID, acceptedAt).Return(nil)
+		m.plans.On("Touch", mock.Anything, staffingDraftID, acceptedAt).Return(int64(1), nil)
 		var added *models.Assignment
 		m.plans.On("CreateAssignment", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 			added = args.Get(1).(*models.Assignment)
@@ -370,12 +370,22 @@ func TestStaffingService_Edit(t *testing.T) {
 				m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(tt.draft, nil)
 				m.projects.On("FindDetail", mock.Anything, projectID).Return(projectWithExpertise(t), nil)
 				m.people.On("FindWithSkills", mock.Anything, mock.Anything).Return(juniorQA, nil)
-				m.plans.On("Touch", mock.Anything, staffingDraftID, acceptedAt).Return(nil)
+				m.plans.On("Touch", mock.Anything, staffingDraftID, acceptedAt).Return(int64(1), nil)
 				_, err := m.service().Edit(planner, staffingDraftID, tt.in)
 				requireAppError(t, err, tt.wantCode, tt.status)
 				m.plans.AssertNotCalled(t, "CreateAssignment", mock.Anything, mock.Anything)
 			})
 		}
+	})
+
+	t.Run("a draft closed while editing is refused", func(t *testing.T) {
+		m := newStaffingMocks()
+		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(), nil)
+		m.projects.On("FindDetail", mock.Anything, projectID).Return(projectWithExpertise(t), nil)
+		m.plans.On("Touch", mock.Anything, staffingDraftID, acceptedAt).Return(int64(0), nil)
+		_, err := m.service().Edit(planner, staffingDraftID, EditDraftInput{})
+		requireAppError(t, err, constants.DraftNotEditable, http.StatusConflict)
+		m.plans.AssertNotCalled(t, "CreateAssignment", mock.Anything, mock.Anything)
 	})
 
 	t.Run("a published plan cannot change", func(t *testing.T) {
@@ -396,7 +406,7 @@ func TestStaffingService_Accept(t *testing.T) {
 		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(qaAssignment(t, 60)), nil)
 		m.projects.On("FindDetail", mock.Anything, projectID).Return(qaProject(t), nil)
 		m.plans.On("SupersedeBaseline", mock.Anything, 2).Return(int64(1), nil)
-		m.plans.On("Publish", mock.Anything, staffingDraftID, 3, acceptedAt, (*string)(nil)).Return(nil)
+		m.plans.On("Publish", mock.Anything, staffingDraftID, 3, acceptedAt, (*string)(nil)).Return(int64(1), nil)
 		m.projects.On("Updates", mock.Anything, mock.MatchedBy(func(p *models.Project) bool {
 			return p.ID == projectID && p.Status == constants.ProjectStatusPlanned && p.StaffedAt != nil && p.StaffedAt.Equal(acceptedAt)
 		})).Return(nil)
@@ -417,7 +427,7 @@ func TestStaffingService_Accept(t *testing.T) {
 		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(qaAssignment(t, 20)), nil)
 		m.projects.On("FindDetail", mock.Anything, projectID).Return(qaProject(t), nil)
 		m.plans.On("SupersedeBaseline", mock.Anything, 2).Return(int64(1), nil)
-		m.plans.On("Publish", mock.Anything, staffingDraftID, 3, acceptedAt, (*string)(nil)).Return(nil)
+		m.plans.On("Publish", mock.Anything, staffingDraftID, 3, acceptedAt, (*string)(nil)).Return(int64(1), nil)
 		m.audit.On("Create", mock.Anything, mock.Anything).Return(nil)
 		m.plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(3), nil)
 
@@ -449,9 +459,20 @@ func TestStaffingService_Accept(t *testing.T) {
 		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(), nil)
 		m.projects.On("FindDetail", mock.Anything, projectID).Return(qaProject(t), nil)
 		m.plans.On("SupersedeBaseline", mock.Anything, 2).Return(int64(1), nil)
-		m.plans.On("Publish", mock.Anything, staffingDraftID, 3, acceptedAt, (*string)(nil)).Return(gorm.ErrDuplicatedKey)
+		m.plans.On("Publish", mock.Anything, staffingDraftID, 3, acceptedAt, (*string)(nil)).Return(int64(0), gorm.ErrDuplicatedKey)
 		_, err := m.service().Accept(planner, staffingDraftID, AcceptDraftInput{BaseVersion: 2})
 		requireAppError(t, err, constants.PlanVersionConflict, http.StatusConflict)
+	})
+
+	t.Run("a draft closed meanwhile is not published", func(t *testing.T) {
+		m := newStaffingMocks()
+		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(), nil)
+		m.projects.On("FindDetail", mock.Anything, projectID).Return(qaProject(t), nil)
+		m.plans.On("SupersedeBaseline", mock.Anything, 2).Return(int64(1), nil)
+		m.plans.On("Publish", mock.Anything, staffingDraftID, 3, acceptedAt, (*string)(nil)).Return(int64(0), nil)
+		_, err := m.service().Accept(planner, staffingDraftID, AcceptDraftInput{BaseVersion: 2})
+		requireAppError(t, err, constants.DraftNotEditable, http.StatusConflict)
+		m.audit.AssertNotCalled(t, "Create", mock.Anything, mock.Anything)
 	})
 
 	t.Run("stretch on the draft's demand needs confirmation", func(t *testing.T) {
@@ -471,7 +492,7 @@ func TestStaffingService_Accept(t *testing.T) {
 		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(copied), nil)
 		m.projects.On("FindDetail", mock.Anything, projectID).Return(qaProject(t), nil)
 		m.plans.On("SupersedeBaseline", mock.Anything, 2).Return(int64(1), nil)
-		m.plans.On("Publish", mock.Anything, staffingDraftID, 3, acceptedAt, (*string)(nil)).Return(nil)
+		m.plans.On("Publish", mock.Anything, staffingDraftID, 3, acceptedAt, (*string)(nil)).Return(int64(1), nil)
 		m.audit.On("Create", mock.Anything, mock.Anything).Return(nil)
 		m.plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(3), nil)
 		_, err := m.service().Accept(planner, staffingDraftID, AcceptDraftInput{BaseVersion: 2})
@@ -479,10 +500,19 @@ func TestStaffingService_Accept(t *testing.T) {
 	})
 }
 
+func TestStaffingService_RejectClosedDraft(t *testing.T) {
+	m := newStaffingMocks()
+	m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(), nil)
+	m.projects.On("FindDetail", mock.Anything, projectID).Return(qaProject(t), nil)
+	m.plans.On("SetStatus", mock.Anything, staffingDraftID, constants.PlanStatusRejected).Return(int64(0), nil)
+	_, err := m.service().Reject(asRole("kc-planner", constants.RolePlanner), staffingDraftID)
+	requireAppError(t, err, constants.DraftNotEditable, http.StatusConflict)
+}
+
 func TestStaffingService_Reject(t *testing.T) {
 	m := newStaffingMocks()
 	m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(openDraftWith(), nil)
-	m.plans.On("SetStatus", mock.Anything, staffingDraftID, constants.PlanStatusRejected).Return(nil)
+	m.plans.On("SetStatus", mock.Anything, staffingDraftID, constants.PlanStatusRejected).Return(int64(1), nil)
 	m.projects.On("FindDetail", mock.Anything, projectID).Return(qaProject(t), nil)
 	m.plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(2), nil)
 	_, err := m.service().Reject(asRole("kc-planner", constants.RolePlanner), staffingDraftID)
@@ -687,7 +717,7 @@ func TestStaffingService_Edit_Swap(t *testing.T) {
 	m.projects.On("FindDetail", mock.Anything, projectID).Return(project, nil)
 	m.people.On("FindWithSkills", mock.Anything, otherPersonID2).Return(&models.Person{BaseModel: models.BaseModel{ID: otherPersonID2},
 		Skills: []models.PersonSkill{{ExpertiseID: expQAID, Level: 3, IsPrimary: true}}}, nil)
-	m.plans.On("Touch", mock.Anything, staffingDraftID, acceptedAt).Return(nil)
+	m.plans.On("Touch", mock.Anything, staffingDraftID, acceptedAt).Return(int64(1), nil)
 	m.plans.On("DeleteAssignment", mock.Anything, draftAssignmentID).Return(nil)
 	var added *models.Assignment
 	m.plans.On("CreateAssignment", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
