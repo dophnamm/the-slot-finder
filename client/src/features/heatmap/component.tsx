@@ -1,5 +1,6 @@
 import { SearchX } from 'lucide-react'
 import { EmptyState } from '@/shared/components/empty-state'
+import { LoadError } from '@/shared/components/load-error'
 import { Section } from '@/shared/components/section'
 import { TableLoading } from '@/shared/components/table-loading'
 import { useDebouncedValue } from '@/shared/hooks'
@@ -23,7 +24,7 @@ export function Heatmap() {
   const expertiseId = useHeatmapFilters((state) => state.expertiseId)
   const programId = useHeatmapFilters((state) => state.programId)
   const search = useHeatmapFilters((state) => state.search)
-  const { data, isPending, isPlaceholderData } = useHeatmap({
+  const { data, error, isPending, isPlaceholderData, refetch } = useHeatmap({
     from,
     to: addIsoWeeks(from, weeks - 1),
     expertise: expertiseId,
@@ -31,6 +32,8 @@ export function Heatmap() {
   })
   const query = useDebouncedValue(search, SEARCH_DEBOUNCE_MS)
   const rows = filterRows(data?.rows ?? [], query)
+
+  const handleRetry = () => void refetch()
 
   return (
     <Section
@@ -48,6 +51,7 @@ export function Heatmap() {
           </TableBody>
         </Table>
       )}
+      {error && !data && <LoadError framed message={error.message} onRetry={handleRetry} />}
       {data && rows.length === 0 && (
         <EmptyState
           framed

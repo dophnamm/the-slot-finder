@@ -1,5 +1,6 @@
 import { GitCompareArrows, Plus } from 'lucide-react'
 import { useState } from 'react'
+import { LoadError } from '@/shared/components/load-error'
 import { Section } from '@/shared/components/section'
 import { TableEmpty } from '@/shared/components/table-empty'
 import { TableLoading } from '@/shared/components/table-loading'
@@ -15,15 +16,17 @@ import { ScenarioRow } from './components/scenario-row'
 /** The planner's what-ifs: each one's assumptions, how much it changes the plan, and whether it is stale. */
 export function Scenarios() {
   const { t } = useTranslation()
-  const { data: scenarios = [], isPending } = useScenarios()
+  const { data, error, isPending, refetch } = useScenarios()
+  const scenarios = data ?? []
   const [creating, setCreating] = useState(false)
 
   const handleNew = () => setCreating(true)
+  const handleRetry = () => void refetch()
 
   return (
     <Section
       className="min-h-0 flex-1"
-      title={t('What-if scenarios')}
+      title={t('Scenarios')}
       description={t(
         'Try a change, such as a project slipping or someone on leave, and see what it does to the plan. Nothing real changes.',
       )}
@@ -54,7 +57,10 @@ export function Scenarios() {
             <ScenarioRow key={scenario.id} scenario={scenario} />
           ))}
           {isPending && <TableLoading columns={SCENARIO_TABLE_COLUMNS} />}
-          {!isPending && scenarios.length === 0 && (
+          {error && !data && (
+            <LoadError columns={SCENARIO_TABLE_COLUMNS} message={error.message} onRetry={handleRetry} />
+          )}
+          {!isPending && !error && scenarios.length === 0 && (
             <TableEmpty
               columns={SCENARIO_TABLE_COLUMNS}
               icon={GitCompareArrows}

@@ -2,11 +2,14 @@ import { useState } from 'react'
 import { generatePath } from 'react-router'
 import { toast } from 'sonner'
 import { ROUTES } from '@/resources/routes'
+import { NOT_FOUND_STATUS } from '@/shared/api/constants'
 import { useCurrentUser } from '@/shared/auth'
 import { ActionMenu } from '@/shared/components/action-menu'
+import { LoadError } from '@/shared/components/load-error'
 import { PageSkeleton } from '@/shared/components/page-skeleton'
 import { PagePlaceholder } from '@/shared/components/page-placeholder'
 import { ProjectFormDialog } from '@/shared/components/project-form-dialog'
+import { ProposeSquadButton } from '@/shared/components/propose-squad-button'
 import { StatusBadge } from '@/shared/components/status-badge'
 import { Section } from '@/shared/components/section'
 import { TextLink } from '@/shared/components/text-link'
@@ -32,15 +35,18 @@ import type { ProjectSummaryProps } from './types'
 export function ProjectSummary({ projectId }: ProjectSummaryProps) {
   const { t } = useTranslation()
   const { data: user } = useCurrentUser()
-  const { data: project, isPending } = useProject(projectId)
+  const { data: project, error, isPending, refetch } = useProject(projectId)
   const action = useProjectAction(projectId)
   const [editing, setEditing] = useState(false)
 
   const handleEdit = () => setEditing(true)
+  const handleRetry = () => void refetch()
   const handleDone = () => toast.success(t('Project updated.'))
   const handleAction = (next: ProjectAction) => action.mutate(next, { onSuccess: handleDone })
 
   if (isPending) return <PageSkeleton />
+  if (!project && error && error.status !== NOT_FOUND_STATUS)
+    return <LoadError framed message={error.message} onRetry={handleRetry} />
   if (!project)
     return <PagePlaceholder title={t('Project not found')} description={t('There is no project at this address.')} />
 
@@ -64,16 +70,19 @@ export function ProjectSummary({ projectId }: ProjectSummaryProps) {
       }
       description={t('Priority {priority}', { priority: project.priority })}
       action={
-        editable && (
-          <>
-            {isOpenStatus(project.status) && (
-              <Button variant="outline" size="sm" onClick={handleEdit}>
-                {t('Edit')}
-              </Button>
-            )}
-            <ActionMenu items={menuItems} disabled={action.isPending} onAction={handleAction} />
-          </>
-        )
+        <>
+          <ProposeSquadButton projectId={project.id} status={project.status} programLeadId={project.program_lead?.id} />
+          {editable && (
+            <>
+              {isOpenStatus(project.status) && (
+                <Button variant="outline" size="sm" onClick={handleEdit}>
+                  {t('Edit')}
+                </Button>
+              )}
+              <ActionMenu items={menuItems} disabled={action.isPending} onAction={handleAction} />
+            </>
+          )}
+        </>
       }
       variant="page"
       contentClassName="flex flex-col gap-4"

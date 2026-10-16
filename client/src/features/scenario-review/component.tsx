@@ -1,7 +1,10 @@
 import { RefreshCw, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router'
 import { ROUTES } from '@/resources/routes'
+import { NOT_FOUND_STATUS } from '@/shared/api/constants'
+import { LoadError } from '@/shared/components/load-error'
 import { AssumptionText } from '@/shared/components/assumption-text'
+import { PagePlaceholder } from '@/shared/components/page-placeholder'
 import { PageSkeleton } from '@/shared/components/page-skeleton'
 import { Section } from '@/shared/components/section'
 import { TextLink } from '@/shared/components/text-link'
@@ -20,12 +23,13 @@ import { projectPath } from './utils'
 export function ScenarioReview({ scenarioId }: ScenarioReviewProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { data: scenario, isPending } = useScenario(scenarioId)
+  const { data: scenario, error, isPending, refetch } = useScenario(scenarioId)
   const rerun = useRerunScenario(scenarioId)
   const remove = useDeleteScenario(scenarioId)
   const busy = rerun.isPending || remove.isPending
 
   const handleRerun = () => rerun.mutate()
+  const handleRetry = () => void refetch()
   const handleDeleted = () => navigate(ROUTES.scenarios, { replace: true })
   const handleDelete = async () => {
     const confirmed = await confirm({
@@ -39,7 +43,10 @@ export function ScenarioReview({ scenarioId }: ScenarioReviewProps) {
   }
 
   if (isPending) return <PageSkeleton />
-  if (!scenario) return null
+  if (!scenario && error && error.status !== NOT_FOUND_STATUS)
+    return <LoadError framed message={error.message} onRetry={handleRetry} />
+  if (!scenario)
+    return <PagePlaceholder title={t('Scenario not found')} description={t('There is no scenario at this address.')} />
   const { summary } = scenario
 
   return (
@@ -123,7 +130,7 @@ export function ScenarioReview({ scenarioId }: ScenarioReviewProps) {
           )}
         </div>
       </Section>
-      <ScenarioChanges changes={scenario.changes} />
+      <ScenarioChanges changes={scenario.changes} projects={scenario.projects} />
       <ScenarioUnmet unmet={scenario.unmet} />
     </div>
   )

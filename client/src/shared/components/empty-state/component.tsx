@@ -2,7 +2,7 @@ import { cn } from '@/utils/functions'
 import type { EmptyStateProps } from './types'
 
 /** What to show where a list has nothing yet: an icon, what is missing and, optionally, what to do. */
-export function EmptyState({ icon: Icon, title, description, framed }: EmptyStateProps) {
+export function EmptyState({ icon: Icon, title, description, action, framed }: EmptyStateProps) {
   return (
     <div
       className={cn(
@@ -15,6 +15,7 @@ export function EmptyState({ icon: Icon, title, description, framed }: EmptyStat
       </div>
       <p className="font-medium">{title}</p>
       {description && <p className="max-w-md text-sm text-muted-foreground">{description}</p>}
+      {action}
     </div>
   )
 }
