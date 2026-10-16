@@ -134,6 +134,7 @@ flowchart TB
 | **Assignment editor** | Person × week grid for one staffing draft, grouped by assignment (person × demand). Add a person to any demand, edit weekly hours, lock or unlock, and see the reason and kind of each assignment. A person below the demand's level becomes a **stretch** assignment: shown with ⚠, locked, and confirmed again on accept. If a re-plan merge has superseded the draft, a save, accept or reject gets `409 DRAFT_SUPERSEDED`; the editor reloads the latest version and tells the Planner to check it again. **Allocate hours** on a row opens a dialog that sets a range of weeks inside the demand's window at once: the same hours every week, or a total spread evenly (rounded down to half hours, the remainder on the last week). Locked weeks keep their hours and the dialog says how many it skipped; each week stays between 0 and 80 h. It saves in one `PATCH /staffing-drafts/:id/assignments` |
 | **Expertise chip** | Expertise name with hours. Plain for primary; cross-expertise and stretch get a second badge with that word. Used in the program team table |
 | **Diff viewer** | Baseline versus a draft or scenario: who was added or removed, how hours changed, which projects changed risk status. |
+| **Ask AI widget** | A round button fixed at the bottom-right of every screen in the app layout. Only planners and Managers see it (permission `ai:ask`). It opens a small panel over a dimmed, blurred layer; clicking the layer closes it. The panel fades and slides in and out, and its header button toggles a larger size (width and height animate). Each question goes to `/ai/ask` with the current route path as `page_context` (up to 200 characters), and the answer shows under it. Questions are limited to 500 characters. Messages live in memory only: a reload clears them, and there is no history. While an answer is pending, a three-dot typing indicator shows. The wrapper ignores the mouse except the round button and the open panel. A failed question shows the shared error toast and an inline message, and the question stays in the list |
 | **Intake extraction review** (later) | The suggested project from `/ai/intake-extractions`, field by field. Each field shows its source quote, highlighted in the document; flagged fields (unknown expertise or tag, hours suggested from points) are marked. The lead edits, then **Confirm** saves through the normal project, phase and demand calls. Nothing is saved before that |
 | **AI chat panel** (later) | A side panel on every page for planners, leads and specialists. Sends the visible conversation to `/ai/chat`, shows the reply and links to any scenario or draft it created. Marked as AI-generated |
 | **AI summary** (later) | A card on the staffing draft page with the text from `/staffing-drafts/:id/summary`, next to the reasons it is based on. Marked as AI-generated |
@@ -147,7 +148,7 @@ flowchart TB
    - unwraps the `{ meta, data }` envelope: `request<T>()` returns `data`, `requestWithMeta<T>()` returns `{ data, meta }` for pagination
    - turns every failure into an `ApiError` (`status`, `code`, `message`, `details`)
 4. Write payloads send **only the fields the user changed**. Never send `status`, `utilization`, `gap_hours` or computed totals. To change state, call the action endpoint.
-5. Permissions come from `/me` (`useCurrentUser`) and are used only to show or hide controls. The Server checks them again. AI controls (later) appear only when `/me` reports the AI assistant enabled.
+5. Permissions come from `/me` (`useCurrentUser`) and are used only to show or hide controls. The Server checks them again. The Ask AI widget shows for the `ai:ask` permission alone. Later AI controls appear only when `/me` reports the AI assistant enabled.
 6. Every failed query or mutation goes through **one shared handler** in `shared/api/query-client.ts`, which shows a toast. For `409 PLAN_VERSION_CONFLICT`, the draft-review feature asks the user whether to regenerate the draft. For `409 DRAFT_SUPERSEDED`, it reloads the latest draft version. For `429`, the toast says how many seconds to wait (`retry_after`), and a query is not retried after a `401`, `403` or `429`.
 7. Show weeks as ISO weeks (`2026-W42`) together with their date range. Do week math only with the dayjs helpers in `@/utils/functions` (`toIsoWeek`, `isoWeekRange`, `formatIsoWeekRange`).
 8. A metric the Server returns as `null` (zero denominator) is shown as "—".
@@ -163,6 +164,8 @@ flowchart TB
 11. **Icon-only buttons in a table row are named on a long hover** (`IconHint` in `shared/components/icon-hint`, after half a second). **Our jargon explains itself.** Where baseline, staffing draft, stretch, cross-expertise, gap hours, staffing %, planned burn %, at risk or scenario is a heading, a column title or a badge, it goes through `Term` (`shared/components/term`): an info icon after the word, with a one-sentence definition on hover or keyboard focus. The definitions are i18n keys in that folder's `constants.ts`, taken from root README §6.5 and §7. Body text is not wrapped.
 12. **Questions use the app's own dialog.** Accepting or rejecting a draft, removing a phase, demand or team member, deleting a scenario, disconnecting a calendar and the record menu's irreversible actions ask with `confirm()` (`shared/stores/confirm-store`), which opens the `ConfirmDialog` mounted in `app-providers`: a title, an optional description, an optional red warning (the draft's stretch assignments) and a confirming button named after the action, red when it cannot be undone. The browser's `confirm`, `alert` and `prompt` are not used; lint rejects them.
 13. **A failed load says so.** A list or page whose request fails (Intake, Drafts, Change history, Scenarios, Heatmap, Risks, project summary, draft review, scenario review, a heatmap cell's popover) shows `LoadError` (`shared/components/load-error`): the reason and **Try again**. "Not found" is shown only for a 404.
+14. **Theme.** The accent is `#3FA6EE` (`--primary` and `--ring` in `src/index.css`; links use a darker shade). The favicon and the Keycloak sign-in theme use the same blue.
+15. **Shared UI.** Dialogs fade and zoom in and out over 200 ms (`shared/ui/dialog.tsx`). Buttons and button-like roles get a pointer cursor from one base rule in `src/index.css`, so new components need no cursor class.
 
 ## 6. Folder layout
 
@@ -190,7 +193,8 @@ client/
     │   ├── draft-review/ · scenarios/ · scenario-review/
     │   ├── heatmap/              ← the dashboard; filters in use-heatmap-filters.ts (Zustand)
     │   ├── replan-banner/ · change-history/
-    │   └── risks/                ← the dashboard's risks list, next to the heatmap
+    │   ├── risks/                ← the dashboard's risks list, next to the heatmap
+    │   └── ask-ai/               ← the floating Ask AI widget, mounted in app-layout
     ├── resources/
     │   ├── endpoints/            ← server API paths per domain (HEALTH_ENDPOINTS, PROGRAM_ENDPOINTS)
     │   ├── routes/               ← client route paths (ROUTES)
@@ -204,6 +208,7 @@ client/
         ├── i18n/                 ← language-key.ts (LanguageKey), translate.ts (t, translate), locales/, language-store.ts
         ├── ui/                   ← shadcn components, managed by the shadcn CLI
         ├── components/           ← components used by several features, e.g. page-placeholder/, pager/, status-badge/
+        ├── ai/                   ← Ask AI: api.ts, use-ask-ai.ts, types.ts
         ├── programs/ · expertises/ · staffing/ · events/ · people/ · scenarios/ · utilization/ · hooks/   ← API calls, query hooks and types shared by several features
         └── stores/               ← auth-store.ts (Zustand)
 ```
