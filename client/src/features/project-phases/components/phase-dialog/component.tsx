@@ -5,13 +5,14 @@ import { Button } from '@/shared/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
-import { formatIsoWeekSpan } from '@/utils/functions'
+import { formatIsoWeekSpan, planningWindow } from '@/utils/functions'
 import type { PhaseDraftField } from '../../types'
 import type { PhaseDialogProps } from './types'
 
 /** Adds or edits one phase; the timeline in the dialog previews how later phases move before saving. */
 export function PhaseDialog({ draft, canSave, busy, preview, onChange, onSave, onCancel }: PhaseDialogProps) {
   const { t } = useTranslation()
+  const bounds = planningWindow()
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const field = event.target.name as PhaseDraftField
@@ -51,14 +52,22 @@ export function PhaseDialog({ draft, canSave, busy, preview, onChange, onSave, o
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="phase-start">{t('Start week')}</Label>
-              <WeekPicker id="phase-start" name="start_week" value={draft.start_week} onChange={handleWeekChange} />
+              <WeekPicker
+                id="phase-start"
+                name="start_week"
+                min={bounds.minWeek}
+                max={bounds.maxWeek}
+                value={draft.start_week}
+                onChange={handleWeekChange}
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="phase-end">{t('End week')}</Label>
               <WeekPicker
                 id="phase-end"
                 name="end_week"
-                min={draft.start_week}
+                min={draft.start_week > bounds.minWeek ? draft.start_week : bounds.minWeek}
+                max={bounds.maxWeek}
                 value={draft.end_week}
                 onChange={handleWeekChange}
               />

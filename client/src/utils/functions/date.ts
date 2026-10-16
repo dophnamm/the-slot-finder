@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 import isoWeek from 'dayjs/plugin/isoWeek'
 import utc from 'dayjs/plugin/utc'
-import { DATE_FORMAT, ISO_WEEK_ONE_DAY, ISO_WEEK_PATTERN } from '@/utils/constants'
+import { DATE_FORMAT, ISO_WEEK_ONE_DAY, ISO_WEEK_PATTERN, PROJECT_WINDOW_WEEKS } from '@/utils/constants'
 import type { IsoWeekRange } from './types'
 
 dayjs.extend(isoWeek)
@@ -131,4 +131,23 @@ export function formatIsoWeekday(isoWeekday: number, format: string = DATE_FORMA
 /** Today as a date value (`'2026-10-14'`), in the browser's time zone. */
 export function todayDateValue(): string {
   return dayjs().format(DATE_FORMAT.isoDate)
+}
+
+/** The weeks and days that project and phase dates may use: `PROJECT_WINDOW_WEEKS` either side of today's week. */
+export function planningWindow(today: dayjs.ConfigType = dayjs()) {
+  const week = toIsoWeek(today)
+  const minWeek = addIsoWeeks(week, -PROJECT_WINDOW_WEEKS)
+  const maxWeek = addIsoWeeks(week, PROJECT_WINDOW_WEEKS)
+  return { minWeek, maxWeek, minDate: isoWeekDate(minWeek, 1), maxDate: isoWeekDate(maxWeek, 7) }
+}
+
+/** Whether an ISO week is inside the planning window. */
+export function isWeekInWindow(week: string, today?: dayjs.ConfigType): boolean {
+  const { minWeek, maxWeek } = planningWindow(today)
+  return isIsoWeek(week) && week >= minWeek && week <= maxWeek
+}
+
+/** Whether a date value (`YYYY-MM-DD`) is inside the planning window. */
+export function isDateInWindow(date: string, today?: dayjs.ConfigType): boolean {
+  return isWeekInWindow(toIsoWeek(date), today)
 }

@@ -18,6 +18,9 @@ export const DATE_FORMAT = {
   weekdayShort: 'ddd',
 } as const
 
+/** Weeks either side of the current ISO week that project and phase dates may fall in; mirrors the server's PROJECT_WINDOW_WEEKS. */
+export const PROJECT_WINDOW_WEEKS = 156
+
 /** ISO week label, e.g. "2026-W42". */
 export const ISO_WEEK_PATTERN = /^(\d{4})-W(\d{2})$/
 

@@ -1,4 +1,5 @@
 import type { Project, ProjectInput } from '@/shared/programs'
+import { isDateInWindow } from '@/utils/functions'
 import type { ProjectFormValues } from './types'
 
 export function initialValues(project: Project | null): ProjectFormValues {
@@ -36,12 +37,19 @@ export function toChanges(project: Project, values: ProjectFormValues, canChoose
   return changes
 }
 
-/** A name and both dates, the deadline not before the start. */
-export function canSave(values: ProjectFormValues): boolean {
+/** A date is fine when unchanged (the server checks changed dates only) or inside the planning window. */
+function dateOk(value: string, saved: string | undefined): boolean {
+  return value === saved || isDateInWindow(value)
+}
+
+/** A name and both dates, the deadline not before the start, changed dates inside the planning window. */
+export function canSave(values: ProjectFormValues, project: Project | null = null): boolean {
   return (
     values.name.trim() !== '' &&
     values.start_earliest !== '' &&
     values.deadline !== '' &&
-    values.deadline >= values.start_earliest
+    values.deadline >= values.start_earliest &&
+    dateOk(values.start_earliest, project?.start_earliest) &&
+    dateOk(values.deadline, project?.deadline)
   )
 }

@@ -1,5 +1,5 @@
 import type { Phase, PhaseChanges, PhaseInput, ProjectDetail } from '@/shared/programs'
-import { addIsoWeeks, isIsoWeek, isoWeekList, isoWeeksBetween } from '@/utils/functions'
+import { addIsoWeeks, isIsoWeek, isoWeekList, isoWeeksBetween, isWeekInWindow } from '@/utils/functions'
 import type { CellState, TimelineRowData } from './components/phase-timeline'
 import { MAX_TIMELINE_WEEKS, NEW_PHASE_KEY, NEW_PHASE_WEEKS } from './constants'
 import type { PhaseDraft, Slip } from './types'
@@ -19,9 +19,21 @@ function hasWeeks(span: PhaseDraft): boolean {
   return isIsoWeek(span.start_week) && isIsoWeek(span.end_week)
 }
 
-/** A name and both weeks, the end not before the start. */
-export function isValidDraft(draft: PhaseDraft): boolean {
-  return draft.name.trim() !== '' && hasWeeks(draft) && isoWeeksBetween(draft.start_week, draft.end_week) >= 0
+/** Whether a span is new or has a week different from its saved phase, like `timelineRows` decides. */
+function isMoved(phases: Phase[], span: PhaseDraft): boolean {
+  const before = phases.find((phase) => phase.id === span.id)
+  return !before || before.start_week !== span.start_week || before.end_week !== span.end_week
+}
+
+/** A name and both weeks, the end not before the start, and every new or moved phase (including the later phases a slip shifts) fully inside the planning window. */
+export function isValidDraft(draft: PhaseDraft, phases: Phase[]): boolean {
+  const spans = previewPhases(phases, draft)
+  return (
+    draft.name.trim() !== '' &&
+    hasWeeks(draft) &&
+    isoWeeksBetween(draft.start_week, draft.end_week) >= 0 &&
+    spans.every((span) => !isMoved(phases, span) || (isWeekInWindow(span.start_week) && isWeekInWindow(span.end_week)))
+  )
 }
 
 /** The server's rule: a later end moves every later phase by the same weeks; an earlier end moves nothing. */
@@ -84,7 +96,7 @@ function cellState(week: string, span: PhaseDraft, before: Phase | undefined, mo
 export function timelineRows(phases: Phase[], spans: PhaseDraft[], weeks: string[]): TimelineRowData[] {
   return spans.map((span) => {
     const before = phases.find((phase) => phase.id === span.id)
-    const moved = !before || before.start_week !== span.start_week || before.end_week !== span.end_week
+    const moved = isMoved(phases, span)
     return {
       key: span.id ?? NEW_PHASE_KEY,
       name: span.name,
