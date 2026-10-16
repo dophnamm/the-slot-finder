@@ -86,7 +86,7 @@ func findBaseline(ctx context.Context, plans repositories.PlanRepository, op str
 }
 
 func (s *planService) PersonAssignments(ctx context.Context, in PersonAssignmentsInput) ([]models.Assignment, error) {
-	if _, err := s.authz.RequireSelfOr(ctx, in.PersonID, CanViewPlans); err != nil {
+	if _, err := s.authz.RequireVisiblePerson(ctx, in.PersonID); err != nil {
 		return nil, err
 	}
 	if in.To.Before(in.From) {

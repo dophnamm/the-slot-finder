@@ -223,6 +223,20 @@ func TestPlanService_PersonAssignments(t *testing.T) {
 		requireStatus(t, err, http.StatusForbidden)
 	})
 
+	t.Run("a manager reads a team member but not an outsider", func(t *testing.T) {
+		plans, people := new(MockPlanRepository), new(MockPersonRepository)
+		people.On("FindOneByID", mock.Anything, teamMemberID).Return(&models.Person{}, nil)
+		plans.On("FindBaselineSummary", mock.Anything).Return(publishedBaseline(1), nil)
+		plans.On("ListPersonAssignments", mock.Anything, baselineID, teamMemberID, from, to).Return([]models.Assignment{withHours}, nil)
+		service := ProvidePlanService(plans, people, newVisibilityAuthz())
+		lead := asRole("kc-lead", constants.RoleLead)
+		got, err := service.PersonAssignments(lead, PersonAssignmentsInput{PersonID: teamMemberID, From: from, To: to})
+		require.NoError(t, err)
+		assert.Len(t, got, 1)
+		_, err = service.PersonAssignments(lead, PersonAssignmentsInput{PersonID: outsiderPersonID, From: from, To: to})
+		requireStatus(t, err, http.StatusForbidden)
+	})
+
 	t.Run("to before from", func(t *testing.T) {
 		_, err := newPlanService(new(MockPlanRepository), new(MockPersonRepository)).PersonAssignments(
 			asRole("kc-planner", constants.RolePlanner), PersonAssignmentsInput{PersonID: selfPersonID, From: to, To: from})

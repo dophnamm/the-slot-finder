@@ -217,7 +217,7 @@ func (s *staffingService) Get(ctx context.Context, id string) (*DraftView, error
 	if err != nil {
 		return nil, err
 	}
-	if _, err := s.authz.RequireLeadOf(ctx, CanManagePlans, leadsOf(view.Projects)...); err != nil {
+	if _, err := s.requireDraftRights(ctx, view.Projects); err != nil {
 		return nil, err
 	}
 	return view, nil
@@ -604,18 +604,6 @@ func diffPlans(before, after *models.Plan) []models.PlanChange {
 		return out[i].Demand.ID < out[j].Demand.ID
 	})
 	return out
-}
-
-// leadsOf is the project and program leads of the projects.
-func leadsOf(projects []models.Project) []*string {
-	var leads []*string
-	for _, p := range projects {
-		leads = append(leads, p.LeadID)
-		if p.Program != nil {
-			leads = append(leads, p.Program.LeadID)
-		}
-	}
-	return leads
 }
 
 func weekLabels(weeks []isoweek.Week) []string {
