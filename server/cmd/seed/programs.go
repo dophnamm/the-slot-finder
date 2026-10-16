@@ -59,10 +59,10 @@ var programs = []seedProgram{
 				scopePoints: 80, leadEmail: "lead@slot-finder.local",
 				phases:  []seedPhase{{"Build", "2026-W45", "2026-W49"}, {"Test", "2026-W49", "2026-W51"}},
 				demands: []seedDemand{{expertiseEngineer, "Build", 4, 1, 160}, {expertiseQA, "Test", 2, 1, 60}}},
-			{name: "Data Migration", priority: 3, start: day(2026, time.October, 5), deadline: day(2026, time.November, 13),
+			{name: "Data Migration", priority: 3, start: day(2026, time.October, 12), deadline: day(2026, time.November, 13),
 				scopePoints: 40, donePts: 10, leadEmail: "lead@slot-finder.local",
-				phases:  []seedPhase{{"Build", "2026-W41", "2026-W45"}, {"Test", "2026-W45", "2026-W46"}},
-				demands: []seedDemand{{expertiseEngineer, "Build", 3, 1, 120}, {expertiseQA, "Test", 3, 1, 40}}},
+				phases:  []seedPhase{{"Build", "2026-W42", "2026-W45"}, {"Test", "2026-W45", "2026-W46"}},
+				demands: []seedDemand{{expertiseEngineer, "Build", 3, 1, 72}, {expertiseQA, "Test", 3, 1, 40}}},
 		},
 	},
 	{
