@@ -11,6 +11,7 @@ import {
   DRAFT_SUPERSEDED,
   draftQueryKey,
   OPEN_DRAFTS_QUERY_KEY,
+  OPEN_DRAFTS_REFETCH_MS,
   PLAN_VERSION_CONFLICT,
 } from './constants'
 import type { Draft, DraftAcceptance, DraftEdit } from './types'
@@ -18,7 +19,12 @@ import { applySetHours } from './utils'
 
 /** Open drafts for the inbox and the sidebar count; enabled only for roles that may see drafts. */
 export function useOpenDrafts(enabled = true) {
-  return useQuery({ queryKey: OPEN_DRAFTS_QUERY_KEY, queryFn: listOpenDrafts, enabled })
+  return useQuery({
+    queryKey: OPEN_DRAFTS_QUERY_KEY,
+    queryFn: listOpenDrafts,
+    enabled,
+    refetchInterval: OPEN_DRAFTS_REFETCH_MS,
+  })
 }
 
 export function useDraft(id: string) {

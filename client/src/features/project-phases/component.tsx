@@ -1,12 +1,12 @@
 import { Layers, Plus } from 'lucide-react'
 import { useState } from 'react'
-import { toast } from 'sonner'
 import { useCurrentUser } from '@/shared/auth'
 import { canEditProject, type Phase, useProject, useReplacePhases, useUpdatePhase } from '@/shared/programs'
 import { Section } from '@/shared/components/section'
 import { TableEmpty } from '@/shared/components/table-empty'
 import { TableLoading } from '@/shared/components/table-loading'
 import { useTranslation } from '@/shared/i18n'
+import { useReplanToast } from '@/shared/staffing'
 import { confirm } from '@/shared/stores/confirm-store'
 import { Button } from '@/shared/ui/button'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
@@ -35,6 +35,7 @@ import {
  */
 export function ProjectPhases({ projectId }: ProjectPhasesProps) {
   const { t } = useTranslation()
+  const replanToast = useReplanToast()
   const { data: user } = useCurrentUser()
   const { data: project, isPending } = useProject(projectId)
   const [draft, setDraft] = useState<PhaseDraft | null>(null)
@@ -75,13 +76,13 @@ export function ProjectPhases({ projectId }: ProjectPhasesProps) {
   const handleCancel = () => setDraft(null)
   const handlePhaseSaved = (changed: Phase[]) => {
     const moved = changed.length - 1
-    if (moved === 0) toast.success(t('Phase saved.'))
-    else if (moved === 1) toast.success(t('Phase saved. {count} later phase moved.', { count: moved }))
-    else toast.success(t('Phase saved. {count} later phases moved.', { count: moved }))
+    if (moved === 0) replanToast(t('Phase saved.'))
+    else if (moved === 1) replanToast(t('Phase saved. {count} later phase moved.', { count: moved }))
+    else replanToast(t('Phase saved. {count} later phases moved.', { count: moved }))
     setDraft(null)
   }
   const handleListSaved = () => {
-    toast.success(t('Phases saved.'))
+    replanToast(t('Phases saved.'))
     setDraft(null)
   }
   const handleSave = () => {

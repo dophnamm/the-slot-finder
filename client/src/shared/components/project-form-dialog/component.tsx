@@ -6,6 +6,7 @@ import { LeadSelect } from '@/shared/components/lead-select'
 import { DatePicker } from '@/shared/components/date-picker'
 import { useSaveProject } from '@/shared/programs'
 import { useTranslation } from '@/shared/i18n'
+import { useReplanToast } from '@/shared/staffing'
 import { Button } from '@/shared/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { Input } from '@/shared/ui/input'
@@ -16,6 +17,7 @@ import { canSave, initialValues, toChanges, toInput } from './utils'
 /** Adds a project to a program, or edits one, including its scope points. */
 export function ProjectFormDialog({ open, programId, project, onOpenChange }: ProjectFormDialogProps) {
   const { t } = useTranslation()
+  const replanToast = useReplanToast()
   const { data: user } = useCurrentUser()
   const [values, setValues] = useState<ProjectFormValues>(() => initialValues(project))
   const save = useSaveProject(programId, project?.id)
@@ -30,7 +32,9 @@ export function ProjectFormDialog({ open, programId, project, onOpenChange }: Pr
     setValues((current) => ({ ...current, [name as ProjectTextField]: value }))
   const handleLeadChange = (leadId: string) => setValues((current) => ({ ...current, lead_id: leadId }))
   const handleSaved = () => {
-    toast.success(t('Project saved.'))
+    // A moved deadline triggers a re-plan; other edits do not.
+    if (project && values.deadline !== project.deadline) replanToast(t('Project saved.'))
+    else toast.success(t('Project saved.'))
     onOpenChange(false)
   }
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {

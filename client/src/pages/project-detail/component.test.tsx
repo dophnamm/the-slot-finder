@@ -9,6 +9,7 @@ import { ProjectDetailPage } from './component'
 const { useProject } = vi.hoisted(() => ({ useProject: vi.fn() }))
 vi.mock('@/shared/programs', () => ({ useProject }))
 vi.mock('@/features/project-summary', () => ({ ProjectSummary: () => 'project summary' }))
+vi.mock('@/features/replan-banner', () => ({ ReplanBanner: () => null }))
 vi.mock('@/features/project-phases', () => ({ ProjectPhases: () => null }))
 vi.mock('@/features/demand-form', () => ({ DemandForm: () => null }))
 

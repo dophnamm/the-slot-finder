@@ -22,6 +22,7 @@ vi.mock('@/shared/programs', async (importOriginal) => ({
   useUpdatePhase: () => ({ mutate: vi.fn(), isPending: false }),
   useReplacePhases: () => ({ mutate: vi.fn(), isPending: false }),
 }))
+vi.mock('@/shared/staffing', () => ({ useReplanToast: () => vi.fn() }))
 vi.mock('@/shared/auth', () => ({ useCurrentUser: () => ({ data: { role: 'planner' } }) }))
 
 afterEach(cleanup)
