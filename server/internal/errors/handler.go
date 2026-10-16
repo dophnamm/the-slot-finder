@@ -260,7 +260,6 @@ func (h *ErrorHandler) reportToSentry(c *echo.Context, appErr *AppError) {
 				monitoring.SetScopeData(scope, "path", c.Request().URL.Path)
 				monitoring.SetScopeData(scope, "method", c.Request().Method)
 				monitoring.SetScopeData(scope, "query", c.QueryParams())
-				monitoring.SetScopeData(scope, "headers", c.Request().Header)
 				monitoring.SetScopeData(scope, "user_agent", c.Request().UserAgent())
 				monitoring.SetScopeData(scope, "ip", c.RealIP())
 			}
