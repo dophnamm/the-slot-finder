@@ -17,6 +17,9 @@ const (
 const (
 	AbsenceSourceManual   = "manual"
 	AbsenceSourceCalendar = "calendar"
+	// AbsenceSourceDismissed marks calendar leave a person deleted by hand. The row stays soft-deleted
+	// with its event UID, so the next sync does not bring the event back.
+	AbsenceSourceDismissed = "calendar_dismissed"
 )
 
 // PersonalAbsenceTypes are the types a person's own absence may have.

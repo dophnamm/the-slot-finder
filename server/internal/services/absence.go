@@ -204,6 +204,9 @@ func (s *availabilityService) Delete(ctx context.Context, absenceID string) erro
 		}
 	}
 	remove := func(ctx context.Context) error { return s.repo.Delete(ctx, absence) }
+	if absence.Source == constants.AbsenceSourceCalendar && absence.ExternalUID != nil {
+		remove = func(ctx context.Context) error { return s.repo.DismissCalendarLeave(ctx, absence) }
+	}
 	event := ChangeInput{Type: constants.EventAbsenceRemoved, Payload: absenceChange(absence, name)}
 	if err := s.saveWithEvent(ctx, remove, event); err != nil {
 		return asAppError(err, constants.MsgAbsenceDeleteFailed, opDeleteAbsence, resourceAbsence)
@@ -309,6 +312,14 @@ func (s *availabilityService) ApplyCalendarLeave(ctx context.Context, in ApplyCa
 		if err != nil {
 			return err
 		}
+		dismissed, err := s.repo.ListDismissedCalendarUIDs(ctx, in.PersonID)
+		if err != nil {
+			return err
+		}
+		skip := make(map[string]bool, len(dismissed))
+		for _, uid := range dismissed {
+			skip[uid] = true
+		}
 		byUID := make(map[string]models.Absence, len(existing))
 		for _, a := range existing {
 			if a.ExternalUID != nil {
@@ -316,6 +327,9 @@ func (s *availabilityService) ApplyCalendarLeave(ctx context.Context, in ApplyCa
 			}
 		}
 		for _, leave := range in.Leave {
+			if skip[leave.UID] {
+				continue // deleted by hand; the calendar keeps the event, the plan does not
+			}
 			old, known := byUID[leave.UID]
 			delete(byUID, leave.UID)
 			if leave.ToDate.Before(in.From) && (!known || old.ToDate.Before(in.From)) {

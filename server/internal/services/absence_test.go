@@ -195,6 +195,19 @@ func TestAvailabilityService_Delete(t *testing.T) {
 	}
 }
 
+func TestAvailabilityService_Delete_CalendarLeaveIsDismissed(t *testing.T) {
+	self, uid := selfPersonID, "event-1"
+	absence := &models.Absence{PersonID: &self, Source: constants.AbsenceSourceCalendar, ExternalUID: &uid}
+	repo := new(MockAbsenceRepository)
+	repo.On("FindOneByID", mock.Anything, absenceID).Return(absence, nil)
+	repo.On("DismissCalendarLeave", mock.Anything, absence).Return(nil)
+
+	require.NoError(t, newAvailability(repo).Delete(asRole("kc-specialist", constants.RoleSpecialist), absenceID))
+
+	repo.AssertExpectations(t)
+	repo.AssertNotCalled(t, "Delete", mock.Anything, mock.Anything)
+}
+
 func TestAvailabilityService_CreateHoliday(t *testing.T) {
 	day := time.Date(2026, time.December, 25, 0, 0, 0, 0, time.UTC)
 
@@ -301,6 +314,15 @@ func TestAvailabilityService_Approve(t *testing.T) {
 
 func (m *MockAbsenceRepository) DetachCalendarLeave(ctx context.Context, personID string) error {
 	return m.Called(ctx, personID).Error(0)
+}
+
+func (m *MockAbsenceRepository) DismissCalendarLeave(ctx context.Context, absence *models.Absence) error {
+	return m.Called(ctx, absence).Error(0)
+}
+
+func (m *MockAbsenceRepository) ListDismissedCalendarUIDs(ctx context.Context, personID string) ([]string, error) {
+	args := m.Called(ctx, personID)
+	return args.Get(0).([]string), args.Error(1)
 }
 
 func (m *MockAbsenceRepository) ApprovePlanned(ctx context.Context, id string) (bool, error) {
