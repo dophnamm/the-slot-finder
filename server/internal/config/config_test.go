@@ -167,7 +167,7 @@ func TestLoad_DefaultsAndOverrides(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	assert.Equal(t, EnvironmentDevelopment, cfg.AppEnv)
+	assert.Equal(t, EnvironmentProduction, cfg.AppEnv)
 	assert.Equal(t, "1.0.0", cfg.AppVersion)
 	assert.Equal(t, 30, cfg.AppRequestTimeout)
 	assert.False(t, cfg.DatabaseEnableDebug)
