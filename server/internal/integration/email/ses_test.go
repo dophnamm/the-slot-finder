@@ -81,7 +81,7 @@ func TestNewSESSender(t *testing.T) {
 }
 
 func TestSESSender_SendEmail(t *testing.T) {
-	cfg := config.Config{AWSSESAccessKey: "noreply@example.com"}
+	cfg := config.Config{AWSSESFromEmail: "noreply@example.com"}
 
 	t.Run("html body only", func(t *testing.T) {
 		var form url.Values
