@@ -1,5 +1,6 @@
 import { History } from 'lucide-react'
 import { useState } from 'react'
+import { LoadError } from '@/shared/components/load-error'
 import { Pager } from '@/shared/components/pager'
 import { Section } from '@/shared/components/section'
 import { TableEmpty } from '@/shared/components/table-empty'
@@ -14,8 +15,10 @@ import { HISTORY_PAGE_SIZE, HISTORY_TABLE_COLUMNS } from './constants'
 export function ChangeHistory() {
   const { t } = useTranslation()
   const [page, setPage] = useState(1)
-  const { data, isPending, isPlaceholderData } = useEvents(undefined, page, HISTORY_PAGE_SIZE)
+  const { data, error, isPending, isPlaceholderData, refetch } = useEvents(undefined, page, HISTORY_PAGE_SIZE)
   const events = data?.data ?? []
+
+  const handleRetry = () => void refetch()
 
   return (
     <Section
@@ -43,7 +46,10 @@ export function ChangeHistory() {
             <ChangeRow key={event.id} event={event} />
           ))}
           {isPending && <TableLoading columns={HISTORY_TABLE_COLUMNS} />}
-          {!isPending && events.length === 0 && (
+          {error && !data && (
+            <LoadError columns={HISTORY_TABLE_COLUMNS} message={error.message} onRetry={handleRetry} />
+          )}
+          {!isPending && !error && events.length === 0 && (
             <TableEmpty
               columns={HISTORY_TABLE_COLUMNS}
               icon={History}

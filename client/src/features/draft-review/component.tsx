@@ -1,4 +1,6 @@
+import { NOT_FOUND_STATUS } from '@/shared/api/constants'
 import { useCurrentUser } from '@/shared/auth'
+import { LoadError } from '@/shared/components/load-error'
 import { PageSkeleton } from '@/shared/components/page-skeleton'
 import { PagePlaceholder } from '@/shared/components/page-placeholder'
 import { useTranslation } from '@/shared/i18n'
@@ -13,9 +15,13 @@ import type { DraftReviewProps } from './types'
 export function DraftReview({ draftId }: DraftReviewProps) {
   const { t } = useTranslation()
   const { data: user } = useCurrentUser()
-  const { data: draft, isPending } = useDraft(draftId)
+  const { data: draft, error, isPending, refetch } = useDraft(draftId)
+
+  const handleRetry = () => void refetch()
 
   if (isPending) return <PageSkeleton />
+  if (!draft && error && error.status !== NOT_FOUND_STATUS)
+    return <LoadError framed message={error.message} onRetry={handleRetry} />
   if (!draft)
     return (
       <PagePlaceholder

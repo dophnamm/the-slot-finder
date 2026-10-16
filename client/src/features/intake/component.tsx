@@ -1,5 +1,6 @@
 import { Inbox } from 'lucide-react'
 import { useState } from 'react'
+import { LoadError } from '@/shared/components/load-error'
 import { Pager } from '@/shared/components/pager'
 import { Section } from '@/shared/components/section'
 import { TableEmpty } from '@/shared/components/table-empty'
@@ -14,8 +15,10 @@ import { INTAKE_STATUS, INTAKE_TABLE_COLUMNS } from './constants'
 export function IntakeQueue() {
   const { t } = useTranslation()
   const [page, setPage] = useState(1)
-  const { data, isPending, isPlaceholderData } = useProjects(INTAKE_STATUS, page)
+  const { data, error, isPending, isPlaceholderData, refetch } = useProjects(INTAKE_STATUS, page)
   const projects = data?.data ?? []
+
+  const handleRetry = () => void refetch()
 
   return (
     <Section
@@ -43,7 +46,8 @@ export function IntakeQueue() {
             <IntakeRow key={project.id} project={project} />
           ))}
           {isPending && <TableLoading columns={INTAKE_TABLE_COLUMNS} />}
-          {!isPending && projects.length === 0 && (
+          {error && !data && <LoadError columns={INTAKE_TABLE_COLUMNS} message={error.message} onRetry={handleRetry} />}
+          {!isPending && !error && projects.length === 0 && (
             <TableEmpty
               columns={INTAKE_TABLE_COLUMNS}
               icon={Inbox}

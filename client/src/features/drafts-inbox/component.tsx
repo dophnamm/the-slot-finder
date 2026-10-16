@@ -1,4 +1,5 @@
 import { FileStack } from 'lucide-react'
+import { LoadError } from '@/shared/components/load-error'
 import { Section } from '@/shared/components/section'
 import { TableEmpty } from '@/shared/components/table-empty'
 import { TableLoading } from '@/shared/components/table-loading'
@@ -12,7 +13,10 @@ import { DRAFT_TABLE_COLUMNS } from './constants'
 /** Every open staffing draft, manual and re-plan, newest first; each row opens the draft review. */
 export function DraftsInbox() {
   const { t } = useTranslation()
-  const { data: drafts = [], isPending } = useOpenDrafts()
+  const { data, error, isPending, refetch } = useOpenDrafts()
+  const drafts = data ?? []
+
+  const handleRetry = () => void refetch()
 
   return (
     <Section
@@ -39,7 +43,8 @@ export function DraftsInbox() {
             <DraftRow key={draft.id} draft={draft} />
           ))}
           {isPending && <TableLoading columns={DRAFT_TABLE_COLUMNS} />}
-          {!isPending && drafts.length === 0 && (
+          {error && !data && <LoadError columns={DRAFT_TABLE_COLUMNS} message={error.message} onRetry={handleRetry} />}
+          {!isPending && !error && drafts.length === 0 && (
             <TableEmpty columns={DRAFT_TABLE_COLUMNS} icon={FileStack} title={t('No open staffing drafts.')} />
           )}
         </TableBody>

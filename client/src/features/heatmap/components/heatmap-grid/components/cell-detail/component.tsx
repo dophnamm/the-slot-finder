@@ -1,3 +1,7 @@
+import { generatePath } from 'react-router'
+import { ROUTES } from '@/resources/routes'
+import { LoadError } from '@/shared/components/load-error'
+import { TextLink } from '@/shared/components/text-link'
 import { useTranslation } from '@/shared/i18n'
 import { ASSIGNMENT_KIND_BADGE, ASSIGNMENT_KIND_LABELS } from '@/shared/staffing'
 import { Badge } from '@/shared/ui/badge'
@@ -13,7 +17,10 @@ import { weekHours } from './utils'
 /** A person's week: load against capacity, planned leave, and the assignments behind it. */
 export function CellDetail({ cell, person }: CellDetailProps) {
   const { t } = useTranslation()
-  const { data: assignments = [], isPending } = usePersonWeek(person.id, cell.week)
+  const { data, error, isPending, refetch } = usePersonWeek(person.id, cell.week)
+  const assignments = data ?? []
+
+  const handleRetry = () => void refetch()
 
   return (
     <div className="flex flex-col gap-3 text-sm">
@@ -51,14 +58,23 @@ export function CellDetail({ cell, person }: CellDetailProps) {
           </span>
         </div>
       )}
-      {!isPending && assignments.length === 0 && (
+      {error && !data && <LoadError message={error.message} onRetry={handleRetry} />}
+      {!isPending && !error && assignments.length === 0 && (
         <span className="text-muted-foreground">{t('No assignments this week.')}</span>
       )}
       <ul className="flex flex-col gap-2">
         {assignments.map((assignment) => (
           <li key={assignment.id} className="flex items-start justify-between gap-2">
             <div className="flex min-w-0 flex-col">
-              <span className="truncate font-medium">{assignment.demand.project}</span>
+              <TextLink
+                to={generatePath(ROUTES.projectDetail, {
+                  programId: assignment.demand.program_id,
+                  id: assignment.demand.project_id,
+                })}
+                className="truncate font-medium"
+              >
+                {assignment.demand.project}
+              </TextLink>
               <span className="text-xs text-muted-foreground">
                 {t('{expertise} · {program}', {
                   expertise: assignment.demand.expertise,
