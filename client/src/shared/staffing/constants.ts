@@ -12,6 +12,9 @@ export const alternativesQueryKey = (id: string, assignmentId: string) =>
 /** The drafts inbox; generating, accepting or rejecting a draft refetches it. */
 export const OPEN_DRAFTS_QUERY_KEY = ['staffing-drafts', 'open'] as const
 
+/** Re-plans add drafts in the background, so the inbox and its sidebar count are fetched again this often. */
+export const OPEN_DRAFTS_REFETCH_MS = 15_000
+
 /** The server's code when the baseline moved on since the draft was made. */
 export const PLAN_VERSION_CONFLICT = 'PLAN_VERSION_CONFLICT'
 
