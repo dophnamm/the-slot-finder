@@ -113,64 +113,6 @@ func (a *KeycloakAuth) ValidateToken(token string) (*gocloak.IntroSpectTokenResu
 	return result, nil
 }
 
-func (a *KeycloakAuth) DecodeAccessToken(ctx context.Context, token string, realm string, claims *TokenClaims) (*TokenClaims, error) {
-	_, err := a.client.DecodeAccessTokenCustomClaims(ctx, token, realm, claims)
-	if err != nil {
-		// Capture invalid claims error in Sentry
-		if hub := monitoring.GetSentryHub(ctx); hub != nil {
-			hub.WithScope(func(scope *sentry.Scope) {
-				scope.SetTag("auth_error", "invalid_claims")
-				scope.SetTag("service", a.config.AppName)
-				scope.SetTag("environment", a.config.AppEnv.String())
-				monitoring.SetScopeData(scope, "error_details", err.Error())
-				hub.CaptureException(err)
-			})
-		}
-		logger.Sugar.Errorf("Failed to decode access token custom claims: %v", err)
-		return nil, errors.ExternalServiceError("Failed to decode access token custom claims", err).
-			WithOperation("decode_access_token_custom_claims").
-			WithResource("keycloak")
-	}
-
-	return claims, nil
-}
-
-func (a *KeycloakAuth) GetRealm() string {
-	return a.config.KeycloakRealm
-}
-
-// GetRequestingPartyToken exchanges an access token for an RPT with evaluated permissions
-func (a *KeycloakAuth) GetRequestingPartyToken(ctx context.Context, accessToken string, opts RequestingPartyTokenOptions) (*JWT, error) {
-	rpt, err := a.client.GetRequestingPartyToken(ctx, accessToken, a.config.KeycloakRealm, gocloak.RequestingPartyTokenOptions(opts))
-	if err != nil {
-		// Capture error in Sentry
-		if hub := monitoring.GetSentryHub(ctx); hub != nil {
-			hub.WithScope(func(scope *sentry.Scope) {
-				scope.SetTag("adapter", "keycloak")
-				scope.SetTag("operation", "get_rpt")
-				monitoring.SetScopeData(scope, "error_details", err.Error())
-				monitoring.SetScopeData(scope, "realm", a.config.KeycloakRealm)
-				hub.CaptureException(err)
-			})
-		}
-		logger.Sugar.Errorf("Failed to get RPT: %v", err)
-		return nil, errors.ExternalServiceError("Failed to get RPT", err).
-			WithOperation("get_rpt").
-			WithResource("keycloak")
-	}
-	return &JWT{
-		AccessToken:      rpt.AccessToken,
-		IDToken:          rpt.IDToken,
-		ExpiresIn:        rpt.ExpiresIn,
-		RefreshExpiresIn: rpt.RefreshExpiresIn,
-		RefreshToken:     rpt.RefreshToken,
-		TokenType:        rpt.TokenType,
-		NotBeforePolicy:  rpt.NotBeforePolicy,
-		SessionState:     rpt.SessionState,
-		Scope:            rpt.Scope,
-	}, nil
-}
-
 func (a *KeycloakAuth) CreateUser(ctx context.Context, adminToken string, userDto *dtos.CreateUserRequest) (*User, error) {
 	emailVerified := true
 	enabled := true

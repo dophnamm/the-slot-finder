@@ -2,7 +2,6 @@ package middlewares
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -22,18 +21,6 @@ import (
 
 type mockAuthService struct {
 	mock.Mock
-}
-
-func (m *mockAuthService) GetRealm() string {
-	return m.Called().String(0)
-}
-
-func (m *mockAuthService) DecodeAccessToken(ctx context.Context, token string, realm string, claims *auth.TokenClaims) (*auth.TokenClaims, error) {
-	args := m.Called(ctx, token, realm, claims)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*auth.TokenClaims), args.Error(1)
 }
 
 func (m *mockAuthService) ValidateToken(token string) (*gocloak.IntroSpectTokenResult, error) {
@@ -58,14 +45,6 @@ func (m *mockAuthService) GetUserInfo(token string) (*auth.User, error) {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*auth.User), args.Error(1)
-}
-
-func (m *mockAuthService) GetRequestingPartyToken(ctx context.Context, accessToken string, opts auth.RequestingPartyTokenOptions) (*auth.JWT, error) {
-	args := m.Called(ctx, accessToken, opts)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*auth.JWT), args.Error(1)
 }
 
 func (m *mockAuthService) CreateUser(ctx context.Context, adminToken string, userDto *dtos.CreateUserRequest) (*auth.User, error) {
@@ -239,106 +218,4 @@ func TestPrincipalFromClaims(t *testing.T) {
 
 	assert.Equal(t, request.Principal{}, principalFromClaims(nil, "client-a"))
 	assert.Empty(t, principalFromClaims(claimsWithRealmRoles("u2", "offline_access"), "client-a").Role)
-}
-
-func TestRequirePermission(t *testing.T) {
-	cfg := &config.Config{KeycloakClientID: "app-client"}
-	next := func(c *echo.Context) error {
-		return c.NoContent(http.StatusNoContent)
-	}
-
-	tests := []struct {
-		name       string
-		headers    map[string]string
-		setup      func(*mockAuthService)
-		wantStatus int
-	}{
-		{
-			name:       "invalid auth header",
-			headers:    map[string]string{"Authorization": "Basic x"},
-			wantStatus: http.StatusUnauthorized,
-		},
-		{
-			name:       "empty token",
-			headers:    map[string]string{"Authorization": "Bearer "},
-			wantStatus: http.StatusUnauthorized,
-		},
-		{
-			name:    "rpt evaluation failed",
-			headers: map[string]string{"Authorization": "Bearer access"},
-			setup: func(m *mockAuthService) {
-				m.On("GetRequestingPartyToken", mock.Anything, "access", mock.Anything).
-					Return(nil, errors.New("uma failed"))
-			},
-			wantStatus: http.StatusForbidden,
-		},
-		{
-			name:    "invalid rpt claims",
-			headers: map[string]string{"Authorization": "Bearer access"},
-			setup: func(m *mockAuthService) {
-				m.On("GetRequestingPartyToken", mock.Anything, "access", mock.Anything).
-					Return(&auth.JWT{AccessToken: "rpt"}, nil)
-				m.On("GetRealm").Return("realm")
-				m.On("DecodeAccessToken", mock.Anything, "rpt", "realm", mock.Anything).
-					Return(nil, errors.New("bad rpt"))
-			},
-			wantStatus: http.StatusForbidden,
-		},
-		{
-			name:    "insufficient permissions",
-			headers: map[string]string{"Authorization": "Bearer access"},
-			setup: func(m *mockAuthService) {
-				m.On("GetRequestingPartyToken", mock.Anything, "access", mock.Anything).
-					Return(&auth.JWT{AccessToken: "rpt"}, nil)
-				m.On("GetRealm").Return("realm")
-				m.On("DecodeAccessToken", mock.Anything, "rpt", "realm", mock.Anything).
-					Run(func(args mock.Arguments) {
-						claims := args.Get(3).(*auth.TokenClaims)
-						claims.Authorization.Permissions = []struct {
-							ResourceName string   `json:"rsname"`
-							Scopes       []string `json:"scopes"`
-						}{
-							{ResourceName: "users", Scopes: []string{"read"}},
-						}
-					}).
-					Return(&auth.TokenClaims{}, nil)
-			},
-			wantStatus: http.StatusForbidden,
-		},
-		{
-			name:    "success",
-			headers: map[string]string{"Authorization": "Bearer access"},
-			setup: func(m *mockAuthService) {
-				m.On("GetRequestingPartyToken", mock.Anything, "access", mock.Anything).
-					Return(&auth.JWT{AccessToken: "rpt"}, nil)
-				m.On("GetRealm").Return("realm")
-				m.On("DecodeAccessToken", mock.Anything, "rpt", "realm", mock.Anything).
-					Run(func(args mock.Arguments) {
-						claims := args.Get(3).(*auth.TokenClaims)
-						claims.Authorization.Permissions = []struct {
-							ResourceName string   `json:"rsname"`
-							Scopes       []string `json:"scopes"`
-						}{
-							{ResourceName: "users", Scopes: []string{"write"}},
-						}
-					}).
-					Return(&auth.TokenClaims{}, nil)
-			},
-			wantStatus: http.StatusNoContent,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			authSvc := new(mockAuthService)
-			if tt.setup != nil {
-				tt.setup(authSvc)
-			}
-			c, rec := newEchoContext(http.MethodGet, "/perm", tt.headers)
-			err := RequirePermission(cfg, authSvc, "users", "write")(next)(c)
-			require.NoError(t, err)
-			assert.Equal(t, tt.wantStatus, rec.Code)
-			authSvc.AssertExpectations(t)
-		})
-	}
 }

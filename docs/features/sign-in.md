@@ -17,7 +17,7 @@
 
 - The PERSON link (`personId`) in `/me` → [people-and-skills](people-and-skills.md).
 - Per-program rules (lead of this program, internal assistant) → [programs-and-demand](programs-and-demand.md) and [Later](README.md#later).
-- Token introspection and UMA permissions (template leftovers, no longer used per request).
+- UMA permissions are removed. Token introspection code is still there, but no request uses it.
 - Sentry. There is no DSN yet. Events are scrubbed of the request body, query string, cookies, credential headers and calendar links before they leave the server (see [server/README, Run locally](../../server/README.md#0-run-locally)).
 - Managing users inside the app. Users are managed in Keycloak.
 

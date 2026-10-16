@@ -19,19 +19,6 @@ type MockAuthProvider struct {
 	mock.Mock
 }
 
-func (m *MockAuthProvider) GetRealm() string {
-	args := m.Called()
-	return args.String(0)
-}
-
-func (m *MockAuthProvider) DecodeAccessToken(ctx context.Context, token string, realm string, claims *auth.TokenClaims) (*auth.TokenClaims, error) {
-	args := m.Called(ctx, token, realm, claims)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*auth.TokenClaims), args.Error(1)
-}
-
 func (m *MockAuthProvider) ValidateToken(token string) (*gocloak.IntroSpectTokenResult, error) {
 	args := m.Called(token)
 	if args.Get(0) == nil {
@@ -59,14 +46,6 @@ func (m *MockAuthProvider) GetUserInfo(token string) (*auth.User, error) {
 func (m *MockAuthProvider) GetClaimsKey() string {
 	args := m.Called()
 	return args.String(0)
-}
-
-func (m *MockAuthProvider) GetRequestingPartyToken(ctx context.Context, accessToken string, opts auth.RequestingPartyTokenOptions) (*auth.JWT, error) {
-	args := m.Called(ctx, accessToken, opts)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*auth.JWT), args.Error(1)
 }
 
 func (m *MockAuthProvider) CreateUser(ctx context.Context, adminToken string, userDto *dtos.CreateUserRequest) (*auth.User, error) {
