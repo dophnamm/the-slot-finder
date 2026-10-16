@@ -177,15 +177,33 @@ func TestStaffingService_Get(t *testing.T) {
 	draft := &models.Plan{BaseModel: models.BaseModel{ID: staffingDraftID}, Kind: constants.PlanKindDraft,
 		Status: constants.PlanStatusDraft, ProjectIDs: []string{projectID}}
 
-	t.Run("the project's lead reads it", func(t *testing.T) {
+	t.Run("the program's lead reads it", func(t *testing.T) {
 		m := newStaffingMocks()
+		project := qaProject(t)
+		project.Program.LeadID = new(leadPersonID)
 		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(draft, nil)
-		m.projects.On("FindDetail", mock.Anything, projectID).Return(qaProject(t), nil)
+		m.projects.On("FindDetail", mock.Anything, projectID).Return(project, nil)
 		m.plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(0), nil)
 		view, err := m.service().Get(asRole("kc-lead", constants.RoleLead), staffingDraftID)
 		require.NoError(t, err)
 		assert.Equal(t, staffingDraftID, view.Plan.ID)
 		assert.NotEmpty(t, view.Load.Weeks)
+	})
+
+	t.Run("a lead of only one of two programs in the draft is refused", func(t *testing.T) {
+		m := newStaffingMocks()
+		spanning := &models.Plan{BaseModel: models.BaseModel{ID: staffingDraftID}, Kind: constants.PlanKindDraft,
+			Status: constants.PlanStatusDraft, ProjectIDs: []string{projectID, buildID}}
+		own, other := qaProject(t), qaProject(t)
+		own.Program.LeadID = new(leadPersonID)
+		other.ID = buildID
+		other.Program = &models.Program{BaseModel: models.BaseModel{ID: otherDemandID}, LeadID: new(otherPersonID2)}
+		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(spanning, nil)
+		m.projects.On("FindDetail", mock.Anything, projectID).Return(own, nil)
+		m.projects.On("FindDetail", mock.Anything, buildID).Return(other, nil)
+		m.plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(0), nil)
+		_, err := m.service().Get(asRole("kc-lead", constants.RoleLead), staffingDraftID)
+		requireStatus(t, err, http.StatusForbidden)
 	})
 
 	t.Run("a lead of other projects is refused", func(t *testing.T) {
