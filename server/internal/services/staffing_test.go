@@ -284,6 +284,7 @@ func TestStaffingService_Edit(t *testing.T) {
 			{name: "add", input: EditDraftInput{Add: []AddAssignmentInput{{PersonID: otherPersonID2, DemandID: demandID,
 				Allocations: []WeekHours{{Week: mustWeek(t, "2026-W47"), Hours: 10}}}}}},
 			{name: "set", input: EditDraftInput{Set: []SetAllocationInput{{AssignmentID: draftAssignmentID, Week: mustWeek(t, "2026-W47"), Hours: 10}}}},
+			{name: "remove an assignment with past hours", input: EditDraftInput{Remove: []string{draftAssignmentID}}},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
