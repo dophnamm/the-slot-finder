@@ -69,3 +69,6 @@ const (
 // SecretBodyPaths are routes whose request body holds a secret (a calendar link). The request
 // log and error reports keep a placeholder instead of the body, even when the request is refused.
 var SecretBodyPaths = []string{PathAPIBase + PathPersonCalendarFeed, PathAPIBase + PathHolidayImport}
+
+// Ask AI.
+const PathAIAsk = "/ai/ask"

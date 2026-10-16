@@ -179,6 +179,108 @@
                 }
             }
         },
+        "/ai/ask": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Answers a question about programs, projects, staffing and load. The model reads data only through read-only tools that run with the caller's own permissions, so a manager gets answers about their own programs only. 503 AI_NOT_CONFIGURED when the server has no API key for the chosen provider; 502 AI_UPSTREAM_FAILED when the model service fails.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AI"
+                ],
+                "summary": "Ask AI",
+                "parameters": [
+                    {
+                        "description": "Question",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.AskAIRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.AskAIResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/events": {
             "get": {
                 "security": [
@@ -4099,6 +4201,33 @@
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "dtos.AskAIRequest": {
+            "type": "object",
+            "required": [
+                "question"
+            ],
+            "properties": {
+                "page_context": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "example": "Project page, id 0b8c5a52-3c0d-4c7e-9a43-6f8a1f0f0001"
+                },
+                "question": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "example": "Who is overloaded next week?"
+                }
+            }
+        },
+        "dtos.AskAIResponse": {
+            "type": "object",
+            "properties": {
+                "answer": {
+                    "type": "string"
                 }
             }
         },

@@ -36,6 +36,7 @@ func Router(
 	calendarFeedHandler *handlers.CalendarFeedHandler,
 	teamHandler *handlers.ProgramTeamHandler,
 	holidayImportHandler *handlers.HolidayImportHandler,
+	aiHandler *handlers.AIHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 ) *echo.Echo {
@@ -154,8 +155,7 @@ func Router(
 	v1.GET(constants.PathPersonSchedule, scheduleHandler.Get, authenticated, middlewares.RequireRole(constants.PersonScheduleRoles...))
 	registerProgramRoutes(v1, authenticated, programHandler, projectHandler)
 	registerPlanRoutes(v1, authenticated, heavy, planHandler, staffingHandler)
-	v1.GET(constants.PathHeatmap, insightsHandler.Heatmap, authenticated, middlewares.RequireRole(constants.InsightRoles...))
-	v1.GET(constants.PathRisks, insightsHandler.Risks, authenticated, middlewares.RequireRole(constants.InsightRoles...))
+	registerInsightRoutes(v1, authenticated, heavy, insightsHandler, aiHandler)
 	v1.GET(constants.PathProgramOverview, insightsHandler.ProgramOverview, authenticated, middlewares.RequireRole(constants.ProgramRoles...))
 	v1.GET(constants.PathProgramMembers, insightsHandler.ProgramMembers, authenticated, middlewares.RequireRole(constants.ProgramRoles...))
 	v1.GET(constants.PathEvents, eventHandler.List, authenticated, middlewares.RequireRole(constants.EventViewRoles...))
@@ -172,6 +172,16 @@ func Router(
 	v1.POST(constants.PathTimesheetImport, timesheetHandler.Import, authenticated, timesheetRoles, heavy)
 
 	return r
+}
+
+// registerInsightRoutes adds the heatmap, the risks and the Ask AI assistant, which reads the same data.
+func registerInsightRoutes(v1 *echo.Group, authenticated, heavy echo.MiddlewareFunc, insightsHandler *handlers.InsightsHandler,
+	aiHandler *handlers.AIHandler,
+) {
+	roles := middlewares.RequireRole(constants.InsightRoles...)
+	v1.GET(constants.PathHeatmap, insightsHandler.Heatmap, authenticated, roles)
+	v1.GET(constants.PathRisks, insightsHandler.Risks, authenticated, roles)
+	v1.POST(constants.PathAIAsk, aiHandler.Ask, authenticated, roles, heavy)
 }
 
 // registerPlanRoutes adds the baseline, people's assignments and staffing drafts.
