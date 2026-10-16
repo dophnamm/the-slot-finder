@@ -79,12 +79,14 @@ func (m *MockPlanRepository) SupersedeBaseline(ctx context.Context, version int)
 	return args.Get(0).(int64), args.Error(1)
 }
 
-func (m *MockPlanRepository) Publish(ctx context.Context, id string, version int, at time.Time, by *string) error {
-	return m.Called(ctx, id, version, at, by).Error(0)
+func (m *MockPlanRepository) Publish(ctx context.Context, id string, version int, at time.Time, by *string) (int64, error) {
+	args := m.Called(ctx, id, version, at, by)
+	return args.Get(0).(int64), args.Error(1)
 }
 
-func (m *MockPlanRepository) SetStatus(ctx context.Context, id, status string) error {
-	return m.Called(ctx, id, status).Error(0)
+func (m *MockPlanRepository) SetStatus(ctx context.Context, id, status string) (int64, error) {
+	args := m.Called(ctx, id, status)
+	return args.Get(0).(int64), args.Error(1)
 }
 
 func (m *MockPlanRepository) FindOpenAutoDraft(ctx context.Context, version int) (*models.Plan, error) {
@@ -121,8 +123,9 @@ func (m *MockPlanRepository) SupersedeDraft(ctx context.Context, id string, read
 	return args.Get(0).(int64), args.Error(1)
 }
 
-func (m *MockPlanRepository) Touch(ctx context.Context, id string, at time.Time) error {
-	return m.Called(ctx, id, at).Error(0)
+func (m *MockPlanRepository) Touch(ctx context.Context, id string, at time.Time) (int64, error) {
+	args := m.Called(ctx, id, at)
+	return args.Get(0).(int64), args.Error(1)
 }
 
 func (m *MockPlanRepository) FindAssignment(ctx context.Context, id string) (*models.Assignment, error) {

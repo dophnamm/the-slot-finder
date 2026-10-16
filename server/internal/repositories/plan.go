@@ -46,10 +46,11 @@ type PlanRepository interface {
 	// SupersedeBaseline marks the published baseline superseded only while its version is
 	// still version. It returns the rows changed: 0 means the baseline moved on.
 	SupersedeBaseline(ctx context.Context, version int) (int64, error)
-	// Publish turns a draft into the published baseline with the given version.
-	Publish(ctx context.Context, id string, version int, at time.Time, by *string) error
-	// SetStatus changes a plan's status.
-	SetStatus(ctx context.Context, id, status string) error
+	// Publish turns an open draft into the published baseline with the given version.
+	// It returns the rows changed: 0 means the plan is no longer an open draft.
+	Publish(ctx context.Context, id string, version int, at time.Time, by *string) (int64, error)
+	// SetStatus changes an open draft's status; 0 rows means the plan is no longer an open draft.
+	SetStatus(ctx context.Context, id, status string) (int64, error)
 	// FindOpenAutoDraft returns the open re-plan draft built on a baseline version, with its
 	// assignments: a draft that change events link to.
 	FindOpenAutoDraft(ctx context.Context, version int) (*models.Plan, error)
@@ -57,7 +58,8 @@ type PlanRepository interface {
 	// open draft last changed at readAt. It returns the rows changed: 0 means it changed.
 	SupersedeDraft(ctx context.Context, id string, readAt time.Time, newID string) (int64, error)
 	// Touch records that a draft changed, so a re-plan merge does not drop the change.
-	Touch(ctx context.Context, id string, at time.Time) error
+	// It returns 0 rows when the plan is no longer an open draft.
+	Touch(ctx context.Context, id string, at time.Time) (int64, error)
 	// FindAssignment returns one assignment with its allocations.
 	FindAssignment(ctx context.Context, id string) (*models.Assignment, error)
 	CreateAssignment(ctx context.Context, assignment *models.Assignment) error
@@ -142,15 +144,24 @@ func (r *planRepository) SupersedeBaseline(ctx context.Context, version int) (in
 	return result.RowsAffected, result.Error
 }
 
-func (r *planRepository) Publish(ctx context.Context, id string, version int, at time.Time, by *string) error {
-	return r.db.From(ctx).Model(&models.Plan{}).Where("id = ?", id).Updates(map[string]any{
+func (r *planRepository) Publish(ctx context.Context, id string, version int, at time.Time, by *string) (int64, error) {
+	result := r.openDraftOnly(ctx, id).Updates(map[string]any{
 		"kind": constants.PlanKindBaseline, "status": constants.PlanStatusPublished, "version": version,
 		"published_at": at, "published_by": by,
-	}).Error
+	})
+	return result.RowsAffected, result.Error
 }
 
-func (r *planRepository) SetStatus(ctx context.Context, id, status string) error {
-	return r.db.From(ctx).Model(&models.Plan{}).Where("id = ?", id).Update("status", status).Error
+func (r *planRepository) SetStatus(ctx context.Context, id, status string) (int64, error) {
+	result := r.openDraftOnly(ctx, id).Update("status", status)
+	return result.RowsAffected, result.Error
+}
+
+// openDraftOnly scopes a write to a plan that is still an open draft, so a concurrent accept,
+// reject or supersede cannot be overwritten.
+func (r *planRepository) openDraftOnly(ctx context.Context, id string) *gorm.DB {
+	return r.db.From(ctx).Model(&models.Plan{}).
+		Where("id = ? AND kind = ? AND status = ?", id, constants.PlanKindDraft, constants.PlanStatusDraft)
 }
 
 func (r *planRepository) FindOpenAutoDraft(ctx context.Context, version int) (*models.Plan, error) {
@@ -173,8 +184,9 @@ func (r *planRepository) SupersedeDraft(ctx context.Context, id string, readAt t
 	return result.RowsAffected, result.Error
 }
 
-func (r *planRepository) Touch(ctx context.Context, id string, at time.Time) error {
-	return r.db.From(ctx).Model(&models.Plan{}).Where("id = ?", id).UpdateColumn("updated_at", at).Error
+func (r *planRepository) Touch(ctx context.Context, id string, at time.Time) (int64, error) {
+	result := r.openDraftOnly(ctx, id).UpdateColumn("updated_at", at)
+	return result.RowsAffected, result.Error
 }
 
 func (r *planRepository) FindAssignment(ctx context.Context, id string) (*models.Assignment, error) {

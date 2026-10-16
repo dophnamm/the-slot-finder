@@ -28,6 +28,29 @@ func emptyDraft(t *testing.T, plans repositories.PlanRepository, version int) st
 	return draft.ID
 }
 
+func TestPlanRepository_OnlyOpenDraftsChange_Postgres(t *testing.T) {
+	pdb := dbtest.NewPostgres(t)
+	dbtest.ApplyMigrations(t, pdb)
+	ctx := context.Background()
+	plans := repositories.ProvidePlanRepository(pdb)
+	draftID := emptyDraft(t, plans, 0)
+
+	n, err := plans.SetStatus(ctx, draftID, constants.PlanStatusRejected)
+	require.NoError(t, err)
+	assert.EqualValues(t, 1, n)
+
+	// A rejected draft is no longer an open draft: none of the three writes may touch it.
+	n, err = plans.SetStatus(ctx, draftID, constants.PlanStatusDraft)
+	require.NoError(t, err)
+	assert.Zero(t, n)
+	n, err = plans.Publish(ctx, draftID, 1, acceptedAt, nil)
+	require.NoError(t, err)
+	assert.Zero(t, n, "a rejected draft is never published")
+	n, err = plans.Touch(ctx, draftID, acceptedAt)
+	require.NoError(t, err)
+	assert.Zero(t, n)
+}
+
 func TestStaffingService_Accept_Postgres(t *testing.T) {
 	pdb := dbtest.NewPostgres(t)
 	dbtest.ApplyMigrations(t, pdb)
