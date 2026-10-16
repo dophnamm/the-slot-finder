@@ -50,6 +50,11 @@ type Config struct {
 	AppHTTPServer string
 	// AppRequestTimeout is the HTTP server read header timeout in seconds.
 	AppRequestTimeout int
+	// HTTP server limits against slow clients. The write timeout covers the whole response, so it must
+	// outlast the slowest handler (the longest is a calendar fetch, CALENDAR_FETCH_TIMEOUT, plus database time).
+	HTTPReadTimeout  time.Duration
+	HTTPWriteTimeout time.Duration
+	HTTPIdleTimeout  time.Duration
 	// Largest request body accepted, in bytes; larger requests get 413.
 	AppBodyLimitBytes int64
 	// Trust X-Forwarded-For from private and loopback proxies when extracting the client IP.
@@ -233,6 +238,9 @@ func Load() (*Config, error) {
 		Timezone:                     getEnv("TIMEZONE", "UTC"),
 		AppHTTPServer:                getEnv("APP_HTTP_SERVER", ":3000"),
 		AppRequestTimeout:            getEnvAsInt("APP_REQUEST_TIMEOUT", 30),
+		HTTPReadTimeout:              getEnvAsDuration("HTTP_READ_TIMEOUT", 30*time.Second),
+		HTTPWriteTimeout:             getEnvAsDuration("HTTP_WRITE_TIMEOUT", 120*time.Second),
+		HTTPIdleTimeout:              getEnvAsDuration("HTTP_IDLE_TIMEOUT", 120*time.Second),
 		AppBodyLimitBytes:            int64(getEnvAsInt("APP_BODY_LIMIT_BYTES", 2<<20)),
 		HTTPTrustProxy:               getEnvAsBool("HTTP_TRUST_PROXY", false),
 		DatabaseHost:                 getEnv("POSTGRES_HOST", "localhost"),
