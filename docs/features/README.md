@@ -19,7 +19,7 @@ One spec per feature, in build order. Each spec holds the goal, scope, server an
 | 11 | [Member calendar](member-calendar.md) | A person page and My schedule with a month calendar: absences, holidays, weekly load against capacity, hours per project | 13–14 Oct | people-and-skills, team-heatmap | Done |
 | 12 | [Timesheet import](timesheet-import.md) | CSV template from the baseline, import of actual hours, Actual hours and Burn % on programs and projects | 14–15 Oct | program-metrics, member-calendar | Done |
 | 13 | [Calendar sync](calendar-sync.md) | Secret ICS link from Google or Outlook; out-of-office events become planned leave and feed the re-plan flow | 15–16 Oct | member-calendar, replan-on-change | Done |
-| 14 | [Program teams](program-teams.md) | A planner gives each program its team; the program's manager sees and staffs only that team, and the engine staffs a program from its team | 14–15 Oct | programs-and-demand, staffing-draft, member-calendar | In review |
+| 14 | [Program teams](program-teams.md) | A planner gives each program its team; the program's manager sees and staffs only that team, and the engine staffs a program from its team | 14–15 Oct | programs-and-demand, staffing-draft, member-calendar | Done |
 
 ## Schedule
 
