@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	stderrors "errors"
 	"net/http"
 	"testing"
@@ -316,4 +317,28 @@ func TestReplanService_RunOnce_KeepsPastWeeks(t *testing.T) {
 	assert.InDelta(t, 40, weeks["2026-W48"]+weeks["2026-W49"]+weeks["2026-W50"]+weeks["2026-W51"], hoursEpsilon,
 		"the 60 h demand minus the 20 h worked is planned from the current week on")
 	assert.InDelta(t, 60, draft.Assignments[0].TotalHours(), hoursEpsilon)
+}
+
+func TestReplanService_Run_SurvivesAPanic(t *testing.T) {
+	secondTick := make(chan struct{})
+	events := new(MockChangeEventRepository)
+	events.On("LockReplanning", mock.Anything).Run(func(mock.Arguments) { panic("boom") }).Return(nil).Once()
+	events.On("LockReplanning", mock.Anything).Run(func(mock.Arguments) { close(secondTick) }).Return(nil).Once()
+	events.On("ClaimPending", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]models.ChangeEvent{}, nil)
+	cfg := replanConfig()
+	cfg.ReplanPollInterval = time.Millisecond
+	service := ProvideReplanService(new(MockPlanRepository), events, nil, new(MockPersonRepository), new(MockAbsenceRepository),
+		passthroughTx{}, clock.NewFixed(eventTime), cfg, nil)
+
+	ctx, cancel := context.WithCancel(t.Context())
+	done := make(chan struct{})
+	go func() { service.Run(ctx); close(done) }()
+
+	select {
+	case <-secondTick:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the runner stopped after a panic")
+	}
+	cancel()
+	<-done
 }

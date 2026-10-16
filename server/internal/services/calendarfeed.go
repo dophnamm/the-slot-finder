@@ -219,10 +219,13 @@ func (s *calendarFeedService) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			// Errors never hold a calendar link, so they are safe to log.
-			if n, err := s.RunOnce(ctx); err != nil {
-				logger.Log.Warn("Calendar sync failed", zap.Int("calendars", n), zap.Error(err))
-			}
+			func() {
+				defer recoverTick("calendar sync")
+				// Errors never hold a calendar link, so they are safe to log.
+				if n, err := s.RunOnce(ctx); err != nil {
+					logger.Log.Warn("Calendar sync failed", zap.Int("calendars", n), zap.Error(err))
+				}
+			}()
 		}
 	}
 }

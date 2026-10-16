@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	stderrors "errors"
+	"runtime/debug"
 	"slices"
 	"sort"
 	"time"
@@ -67,10 +68,21 @@ func (s *replanService) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if n, err := s.RunOnce(ctx); err != nil {
-				logger.Log.Warn("Re-plan batch failed", zap.Int("events", n), zap.Error(err))
-			}
+			func() {
+				defer recoverTick("replan")
+				if n, err := s.RunOnce(ctx); err != nil {
+					logger.Log.Warn("Re-plan batch failed", zap.Int("events", n), zap.Error(err))
+				}
+			}()
 		}
+	}
+}
+
+// recoverTick, deferred around one tick of a background runner, keeps the loop alive after a panic.
+func recoverTick(runner string) {
+	if r := recover(); r != nil {
+		logger.Log.Error("Background runner panicked", zap.String("runner", runner), zap.Any("panic", r),
+			zap.ByteString("stack", debug.Stack()))
 	}
 }
 

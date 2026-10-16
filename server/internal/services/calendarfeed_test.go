@@ -377,3 +377,41 @@ func TestCalendarFeedService_LeaveHours(t *testing.T) {
 		})
 	}
 }
+
+// panicOnceFeeds panics on the first ClaimDue and signals on the second.
+type panicOnceFeeds struct {
+	*fakeFeeds
+	calls      int
+	secondTick chan struct{}
+}
+
+func (f *panicOnceFeeds) ClaimDue(ctx context.Context, now, next time.Time, limit int) ([]models.CalendarFeed, error) {
+	f.calls++
+	if f.calls == 1 {
+		panic("boom")
+	}
+	close(f.secondTick)
+	return f.fakeFeeds.ClaimDue(ctx, now, next, limit)
+}
+
+func TestCalendarFeedService_Run_SurvivesAPanic(t *testing.T) {
+	feeds := &panicOnceFeeds{fakeFeeds: &fakeFeeds{byPerson: map[string]*models.CalendarFeed{}}, secondTick: make(chan struct{})}
+	people := hoursPeople{stubPeople: stubPeople{self: &models.Person{BaseModel: models.BaseModel{ID: selfPersonID}}}, weeklyHours: fullTime}
+	cfg := feedConfig(testFeedKey)
+	cfg.CalendarSyncInterval = time.Millisecond
+	service, err := ProvideCalendarFeedService(feeds, people, &fakeLeave{}, ProvideAuthzService(people), passthroughTx{},
+		clock.NewFixed(syncNow), cfg, &fakeFetcher{})
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() { service.Run(ctx); close(done) }()
+
+	select {
+	case <-feeds.secondTick:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the runner stopped after a panic")
+	}
+	cancel()
+	<-done
+}
