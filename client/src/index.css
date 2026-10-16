@@ -213,4 +213,13 @@
   html {
     @apply font-sans;
   }
+  /* Tailwind v4 preflight resets buttons to the default cursor. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  [role='tab'],
+  [role='menuitem'],
+  [role='option'],
+  summary {
+    cursor: pointer;
+  }
 }
