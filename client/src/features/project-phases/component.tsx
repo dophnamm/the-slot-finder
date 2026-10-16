@@ -69,6 +69,7 @@ export function ProjectPhases({ projectId }: ProjectPhasesProps) {
   const savedRows = timelineRows(phases, saved, savedWeeks)
   const thisWeek = currentIsoWeek()
   const slip = slipOf(phases, draft)
+  const draftValid = draft !== null && isValidDraft(draft, phases)
   const late = draft !== null && endsLate(preview, project.deadline_week)
 
   const handleEdit = (phase: Phase) => setDraft(toDraft(phase))
@@ -160,7 +161,7 @@ export function ProjectPhases({ projectId }: ProjectPhasesProps) {
       {draft && (
         <PhaseDialog
           draft={draft}
-          canSave={isValidDraft(draft)}
+          canSave={draftValid}
           busy={busy}
           preview={
             <div className="flex flex-col gap-3">

@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { addMonths, formatIsoWeekday, formatMonth, isInMonth, isoWeekDate, monthIsoWeeks } from './date'
+import {
+  addIsoWeeks,
+  addMonths,
+  formatIsoWeekday,
+  formatMonth,
+  isInMonth,
+  isDateInWindow,
+  isoWeekDate,
+  isWeekInWindow,
+  monthIsoWeeks,
+  planningWindow,
+} from './date'
 
 describe('monthIsoWeeks', () => {
   it('lists the ISO weeks that touch a month', () => {
@@ -38,5 +49,33 @@ describe('day helpers', () => {
     expect(formatMonth('2026-10')).toBe('October 2026')
     expect(formatIsoWeekday(1)).toBe('Mon')
     expect(formatIsoWeekday(7)).toBe('Sun')
+  })
+})
+
+describe('planning window', () => {
+  const today = '2026-10-14'
+
+  it('spans 156 weeks either side of the current week', () => {
+    const { minWeek, maxWeek, minDate, maxDate } = planningWindow(today)
+    expect(minWeek).toBe(addIsoWeeks('2026-W42', -156))
+    expect(maxWeek).toBe(addIsoWeeks('2026-W42', 156))
+    expect(minDate).toBe(isoWeekDate(minWeek, 1))
+    expect(maxDate).toBe(isoWeekDate(maxWeek, 7))
+  })
+
+  it('accepts the edge weeks and rejects the ones just outside', () => {
+    const { minWeek, maxWeek } = planningWindow(today)
+    expect(isWeekInWindow(minWeek, today)).toBe(true)
+    expect(isWeekInWindow(maxWeek, today)).toBe(true)
+    expect(isWeekInWindow(addIsoWeeks(minWeek, -1), today)).toBe(false)
+    expect(isWeekInWindow(addIsoWeeks(maxWeek, 1), today)).toBe(false)
+  })
+
+  it('judges a date by its week', () => {
+    const { minDate, maxDate } = planningWindow(today)
+    expect(isDateInWindow(minDate, today)).toBe(true)
+    expect(isDateInWindow(maxDate, today)).toBe(true)
+    expect(isDateInWindow(isoWeekDate(addIsoWeeks(planningWindow(today).minWeek, -1), 7), today)).toBe(false)
+    expect(isDateInWindow(isoWeekDate(addIsoWeeks(planningWindow(today).maxWeek, 1), 1), today)).toBe(false)
   })
 })

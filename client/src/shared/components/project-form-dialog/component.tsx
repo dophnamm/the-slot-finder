@@ -11,6 +11,7 @@ import { Button } from '@/shared/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
+import { planningWindow } from '@/utils/functions'
 import type { ProjectFormDialogProps, ProjectFormValues, ProjectTextField } from './types'
 import { canSave, initialValues, toChanges, toInput } from './utils'
 
@@ -21,6 +22,7 @@ export function ProjectFormDialog({ open, programId, project, onOpenChange }: Pr
   const { data: user } = useCurrentUser()
   const [values, setValues] = useState<ProjectFormValues>(() => initialValues(project))
   const save = useSaveProject(programId, project?.id)
+  const bounds = planningWindow()
   const canChooseLead = can(user?.role, 'programs:manage-all')
 
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -76,6 +78,8 @@ export function ProjectFormDialog({ open, programId, project, onOpenChange }: Pr
               <DatePicker
                 id="project-start"
                 name="start_earliest"
+                min={bounds.minDate}
+                max={bounds.maxDate}
                 value={values.start_earliest}
                 onChange={handleDateChange}
               />
@@ -85,7 +89,8 @@ export function ProjectFormDialog({ open, programId, project, onOpenChange }: Pr
               <DatePicker
                 id="project-deadline"
                 name="deadline"
-                min={values.start_earliest}
+                min={values.start_earliest > bounds.minDate ? values.start_earliest : bounds.minDate}
+                max={bounds.maxDate}
                 value={values.deadline}
                 onChange={handleDateChange}
               />
@@ -118,7 +123,7 @@ export function ProjectFormDialog({ open, programId, project, onOpenChange }: Pr
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={!canSave(values)} isLoading={save.isPending}>
+            <Button type="submit" disabled={!canSave(values, project)} isLoading={save.isPending}>
               {t('Save')}
             </Button>
           </DialogFooter>
