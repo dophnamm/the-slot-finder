@@ -162,6 +162,7 @@ func (dm *DatabaseManager) connect() error {
 	if monitoring.IsOTelEnabled(*dm.config) {
 		pluginOpts := []tracing.Option{
 			tracing.WithDBSystem("postgresql"),
+			tracing.WithoutQueryVariables(), // values hold names and emails
 		}
 		if !dm.config.OTelMetricsEnabled {
 			pluginOpts = append(pluginOpts, tracing.WithoutMetrics())
