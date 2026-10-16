@@ -4,15 +4,27 @@ import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Calendar } from '@/shared/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover'
-import { cn, formatDate, parseDateValue, toDateValue } from '@/utils/functions'
+import { cn, formatDate, parseDateValue, todayDateValue, toDateValue } from '@/utils/functions'
 import type { DatePickerProps } from './types'
 
 /** A date field with the app's calendar in a popover, in place of the browser's own date picker. */
-export function DatePicker({ id, name, value, onChange, min, disabled, 'aria-label': ariaLabel }: DatePickerProps) {
+export function DatePicker({
+  id,
+  name,
+  value,
+  onChange,
+  min,
+  max,
+  disabled,
+  'aria-label': ariaLabel,
+}: DatePickerProps) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const selected = parseDateValue(value)
   const earliest = min ? parseDateValue(min) : undefined
+  const today = parseDateValue(todayDateValue())
+  const opensOn = earliest && today && earliest > today ? earliest : today
+  const latest = max ? parseDateValue(max) : undefined
 
   const handleSelect = (date: Date | undefined) => {
     onChange(date ? toDateValue(date) : '', name)
@@ -40,9 +52,9 @@ export function DatePicker({ id, name, value, onChange, min, disabled, 'aria-lab
           mode="single"
           weekStartsOn={1}
           selected={selected}
-          defaultMonth={selected ?? earliest}
+          defaultMonth={selected ?? opensOn}
           onSelect={handleSelect}
-          disabled={earliest ? { before: earliest } : undefined}
+          disabled={[...(earliest ? [{ before: earliest }] : []), ...(latest ? [{ after: latest }] : [])]}
         />
       </PopoverContent>
     </Popover>
