@@ -1751,7 +1751,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request, or WEEK_OUT_OF_WINDOW when a date or week is too far from the current week",
                         "schema": {
                             "type": "object",
                             "properties": {
@@ -2471,7 +2471,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request, or WEEK_OUT_OF_WINDOW when a date or week is too far from the current week",
                         "schema": {
                             "type": "object",
                             "properties": {
@@ -2879,7 +2879,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request, or WEEK_OUT_OF_WINDOW when a date or week is too far from the current week",
                         "schema": {
                             "type": "object",
                             "properties": {
@@ -3010,7 +3010,18 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request, or DEMAND_HOURS_STEP when total_hours is not a multiple of the planning hour step",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "DEMAND_IN_USE when a removed demand holds staffed hours in past baseline weeks",
                         "schema": {
                             "type": "object",
                             "properties": {
@@ -3117,7 +3128,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request, or WEEK_OUT_OF_WINDOW when a date or week is too far from the current week",
                         "schema": {
                             "type": "object",
                             "properties": {

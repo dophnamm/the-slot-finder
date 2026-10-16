@@ -156,6 +156,9 @@ type Config struct {
 	DefaultNonProjectHours float64
 	CountPlannedAbsence    bool
 
+	// ProjectWindowWeeks is how far from the current week a project date or phase week may lie, either way.
+	ProjectWindowWeeks int
+
 	// Planning policy, copied into each engine request (server/README §8).
 	PlanningTargetUtilization          float64
 	PlanningMaxUtilization             float64
@@ -302,6 +305,8 @@ func Load() (*Config, error) {
 		HTTPClientTLSInsecureSkipTLS: getEnvAsBool("HTTP_CLIENT_TLS_INSECURE_SKIP_TLS", false),
 		DefaultNonProjectHours:       getEnvAsFloat("DEFAULT_NON_PROJECT_HOURS", 4),
 		CountPlannedAbsence:          getEnvAsBool("COUNT_PLANNED_ABSENCE", true),
+
+		ProjectWindowWeeks: getEnvAsInt("PROJECT_WINDOW_WEEKS", 156),
 
 		PlanningTargetUtilization:          getEnvAsFloat("PLANNING_TARGET_UTILIZATION", 0.8),
 		PlanningMaxUtilization:             getEnvAsFloat("PLANNING_MAX_UTILIZATION", 1.0),

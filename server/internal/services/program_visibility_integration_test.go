@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"the-slot-finder/server/internal/clock"
 	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/db"
 	"the-slot-finder/server/internal/db/dbtest"
@@ -52,7 +53,7 @@ func TestProgramVisibility_Postgres(t *testing.T) {
 	authz := ProvideAuthzService(people)
 	projects, programRepo := repositories.ProvideProjectRepository(pdb), repositories.ProvideProgramRepository(pdb)
 	programs := ProvideProgramService(programRepo, projects, leadPeople{}, authz, db.ProvideTxManager(pdb), &recordedEvents{})
-	projectService := ProvideProjectService(projects, programRepo, knownExpertisePeople{}, authz, db.ProvideTxManager(pdb), &recordedEvents{})
+	projectService := ProvideProjectService(projects, programRepo, knownExpertisePeople{}, authz, db.ProvideTxManager(pdb), &recordedEvents{}, projectConfig(), clock.NewFixed(acceptedAt))
 	manager, planner := asRole("kc-lee", constants.RoleLead), asRole("kc-planner", constants.RolePlanner)
 	page := ListProgramsInput{Page: 1, PageSize: 20}
 
