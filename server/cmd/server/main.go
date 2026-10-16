@@ -61,6 +61,9 @@ func NewHTTPServer(lc fx.Lifecycle,
 		Addr:              cfg.AppHTTPServer,
 		Handler:           handler,
 		ReadHeaderTimeout: time.Duration(cfg.AppRequestTimeout) * time.Second,
+		ReadTimeout:       cfg.HTTPReadTimeout,
+		WriteTimeout:      cfg.HTTPWriteTimeout,
+		IdleTimeout:       cfg.HTTPIdleTimeout,
 	}
 
 	lc.Append(fx.Hook{
