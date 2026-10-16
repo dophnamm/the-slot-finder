@@ -18,6 +18,10 @@ type CalendarFeedRepository interface {
 	// ClaimDue locks up to limit calendars due at now (FOR UPDATE SKIP LOCKED) and moves their
 	// next sync to next, so another server skips them. Call it inside a transaction.
 	ClaimDue(ctx context.Context, now, next time.Time, limit int) ([]models.CalendarFeed, error)
+	// TryLockSync takes a lock on one calendar's sync until the transaction ends, and reports
+	// whether it got it; false means another sync of that calendar is running, on any server.
+	// Call it inside a transaction.
+	TryLockSync(ctx context.Context, feedID string) (bool, error)
 	// RecordSync stores how a sync went: on success the time and the events found, on failure
 	// only the error code, so the last good sync stays visible.
 	RecordSync(ctx context.Context, id string, at time.Time, eventsFound int, errorCode *string) error
@@ -71,4 +75,13 @@ func (r *calendarFeedRepository) RecordSync(ctx context.Context, id string, at t
 
 func (r *calendarFeedRepository) DeleteByPerson(ctx context.Context, personID string) error {
 	return r.db.From(ctx).Unscoped().Where("person_id = ?", personID).Delete(&models.CalendarFeed{}).Error
+}
+
+// syncLockPrefix names the advisory locks that serialize the syncs of one calendar.
+const syncLockPrefix = "slot-finder.calendar-sync:"
+
+func (r *calendarFeedRepository) TryLockSync(ctx context.Context, feedID string) (bool, error) {
+	var locked bool
+	err := r.db.From(ctx).Raw("SELECT pg_try_advisory_xact_lock(hashtext(?))", syncLockPrefix+feedID).Scan(&locked).Error
+	return locked, err
 }

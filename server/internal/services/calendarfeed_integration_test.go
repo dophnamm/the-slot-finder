@@ -3,6 +3,7 @@
 package services
 
 import (
+	"context"
 	"testing"
 
 	"the-slot-finder/server/internal/clock"
@@ -212,4 +213,28 @@ func TestCalendarFeedService_KeepsLeave_Postgres(t *testing.T) {
 		require.Len(t, leave, 1, "connecting another calendar keeps the leave")
 		assert.Equal(t, constants.AbsenceStatusApproved, leave[0].Status)
 	})
+}
+
+// A second sync of the same calendar, even from another connection, cannot take the lock.
+func TestCalendarFeedRepository_TryLockSync_Postgres(t *testing.T) {
+	pdb := dbtest.NewPostgres(t)
+	dbtest.ApplyMigrations(t, pdb)
+	feeds := repositories.ProvideCalendarFeedRepository(pdb)
+	tx := db.ProvideTxManager(pdb)
+	const feedID = "feed-1"
+
+	err := tx.Do(context.Background(), func(ctx context.Context) error {
+		first, err := feeds.TryLockSync(ctx, feedID)
+		require.NoError(t, err)
+		assert.True(t, first)
+		// A call outside this transaction runs on another connection.
+		second, err := feeds.TryLockSync(context.Background(), feedID)
+		require.NoError(t, err)
+		assert.False(t, second, "the calendar is locked until the first transaction ends")
+		other, err := feeds.TryLockSync(ctx, "feed-2")
+		require.NoError(t, err)
+		assert.True(t, other, "another calendar is not affected")
+		return nil
+	})
+	require.NoError(t, err)
 }

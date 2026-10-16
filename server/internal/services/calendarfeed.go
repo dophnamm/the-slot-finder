@@ -30,6 +30,11 @@ const (
 	resourceCalendarFeed     = "calendar_feed"
 )
 
+// errSyncRunning says another sync of the same calendar holds its lock. The runner skips such a
+// calendar; "Sync now" answers 409.
+var errSyncRunning = errors.NewAppError(constants.CalendarSyncRunning, constants.MsgCalendarSyncRunning, errors.ErrorTypeConflict,
+	http.StatusConflict).WithOperation(opSyncCalendarFeed).WithResource(resourceCalendarFeed)
+
 // hoursPerDayScale rounds leave hours to two decimals, as absences store them (numeric(4,2)),
 // so an unchanged event never looks moved after a round trip through the database.
 const hoursPerDayScale = 100
@@ -196,7 +201,7 @@ func (s *calendarFeedService) RunOnce(ctx context.Context) (int, error) {
 	}
 	var errs []error
 	for i := range claimed {
-		if err := s.sync(ctx, &claimed[i]); err != nil {
+		if err := s.sync(ctx, &claimed[i]); err != nil && !stderrors.Is(err, errSyncRunning) {
 			errs = append(errs, err)
 		}
 	}
@@ -247,6 +252,19 @@ func (s *calendarFeedService) find(ctx context.Context, personID, op string) (*m
 // sync reads one stored calendar and applies its leave. A calendar that cannot be read keeps
 // its absences as they are and stores the error code; only database errors are returned.
 func (s *calendarFeedService) sync(ctx context.Context, feed *models.CalendarFeed) error {
+	return s.tx.Do(ctx, func(ctx context.Context) error {
+		locked, err := s.feeds.TryLockSync(ctx, feed.ID)
+		if err != nil {
+			return err
+		}
+		if !locked {
+			return errSyncRunning
+		}
+		return s.syncLocked(ctx, feed)
+	})
+}
+
+func (s *calendarFeedService) syncLocked(ctx context.Context, feed *models.CalendarFeed) error {
 	person, err := s.people.Get(ctx, feed.PersonID)
 	if err != nil {
 		return err

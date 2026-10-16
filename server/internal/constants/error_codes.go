@@ -27,6 +27,7 @@ const (
 
 	// Calendar feed errors. The link is a secret, so a problem is only ever stored as one of these.
 	CalendarSyncDisabled       = "CALENDAR_SYNC_DISABLED"
+	CalendarSyncRunning        = "CALENDAR_SYNC_RUNNING"
 	CalendarFeedNotFound       = "CALENDAR_FEED_NOT_FOUND"
 	CalendarFeedHostNotAllowed = "CALENDAR_FEED_HOST_NOT_ALLOWED"
 	CalendarFeedUnreachable    = "CALENDAR_FEED_UNREACHABLE"
