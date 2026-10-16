@@ -45,6 +45,9 @@ type replanService struct {
 	plans  repositories.PlanRepository
 	events repositories.ChangeEventRepository
 	tx     db.TxManager
+	// isolate makes the next claim take one event, after a batch failed. Only the runner
+	// goroutine calls RunOnce, so it needs no lock.
+	isolate bool
 }
 
 // ProvideReplanService creates the re-plan service.
@@ -74,6 +77,10 @@ func (s *replanService) Run(ctx context.Context) {
 func (s *replanService) RunOnce(ctx context.Context) (int, error) {
 	now := s.clock.Now().UTC()
 	cutoff := now.Add(-s.cfg.ReplanDebounce)
+	limit := s.cfg.ReplanBatchSize
+	if s.isolate {
+		limit = 1
+	}
 	var claimed []models.ChangeEvent
 	var err error
 	for range mergeRetries {
@@ -81,7 +88,7 @@ func (s *replanService) RunOnce(ctx context.Context) (int, error) {
 			if err := s.events.LockReplanning(ctx); err != nil {
 				return err
 			}
-			events, err := s.events.ClaimPending(ctx, now, cutoff, s.cfg.ReplanBatchSize)
+			events, err := s.events.ClaimPending(ctx, now, cutoff, limit)
 			if err != nil {
 				return err
 			}
@@ -96,15 +103,18 @@ func (s *replanService) RunOnce(ctx context.Context) (int, error) {
 		}
 	}
 	if err == nil {
+		s.isolate = false
 		return len(claimed), nil
 	}
-	if len(claimed) > 0 {
-		ids := make([]string, len(claimed))
-		for i, e := range claimed {
-			ids[i] = e.ID
-		}
-		if ferr := s.events.RecordFailure(ctx, ids, err.Error(), now, s.cfg.ReplanRetryBackoff, s.cfg.ReplanMaxAttempts); ferr != nil {
-			return len(claimed), stderrors.Join(err, ferr)
+	switch {
+	case len(claimed) > 1:
+		// One bad event must not fail the healthy ones: they stay pending and run one by one.
+		s.isolate = true
+		logger.Log.Warn("Re-plan batch failed, retrying its events one by one", zap.Int("events", len(claimed)), zap.Error(err))
+	case len(claimed) == 1:
+		logger.Log.Error("Re-plan event failed", zap.String("event_id", claimed[0].ID), zap.Error(err))
+		if ferr := s.events.RecordFailure(ctx, []string{claimed[0].ID}, err.Error(), now, s.cfg.ReplanRetryBackoff, s.cfg.ReplanMaxAttempts); ferr != nil {
+			return 1, stderrors.Join(err, ferr)
 		}
 	}
 	return len(claimed), err
