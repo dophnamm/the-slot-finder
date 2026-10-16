@@ -47,7 +47,7 @@ Demo users, **for development only**. Their password is `KEYCLOAK_DEMO_PASSWORD`
 
 The server verifies access tokens locally against the realm's JWKS, cached and refreshed every `AUTH_JWKS_REFRESH_INTERVAL` (and on an unknown key id). It calls Keycloak only to fetch those keys, never per request. `KEYCLOAK_URL` is how the server reaches Keycloak; `KEYCLOAK_PUBLIC_URL` is the issuer in the tokens, as the browser sees it.
 
-**Sentry** is off (no `SENTRY_DSN`). Before an event leaves the server, `internal/monitoring/sentry.go` drops its request body, query string and cookies, every header whose name contains `authorization`, `cookie`, `token`, `secret` or `key`, and calendar feed links (hosts in `CALENDAR_ALLOWED_HOSTS`) in messages, exception values and tags.
+**Sentry** is off (no `SENTRY_DSN`). The error handler attaches no request headers to an event. Before an event leaves the server, `internal/monitoring/sentry.go` drops its request body, query string and cookies, every header whose name contains `authorization`, `cookie`, `token`, `secret` or `key`, and calendar feed links (hosts in `CALENDAR_ALLOWED_HOSTS`) in messages, exception values and tags.
 
 ## 1. Architecture style
 
@@ -83,7 +83,7 @@ Files per module follow the pattern `handlers/<module>.go`, `services/<module>.g
 
 | Module | Responsibility | Owns data | Publishes events |
 |---|---|---|---|
-| **identity** | Local Keycloak token verification (cached JWKS), roles, mapping the token to a PERSON (`keycloak_id`), the `authz` service with named permission checks (including assistant read access) | none (accounts live in Keycloak) | |
+| **identity** | Local Keycloak token verification (cached JWKS), roles, mapping the token to a PERSON (`keycloak_id`; by email only when `email_verified` is true and the person is not linked to another account yet), the `authz` service with named permission checks (including assistant read access) | none (accounts live in Keycloak) | |
 | **people** | People, expertise, levels, skill tags, contracted and non-project hours, start and end dates, location | PERSON, EXPERTISE, PERSON_SKILL, TAG, PERSON_TAG | `PersonJoined`, `PersonLeft`, `SkillChanged` (also for tags) |
 | **availability** | Leave (entered by hand or read from a calendar feed), holidays per location, effective-dated weekly hours; computes `capacity(person, week)` | ABSENCE, CAPACITY_CHANGE | `AbsenceAdded`, `AbsenceRemoved`, `CapacityChanged` |
 | **programs** | Programs, projects, phases (and their slip propagation), staffing demand (budget hours, profile, tags, preferred person), forecast overrides, scope points, confidence, milestones, assistants, program and project lifecycles (including `staffed_at`) | PROGRAM, PROJECT, PROJECT_PHASE, DEMAND, DEMAND_TAG, MILESTONE, PROGRAM_ASSISTANT | `ProgramSlipped`, `ProgramCancelled`, `ProjectCreated`, `ProjectSlipped`, `PhaseSlipped`, `DemandChanged` |
@@ -113,7 +113,7 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | GET, POST | `/people/{id}/absences` | Leave calendar. A person's own absence is always `planned`; planners choose the status. Leave read from a calendar feed has `source = calendar` | planner, the person themselves |
 | DELETE | `/absences/{id}` | Remove an absence, or a holiday (planner) | planner, the person themselves |
 | POST | `/absences/{id}/approve` | Approve a planned absence; records a change event | planner |
-| GET | `/people/{id}/assignments?from=&to=` | Everything a person owns in the baseline: project, demand, **expertise**, kind, hours per week | planner, lead, the person themselves |
+| GET | `/people/{id}/assignments?from=&to=` | Everything a person owns in the baseline: project, demand, **expertise**, kind, hours per week | planner, lead (team), the person themselves |
 | GET | `/people/{id}/schedule?from=&to=` | One person's calendar: per week capacity, load, band, tentative flag, hours per project and actual hours; per day absences and holidays; the working weekdays | planner, lead (team), the person themselves |
 | GET, PUT, DELETE | `/people/{id}/calendar-feed` | A person's calendar link: its status (never the link itself), connect or replace (`{ url }`, checked and synced once), disconnect. `503 CALENDAR_SYNC_DISABLED` without `CALENDAR_FEED_KEY` | planner, the person themselves |
 | POST | `/people/{id}/calendar-feed/sync` | Sync that calendar now; `409 CALENDAR_SYNC_RUNNING` while another sync of the same calendar runs | planner, the person themselves |
@@ -133,7 +133,7 @@ A manager (`lead`) reads only the programs they lead or lead a project in, and t
 | POST | `/programs/{id}/actions/{hold\|resume\|start-closing\|close\|cancel}` | Change program state through an action. `cancel` also cancels the program's open projects | planner, lead (own) |
 | GET | `/programs/{id}/overview` | Header metrics (Time, Scope, Planned burn, Burn from actual hours, Staffing with warnings), cost figures (budget, planned, planned to date, actual, forecast, gap; EAC hours later), staffing by expertise | planner, lead |
 | GET | `/programs/{id}/projects` | Projects tab: rows in priority order with a `metrics` object (Time / Scope / Planned burn / Burn / Staffing and warnings, and the baseline hours planned next week and in the next three weeks: `next_week_hours`, `next_three_weeks_hours`); next milestone later | planner, lead |
-| POST | `/programs/{id}/projects` | Add a project to the program; it goes last in the priority order unless `priority` is sent | planner, lead (own) |
+| POST | `/programs/{id}/projects` | Add a project to the program; it goes last in the priority order unless `priority` is sent. Its start and deadline must lie within `PROJECT_WINDOW_WEEKS` of the current week, else `400 WEEK_OUT_OF_WINDOW` | planner, lead (own) |
 | PUT | `/programs/{id}/project-order` | Set the priority order: `{ project_ids }` lists every project of the program, highest priority first, and they get priority 1..N. `422 PROJECT_ORDER_MISMATCH` when the list is not exactly the program's projects | planner, lead (own) |
 | GET | `/programs/{id}/members` | The Programs list preview: everyone with baseline hours on the program's projects, most hours first, with hours per expertise and kind, first and last week, and projects (overall utilization later) | planner, lead |
 | GET | `/programs/{id}/team` | Team tab: the people the program's projects are staffed from, each with their skills and their hours, first and last week and projects in this program's baseline (0 h until a draft gives them some) | planner, lead (own) |
@@ -141,11 +141,11 @@ A manager (`lead`) reads only the programs they lead or lead a project in, and t
 | DELETE | `/programs/{id}/team/{personId}` | Remove a member; their baseline hours stay, the next draft plans without them (`404 TEAM_MEMBER_NOT_FOUND`) | planner |
 | GET | `/projects` | Projects across programs (filter by `status`) | planner, lead |
 | GET | `/projects/{id}` | Project record with its phases, its demand (each row with the weeks it may be staffed in) and the program's lead | planner, lead |
-| PATCH | `/projects/{id}` | Edit a project, including `scope_points`, `done_points` and `confidence`. Moving the deadline emits `ProjectSlipped` | planner, lead (own) |
+| PATCH | `/projects/{id}` | Edit a project, including `scope_points`, `done_points` and `confidence`. Moving the deadline emits `ProjectSlipped`. A changed date outside `PROJECT_WINDOW_WEEKS` gets `400 WEEK_OUT_OF_WINDOW` | planner, lead (own) |
 | POST | `/projects/{id}/actions/{hold\|resume\|complete\|cancel}` | Change project state through an action | planner, lead (own) |
-| GET, PUT | `/projects/{id}/phases` | Ordered phases of a project (PUT replaces the whole list; removing a phase that still has demand gets `409 PHASE_IN_USE`) | planner, lead (own) |
-| PATCH | `/phases/{id}` | Edit a phase. Moving its end week later shifts every later phase by the same weeks and emits `PhaseSlipped`. Returns every phase it changed | planner, lead (own) |
-| PUT | `/projects/{id}/demands` | Staffing demand: budget hours per expertise and level, each with an optional `phase_id`, a `profile`, required and preferred tags, and an optional preferred person | planner, lead (own) |
+| GET, PUT | `/projects/{id}/phases` | Ordered phases of a project (PUT replaces the whole list; removing a phase that still has demand gets `409 PHASE_IN_USE`; a changed week outside `PROJECT_WINDOW_WEEKS` gets `400 WEEK_OUT_OF_WINDOW`, but a rename of an old phase still works) | planner, lead (own) |
+| PATCH | `/phases/{id}` | Edit a phase. Moving its end week later shifts every later phase by the same weeks and emits `PhaseSlipped`. Returns every phase it changed. A changed week outside `PROJECT_WINDOW_WEEKS` gets `400 WEEK_OUT_OF_WINDOW` | planner, lead (own) |
+| PUT | `/projects/{id}/demands` | Staffing demand: budget hours per expertise and level, each with an optional `phase_id`, a `profile`, required and preferred tags, and an optional preferred person. `400 DEMAND_HOURS_STEP` when a total is not a multiple of `PLANNING_HOUR_STEP`; `409 DEMAND_IN_USE` when a removed demand holds staffed hours in past weeks of the baseline | planner, lead (own) |
 
 **Planning and insights**
 
@@ -154,7 +154,7 @@ A manager (`lead`) reads only the programs they lead or lead a project in, and t
 | GET | `/plans/current` | The baseline | planner, lead |
 | POST | `/staffing-drafts` | Generate a draft: `{ projectIds }` or `{ changeEventId }`. Each demand is staffed from its program's team only | planner, lead (every project's program is their own) |
 | GET | `/plans/drafts` | Open staffing drafts, newest first: `base_version`, `current_version`, `stale`, `auto` (a re-plan draft), `created_at`, the covered `projects` with their programs, and `unmet_count` | planner, lead (drafts whose projects all belong to programs they manage) |
-| GET | `/staffing-drafts/{id}` | Draft with diff against the baseline, plan churn and reasons; each project carries `program_lead_id` and each demand its program team as `team_ids` (`null` puts no limit); `load` gives every active person's `capacity` and `other_hours` (hours on other demand, of plannable projects only, from the current ISO week on) per week and `bands` the utilization limits, so the grid can colour a week from the hours being edited | planner, lead |
+| GET | `/staffing-drafts/{id}` | Draft with diff against the baseline, plan churn and reasons; each project carries `program_lead_id` and each demand its program team as `team_ids` (`null` puts no limit); `load` gives every active person's `capacity` and `other_hours` (hours on other demand, of plannable projects only, from the current ISO week on) per week and `bands` the utilization limits, so the grid can colour a week from the hours being edited | planner, lead (own) |
 | PATCH | `/staffing-drafts/{id}/assignments` | One batch `{ add, remove, set }`: add or remove an assignment (any person to a covered demand; the server sets `kind`), change weekly hours (0 removes the week), lock or unlock; a person outside the demand's program team gets `422 PERSON_NOT_IN_TEAM`. Adding or setting hours in a week before the current ISO week gets `400 WEEK_IN_THE_PAST`, and so does removing an assignment that has hours in such a week. Swap to an alternative comes later | planner, lead (own) |
 | GET | `/staffing-drafts/{id}/assignments/{assignmentId}/alternatives` | Who could take over the assignment: members of the demand's program team who hold its expertise at the required level and do not cover it yet, with `free_hours` over the demand's window (capacity minus the plan's hours), most first, at most `DRAFT_ALTERNATIVES_LIMIT`. To swap, send one `remove` and one `add` with the same weekly hours in one PATCH above; it is applied in one transaction | planner, lead (own) |
 | POST | `/staffing-drafts/{id}/accept` | Publish (`{ baseVersion }`; `409 PLAN_VERSION_CONFLICT` if the baseline changed) | planner, lead (own) |
@@ -207,6 +207,7 @@ Error example (HTTP 409):
 - Write payloads contain only fields the user may edit. The Server ignores or rejects computed fields such as `status`, `utilization`, `gap_hours` and `total_*`.
 - The Server computes and returns all metrics and aggregated numbers. The Client never accumulates them itself.
 - `PATCH /staffing-drafts/{id}/assignments`, accept and reject on a **superseded** draft version return `409` with `DRAFT_SUPERSEDED`. The Client reloads the latest version.
+- Edit, accept and reject on a staffing draft that is already accepted or rejected return `409` with `DRAFT_NOT_EDITABLE`. So does one that another request changes while this one runs. A draft superseded before the request still gets `DRAFT_SUPERSEDED`.
 - **Accept is atomic** (staffing-draft): in one `TxManager.Do`, `UPDATE plan SET status = 'superseded' WHERE kind = 'baseline' AND status = 'published' AND version = :baseVersion`. 0 rows updated → `409 PLAN_VERSION_CONFLICT` and nothing is written. The draft is then published as version `baseVersion + 1`. A partial unique index (`kind = 'baseline' AND status = 'published'`) allows one published baseline, so a racing second accept also gets `409`.
 
 ## 4. Planning engine
@@ -325,14 +326,15 @@ Jobs are rows in Postgres, run by a runner inside the server process, started an
 - **`CHANGE_EVENT` is a transactional outbox.** The service that saves a change inserts its event in the same `TxManager.Do`, so there is never a change without its event, or an event without its change.
   - **Event types** (`internal/constants/events.go`): `AbsenceAdded`, `AbsenceRemoved`, `PhaseSlipped` (one per phase whose end moved later), `ProjectSlipped`, `ProjectStatusChanged` (a project hold, resume, complete or cancel; cancelling a program records one for all projects it cancelled), `DemandChanged` (only when the demand differs), `PersonCapacityChanged` (weekly hours, non-project hours, dates or active; not name or role) and `TeamChanged` (a person added to or removed from a program's team; the project ids are the program's plannable projects).
 - **The runner claims rows with `FOR UPDATE SKIP LOCKED`**, every `REPLAN_POLL_INTERVAL`, up to `REPLAN_BATCH_SIZE` at a time. Two server instances never claim the same row.
-- **Retries:** runner columns `attempts`, `available_at` and `last_error`. A failure moves `available_at` by `REPLAN_RETRY_BACKOFF × attempts`. After `REPLAN_MAX_ATTEMPTS` the status becomes `failed`.
+- **Retries:** runner columns `attempts`, `available_at` and `last_error`. A failure moves `available_at` by `REPLAN_RETRY_BACKOFF × attempts`. After `REPLAN_MAX_ATTEMPTS` the status becomes `failed`. A batch of several events that fails counts no attempt: the runner then claims one event at a time, so only the event that keeps failing gains attempts and ends `failed` (logged at Error).
+- **Panics:** each tick of the re-plan and calendar runners recovers a panic and logs it at Error, so the loop keeps running.
 - **Scaling out:** when load grows, the same runner moves to a separate `cmd/worker` process on the same table. No queue service is needed, and job code does not change.
 
 | Job | Triggered by | Does |
 |---|---|---|
 | `replan` | ChangeEvents, batched over `REPLAN_DEBOUNCE` | Assesses impact. If there is a conflict, calls the engine, saves a staffing draft and alerts the Planner. If an auto draft is already open for the baseline, it regenerates that draft instead (see below) |
 | `import` | `POST /imports/*` | Reads the source, validates it, writes through each module's public interface |
-| `calendar-sync` | Every `CALENDAR_SYNC_INTERVAL`, or `POST /people/{id}/calendar-feed/sync` | Fetches each due calendar feed, keeps its out-of-office events, and creates, moves or deletes the matching planned leave through **availability**, which records the change events. Claims feeds with `FOR UPDATE SKIP LOCKED`. Each sync takes a Postgres advisory lock per feed until its transaction ends: the runner skips a locked feed, and "Sync now" answers `409 CALENDAR_SYNC_RUNNING`. Leave that a person deletes by hand is kept as `source = calendar_dismissed` with its event UID, so the sync does not create it again. A failed fetch changes nothing and stores an error code |
+| `calendar-sync` | Every `CALENDAR_SYNC_INTERVAL`, or `POST /people/{id}/calendar-feed/sync` | Fetches each due calendar feed, keeps its out-of-office events, and creates, moves or deletes the matching planned leave through **availability**, which records the change events. Claims feeds with `FOR UPDATE SKIP LOCKED`. The fetch runs before the database transaction. Each sync takes a Postgres advisory lock per feed until its transaction ends, and the lock covers only writing the leave: the runner skips a locked feed, and "Sync now" answers `409 CALENDAR_SYNC_RUNNING`. Leave that a person deletes by hand is kept as `source = calendar_dismissed` with its event UID, so the sync does not create it again. A failed fetch changes nothing and stores an error code |
 | `notify` | `PlanPublished`, alerts | Sends Email/Slack messages to the affected members and to the program's assistants (internal and external) |
 
 **One open auto draft per baseline.** A draft is "auto" when change events link to it. When a new event arrives while one is open, `replan` regenerates it from the current baseline plus every linked event. Assignments the Planner added by hand and locked allocations are carried over. The old draft version becomes `superseded` and all events point to the new one. The worker saves the new version only if the old one has not changed since it read it; otherwise it regenerates again, so a Planner's edit is never dropped silently. An edit, accept or reject that reaches the old version afterwards gets `409 DRAFT_SUPERSEDED`.
@@ -378,12 +380,13 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `PLANNING_MAX_PROJECTS_PER_PERSON_WEEK` | `maxProjectsPerPersonWeek` | 3 |
 | `PLANNING_MAX_EXPERTISES_PER_PERSON_WEEK` | `maxExpertisesPerPersonWeek` | 2 |
 | `PLANNING_MIN_HOURS_PER_WEEK` | `minHoursPerWeek`: smallest weekly allocation, except a demand's last remainder | 8 |
-| `PLANNING_HOUR_STEP` | `hourStep`: rounds weekly allocations (1 = whole hours, 0 = exact) | 1 |
+| `PLANNING_HOUR_STEP` | `hourStep`: rounds weekly allocations (1 = whole hours, 0 = exact). Demand `total_hours` must be a multiple of the step, otherwise `400 DEMAND_HOURS_STEP` | 1 |
 | `PLANNING_MAX_ALTERNATIVES` | `maxAlternatives`: runner-ups kept per assignment | 3 |
 | `PLANNING_WEIGHT_<NAME>` | One per weight: `DEADLINE`, `PRIMARY_FIT`, `TAG_FIT`, `PREFERENCE`, `BALANCE`, `STABILITY`, `CONTINUITY`, `LEVEL_FIT` | as in the sample request (`LEVEL_FIT` 0.4) |
 | `PLANNING_REPLAN_STABILITY_WEIGHT` | The raised `stability` weight used for re-plans | 2.0 |
 | `DEFAULT_NON_PROJECT_HOURS` | `PERSON.non_project_hours` when a person is created without one | 4 |
 | `COUNT_PLANNED_ABSENCE` | Whether `planned` absence reduces capacity (`approved` always does) | true |
+| `PROJECT_WINDOW_WEEKS` | How many weeks from the current ISO week a project date or phase week may lie, either way (otherwise `400 WEEK_OUT_OF_WINDOW`) | 156 |
 | `REPLAN_DEBOUNCE` | Window in which change events are batched into one re-plan (30s in `.env.example` for local demos) | 5m |
 | `REPLAN_POLL_INTERVAL` · `REPLAN_BATCH_SIZE` | How often the runner looks for pending events, and how many it claims at once | 10s · 50 |
 | `REPLAN_MAX_ATTEMPTS` · `REPLAN_RETRY_BACKOFF` | Retries before an event is `failed`, and the delay step between them | 5 · 30s |
@@ -400,6 +403,7 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `CALENDAR_FETCH_TIMEOUT` · `CALENDAR_MAX_BYTES` | Limits on one calendar fetch | 10s · 5MB |
 | `RATE_LIMIT` · `RATE_LIMIT_DURATION` | Requests allowed per client IP on every route, and the window (0 turns it off) | 20 · 1s |
 | `RATE_LIMIT_HEAVY` · `RATE_LIMIT_HEAVY_DURATION` | Requests allowed per signed-in user on each heavy route (see the API section), and the window (0 turns it off) | 20 · 30s |
+| `HTTP_READ_TIMEOUT` · `HTTP_WRITE_TIMEOUT` · `HTTP_IDLE_TIMEOUT` | Timeouts of the HTTP server. The write timeout covers the whole response, so it must stay longer than the slowest request (a calendar fetch up to `CALENDAR_FETCH_TIMEOUT`, plus database time) | 30s · 120s · 120s |
 | `WORKING_WEEKDAYS` | Days that count when absence hours are computed | Mon–Fri |
 | `HEATMAP_DEFAULT_WEEKS` · `HEATMAP_MAX_WEEKS` | Weeks shown by default on the heatmap, and the largest range allowed | 12 · 52 |
 | `ALERT_HORIZON_WEEKS` | A deadline this close turns a gap into **at risk** | 4 |
@@ -407,6 +411,8 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `SCOPE_LAG_THRESHOLD` | Percentage points by which Scope % may trail Time % before **behind on delivery** (not scope points) | 20 |
 | `SUSTAINED_OVERLOAD_WEEKS` | Consecutive weeks over 100 % for **sustained overload** | 3 |
 | `DRAFT_ALTERNATIVES_LIMIT` | People a staffing draft offers to swap in for an assignment | 5 |
+| `APP_ENV` | Runtime environment; an unset value runs as `production` (`.env.example` sets `development`) | production |
+| `AWS_SES_FROM_EMAIL` | Sender address of every email (a verified SES address) | empty |
 
 ## 9. AI assistant (later)
 
