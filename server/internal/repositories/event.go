@@ -21,8 +21,9 @@ const eventDraftPreload = "Draft"
 type ChangeEventRepository interface {
 	AbstractRepository[models.ChangeEvent]
 	// List returns events newest first with their draft; with projectIDs, only events that
-	// touch one of them.
-	List(ctx context.Context, projectIDs []string, page *dtos.PageableRequest) (*dtos.DataResponse[models.ChangeEvent], error)
+	// touch one of them. With a readerID (a manager), events about a person only for themselves
+	// and the teams of the programs they lead or lead a project in, other events only on those programs' projects.
+	List(ctx context.Context, projectIDs []string, readerID *string, page *dtos.PageableRequest) (*dtos.DataResponse[models.ChangeEvent], error)
 	// ClaimPending locks up to limit pending events available at now that occurred at or
 	// before cutoff, oldest first. Rows another transaction holds are skipped. Run it inside
 	// TxManager.Do so the locks last until the batch is done.
@@ -53,10 +54,18 @@ func ProvideChangeEventRepository(db *db.PostgresDB) ChangeEventRepository {
 	return &changeEventRepository{abstractRepository: abstractRepository[models.ChangeEvent]{db: db}}
 }
 
-func (r *changeEventRepository) List(ctx context.Context, projectIDs []string, page *dtos.PageableRequest) (*dtos.DataResponse[models.ChangeEvent], error) {
+func (r *changeEventRepository) List(ctx context.Context, projectIDs []string, readerID *string, page *dtos.PageableRequest) (*dtos.DataResponse[models.ChangeEvent], error) {
 	query := r.db.From(ctx).Preload(eventDraftPreload).Order("occurred_at DESC").Order("id DESC")
 	if projectIDs != nil {
 		query = query.Where("EXISTS (SELECT 1 FROM jsonb_array_elements_text(project_ids) AS touched(id) WHERE touched.id IN ?)", projectIDs)
+	}
+	if readerID != nil {
+		tx := r.db.From(ctx).Session(&gorm.Session{NewDB: true})
+		led := programIDsLedBy(r.db.From(ctx), *readerID)
+		projects := tx.Model(&models.Project{}).Select("projects.id::text").Where("projects.program_id IN (?)", led)
+		team := tx.Model(&models.ProgramTeamMember{}).Select("program_team_members.person_id::text").Where("program_team_members.program_id IN (?)", led)
+		query = query.Where("((payload->>'person_id' IS NULL AND EXISTS (SELECT 1 FROM jsonb_array_elements_text(project_ids) AS led(id) WHERE led.id IN (?)))"+
+			" OR payload->>'person_id' = ? OR payload->>'person_id' IN (?))", projects, *readerID, team)
 	}
 	return r.find(query, page)
 }
