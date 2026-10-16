@@ -251,7 +251,7 @@ func TestPeopleService_Update(t *testing.T) {
 }
 
 func TestPeopleService_LinkPrincipal(t *testing.T) {
-	principal := request.Principal{Subject: "kc-1", Email: "alex@example.test"}
+	principal := request.Principal{Subject: "kc-1", Email: "alex@example.test", EmailVerified: true}
 
 	t.Run("already linked", func(t *testing.T) {
 		repo := new(MockPersonRepository)
@@ -274,6 +274,33 @@ func TestPeopleService_LinkPrincipal(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, person.KeycloakID)
 		repo.AssertExpectations(t)
+	})
+
+	t.Run("unverified email does not link", func(t *testing.T) {
+		repo := new(MockPersonRepository)
+		repo.On("FindByKeycloakID", mock.Anything, "kc-1").Return(nil, gorm.ErrRecordNotFound)
+		unverified := principal
+		unverified.EmailVerified = false
+		svc := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig(), &recordedEvents{})
+		person, err := svc.LinkPrincipal(context.Background(), unverified)
+		require.NoError(t, err)
+		assert.Nil(t, person)
+		person, err = svc.FindForPrincipal(context.Background(), unverified)
+		require.NoError(t, err)
+		assert.Nil(t, person)
+		repo.AssertNotCalled(t, "FindByEmail", mock.Anything, mock.Anything)
+		repo.AssertNotCalled(t, "Updates", mock.Anything, mock.Anything)
+	})
+
+	t.Run("row linked to another subject is not relinked", func(t *testing.T) {
+		repo := new(MockPersonRepository)
+		repo.On("FindByKeycloakID", mock.Anything, "kc-1").Return(nil, gorm.ErrRecordNotFound)
+		repo.On("FindByEmail", mock.Anything, "alex@example.test").
+			Return(&models.Person{BaseModel: models.BaseModel{ID: personID}, KeycloakID: new("kc-other")}, nil)
+		person, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig(), &recordedEvents{}).LinkPrincipal(context.Background(), principal)
+		require.NoError(t, err)
+		assert.Nil(t, person)
+		repo.AssertNotCalled(t, "Updates", mock.Anything, mock.Anything)
 	})
 
 	t.Run("no person for this user", func(t *testing.T) {

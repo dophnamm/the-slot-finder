@@ -228,10 +228,11 @@ func TestPrincipalFromClaims(t *testing.T) {
 	claims.ResourceAccess = map[string]auth.RoleClaim{"client-a": {Roles: []string{"client-role"}}}
 	claims.Name = "Pat"
 	claims.Email = "pat@example.test"
+	claims.EmailVerified = true
 
 	got := principalFromClaims(claims, "client-a")
 	assert.Equal(t, request.Principal{
-		Subject: "user-1", Username: "user-1", Name: "Pat", Email: "pat@example.test",
+		Subject: "user-1", Username: "user-1", Name: "Pat", Email: "pat@example.test", EmailVerified: true,
 		Role:  constants.RolePlanner,
 		Roles: []string{constants.RoleSpecialist, constants.RolePlanner, "client-role"},
 	}, got)

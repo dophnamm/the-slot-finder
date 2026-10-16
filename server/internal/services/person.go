@@ -289,6 +289,7 @@ func (s *peopleService) LinkPrincipal(ctx context.Context, principal request.Pri
 }
 
 // findForPrincipal reports whether the match came from the email, i.e. the link is new.
+// The email counts only when verified and the row is not linked yet.
 func (s *peopleService) findForPrincipal(ctx context.Context, principal request.Principal) (*models.Person, bool, error) {
 	if principal.Subject != "" {
 		person, err := s.repo.FindByKeycloakID(ctx, principal.Subject)
@@ -300,7 +301,7 @@ func (s *peopleService) findForPrincipal(ctx context.Context, principal request.
 				WithOperation(opFindForPrincipal).WithResource(resourcePerson)
 		}
 	}
-	if principal.Email == "" {
+	if principal.Email == "" || !principal.EmailVerified {
 		return nil, false, nil
 	}
 	person, err := s.repo.FindByEmail(ctx, principal.Email)
@@ -310,6 +311,10 @@ func (s *peopleService) findForPrincipal(ctx context.Context, principal request.
 		}
 		return nil, false, errors.DatabaseError(constants.MsgPersonListFailed, err).
 			WithOperation(opFindForPrincipal).WithResource(resourcePerson)
+	}
+	// A row already linked to a subject belongs to that account, never to a new one with the same email.
+	if person.KeycloakID != nil && *person.KeycloakID != "" {
+		return nil, false, nil
 	}
 	return person, true, nil
 }
