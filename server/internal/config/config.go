@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"the-slot-finder/server/internal/constants"
+
 	"github.com/joho/godotenv"
 )
 
@@ -225,6 +227,15 @@ type Config struct {
 	SustainedOverloadWeeks int
 	// DraftAlternativesLimit is how many people a staffing draft offers to swap in for an assignment.
 	DraftAlternativesLimit int
+
+	// Gemini AI (Ask AI): the API key (empty turns the feature off), the model, the timeout of one
+	// model call, how many model calls one question may take, and the longest tool result sent back.
+	LLMAPIKey             string
+	LLMProvider           string
+	LLMModel              string
+	LLMTimeout            time.Duration
+	LLMMaxToolRounds      int
+	LLMMaxToolResultBytes int
 }
 
 // Load loads configuration from environment variables
@@ -232,6 +243,8 @@ func Load() (*Config, error) {
 	// Load .env file if it exists (optional; ignore errors)
 	_ = godotenv.Load()
 
+	llmProvider := getEnv("LLM_PROVIDER", constants.LLMProviderGemini)
+	llmAPIKey, llmModel := llmSettings(llmProvider)
 	cfg := &Config{
 		AppEnv:                       Environment(getEnv("APP_ENV", string(EnvironmentProduction))),
 		AppName:                      getEnv("APP_NAME", ""),
@@ -365,6 +378,13 @@ func Load() (*Config, error) {
 
 		SustainedOverloadWeeks: getEnvAsInt("SUSTAINED_OVERLOAD_WEEKS", 3),
 		DraftAlternativesLimit: getEnvAsInt("DRAFT_ALTERNATIVES_LIMIT", 5),
+
+		LLMAPIKey:             llmAPIKey,
+		LLMProvider:           llmProvider,
+		LLMModel:              llmModel,
+		LLMTimeout:            getEnvAsDuration("LLM_TIMEOUT", 30*time.Second),
+		LLMMaxToolRounds:      getEnvAsInt("LLM_MAX_TOOL_ROUNDS", 4),
+		LLMMaxToolResultBytes: getEnvAsInt("LLM_MAX_TOOL_RESULT_BYTES", 12000),
 	}
 
 	weekdays, err := parseWeekdays(getEnv("WORKING_WEEKDAYS", defaultWorkingWeekdays))
@@ -416,6 +436,16 @@ func envValue(key string) string {
 		return value[1 : len(value)-1]
 	}
 	return value
+}
+
+// llmSettings returns the key and the model of the chosen provider. Each provider has its own
+// variables, so switching provider means changing LLM_PROVIDER only. An unknown provider is
+// rejected by llm.ProvideClient at startup, so what it gets here does not matter.
+func llmSettings(provider string) (apiKey, model string) {
+	if provider == constants.LLMProviderGroq {
+		return getEnv("GROQ_API_KEY", ""), getEnv("GROQ_MODEL", constants.DefaultGroqModel)
+	}
+	return getEnv("GEMINI_API_KEY", ""), getEnv("GEMINI_MODEL", constants.DefaultGeminiModel)
 }
 
 func getEnv(key, fallback string) string {
