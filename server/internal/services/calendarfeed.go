@@ -251,20 +251,9 @@ func (s *calendarFeedService) find(ctx context.Context, personID, op string) (*m
 
 // sync reads one stored calendar and applies its leave. A calendar that cannot be read keeps
 // its absences as they are and stores the error code; only database errors are returned.
+// The fetch runs before the transaction: a slow calendar must not hold a connection. The lock
+// only serializes the writes; two fetches in a row apply the same leave, which is idempotent.
 func (s *calendarFeedService) sync(ctx context.Context, feed *models.CalendarFeed) error {
-	return s.tx.Do(ctx, func(ctx context.Context) error {
-		locked, err := s.feeds.TryLockSync(ctx, feed.ID)
-		if err != nil {
-			return err
-		}
-		if !locked {
-			return errSyncRunning
-		}
-		return s.syncLocked(ctx, feed)
-	})
-}
-
-func (s *calendarFeedService) syncLocked(ctx context.Context, feed *models.CalendarFeed) error {
 	person, err := s.people.Get(ctx, feed.PersonID)
 	if err != nil {
 		return err
@@ -279,6 +268,13 @@ func (s *calendarFeedService) syncLocked(ctx context.Context, feed *models.Calen
 		return s.recordFailure(ctx, feed.ID, now, err)
 	}
 	return s.tx.Do(ctx, func(ctx context.Context) error {
+		locked, err := s.feeds.TryLockSync(ctx, feed.ID)
+		if err != nil {
+			return err
+		}
+		if !locked {
+			return errSyncRunning
+		}
 		if err := s.apply(ctx, person.ID, leave); err != nil {
 			return err
 		}
