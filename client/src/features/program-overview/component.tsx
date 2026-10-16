@@ -1,5 +1,7 @@
 import { useSearchParams } from 'react-router'
 import { PROGRAM_TABS, TAB_PARAM } from '@/resources/routes'
+import { NOT_FOUND_STATUS } from '@/shared/api/constants'
+import { LoadError } from '@/shared/components/load-error'
 import { PageSkeleton } from '@/shared/components/page-skeleton'
 import { PagePlaceholder } from '@/shared/components/page-placeholder'
 import { useProgram, useProgramOverview } from '@/shared/programs'
@@ -18,14 +20,17 @@ import { programTab } from './utils'
  */
 export function ProgramOverview({ programId, projects, team }: ProgramOverviewProps) {
   const { t } = useTranslation()
-  const { data: program, isPending } = useProgram(programId)
+  const { data: program, error, isPending, refetch } = useProgram(programId)
   const { data: overview } = useProgramOverview(programId)
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = programTab(searchParams.get(TAB_PARAM))
 
+  const handleRetry = () => void refetch()
   const handleTabChange = (value: string) => setSearchParams({ [TAB_PARAM]: value }, { replace: true })
 
   if (isPending) return <PageSkeleton tabs={Object.keys(PROGRAM_TABS).length} />
+  if (!program && error && error.status !== NOT_FOUND_STATUS)
+    return <LoadError framed error={error} onRetry={handleRetry} />
   if (!program)
     return <PagePlaceholder title={t('Program not found')} description={t('There is no program at this address.')} />
 
