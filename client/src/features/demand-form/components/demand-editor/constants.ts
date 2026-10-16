@@ -3,6 +3,8 @@ export const DEMAND_LIMITS = {
   minHeadcount: 1,
   maxHeadcount: 20,
   maxHours: 100000,
+  /** Hours come in whole multiples of this; mirrors the server's PLANNING_HOUR_STEP. */
+  hoursStep: 1,
 } as const
 
 /** Values a newly added row starts with. */

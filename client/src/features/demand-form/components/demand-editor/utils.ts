@@ -46,8 +46,15 @@ export function isValidDraft(draft: DemandDraft): boolean {
     headcount >= DEMAND_LIMITS.minHeadcount &&
     headcount <= DEMAND_LIMITS.maxHeadcount &&
     hours > 0 &&
-    hours <= DEMAND_LIMITS.maxHours
+    hours <= DEMAND_LIMITS.maxHours &&
+    isHoursStep(draft.total_hours)
   )
+}
+
+/** Whether the hours are a whole multiple of the planning step (an empty or invalid number passes). */
+export function isHoursStep(totalHours: string): boolean {
+  const hours = Number(totalHours)
+  return !Number.isFinite(hours) || hours % DEMAND_LIMITS.hoursStep === 0
 }
 
 /** Weeks a demand may be staffed in: its phase, or the project's start through its deadline. */
