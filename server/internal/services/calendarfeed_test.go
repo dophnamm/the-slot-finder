@@ -36,6 +36,8 @@ type fakeFeeds struct {
 	repositories.CalendarFeedRepository
 	byPerson map[string]*models.CalendarFeed
 	claimed  bool
+	// locked holds the ids of feeds whose sync another server is running.
+	locked map[string]bool
 }
 
 func (f *fakeFeeds) FindByPerson(_ context.Context, personID string) (*models.CalendarFeed, error) {
@@ -74,6 +76,13 @@ func (f *fakeFeeds) ClaimDue(_ context.Context, now, next time.Time, _ int) ([]m
 		}
 	}
 	return due, nil
+}
+
+func (f *fakeFeeds) TryLockSync(_ context.Context, feedID string) (bool, error) {
+	if f.locked[feedID] {
+		return false, nil
+	}
+	return true, nil
 }
 
 func (f *fakeFeeds) DeleteByPerson(_ context.Context, personID string) error {
@@ -216,6 +225,22 @@ func TestCalendarFeedService_Connect(t *testing.T) {
 			assert.Equal(t, time.Date(2027, time.April, 13, 0, 0, 0, 0, time.UTC), leave.applied[0].To)
 		})
 	}
+}
+
+func TestCalendarFeedService_SyncNowRefusesWhileAnotherSyncRuns(t *testing.T) {
+	feeds := &fakeFeeds{byPerson: map[string]*models.CalendarFeed{}}
+	fetcher := &fakeFetcher{body: allDayOOO}
+	service := newFeedService(t, testFeedKey, feeds, fetcher, &fakeLeave{})
+	planner := asRole("kc-planner", constants.RolePlanner)
+	_, err := service.Connect(planner, ConnectFeedInput{PersonID: otherPersonID, URL: googleLink})
+	require.NoError(t, err)
+	fetched := len(fetcher.links)
+	feeds.locked = map[string]bool{feeds.byPerson[otherPersonID].ID: true}
+
+	_, err = service.SyncNow(planner, otherPersonID)
+
+	requireAppError(t, err, constants.CalendarSyncRunning, http.StatusConflict)
+	assert.Len(t, fetcher.links, fetched, "a locked calendar is not fetched")
 }
 
 func TestCalendarFeedService_SyncKeepsAbsencesWhenTheFetchFails(t *testing.T) {

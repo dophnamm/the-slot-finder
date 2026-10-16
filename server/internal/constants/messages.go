@@ -166,6 +166,7 @@ const (
 	MsgCalendarFeedDisconnected   = "Calendar disconnected"
 	MsgCalendarFeedSynced         = "Calendar synced"
 	MsgCalendarSyncDisabled       = "Calendar sync is turned off on this server"
+	MsgCalendarSyncRunning        = "A sync of this calendar is already running. Try again in a moment."
 	MsgCalendarFeedNotFound       = "No calendar is connected"
 	MsgCalendarFeedHostNotAllowed = "Use the secret iCal (https) address from Google Calendar or Outlook"
 	MsgCalendarFeedUnreachable    = "The calendar could not be fetched"
