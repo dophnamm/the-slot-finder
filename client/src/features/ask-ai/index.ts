@@ -1,0 +1,1 @@
+export { AskAi } from './component'

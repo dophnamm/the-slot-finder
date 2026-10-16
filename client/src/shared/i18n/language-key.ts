@@ -62,6 +62,7 @@ export type LanguageKey = {
   Approve: string
   Approved: string
   'Approved absence always lowers capacity; planned absence does when the setting is on.': string
+  'Ask AI': string
   Assigned: string
   Assignments: string
   Assumptions: string
@@ -101,6 +102,7 @@ export type LanguageKey = {
   'Choose a project': string
   Client: string
   Close: string
+  'Close Ask AI': string
   Closed: string
   Closing: string
   Column: string
@@ -168,6 +170,7 @@ export type LanguageKey = {
   'e.g. https://docs.example.com/charter': string
   'e.g. Move the online store to the new platform before the holidays.': string
   'e.g. National Day': string
+  'e.g. Who is overloaded next week?': string
   'Each assumption is applied to a copy of the baseline. Nothing real changes.': string
   'Each event of a holiday calendar between the two dates becomes a company holiday. Holidays imported before are skipped.': string
   'Each person and demand whose hours or weeks differ in this scenario.': string
@@ -206,6 +209,7 @@ export type LanguageKey = {
   'Has stretch': string
   Headcount: string
   Healthy: string
+  'Hi, I can answer questions about the page you are on. What would you like to know?': string
   'Hide details': string
   Holiday: string
   'Holiday added.': string
@@ -249,6 +253,8 @@ export type LanguageKey = {
   Link: string
   'Loading…': string
   'Lock hours': string
+  'Make Ask AI larger': string
+  'Make Ask AI smaller': string
   Manager: string
   Manual: string
   'Mark done': string
@@ -328,6 +334,7 @@ export type LanguageKey = {
   'One objective per line, e.g. Ship the new checkout.': string
   'Only the program team is listed. People with the expertise at the minimum level come first; the others would be stretch.': string
   Open: string
+  'Open Ask AI': string
   'Open draft ({status})': string
   'Open navigation': string
   'Open staffing drafts': string
@@ -437,6 +444,7 @@ export type LanguageKey = {
   'Scope points': string
   Search: string
   'Secret iCal address': string
+  Send: string
   'Sets the hours of {name} for many weeks at once. Locked weeks keep their hours.': string
   'Short {hours} hrs': string
   'Show details': string
@@ -469,6 +477,10 @@ export type LanguageKey = {
   'Sync now': string
   Team: string
   'Team heatmap': string
+  'The assistant could not answer. Try again.': string
+  'The assistant is at its usage limit. Try again in a minute.': string
+  'The assistant is at its usage limit. Try again in {seconds} second.': string
+  'The assistant is at its usage limit. Try again in {seconds} seconds.': string
   'The baseline changed to version {version} since this draft was made, so it can no longer be accepted.': string
   'The calendar could not be fetched. Your organization may block secret calendar links.': string
   'The calendar is too large to read.': string
@@ -494,6 +506,7 @@ export type LanguageKey = {
   'There is no scenario at this address.': string
   'There is no screen at this address.': string
   'There is no staffing draft at this address.': string
+  'Thinking...': string
   'This cannot be undone. Continue?': string
   'This cannot be undone. Open projects of a cancelled program are cancelled too. Continue?': string
   'This draft has stretch assignments: people below the minimum level or without the expertise.': string
@@ -546,6 +559,7 @@ export type LanguageKey = {
   'You can’t see this project': string
   'Your account is not linked to a person yet. Ask a planner to add you with the same email.': string
   'Your hours by week, leave and holidays.': string
+  'Your question': string
   'Your role cannot open this page.': string
   'Your session has ended. Sign in again.': string
   '{added} added, {skipped} already there.': string
