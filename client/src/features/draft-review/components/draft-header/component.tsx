@@ -40,7 +40,11 @@ export function DraftHeader({ draft, editable }: DraftHeaderProps) {
       draft.projects.map((project) => project.program_lead_id),
     )
 
-  const handleAccepted = () => toast.success(t('Draft accepted. It is now the baseline.'))
+  const handleAccepted = () => {
+    toast.success(t('Draft accepted. It is now the baseline.'))
+    const programId = draft.projects[0]?.program_id
+    if (programId) navigate(generatePath(ROUTES.programDetail, { id: programId }))
+  }
   const handleRejected = () => toast.success(t('Draft rejected.'))
   const handleOpen = (next: Draft) => navigate(generatePath(ROUTES.staffingDraft, { id: next.id }))
   const handleAccept = async () => {
