@@ -93,6 +93,10 @@ describe('ScenarioReview', () => {
     expect(screen.getByText('Moved'), 'the same hours in other weeks').toBeTruthy()
     expect(screen.getByText('Removed')).toBeTruthy()
     expect(screen.getByText('Nov 9 – Dec 13'), "Alex's new weeks, W46–W50").toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Checkout Revamp' }).getAttribute('href')).toBe('/programs/g1/projects/p1')
+    const hrefs = screen.getAllByRole('link', { name: 'Checkout Revamp' }).map((link) => link.getAttribute('href'))
+    expect(hrefs, 'the assumption and the changes table both link the project').toEqual(
+      Array(hrefs.length).fill('/programs/g1/projects/p1'),
+    )
+    expect(screen.getByRole('link', { name: 'Alex Nguyen' }).getAttribute('href')).toBe('/people/u1')
   })
 })
