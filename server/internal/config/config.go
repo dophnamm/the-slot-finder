@@ -227,7 +227,7 @@ func Load() (*Config, error) {
 	_ = godotenv.Load()
 
 	cfg := &Config{
-		AppEnv:                       Environment(getEnv("APP_ENV", "development")),
+		AppEnv:                       Environment(getEnv("APP_ENV", string(EnvironmentProduction))),
 		AppName:                      getEnv("APP_NAME", ""),
 		AppVersion:                   getEnv("APP_VERSION", "1.0.0"),
 		Timezone:                     getEnv("TIMEZONE", "UTC"),
