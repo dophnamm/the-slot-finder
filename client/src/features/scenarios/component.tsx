@@ -57,9 +57,7 @@ export function Scenarios() {
             <ScenarioRow key={scenario.id} scenario={scenario} />
           ))}
           {isPending && <TableLoading columns={SCENARIO_TABLE_COLUMNS} />}
-          {error && !data && (
-            <LoadError columns={SCENARIO_TABLE_COLUMNS} message={error.message} onRetry={handleRetry} />
-          )}
+          {error && !data && <LoadError columns={SCENARIO_TABLE_COLUMNS} error={error} onRetry={handleRetry} />}
           {!isPending && !error && scenarios.length === 0 && (
             <TableEmpty
               columns={SCENARIO_TABLE_COLUMNS}

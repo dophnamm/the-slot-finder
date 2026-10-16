@@ -46,7 +46,7 @@ export function ProjectSummary({ projectId }: ProjectSummaryProps) {
 
   if (isPending) return <PageSkeleton />
   if (!project && error && error.status !== NOT_FOUND_STATUS)
-    return <LoadError framed message={error.message} onRetry={handleRetry} />
+    return <LoadError framed error={error} onRetry={handleRetry} />
   if (!project)
     return <PagePlaceholder title={t('Project not found')} description={t('There is no project at this address.')} />
 

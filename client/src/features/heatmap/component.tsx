@@ -51,7 +51,7 @@ export function Heatmap() {
           </TableBody>
         </Table>
       )}
-      {error && !data && <LoadError framed message={error.message} onRetry={handleRetry} />}
+      {error && !data && <LoadError framed error={error} onRetry={handleRetry} />}
       {data && rows.length === 0 && (
         <EmptyState
           framed

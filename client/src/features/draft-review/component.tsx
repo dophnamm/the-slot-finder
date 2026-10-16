@@ -21,7 +21,7 @@ export function DraftReview({ draftId }: DraftReviewProps) {
 
   if (isPending) return <PageSkeleton />
   if (!draft && error && error.status !== NOT_FOUND_STATUS)
-    return <LoadError framed message={error.message} onRetry={handleRetry} />
+    return <LoadError framed error={error} onRetry={handleRetry} />
   if (!draft)
     return (
       <PagePlaceholder

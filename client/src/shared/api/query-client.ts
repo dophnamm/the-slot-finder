@@ -3,7 +3,8 @@ import { toast } from 'sonner'
 import { signOutLocally } from '@/shared/auth/session'
 import { translate } from '@/shared/i18n'
 import { QUERY_RETRY, QUERY_STALE_TIME_MS } from '@/utils/constants'
-import { NO_RETRY_STATUSES, TOO_MANY_REQUESTS_STATUS, UNAUTHORIZED_STATUS } from './constants'
+import { NO_RETRY_STATUSES, UNAUTHORIZED_STATUS } from './constants'
+import { retryAfterSeconds } from './retry-after'
 import type { ApiError } from './types'
 
 declare module '@tanstack/react-query' {
@@ -16,16 +17,9 @@ declare module '@tanstack/react-query' {
   }
 }
 
-/** Seconds to wait, from the `data` of a 429 answer, when the server sent them. */
-function retryAfterSeconds(details: unknown) {
-  if (typeof details !== 'object' || details === null || !('retry_after' in details)) return undefined
-  const seconds = details.retry_after
-  return typeof seconds === 'number' && seconds > 0 ? seconds : undefined
-}
-
 /** The toast text for a failed request. After too many requests it says how long to wait. */
 function errorMessage(error: ApiError) {
-  const seconds = error.status === TOO_MANY_REQUESTS_STATUS ? retryAfterSeconds(error.details) : undefined
+  const seconds = retryAfterSeconds(error)
   if (seconds === undefined) return error.message
   if (seconds === 1) return translate('Too many requests. Try again in {seconds} second.', { seconds })
   return translate('Too many requests. Try again in {seconds} seconds.', { seconds })
