@@ -44,7 +44,7 @@ export function ScenarioReview({ scenarioId }: ScenarioReviewProps) {
 
   if (isPending) return <PageSkeleton />
   if (!scenario && error && error.status !== NOT_FOUND_STATUS)
-    return <LoadError framed message={error.message} onRetry={handleRetry} />
+    return <LoadError framed error={error} onRetry={handleRetry} />
   if (!scenario)
     return <PagePlaceholder title={t('Scenario not found')} description={t('There is no scenario at this address.')} />
   const { summary } = scenario

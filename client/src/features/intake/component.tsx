@@ -46,7 +46,7 @@ export function IntakeQueue() {
             <IntakeRow key={project.id} project={project} />
           ))}
           {isPending && <TableLoading columns={INTAKE_TABLE_COLUMNS} />}
-          {error && !data && <LoadError columns={INTAKE_TABLE_COLUMNS} message={error.message} onRetry={handleRetry} />}
+          {error && !data && <LoadError columns={INTAKE_TABLE_COLUMNS} error={error} onRetry={handleRetry} />}
           {!isPending && !error && projects.length === 0 && (
             <TableEmpty
               columns={INTAKE_TABLE_COLUMNS}

@@ -46,9 +46,7 @@ export function ChangeHistory() {
             <ChangeRow key={event.id} event={event} />
           ))}
           {isPending && <TableLoading columns={HISTORY_TABLE_COLUMNS} />}
-          {error && !data && (
-            <LoadError columns={HISTORY_TABLE_COLUMNS} message={error.message} onRetry={handleRetry} />
-          )}
+          {error && !data && <LoadError columns={HISTORY_TABLE_COLUMNS} error={error} onRetry={handleRetry} />}
           {!isPending && !error && events.length === 0 && (
             <TableEmpty
               columns={HISTORY_TABLE_COLUMNS}

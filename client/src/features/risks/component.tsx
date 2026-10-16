@@ -35,7 +35,7 @@ export function Risks() {
       className="h-full min-h-0"
       contentClassName="gap-5 overflow-y-auto"
     >
-      {failed && <LoadError framed message={error?.message ?? ''} onRetry={handleRetry} />}
+      {failed && error && <LoadError framed error={error} onRetry={handleRetry} />}
       {!failed && (
         <>
           {isPending && (

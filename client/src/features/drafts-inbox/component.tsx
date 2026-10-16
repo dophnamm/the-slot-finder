@@ -43,7 +43,7 @@ export function DraftsInbox() {
             <DraftRow key={draft.id} draft={draft} />
           ))}
           {isPending && <TableLoading columns={DRAFT_TABLE_COLUMNS} />}
-          {error && !data && <LoadError columns={DRAFT_TABLE_COLUMNS} message={error.message} onRetry={handleRetry} />}
+          {error && !data && <LoadError columns={DRAFT_TABLE_COLUMNS} error={error} onRetry={handleRetry} />}
           {!isPending && !error && drafts.length === 0 && (
             <TableEmpty columns={DRAFT_TABLE_COLUMNS} icon={FileStack} title={t('No open staffing drafts.')} />
           )}

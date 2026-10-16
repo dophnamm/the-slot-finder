@@ -58,7 +58,7 @@ export function CellDetail({ cell, person }: CellDetailProps) {
           </span>
         </div>
       )}
-      {error && !data && <LoadError message={error.message} onRetry={handleRetry} />}
+      {error && !data && <LoadError error={error} onRetry={handleRetry} />}
       {!isPending && !error && assignments.length === 0 && (
         <span className="text-muted-foreground">{t('No assignments this week.')}</span>
       )}
