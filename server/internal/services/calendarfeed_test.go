@@ -230,17 +230,35 @@ func TestCalendarFeedService_Connect(t *testing.T) {
 func TestCalendarFeedService_SyncNowRefusesWhileAnotherSyncRuns(t *testing.T) {
 	feeds := &fakeFeeds{byPerson: map[string]*models.CalendarFeed{}}
 	fetcher := &fakeFetcher{body: allDayOOO}
-	service := newFeedService(t, testFeedKey, feeds, fetcher, &fakeLeave{})
+	leave := &fakeLeave{}
+	service := newFeedService(t, testFeedKey, feeds, fetcher, leave)
 	planner := asRole("kc-planner", constants.RolePlanner)
 	_, err := service.Connect(planner, ConnectFeedInput{PersonID: otherPersonID, URL: googleLink})
 	require.NoError(t, err)
-	fetched := len(fetcher.links)
+	applied := len(leave.applied)
 	feeds.locked = map[string]bool{feeds.byPerson[otherPersonID].ID: true}
 
 	_, err = service.SyncNow(planner, otherPersonID)
 
 	requireAppError(t, err, constants.CalendarSyncRunning, http.StatusConflict)
-	assert.Len(t, fetcher.links, fetched, "a locked calendar is not fetched")
+	assert.Len(t, leave.applied, applied, "a locked calendar applies nothing")
+}
+
+func TestCalendarFeedService_SyncRecordsAFetchFailureWithoutTheLock(t *testing.T) {
+	feeds := &fakeFeeds{byPerson: map[string]*models.CalendarFeed{}}
+	fetcher := &fakeFetcher{body: allDayOOO}
+	service := newFeedService(t, testFeedKey, feeds, fetcher, &fakeLeave{})
+	planner := asRole("kc-planner", constants.RolePlanner)
+	_, err := service.Connect(planner, ConnectFeedInput{PersonID: otherPersonID, URL: googleLink})
+	require.NoError(t, err)
+	feeds.locked = map[string]bool{feeds.byPerson[otherPersonID].ID: true}
+	fetcher.err = calendar.ErrUnreachable
+
+	feed, err := service.SyncNow(planner, otherPersonID)
+
+	require.NoError(t, err, "the fetch and its failure record run before the lock")
+	require.NotNil(t, feed.LastError)
+	assert.Equal(t, constants.CalendarFeedUnreachable, *feed.LastError)
 }
 
 func TestCalendarFeedService_SyncKeepsAbsencesWhenTheFetchFails(t *testing.T) {
