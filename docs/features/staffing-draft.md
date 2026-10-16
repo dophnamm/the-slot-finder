@@ -68,7 +68,7 @@ At startup the server creates an empty published baseline (version 0) if none ex
 **As built**
 - Candidates rank by: holds the whole seat, then primary-expertise match, then the weighted score (deadline coverage, primary fit, balance, stability, continuity, levelFit), then person id. So a primary person wins whenever one can hold the seat, and a cross-expertise person wins when no primary person can.
 - The planning service passes each demand's window as its list of ISO weeks, so the engine does no week arithmetic. `PLANNING_HOUR_STEP` (default 1) rounds allocations to whole hours.
-- A demand never gets more distinct people than its `headcount`: once it has that many, only people already on it can take more hours, and what they cannot hold stays unmet (`NO_CAPACITY_BEFORE_DEADLINE`).
+- A demand never gets more distinct people than its `headcount`: once it has that many, only people already on it can take more hours, and what they cannot hold stays unmet (`NO_CAPACITY_BEFORE_DEADLINE`). With `headcount` 1, a week the only holder cannot work (leave, or a re-plan) gets nobody else, so those hours stay unmet until the Planner raises the headcount or adds a person by hand, whereas `headcount` 2 leaves a free seat for the other person.
 - Headcount is lowered when a seat would be smaller than one minimum week. Per demand, at most one allocation is below `minHoursPerWeek`: the last remainder.
 - `BLOCKED_BY_LOCKED` when the locked hours of qualified people inside the window are at least the missing hours; otherwise `NO_CAPACITY_BEFORE_DEADLINE`.
 - Existing assignments: for demand outside the request they are fixed load; for requested demand, locked allocations are kept and unlocked ones are planned again, preferring the same person (stability).

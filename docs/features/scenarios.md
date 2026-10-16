@@ -94,7 +94,7 @@ The [server README](../../server/README.md#3-api-restjson) lists `GET /scenarios
 ## Acceptance criteria
 
 1. With Checkout Revamp staffed in the baseline, "Checkout Revamp +2 weeks" moves its allocations two weeks later, or puts hours in unmet where nobody is free. The baseline, the project and its phases are unchanged afterwards.
-2. With Alex staffed in late October, "Alex on leave 26 Oct – 6 Nov" takes those hours off Alex. Someone else takes them, or they appear in unmet with a reason.
+2. With Alex staffed in late October, "Alex on leave 26 Oct – 6 Nov" takes those hours off Alex. Someone else takes them, or they appear in unmet with a reason; another person can only take them if the demand has a free seat (headcount of 2 or more), so with headcount 1 they stay unmet.
 3. Two assumptions combine in one scenario.
 4. The changes, churn and unmet shown match the scenario's plan against the baseline.
 5. After a draft is accepted, the scenario shows "Stale"; Run again computes it against the new baseline.
