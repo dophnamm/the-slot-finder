@@ -18,6 +18,7 @@ import (
 	"the-slot-finder/server/internal/integration/auth"
 	"the-slot-finder/server/internal/integration/calendar"
 	"the-slot-finder/server/internal/integration/email"
+	"the-slot-finder/server/internal/integration/llm"
 	"the-slot-finder/server/internal/logger"
 	"the-slot-finder/server/internal/monitoring"
 	"the-slot-finder/server/internal/repositories"
@@ -51,11 +52,12 @@ func NewHTTPServer(lc fx.Lifecycle,
 	calendarFeedHandler *handlers.CalendarFeedHandler,
 	teamHandler *handlers.ProgramTeamHandler,
 	holidayImportHandler *handlers.HolidayImportHandler,
+	aiHandler *handlers.AIHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 	db *db.PostgresDB,
 ) *http.Server {
-	handler := routes.Router(healthHandler, identityHandler, personHandler, absenceHandler, programHandler, projectHandler, planHandler, staffingHandler, insightsHandler, eventHandler, scenarioHandler, scheduleHandler, timesheetHandler, calendarFeedHandler, teamHandler, holidayImportHandler, verifier, cfg)
+	handler := routes.Router(healthHandler, identityHandler, personHandler, absenceHandler, programHandler, projectHandler, planHandler, staffingHandler, insightsHandler, eventHandler, scenarioHandler, scheduleHandler, timesheetHandler, calendarFeedHandler, teamHandler, holidayImportHandler, aiHandler, verifier, cfg)
 
 	srv := &http.Server{
 		Addr:              cfg.AppHTTPServer,
@@ -187,6 +189,7 @@ func appOptions(cfg *config.Config) []fx.Option {
 			auth.ProvideTokenVerifier,
 			cache.ProvideCache,
 			email.ProvideEmailSender,
+			llm.ProvideClient,
 			services.ProvideEmailService,
 			services.ProvideAuthService,
 			services.ProvideTeamAuthzService,
@@ -219,6 +222,7 @@ func appOptions(cfg *config.Config) []fx.Option {
 			services.ProvideTimesheetService,
 			services.ProvideCalendarFeedService,
 			services.ProvideScheduleService,
+			services.ProvideAIService,
 			handlers.ProvideHealthHandler,
 			handlers.ProvideIdentityHandler,
 			handlers.ProvidePersonHandler,
@@ -235,6 +239,7 @@ func appOptions(cfg *config.Config) []fx.Option {
 			handlers.ProvideCalendarFeedHandler,
 			handlers.ProvideProgramTeamHandler,
 			handlers.ProvideHolidayImportHandler,
+			handlers.ProvideAIHandler,
 		),
 		fx.Invoke(func(*http.Server) {}),
 		fx.Invoke(registerBaselineHook),

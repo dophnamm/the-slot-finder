@@ -99,7 +99,7 @@ func newTestRouterWith(cfg *config.Config, availability services.AvailabilitySer
 	calendarFeeds := handlers.ProvideCalendarFeedHandler(nil, nil)
 	return Router(health, identity, person, absence, program, project, plan, staffing, insights, events, scenarios, schedule,
 		timesheets, calendarFeeds, handlers.ProvideProgramTeamHandler(nil, nil),
-		handlers.ProvideHolidayImportHandler(nil, nil), verifier, cfg)
+		handlers.ProvideHolidayImportHandler(nil, nil), handlers.ProvideAIHandler(nil, nil), verifier, cfg)
 }
 
 func baseConfig() *config.Config {

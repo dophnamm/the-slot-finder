@@ -198,3 +198,14 @@ const (
 	MsgPersonNotInTeam    = "Only members of the program team can be staffed on its projects"
 	MsgTeamSaveFailed     = "Could not save the program team"
 )
+
+// Ask AI messages.
+const (
+	MsgAIAnswered       = "Question answered"
+	MsgAINotConfigured  = "Ask AI is not set up on this server"
+	MsgAIUpstreamFailed = "The AI service could not answer; try again later"
+	MsgAIRateLimited    = "The AI assistant is at its usage limit; try again later"
+	MsgAIEmptyAnswer    = "The AI service returned no answer"
+	MsgAIToolFailed     = "The data could not be read"
+	MsgAIUnknownTool    = "Unknown tool"
+)

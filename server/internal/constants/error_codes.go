@@ -83,6 +83,11 @@ const (
 	TimesheetWeekInFuture = "TIMESHEET_WEEK_IN_FUTURE"
 	TimesheetFileMissing  = "TIMESHEET_FILE_MISSING"
 
+	// Ask AI errors
+	AINotConfigured  = "AI_NOT_CONFIGURED"
+	AIUpstreamFailed = "AI_UPSTREAM_FAILED"
+	AIRateLimited    = "AI_RATE_LIMITED"
+
 	// Email errors
 	EmailSendError = "EMAIL_SEND_ERROR"
 

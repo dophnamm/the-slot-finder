@@ -103,6 +103,25 @@ definitions:
           type: string
         type: array
     type: object
+  dtos.AskAIRequest:
+    properties:
+      page_context:
+        example: Project page, id 0b8c5a52-3c0d-4c7e-9a43-6f8a1f0f0001
+        maxLength: 200
+        type: string
+      question:
+        example: Who is overloaded next week?
+        maxLength: 500
+        minLength: 1
+        type: string
+    required:
+    - question
+    type: object
+  dtos.AskAIResponse:
+    properties:
+      answer:
+        type: string
+    type: object
   dtos.AssignmentDemandResponse:
     properties:
       expertise:
@@ -2083,6 +2102,74 @@ paths:
       summary: Approve a planned absence
       tags:
       - Availability
+  /ai/ask:
+    post:
+      consumes:
+      - application/json
+      description: Answers a question about programs, projects, staffing and load.
+        The model reads data only through read-only tools that run with the caller's
+        own permissions, so a manager gets answers about their own programs only.
+        503 AI_NOT_CONFIGURED when the server has no API key for the chosen provider;
+        502 AI_UPSTREAM_FAILED when the model service fails.
+      parameters:
+      - description: Question
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.AskAIRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.AskAIResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "502":
+          description: Bad Gateway
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Ask AI
+      tags:
+      - AI
   /events:
     get:
       description: Changes that may break the plan (absence, slipped phases and deadlines),
