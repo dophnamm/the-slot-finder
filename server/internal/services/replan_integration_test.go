@@ -107,7 +107,7 @@ func TestReplan_Postgres(t *testing.T) {
 		assert.Equal(t, firstDraft, *e.DraftID, "one draft linked to both leaves")
 	}
 
-	page, err := events.List(asRole("kc-lead", constants.RoleLead), ListEventsInput{ProgramID: program.ID, Page: 1, PageSize: 20})
+	page, err := events.List(asRole("kc-planner", constants.RolePlanner), ListEventsInput{ProgramID: program.ID, Page: 1, PageSize: 20})
 	require.NoError(t, err)
 	require.NotEmpty(t, page.Data, "the program's history drives the banner")
 	assert.Equal(t, constants.PlanStatusDraft, page.Data[0].Draft.Status)

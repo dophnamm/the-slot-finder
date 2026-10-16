@@ -104,6 +104,7 @@ type ListEventsInput struct {
 type EventService interface {
 	EventRecorder
 	// List returns events newest first; with a program, only events that touch its projects.
+	// A manager sees only the events of their programs and their teams.
 	List(ctx context.Context, in ListEventsInput) (*dtos.DataResponse[models.ChangeEvent], error)
 }
 
@@ -159,6 +160,13 @@ func (s *eventService) List(ctx context.Context, in ListEventsInput) (*dtos.Data
 	if _, err := s.authz.Require(ctx, CanViewEvents); err != nil {
 		return nil, err
 	}
+	reader, err := s.authz.ProgramReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !reader.All && reader.LeadID == "" {
+		return emptyPage[models.ChangeEvent](&dtos.PageableRequest{Page: in.Page, PageSize: in.PageSize}), nil
+	}
 	var projectIDs []string
 	if in.ProgramID != "" {
 		projects, err := s.projects.ListByProgram(ctx, in.ProgramID)
@@ -173,7 +181,7 @@ func (s *eventService) List(ctx context.Context, in ListEventsInput) (*dtos.Data
 			return &dtos.DataResponse[models.ChangeEvent]{Data: []models.ChangeEvent{}, Pageable: &dtos.Pageable{Page: in.Page, PageSize: in.PageSize}}, nil
 		}
 	}
-	page, err := s.events.List(ctx, projectIDs, &dtos.PageableRequest{Page: in.Page, PageSize: in.PageSize})
+	page, err := s.events.List(ctx, projectIDs, readerLeadID(reader), &dtos.PageableRequest{Page: in.Page, PageSize: in.PageSize})
 	if err != nil {
 		return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opListEvents).WithResource(resourceEvent)
 	}

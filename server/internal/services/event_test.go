@@ -51,8 +51,8 @@ func (m *MockChangeEventRepository) Updates(ctx context.Context, entity *models.
 	return m.Called(ctx, entity).Error(0)
 }
 
-func (m *MockChangeEventRepository) List(ctx context.Context, projectIDs []string, page *dtos.PageableRequest) (*dtos.DataResponse[models.ChangeEvent], error) {
-	args := m.Called(ctx, projectIDs, page)
+func (m *MockChangeEventRepository) List(ctx context.Context, projectIDs []string, readerID *string, page *dtos.PageableRequest) (*dtos.DataResponse[models.ChangeEvent], error) {
+	args := m.Called(ctx, projectIDs, readerID, page)
 	return args.Get(0).(*dtos.DataResponse[models.ChangeEvent]), args.Error(1)
 }
 
@@ -115,12 +115,25 @@ func TestEventService_List(t *testing.T) {
 	t.Run("a program keeps the events of its projects", func(t *testing.T) {
 		events, projects := new(MockChangeEventRepository), new(MockProjectRepository)
 		projects.On("ListByProgram", mock.Anything, programID).Return([]models.Project{{BaseModel: models.BaseModel{ID: projectID}}}, nil)
-		events.On("List", mock.Anything, []string{projectID}, mock.Anything).
+		events.On("List", mock.Anything, []string{projectID}, mock.Anything, mock.Anything).
 			Return(&dtos.DataResponse[models.ChangeEvent]{Data: []models.ChangeEvent{{Type: constants.EventAbsenceAdded}}}, nil)
 		page, err := ProvideEventService(events, projects, ProvideAuthzService(leadPeople{}), clock.NewFixed(eventTime)).
 			List(lead, ListEventsInput{ProgramID: programID, Page: 1, PageSize: 20})
 		require.NoError(t, err)
 		assert.Len(t, page.Data, 1)
+	})
+
+	t.Run("a manager is limited to their own programs and teams, a planner is not", func(t *testing.T) {
+		events := new(MockChangeEventRepository)
+		leadID := leadPersonID
+		events.On("List", mock.Anything, []string(nil), &leadID, mock.Anything).Return(&dtos.DataResponse[models.ChangeEvent]{}, nil).Once()
+		events.On("List", mock.Anything, []string(nil), (*string)(nil), mock.Anything).Return(&dtos.DataResponse[models.ChangeEvent]{}, nil).Once()
+		service := ProvideEventService(events, nil, ProvideAuthzService(leadPeople{}), clock.NewFixed(eventTime))
+		_, err := service.List(lead, ListEventsInput{Page: 1, PageSize: 20})
+		require.NoError(t, err)
+		_, err = service.List(asRole("kc-planner", constants.RolePlanner), ListEventsInput{Page: 1, PageSize: 20})
+		require.NoError(t, err)
+		events.AssertExpectations(t)
 	})
 
 	t.Run("a program without projects has no events", func(t *testing.T) {
@@ -130,7 +143,16 @@ func TestEventService_List(t *testing.T) {
 			List(lead, ListEventsInput{ProgramID: programID, Page: 1, PageSize: 20})
 		require.NoError(t, err)
 		assert.Empty(t, page.Data)
-		events.AssertNotCalled(t, "List", mock.Anything, mock.Anything, mock.Anything)
+		events.AssertNotCalled(t, "List", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+	})
+
+	t.Run("a manager without a person record sees nothing", func(t *testing.T) {
+		events := new(MockChangeEventRepository)
+		page, err := ProvideEventService(events, nil, ProvideAuthzService(leadPeople{}), clock.NewFixed(eventTime)).
+			List(asRole("kc-other-lead", constants.RoleLead), ListEventsInput{Page: 1, PageSize: 20})
+		require.NoError(t, err)
+		assert.Empty(t, page.Data)
+		events.AssertNotCalled(t, "List", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 	})
 
 	t.Run("a specialist is refused", func(t *testing.T) {
