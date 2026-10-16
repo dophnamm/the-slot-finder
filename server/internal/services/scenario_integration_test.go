@@ -19,11 +19,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestScenario_Postgres(t *testing.T) {
+// scenarioFixture is a baseline where Ada holds all 72 QA hours of one demand in W42 and W43,
+// and Bea, a second QA, is free.
+type scenarioFixture struct {
+	pdb      *db.PostgresDB
+	plans    repositories.PlanRepository
+	svc      ScenarioService
+	ada      models.Person
+	baseline *models.Plan
+}
+
+func newScenarioFixture(t *testing.T, headcount int) scenarioFixture {
 	pdb := dbtest.NewPostgres(t)
 	dbtest.ApplyMigrations(t, pdb)
 	ctx := context.Background()
-	planner := asRole("kc-planner", constants.RolePlanner)
 
 	qa := models.Expertise{BaseModel: models.NewBaseModel(), Name: "QA", Sequence: 4}
 	require.NoError(t, pdb.Create(&qa).Error)
@@ -42,15 +51,15 @@ func TestScenario_Postgres(t *testing.T) {
 	project := models.Project{BaseModel: models.NewBaseModel(), ProgramID: program.ID, Name: "Checkout", Priority: 1,
 		Status: constants.ProjectStatusPlanned, StartEarliest: day(time.October, 12), Deadline: day(time.October, 23)}
 	require.NoError(t, pdb.Create(&project).Error)
-	demand := models.Demand{BaseModel: models.NewBaseModel(), ProjectID: project.ID, ExpertiseID: qa.ID, MinLevel: 2, Headcount: 1,
+	demand := models.Demand{BaseModel: models.NewBaseModel(), ProjectID: project.ID, ExpertiseID: qa.ID, MinLevel: 2, Headcount: headcount,
 		TotalHours: 72, Profile: constants.DemandProfileFlat}
 	require.NoError(t, pdb.Create(&demand).Error)
 
 	plans := repositories.ProvidePlanRepository(pdb)
 	require.NoError(t, plans.EnsureBaseline(ctx))
-	baseline, err := plans.FindBaselineSummary(ctx)
+	baselineSummary, err := plans.FindBaselineSummary(ctx)
 	require.NoError(t, err)
-	require.NoError(t, plans.CreateAssignment(ctx, &models.Assignment{BaseModel: models.NewBaseModel(), PlanID: baseline.ID,
+	require.NoError(t, plans.CreateAssignment(ctx, &models.Assignment{BaseModel: models.NewBaseModel(), PlanID: baselineSummary.ID,
 		PersonID: ada.ID, DemandID: demand.ID, Kind: constants.AssignmentKindPrimary, Reason: []string{},
 		Allocations: []models.Allocation{{Week: mustWeek(t, "2026-W42"), Hours: 36}, {Week: mustWeek(t, "2026-W43"), Hours: 36}}}))
 
@@ -58,6 +67,16 @@ func TestScenario_Postgres(t *testing.T) {
 	cfg.ScenarioMaxShiftWeeks, cfg.ScenarioMaxAssumptions = 12, 10
 	svc := ProvideScenarioService(plans, repositories.ProvideProjectRepository(pdb), repositories.ProvidePersonRepository(pdb),
 		repositories.ProvideAbsenceRepository(pdb), leadPeople{}, ProvideAuthzService(leadPeople{}), db.ProvideTxManager(pdb), clock.NewFixed(day(time.October, 12)), cfg, nil)
+
+	return scenarioFixture{pdb: pdb, plans: plans, svc: svc, ada: ada, baseline: baselineSummary}
+}
+
+// With two seats Ada's W43 can go to Bea.
+func TestScenario_Postgres(t *testing.T) {
+	f := newScenarioFixture(t, 2)
+	pdb, plans, svc, ada, baseline := f.pdb, f.plans, f.svc, f.ada, f.baseline
+	ctx := context.Background()
+	planner := asRole("kc-planner", constants.RolePlanner)
 
 	// Ada away in W43: her 36 h there go to Bea, and nothing real changes.
 	view, err := svc.Create(planner, CreateScenarioInput{Name: "Ada away", Assumptions: []AssumptionInput{{
@@ -104,4 +123,17 @@ func TestScenario_Postgres(t *testing.T) {
 	assert.EqualValues(t, 2, allocations, "only the baseline's allocations remain")
 	_, err = svc.Get(planner, view.Plan.ID)
 	requireAppError(t, err, constants.ScenarioNotFound, http.StatusNotFound)
+}
+
+// With one seat the demand never gets a second person: Ada's W43 stays unmet.
+func TestScenario_Postgres_HeadcountOne(t *testing.T) {
+	f := newScenarioFixture(t, 1)
+	planner := asRole("kc-planner", constants.RolePlanner)
+
+	view, err := f.svc.Create(planner, CreateScenarioInput{Name: "Ada away", Assumptions: []AssumptionInput{{
+		Type: constants.AssumptionAddAbsence, PersonID: f.ada.ID, FromDate: day(time.October, 19), ToDate: day(time.October, 23), HoursPerDay: 8}}})
+	require.NoError(t, err)
+	require.NotNil(t, view.Plan.Summary)
+	assert.Equal(t, 1, view.Plan.Summary.PeopleChanged, "only Ada changes: Bea cannot take a second seat")
+	assert.InDelta(t, 36, view.Plan.Summary.UnmetHours, hoursEpsilon, "Ada's W43 hours stay unmet")
 }
