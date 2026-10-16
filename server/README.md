@@ -90,15 +90,15 @@ Files per module follow the pattern `handlers/<module>.go`, `services/<module>.g
 | **planning** | Baseline, staffing drafts, scenarios; assignments and their kind (primary / cross-expertise / stretch) and alternatives; calls the engine; accept and publish | PLAN, ASSIGNMENT, ALLOCATION | `PlanPublished` |
 | **insights** | Heatmap, utilization, program and project metrics, at-risk lists, capacity forecast, bench list, sustained overload, plan churn, hours per point (read-only) | none (read-only) | |
 | **events** | Records ChangeEvents, debounces them, assesses impact, creates re-plan jobs (one open auto draft per baseline) | CHANGE_EVENT | |
-| **integrations** | Imports (CSV, HR), calendar feeds (secret ICS links and the sync runner, which writes leave through **availability**), notifications (Email/Slack) to members and assistants, the LLM provider client (later) | import_job, CALENDAR_FEED | |
+| **integrations** | Imports (CSV, HR), calendar feeds (secret ICS links and the sync runner, which writes leave through **availability**), notifications (Email/Slack) to members and assistants, the LLM provider client (used by Ask AI) | import_job, CALENDAR_FEED | |
 | **timesheets** | The timesheet template and import; actual hours per person, project and ISO week | ACTUAL_HOURS | |
-| **ai** (later) | The AI assistant: intake extraction, what-if chat, draft summaries, Q&A. Runs the function-calling loop with the LLM; each tool wraps another module's service and runs with the caller's identity (section 9) | none | |
+| **ai** | Ask AI (built): read-only Q&A over the insights and planning data. Later: intake extraction, what-if chat, draft summaries. Runs the function-calling loop with the LLM; each tool wraps another module's service and runs with the caller's identity (section 9) | none | |
 
 ## 3. API (REST/JSON)
 
 All paths below are under **`/api/v1`**. Every endpoint except health checks requires a Keycloak JWT (`Authorization: Bearer`); unsafe methods also need `X-CSRF-Token`. The Server checks permissions on every call: the role through `RequireRole` in the router, and per-program rules ("lead (own)") in the service. The `lead` role is shown as **Manager**: "lead (own)" means the manager of that program. A manager sees only the people in the teams of the programs they manage, plus themselves ("lead (team)" below); `AuthzService.VisiblePeople` answers that for the people list and detail, schedules, the heatmap and the risks.
 
-**Rate limits.** Every request counts against `RATE_LIMIT` per `RATE_LIMIT_DURATION` for its client IP. The routes that run the planning engine, read an uploaded file or fetch a URL also count against `RATE_LIMIT_HEAVY` per `RATE_LIMIT_HEAVY_DURATION` for each signed-in user on each route: `POST /staffing-drafts`, `POST /scenarios`, `POST /scenarios/{id}/rerun`, `POST /timesheets/import`, `POST /holidays/import`, `PUT /people/{id}/calendar-feed` and `POST /people/{id}/calendar-feed/sync`. Over either limit the Server answers `429 RATE_LIMIT_EXCEEDED`, with a `Retry-After` header and `{ limit, window, retry_after }` in `data` (`retry_after` in seconds). The counters live in memory, one set per Server instance.
+**Rate limits.** Every request counts against `RATE_LIMIT` per `RATE_LIMIT_DURATION` for its client IP. The routes that run the planning engine, read an uploaded file, fetch a URL or call the AI model also count against `RATE_LIMIT_HEAVY` per `RATE_LIMIT_HEAVY_DURATION` for each signed-in user on each route: `POST /staffing-drafts`, `POST /scenarios`, `POST /scenarios/{id}/rerun`, `POST /timesheets/import`, `POST /holidays/import`, `POST /ai/ask`, `PUT /people/{id}/calendar-feed` and `POST /people/{id}/calendar-feed/sync`. Over either limit the Server answers `429 RATE_LIMIT_EXCEEDED`, with a `Retry-After` header and `{ limit, window, retry_after }` in `data` (`retry_after` in seconds). The counters live in memory, one set per Server instance.
 
 **Identity and people**
 
@@ -164,6 +164,7 @@ A manager (`lead`) reads only the programs they lead or lead a project in, and t
 | POST | `/scenarios/{id}/rerun` | Compute a scenario again, with the same assumptions, against the baseline in force | planner |
 | GET | `/insights/heatmap?from=&to=&expertise=&program_id=` | Person × week matrix. Each cell holds total hours plus hours per expertise; `expertise=` (an expertise id) keeps people who hold that expertise or work on it in the range; `program_id=` keeps the program's team (`403` for a manager who may not read the program, `404` for an unknown one). Each cell also has capacity, utilization, its band, a tentative flag for planned leave and `actual_hours`: the hours worked that week from imported timesheets, `null` when none were imported. Load counts plannable projects only, from the current ISO week on (section 5) | planner, lead (team) |
 | GET | `/insights/risks` | Understaffed and at-risk projects, delivery behind time, overloaded people in the next `HEATMAP_DEFAULT_WEEKS` weeks (a manager sees only their team's), and before them `sustained_overload`: each person over 100 % for `SUSTAINED_OVERLOAD_WEEKS` or more weeks in a row (`person`, `from_week`, `weeks`, the first such run); likely over budget and overdue milestones later. Load counts plannable projects only, from the current ISO week on (section 5) | planner, lead |
+| POST | `/ai/ask` | Ask AI. Body `{ question }` (1–500 characters) and optional `page_context` (up to 200). Returns `{ answer }`. The model reads data only through read-only tools that run with the caller's permissions (section 9). `503 AI_NOT_CONFIGURED` when the chosen provider's key is empty; `429 AI_RATE_LIMITED` when the model service is rate limited, with `data.retry_after` (seconds) when it sends one; `502 AI_UPSTREAM_FAILED` for other model failures. Heavy rate limit | planner, lead (own programs, through the tools) |
 | GET | `/events?program_id=` | Change history and processing status; the program page uses it for the re-plan banner. A manager sees only events on the projects of their programs and events about themselves or the people in their teams (`person_id` in the payload); a manager without a person record gets an empty page. A planner sees all | planner, lead |
 | GET | `/timesheets/template?from=&to=` | CSV template: person × project × week with baseline hours in a range of past weeks, with planned hours and any actual hours already recorded | planner |
 | POST | `/timesheets/import` | Upload a filled-in template (multipart `file`). Every row is checked first; any failure gets `400 TIMESHEET_INVALID` with line, column and code, and nothing is saved | planner |
@@ -403,7 +404,7 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `CALENDAR_FETCH_TIMEOUT` · `CALENDAR_MAX_BYTES` | Limits on one calendar fetch | 10s · 5MB |
 | `RATE_LIMIT` · `RATE_LIMIT_DURATION` | Requests allowed per client IP on every route, and the window (0 turns it off) | 20 · 1s |
 | `RATE_LIMIT_HEAVY` · `RATE_LIMIT_HEAVY_DURATION` | Requests allowed per signed-in user on each heavy route (see the API section), and the window (0 turns it off) | 20 · 30s |
-| `HTTP_READ_TIMEOUT` · `HTTP_WRITE_TIMEOUT` · `HTTP_IDLE_TIMEOUT` | Timeouts of the HTTP server. The write timeout covers the whole response, so it must stay longer than the slowest request (a calendar fetch up to `CALENDAR_FETCH_TIMEOUT`, plus database time) | 30s · 120s · 120s |
+| `HTTP_READ_TIMEOUT` · `HTTP_WRITE_TIMEOUT` · `HTTP_IDLE_TIMEOUT` | Timeouts of the HTTP server. The write timeout covers the whole response, so it must stay longer than the slowest request (a calendar fetch up to `CALENDAR_FETCH_TIMEOUT`, or an Ask AI question: up to `LLM_MAX_TOOL_ROUNDS` model calls of up to `LLM_TIMEOUT` each, plus database time; with the defaults this can exceed 120s) | 30s · 120s · 120s |
 | `WORKING_WEEKDAYS` | Days that count when absence hours are computed | Mon–Fri |
 | `HEATMAP_DEFAULT_WEEKS` · `HEATMAP_MAX_WEEKS` | Weeks shown by default on the heatmap, and the largest range allowed | 12 · 52 |
 | `ALERT_HORIZON_WEEKS` | A deadline this close turns a gap into **at risk** | 4 |
@@ -413,8 +414,26 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `DRAFT_ALTERNATIVES_LIMIT` | People a staffing draft offers to swap in for an assignment | 5 |
 | `APP_ENV` | Runtime environment; an unset value runs as `production` (`.env.example` sets `development`) | production |
 | `AWS_SES_FROM_EMAIL` | Sender address of every email (a verified SES address) | empty |
+| `LLM_PROVIDER` | Model provider for Ask AI: `gemini` (Google AI Studio) or `groq` (Groq's OpenAI-compatible API). Picks which key and model are used; any other value fails at startup. Switching provider means changing this value only, with both keys set | gemini |
+| `GEMINI_API_KEY` · `GEMINI_MODEL` | Google AI Studio key (a secret) and model name. An empty key turns Ask AI off: `503 AI_NOT_CONFIGURED`, and the server still starts. An empty model uses `gemini-3.5-flash`; production should set it explicitly, since model IDs change (`gemini-2.5-flash` is closed to new accounts and answers 404). Confirm IDs in AI Studio | empty · `gemini-3.5-flash` |
+| `GROQ_API_KEY` · `GROQ_MODEL` | Groq key (a secret) and model name, with the same rules. An empty model uses `openai/gpt-oss-120b`; production should set it explicitly and confirm the ID in the Groq console | empty · `openai/gpt-oss-120b` |
+| `LLM_TIMEOUT` | Limit for one model call | 30s |
+| `LLM_MAX_TOOL_ROUNDS` | Most model calls one question may take. Each round may run tools | 4 |
+| `LLM_MAX_TOOL_RESULT_BYTES` | Longest tool result sent back to the model. A longer one is cut and marked as cut | 12000 |
 
 ## 9. AI assistant (later)
+
+**Built: Ask AI** (`POST /ai/ask`, section 3). The model is Gemini (Google AI Studio) or Groq, chosen with `LLM_PROVIDER`, and configured with the `LLM_*` settings (section 8). It answers with these read-only tools. Each one calls an existing service with the caller's identity, so the route's roles and the per-program rules apply:
+
+| Tool | Arguments | Wraps | Writes |
+|---|---|---|---|
+| `get_heatmap` | `from`, `to`, `expertise_id`, `program_id` | insights: heatmap | no |
+| `get_risks` | none | insights: risk lists | no |
+| `list_open_drafts` | none | staffing: open drafts | no |
+| `get_project` | `project_id` | programs: one project | no |
+| `get_program_overview` | `program_id` | insights: a program's metrics | no |
+
+Each question is sent alone, with the page path as context, so there is no chat history on the server. Ask AI never writes. Tool results are cut at `LLM_MAX_TOOL_RESULT_BYTES`, and one question takes at most `LLM_MAX_TOOL_ROUNDS` model calls.
 
 **Later** settings (no config field yet):
 
@@ -438,11 +457,11 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `BENCH_WEEKS` | Weeks ahead a person must stay underused to be on the bench list | 4 |
 | `FTE_WEEKLY_HOURS` | Hours in one FTE for capacity-forecast signals | 40 |
 
-**Later**, not built yet: it stays off until `AI_API_KEY` is set and the data policy question below is approved. The principle, capabilities and boundaries are in the [root README, section 15](../README.md#15-ai-assistant-later).
+**Later**, not built yet: the settings above are a draft, since Ask AI already uses the `LLM_*` settings. Intake, chat and summaries wait for the data policy question below. The principle, capabilities and boundaries are in the [root README, section 15](../README.md#15-ai-assistant-later).
 
-**Code (later):** `handlers/ai.go` and `services/ai.go` (the function-calling loop and tool definitions), and `internal/integration/llm` (a `Provider` interface plus one implementation per `AI_PROVIDER`; Gemini first). Nothing outside `integration/llm` knows which provider is used.
+**Code:** `handlers/ai.go` and `services/ai.go` (the function-calling loop and tool declarations), `constants/ai.go` (tool names and Gemini settings), and `internal/integration/llm` (a `Client` interface with a Gemini and a Groq implementation, chosen by `LLM_PROVIDER`. Groq has been run end to end with real questions; Gemini has had one direct live call, and the full tool-result loop is not yet verified). Nothing outside `integration/llm` knows which provider is used.
 
-**Tools** (each wraps an existing service method):
+**Later tools** (not built yet; each wraps an existing service method):
 
 | Tool | Wraps | Used by | Writes |
 |---|---|---|---|
@@ -468,4 +487,4 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 - **Audit:** every write through a tool records the user as the actor, `via = ai_assistant` and the tool name.
 - **Observability:** per request: latency, input and output tokens, tool-call count, provider and model. There is one OTel span per LLM call and per tool call. Prompts, documents and replies are not logged. Logs carry the request id, user id and tool names.
 
-**Open question:** customer documents and personnel data would be sent to an external LLM provider. The company data policy must approve this before `AI_ENABLED` is turned on.
+**Open question:** customer documents and personnel data would be sent to an external LLM provider. Ask AI already sends the question, the page path and tool results (people's hours, risks, drafts, project data) to the chosen provider's API (Gemini or Groq) whenever the chosen provider's key (`GEMINI_API_KEY` or `GROQ_API_KEY`) is set. On the Gemini free tier, Google may use these inputs and outputs to improve its products, and people may read them; paid-tier requests are excluded from that use. Google's free-tier limits are per project and shown in Google AI Studio, with per-minute and per-day request limits; the day resets at midnight Pacific time. Each model call, including each round after a tool call, counts as one request, so one question can use several. Google's pages (checked 2026-10-16) give no numbers, so read them in AI Studio. Groq's data-use terms and limits were not checked. The company data policy must approve the provider and the key type before real data is sent, and before intake, chat or summaries are built.
