@@ -4,16 +4,28 @@ import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Calendar } from '@/shared/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover'
-import { cn, formatIsoWeekRange, isIsoWeek, toIsoWeek } from '@/utils/functions'
+import { cn, formatIsoWeekRange, isIsoWeek, parseDateValue, todayDateValue, toIsoWeek } from '@/utils/functions'
 import type { WeekPickerProps } from './types'
 import { weekDays } from './utils'
 
 /** An ISO week field: a calendar with week numbers where any day picks its whole week. */
-export function WeekPicker({ id, name, value, onChange, min, className, 'aria-label': ariaLabel }: WeekPickerProps) {
+export function WeekPicker({
+  id,
+  name,
+  value,
+  onChange,
+  min,
+  max,
+  className,
+  'aria-label': ariaLabel,
+}: WeekPickerProps) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const selected = weekDays(value)
   const earliest = min ? weekDays(min)?.from : undefined
+  const today = parseDateValue(todayDateValue())
+  const opensOn = earliest && today && earliest > today ? earliest : today
+  const latest = max ? weekDays(max)?.to : undefined
 
   const handleSelect = (_range: unknown, day: Date) => {
     onChange(toIsoWeek(day), name)
@@ -42,9 +54,9 @@ export function WeekPicker({ id, name, value, onChange, min, className, 'aria-la
           showWeekNumber
           highlightWeek
           selected={selected}
-          defaultMonth={selected?.from ?? earliest}
+          defaultMonth={selected?.from ?? opensOn}
           onSelect={handleSelect}
-          disabled={earliest ? { before: earliest } : undefined}
+          disabled={[...(earliest ? [{ before: earliest }] : []), ...(latest ? [{ after: latest }] : [])]}
         />
       </PopoverContent>
     </Popover>

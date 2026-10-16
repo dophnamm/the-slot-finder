@@ -8,6 +8,8 @@ export interface WeekPickerProps {
   onChange: (value: string, name: string) => void
   /** Earliest ISO week that can be picked. */
   min?: string
+  /** Latest ISO week that can be picked. */
+  max?: string
   className?: string
   'aria-label'?: string
 }

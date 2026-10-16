@@ -8,6 +8,8 @@ export interface DatePickerProps {
   onChange: (value: string, name: string) => void
   /** Earliest day that can be picked (`YYYY-MM-DD`). */
   min?: string
+  /** Latest day that can be picked (`YYYY-MM-DD`). */
+  max?: string
   disabled?: boolean
   'aria-label'?: string
 }
