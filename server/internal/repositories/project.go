@@ -6,6 +6,7 @@ import (
 	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/db"
 	"the-slot-finder/server/internal/dtos"
+	"the-slot-finder/server/internal/isoweek"
 	"the-slot-finder/server/internal/models"
 
 	"gorm.io/gorm"
@@ -42,6 +43,9 @@ type ProjectRepository interface {
 	SavePhases(ctx context.Context, phases []models.ProjectPhase) error
 	DeletePhases(ctx context.Context, ids []string) error
 	CountDemandsInPhases(ctx context.Context, phaseIDs []string) (int64, error)
+	// CountPastBaselineHours counts the published baseline's allocations on the demands that hold more than
+	// minHours in a week before the given week.
+	CountPastBaselineHours(ctx context.Context, demandIDs []string, before isoweek.Week, minHours float64) (int64, error)
 	ListDemands(ctx context.Context, projectID string) ([]models.Demand, error)
 	// SaveDemands inserts or updates demand rows in one statement.
 	SaveDemands(ctx context.Context, demands []models.Demand) error
@@ -160,6 +164,20 @@ func (r *projectRepository) CountDemandsInPhases(ctx context.Context, phaseIDs [
 	}
 	var count int64
 	err := r.db.From(ctx).Model(&models.Demand{}).Where("phase_id IN ?", phaseIDs).Count(&count).Error
+	return count, err
+}
+
+func (r *projectRepository) CountPastBaselineHours(ctx context.Context, demandIDs []string, before isoweek.Week, minHours float64) (int64, error) {
+	if len(demandIDs) == 0 {
+		return 0, nil
+	}
+	var count int64
+	err := r.db.From(ctx).Model(&models.Allocation{}).
+		Joins("JOIN assignments ON assignments.id = allocations.assignment_id AND assignments.deleted_at IS NULL").
+		Joins("JOIN plans ON plans.id = assignments.plan_id AND plans.deleted_at IS NULL").
+		Where("assignments.demand_id IN ? AND plans.kind = ? AND plans.status = ?", demandIDs, constants.PlanKindBaseline, constants.PlanStatusPublished).
+		Where("allocations.week_start < ? AND allocations.hours > ?", before, minHours).
+		Count(&count).Error
 	return count, err
 }
 

@@ -2,10 +2,14 @@ package services
 
 import (
 	"context"
+	"fmt"
+	"math"
 	"net/http"
 	"slices"
 	"time"
 
+	"the-slot-finder/server/internal/clock"
+	"the-slot-finder/server/internal/config"
 	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/db"
 	"the-slot-finder/server/internal/dtos"
@@ -137,13 +141,15 @@ type projectService struct {
 	authz    AuthzService
 	tx       db.TxManager
 	events   EventRecorder
+	cfg      *config.Config
+	clock    clock.Clock
 }
 
 // ProvideProjectService creates the project service.
 func ProvideProjectService(projects repositories.ProjectRepository, programs repositories.ProgramRepository,
-	people PeopleService, authz AuthzService, tx db.TxManager, events EventRecorder,
+	people PeopleService, authz AuthzService, tx db.TxManager, events EventRecorder, cfg *config.Config, clk clock.Clock,
 ) ProjectService {
-	return &projectService{projects: projects, programs: programs, people: people, authz: authz, tx: tx, events: events}
+	return &projectService{projects: projects, programs: programs, people: people, authz: authz, tx: tx, events: events, cfg: cfg, clock: clk}
 }
 
 func (s *projectService) ListByProgram(ctx context.Context, programID string) ([]models.Project, error) {
@@ -208,6 +214,9 @@ func (s *projectService) Create(ctx context.Context, in CreateProjectInput) (*mo
 			WithOperation(opCreateProject).WithResource(resourceProject)
 	}
 	if err := checkProjectDates(in.StartEarliest, in.Deadline, opCreateProject); err != nil {
+		return nil, err
+	}
+	if err := s.requireInWindow(opCreateProject, resourceProject, isoweek.Of(in.StartEarliest), isoweek.Of(in.Deadline)); err != nil {
 		return nil, err
 	}
 	leadID, err := chooseLead(ctx, s.people, principal, in.LeadID, opCreateProject)
@@ -316,6 +325,15 @@ func (s *projectService) Update(ctx context.Context, id string, in UpdateProject
 	if err := checkProjectDates(project.StartEarliest, project.Deadline, opUpdateProject); err != nil {
 		return nil, err
 	}
+	// Only a changed date is checked, so a project saved before the window can still be renamed.
+	for _, date := range []*time.Time{in.StartEarliest, in.Deadline} {
+		if date == nil {
+			continue
+		}
+		if err := s.requireInWindow(opUpdateProject, resourceProject, isoweek.Of(*date)); err != nil {
+			return nil, err
+		}
+	}
 	err = s.tx.Do(ctx, func(ctx context.Context) error {
 		if err := s.saveProject(ctx, project, opUpdateProject); err != nil {
 			return err
@@ -371,14 +389,27 @@ func (s *projectService) ReplacePhases(ctx context.Context, projectID string, ph
 	}
 
 	existing := map[string]bool{}
+	stored := map[string]models.ProjectPhase{}
 	for _, phase := range project.Phases {
 		existing[phase.ID] = true
+		stored[phase.ID] = phase
 	}
 	kept := map[string]bool{}
 	rows := make([]models.ProjectPhase, 0, len(phases))
 	for i, in := range phases {
 		if in.EndWeek.Before(in.StartWeek) {
 			return nil, phaseWeeksInvalid(opReplacePhases)
+		}
+		// Only new or moved phases are checked: renaming an old phase outside the window stays possible.
+		moved := true
+		if in.ID != nil {
+			old, ok := stored[*in.ID]
+			moved = !ok || old.StartWeek != in.StartWeek || old.EndWeek != in.EndWeek
+		}
+		if moved {
+			if err := s.requireInWindow(opReplacePhases, resourcePhase, in.StartWeek, in.EndWeek); err != nil {
+				return nil, err
+			}
 		}
 		row := models.ProjectPhase{BaseModel: models.NewBaseModel(), ProjectID: projectID, Name: in.Name,
 			Sequence: i + firstPhaseSequence, StartWeek: in.StartWeek, EndWeek: in.EndWeek}
@@ -461,6 +492,15 @@ func (s *projectService) UpdatePhase(ctx context.Context, phaseID string, in Upd
 			changed = append(changed, later)
 		}
 	}
+	// The phase itself is checked only when its weeks are sent, so a rename of an old phase still works.
+	for i, row := range changed {
+		if i == 0 && in.StartWeek == nil && in.EndWeek == nil {
+			continue
+		}
+		if err := s.requireInWindow(opUpdatePhase, resourcePhase, row.StartWeek, row.EndWeek); err != nil {
+			return nil, err
+		}
+	}
 
 	save := func(ctx context.Context) error {
 		if err := s.projects.SavePhases(ctx, changed); err != nil {
@@ -503,6 +543,11 @@ func (s *projectService) ReplaceDemands(ctx context.Context, projectID string, d
 		if in.PhaseID != nil && !phases[*in.PhaseID] {
 			return nil, phaseNotInProject(opReplaceDemands)
 		}
+		// The engine lays hours out in whole steps; any other budget would be rounded into a wrong draft.
+		if step := s.cfg.PlanningHourStep; step > 0 && math.Abs(math.Remainder(in.TotalHours, step)) > hoursEpsilon {
+			return nil, errors.NewAppError(constants.DemandHoursStep, fmt.Sprintf(constants.MsgDemandHoursStepFormat, step),
+				errors.ErrorTypeValidation, http.StatusBadRequest).WithOperation(opReplaceDemands).WithResource(resourceDemand)
+		}
 		row := models.Demand{BaseModel: models.NewBaseModel(), ProjectID: projectID, ExpertiseID: in.ExpertiseID,
 			PhaseID: in.PhaseID, MinLevel: in.MinLevel, Headcount: in.Headcount, TotalHours: in.TotalHours, Profile: in.Profile}
 		if row.Profile == "" {
@@ -531,6 +576,15 @@ func (s *projectService) ReplaceDemands(ctx context.Context, projectID string, d
 	removed := missingIDs(existing, kept)
 	changed := demandsChanged(project.Demands, rows)
 	err = s.tx.Do(ctx, func(ctx context.Context) error {
+		// Deleting a demand cascades over its assignments, so past baseline hours must stay.
+		held, err := s.projects.CountPastBaselineHours(ctx, removed, isoweek.Of(s.clock.Now()), hoursEpsilon)
+		if err != nil {
+			return err
+		}
+		if held > 0 {
+			return errors.NewAppError(constants.DemandInUse, constants.MsgDemandInUse, errors.ErrorTypeConflict, http.StatusConflict).
+				WithOperation(opReplaceDemands).WithResource(resourceDemand)
+		}
 		if err := s.projects.DeleteDemands(ctx, removed); err != nil {
 			return err
 		}
@@ -603,6 +657,19 @@ func applyProjectChanges(project *models.Project, in UpdateProjectInput) {
 	if in.DonePoints != nil {
 		project.DonePoints = *in.DonePoints
 	}
+}
+
+// requireInWindow refuses a week farther from the current week than the configured window, which
+// bounds how many weeks any later per-week loop can span.
+func (s *projectService) requireInWindow(op, resource string, weeks ...isoweek.Week) error {
+	current := isoweek.Of(s.clock.Now())
+	for _, week := range weeks {
+		if distance := isoweek.WeeksBetween(current, week); max(distance, -distance) > s.cfg.ProjectWindowWeeks {
+			return errors.NewAppError(constants.WeekOutOfWindow, fmt.Sprintf(constants.MsgWeekOutOfWindowFormat, s.cfg.ProjectWindowWeeks),
+				errors.ErrorTypeValidation, http.StatusBadRequest).WithOperation(op).WithResource(resource)
+		}
+	}
+	return nil
 }
 
 func checkProjectDates(start, deadline time.Time, op string) error {

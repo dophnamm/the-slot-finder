@@ -63,7 +63,7 @@ func TestProjectService_UpdatePhase_Postgres(t *testing.T) {
 	people := knownExpertisePeople{}
 	events := ProvideEventService(repositories.ProvideChangeEventRepository(pdb), projects, ProvideAuthzService(people), clock.NewFixed(acceptedAt))
 	newService := func(repo repositories.ProjectRepository) ProjectService {
-		return ProvideProjectService(repo, programs, people, ProvideAuthzService(people), db.ProvideTxManager(pdb), events)
+		return ProvideProjectService(repo, programs, people, ProvideAuthzService(people), db.ProvideTxManager(pdb), events, projectConfig(), clock.NewFixed(acceptedAt))
 	}
 	planner := asRole("kc-planner", constants.RolePlanner)
 	slipEvents := func(t *testing.T, phaseID string) int64 {
@@ -110,4 +110,45 @@ func TestProjectService_UpdatePhase_Postgres(t *testing.T) {
 		assert.Equal(t, "2026-W46 2026-W51", weeks(t, testID))
 		assert.Equal(t, int64(0), slipEvents(t, buildID), "no event without its change")
 	})
+}
+
+func TestProjectRepository_CountPastBaselineHours_Postgres(t *testing.T) {
+	pdb := dbtest.NewPostgres(t)
+	dbtest.ApplyMigrations(t, pdb)
+	ctx := context.Background()
+	qa := models.Expertise{BaseModel: models.NewBaseModel(), Name: "QA", Sequence: 4}
+	require.NoError(t, pdb.Create(&qa).Error)
+	ada := models.Person{BaseModel: models.NewBaseModel(), Name: "ada", Email: "ada@example.test", Role: constants.RoleSpecialist,
+		WeeklyHours: 40, NonProjectHours: 4, Active: true}
+	require.NoError(t, pdb.Create(&ada).Error)
+	buildID, _ := seedBuildAndTest(t, pdb)
+	var phase models.ProjectPhase
+	require.NoError(t, pdb.First(&phase, "id = ?", buildID).Error)
+	demand := models.Demand{BaseModel: models.NewBaseModel(), ProjectID: phase.ProjectID, ExpertiseID: qa.ID, MinLevel: 2, Headcount: 1,
+		TotalHours: 72, Profile: constants.DemandProfileFlat}
+	require.NoError(t, pdb.Create(&demand).Error)
+
+	plans := repositories.ProvidePlanRepository(pdb)
+	require.NoError(t, plans.EnsureBaseline(ctx))
+	baseline, err := plans.FindBaselineSummary(ctx)
+	require.NoError(t, err)
+	require.NoError(t, plans.CreateAssignment(ctx, &models.Assignment{BaseModel: models.NewBaseModel(), PlanID: baseline.ID,
+		PersonID: ada.ID, DemandID: demand.ID, Kind: constants.AssignmentKindPrimary, Reason: []string{},
+		Allocations: []models.Allocation{{Week: mustWeek(t, "2026-W42"), Hours: 36}, {Week: mustWeek(t, "2026-W44"), Hours: 36}}}))
+
+	// Hours on a draft are not staffed yet: they must not change the count.
+	draftID := emptyDraft(t, plans, baseline.Version)
+	require.NoError(t, plans.CreateAssignment(ctx, &models.Assignment{BaseModel: models.NewBaseModel(), PlanID: draftID,
+		PersonID: ada.ID, DemandID: demand.ID, Kind: constants.AssignmentKindPrimary, Reason: []string{},
+		Allocations: []models.Allocation{{Week: mustWeek(t, "2026-W43"), Hours: 36}}}))
+
+	projects := repositories.ProvideProjectRepository(pdb)
+	count := func(ids []string, before string) int64 {
+		n, err := projects.CountPastBaselineHours(ctx, ids, mustWeek(t, before), hoursEpsilon)
+		require.NoError(t, err)
+		return n
+	}
+	assert.EqualValues(t, 1, count([]string{demand.ID}, "2026-W44"), "only W42 is before W44")
+	assert.EqualValues(t, 0, count([]string{demand.ID}, "2026-W42"), "future-only hours do not count")
+	assert.EqualValues(t, 0, count([]string{buildID}, "2026-W50"), "another demand")
 }

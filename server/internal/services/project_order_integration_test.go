@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"the-slot-finder/server/internal/clock"
 	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/db"
 	"the-slot-finder/server/internal/db/dbtest"
@@ -22,7 +23,7 @@ func TestProjectOrder_Postgres(t *testing.T) {
 	planner := asRole("kc-planner", constants.RolePlanner)
 	people := knownExpertisePeople{}
 	service := ProvideProjectService(repositories.ProvideProjectRepository(pdb), repositories.ProvideProgramRepository(pdb),
-		people, ProvideAuthzService(people), db.ProvideTxManager(pdb), &recordedEvents{})
+		people, ProvideAuthzService(people), db.ProvideTxManager(pdb), &recordedEvents{}, projectConfig(), clock.NewFixed(acceptedAt))
 
 	program := models.Program{BaseModel: models.NewBaseModel(), Name: "Acme", Client: "Acme", Status: constants.ProgramStatusOpen,
 		StartDate: time.Date(2026, time.October, 1, 0, 0, 0, 0, time.UTC), EndDate: time.Date(2026, time.December, 31, 0, 0, 0, 0, time.UTC),

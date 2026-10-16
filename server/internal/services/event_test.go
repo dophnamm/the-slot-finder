@@ -214,7 +214,7 @@ func TestProjectService_RecordsSlips(t *testing.T) {
 		repo.On("FindDetail", mock.Anything, projectID).Return(project, nil)
 		repo.On("SavePhases", mock.Anything, mock.Anything).Return(nil)
 		people := knownExpertisePeople{}
-		_, err := ProvideProjectService(repo, nil, people, ProvideAuthzService(people), passthroughTx{}, events).
+		_, err := ProvideProjectService(repo, nil, people, ProvideAuthzService(people), passthroughTx{}, events, projectConfig(), clock.NewFixed(acceptedAt)).
 			UpdatePhase(planner, buildID, UpdatePhaseInput{EndWeek: new(mustWeek(t, "2026-W49"))})
 		require.NoError(t, err)
 		require.Len(t, events.events, 1)
@@ -237,7 +237,7 @@ func TestProjectService_RecordsSlips(t *testing.T) {
 			repo, events := new(MockProjectRepository), &recordedEvents{}
 			repo.On("FindDetail", mock.Anything, projectID).Return(buildAndTest(t), nil)
 			repo.On("Save", mock.Anything, mock.Anything).Return(nil)
-			_, err := ProvideProjectService(repo, nil, people, ProvideAuthzService(people), passthroughTx{}, events).
+			_, err := ProvideProjectService(repo, nil, people, ProvideAuthzService(people), passthroughTx{}, events, projectConfig(), clock.NewFixed(acceptedAt)).
 				Update(planner, projectID, UpdateProjectInput{Deadline: &tt.deadline})
 			require.NoError(t, err, tt.name)
 			assert.Len(t, events.events, tt.want, tt.name)
@@ -266,7 +266,7 @@ func TestProjectService_RecordsStatusChange(t *testing.T) {
 			project.Status = tt.from
 			repo.On("FindDetail", mock.Anything, projectID).Return(project, nil)
 			repo.On("Save", mock.Anything, mock.Anything).Return(nil)
-			_, err := ProvideProjectService(repo, nil, people, ProvideAuthzService(people), passthroughTx{}, events).
+			_, err := ProvideProjectService(repo, nil, people, ProvideAuthzService(people), passthroughTx{}, events, projectConfig(), clock.NewFixed(acceptedAt)).
 				ApplyAction(planner, projectID, tt.action)
 			require.NoError(t, err)
 			require.Len(t, events.events, 1)
@@ -282,7 +282,7 @@ func TestProjectService_RecordsStatusChange(t *testing.T) {
 		repo, events := new(MockProjectRepository), &recordedEvents{fail: stderrors.New("outbox down")}
 		repo.On("FindDetail", mock.Anything, projectID).Return(buildAndTest(t), nil)
 		repo.On("Save", mock.Anything, mock.Anything).Return(nil)
-		_, err := ProvideProjectService(repo, nil, people, ProvideAuthzService(people), passthroughTx{}, events).
+		_, err := ProvideProjectService(repo, nil, people, ProvideAuthzService(people), passthroughTx{}, events, projectConfig(), clock.NewFixed(acceptedAt)).
 			ApplyAction(planner, projectID, constants.ProjectActionCancel)
 		require.Error(t, err)
 	})
@@ -362,7 +362,7 @@ func TestProjectService_ReplacePhasesAndDemandsRecordEvents(t *testing.T) {
 			repo.On("CountDemandsInPhases", mock.Anything, mock.Anything).Return(int64(0), nil)
 			repo.On("DeletePhases", mock.Anything, mock.Anything).Return(nil)
 			repo.On("SavePhases", mock.Anything, mock.Anything).Return(nil)
-			_, err := ProvideProjectService(repo, nil, people, ProvideAuthzService(people), passthroughTx{}, events).
+			_, err := ProvideProjectService(repo, nil, people, ProvideAuthzService(people), passthroughTx{}, events, projectConfig(), clock.NewFixed(acceptedAt)).
 				ReplacePhases(planner, projectID, []PhaseInput{phase(project, 0, tt.build, t), phase(project, 1, tt.tst, t)})
 			require.NoError(t, err)
 			var got []string
@@ -393,13 +393,14 @@ func TestProjectService_ReplacePhasesAndDemandsRecordEvents(t *testing.T) {
 			project.Demands[0].MinLevel, project.Demands[0].Headcount, project.Demands[0].TotalHours = 2, 1, 60
 			project.Demands[0].Profile = constants.DemandProfileFlat
 			repo.On("FindDetail", mock.Anything, projectID).Return(project, nil)
+			repo.On("CountPastBaselineHours", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int64(0), nil)
 			repo.On("DeleteDemands", mock.Anything, mock.Anything).Return(nil)
 			repo.On("SaveDemands", mock.Anything, mock.Anything).Return(nil)
 			d := project.Demands[0]
 			in := DemandInput{ID: &d.ID, ExpertiseID: d.ExpertiseID, PhaseID: d.PhaseID, MinLevel: 2, Headcount: 1, TotalHours: 60,
 				Profile: constants.DemandProfileFlat}
 			tt.change(&in)
-			_, err := ProvideProjectService(repo, nil, people, ProvideAuthzService(people), passthroughTx{}, events).
+			_, err := ProvideProjectService(repo, nil, people, ProvideAuthzService(people), passthroughTx{}, events, projectConfig(), clock.NewFixed(acceptedAt)).
 				ReplaceDemands(planner, projectID, []DemandInput{in})
 			require.NoError(t, err)
 			if !tt.wantEvt {

@@ -117,7 +117,7 @@ func (h *ProjectHandler) Get(c *echo.Context) error {
 // @Param id path string true "Program id"
 // @Param body body dtos.CreateProjectRequest true "Project"
 // @Success 201 {object} object{meta=dtos.Meta,data=dtos.ProjectDetailResponse}
-// @Failure 400 {object} object{meta=dtos.Meta}
+// @Failure 400 {object} object{meta=dtos.Meta} "Invalid request, or WEEK_OUT_OF_WINDOW when a date or week is too far from the current week"
 // @Failure 409 {object} object{meta=dtos.Meta}
 // @Router /programs/{id}/projects [post]
 func (h *ProjectHandler) Create(c *echo.Context) error {
@@ -190,7 +190,7 @@ func (h *ProjectHandler) Reorder(c *echo.Context) error {
 // @Param id path string true "Project id"
 // @Param body body dtos.UpdateProjectRequest true "Changed fields"
 // @Success 200 {object} object{meta=dtos.Meta,data=dtos.ProjectDetailResponse}
-// @Failure 400 {object} object{meta=dtos.Meta}
+// @Failure 400 {object} object{meta=dtos.Meta} "Invalid request, or WEEK_OUT_OF_WINDOW when a date or week is too far from the current week"
 // @Router /projects/{id} [patch]
 func (h *ProjectHandler) Update(c *echo.Context) error {
 	id, ok := h.pathID(c)
@@ -272,7 +272,7 @@ func (h *ProjectHandler) ListPhases(c *echo.Context) error {
 // @Param id path string true "Project id"
 // @Param body body dtos.ReplacePhasesRequest true "Phases"
 // @Success 200 {object} object{meta=dtos.Meta,data=dtos.ProjectDetailResponse}
-// @Failure 400 {object} object{meta=dtos.Meta}
+// @Failure 400 {object} object{meta=dtos.Meta} "Invalid request, or WEEK_OUT_OF_WINDOW when a date or week is too far from the current week"
 // @Failure 409 {object} object{meta=dtos.Meta}
 // @Router /projects/{id}/phases [put]
 func (h *ProjectHandler) ReplacePhases(c *echo.Context) error {
@@ -312,7 +312,7 @@ func (h *ProjectHandler) ReplacePhases(c *echo.Context) error {
 // @Param id path string true "Phase id"
 // @Param body body dtos.UpdatePhaseRequest true "Changed fields"
 // @Success 200 {object} object{meta=dtos.Meta,data=[]dtos.PhaseResponse}
-// @Failure 400 {object} object{meta=dtos.Meta}
+// @Failure 400 {object} object{meta=dtos.Meta} "Invalid request, or WEEK_OUT_OF_WINDOW when a date or week is too far from the current week"
 // @Failure 404 {object} object{meta=dtos.Meta}
 // @Router /phases/{id} [patch]
 func (h *ProjectHandler) UpdatePhase(c *echo.Context) error {
@@ -348,7 +348,8 @@ func (h *ProjectHandler) UpdatePhase(c *echo.Context) error {
 // @Param id path string true "Project id"
 // @Param body body dtos.ReplaceDemandsRequest true "Demand"
 // @Success 200 {object} object{meta=dtos.Meta,data=dtos.ProjectDetailResponse}
-// @Failure 400 {object} object{meta=dtos.Meta}
+// @Failure 400 {object} object{meta=dtos.Meta} "Invalid request, or DEMAND_HOURS_STEP when total_hours is not a multiple of the planning hour step"
+// @Failure 409 {object} object{meta=dtos.Meta} "DEMAND_IN_USE when a removed demand holds staffed hours in past baseline weeks"
 // @Router /projects/{id}/demands [put]
 func (h *ProjectHandler) ReplaceDemands(c *echo.Context) error {
 	id, ok := h.pathID(c)
