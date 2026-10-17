@@ -184,6 +184,28 @@ func AtRisk(gap float64, weeksToDeadline, horizon int, lastPhaseLate bool) bool 
 	return lastPhaseLate || (gap > epsilon && weeksToDeadline <= horizon)
 }
 
+// BenchWeek is one week of a person's capacity and baseline load, in hours.
+type BenchWeek struct {
+	Capacity float64
+	Load     float64
+}
+
+// Bench tells whether a person is on the bench for these weeks (README §7): in every week their
+// capacity is above 0 and load ÷ capacity is below underusedBelow. freeHours is Σ (capacity − load).
+// No weeks means not on the bench.
+func Bench(weeks []BenchWeek, underusedBelow float64) (freeHours float64, onBench bool) {
+	if len(weeks) == 0 {
+		return 0, false
+	}
+	for _, w := range weeks {
+		if w.Capacity <= epsilon || w.Load/w.Capacity >= underusedBelow-epsilon {
+			return 0, false
+		}
+		freeHours += w.Capacity - w.Load
+	}
+	return freeHours, true
+}
+
 // SustainedOverload finds the first run of at least minWeeks consecutive weeks over 100 %
 // (README §7, sustained overload) in a person's weeks in order: its start index and full length.
 func SustainedOverload(overloaded []bool, minWeeks int) (start, length int, found bool) {
