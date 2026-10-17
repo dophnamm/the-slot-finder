@@ -41,6 +41,7 @@ export type LanguageKey = {
   Actions: string
   Active: string
   Actual: string
+  'active status': string
   'Add absence': string
   'Add assumption': string
   'Add at least one expertise.': string
@@ -193,6 +194,7 @@ export type LanguageKey = {
   'Edit project': string
   Email: string
   'End date': string
+  'end date': string
   'End week': string
   'Enough free hours': string
   'Estimate at completion: the hours used so far divided by Scope %.': string
@@ -340,6 +342,7 @@ export type LanguageKey = {
   'Nobody matches these filters.': string
   'Nobody’s hours change in this scenario.': string
   'Non-project hours': string
+  'non-project hours': string
   'None this week': string
   'Not a week such as 2026-W41.': string
   'Not primary': string
@@ -393,6 +396,10 @@ export type LanguageKey = {
   'Planned again:': string
   'Planned burn': string
   'Short of free hours': string
+  'start date': string
+  'Team member added': string
+  'Team member removed': string
+  'weekly hours': string
   '{hours} hrs free': string
   "Planned hours as a share of a person's capacity in a week; over 100% is overloaded.": string
   'Planned hours as a share of budget hours.': string
@@ -620,11 +627,17 @@ export type LanguageKey = {
   '{name} (stretch)': string
   '{name} · {expertise}': string
   '{name}: over 100 % for {weeks} weeks from {week}': string
+  '{name}: {from} → {to}': string
   '{percent}%': string
+  '{person} added to the {program} team': string
   '{person} away {dates}, {hours} hrs a day': string
   '{person} in {week}': string
   '{person} is away {dates}': string
   '{person} is no longer away {dates}': string
+  '{person} removed from the {program} team': string
+  '{person}: skills changed': string
+  '{person}: {fields} changed': string
+  '{program}: end moved from {from} to {to}': string
   '{project} ({program})': string
   '{project} 1 week earlier': string
   '{project} 1 week later': string
@@ -632,6 +645,7 @@ export type LanguageKey = {
   '{project} {weeks} weeks later': string
   '{project} · {expertise} · {phase}': string
   '{project}: deadline moved from {from} to {to}': string
+  '{project}: demand changed': string
   '{project}: {phase} now ends {week}, {weeks} weeks later': string
   '{start} – {end}': string
   '{start} – {end} · level {level}+ · {assigned} of {hours} hrs': string

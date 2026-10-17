@@ -1,5 +1,15 @@
 /** They match the server's constants/events.go. */
-export type ChangeEventType = 'AbsenceAdded' | 'AbsenceRemoved' | 'PhaseSlipped' | 'ProjectSlipped'
+export type ChangeEventType =
+  | 'AbsenceAdded'
+  | 'AbsenceRemoved'
+  | 'PhaseSlipped'
+  | 'ProjectSlipped'
+  | 'ProjectStatusChanged'
+  | 'DemandChanged'
+  | 'PersonCapacityChanged'
+  | 'TeamChanged'
+  | 'SkillChanged'
+  | 'ProgramSlipped'
 export type ChangeEventStatus = 'pending' | 'no_impact' | 'draft_created' | 'failed'
 
 /** Payload fields by type; a holiday has no person. */
@@ -14,6 +24,18 @@ export interface ChangeEventPayload {
   weeks?: number
   old_deadline?: string
   new_deadline?: string
+  /** PersonCapacityChanged: the changed fields, e.g. `weekly_hours`. */
+  fields?: string[]
+  /** ProjectStatusChanged: a project or a program. */
+  kind?: string
+  name?: string
+  old_status?: string
+  new_status?: string
+  /** ProgramSlipped and TeamChanged; TeamChanged rows from before the names were recorded lack it. */
+  program?: string
+  old_end_date?: string
+  new_end_date?: string
+  change?: string
 }
 
 export interface ChangeEvent {

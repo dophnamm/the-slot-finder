@@ -23,3 +23,15 @@ export const EVENT_STATUS_BADGE: Record<ChangeEventStatus, BadgeVariant> = {
   draft_created: 'blue',
   failed: 'red',
 }
+
+/** The capacity fields a PersonCapacityChanged event can list. */
+export const CAPACITY_FIELD_LABELS: Record<string, PlainKey> = {
+  weekly_hours: 'weekly hours',
+  non_project_hours: 'non-project hours',
+  start_date: 'start date',
+  end_date: 'end date',
+  active: 'active status',
+}
+
+/** The `change` values of a TeamChanged event. */
+export const TEAM_CHANGE_ADDED = 'added'
