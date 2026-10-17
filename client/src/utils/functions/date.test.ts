@@ -13,7 +13,7 @@ import {
 } from './date'
 
 describe('monthIsoWeeks', () => {
-  it('lists the ISO weeks that touch a month', () => {
+  it('lists the weeks that touch a month', () => {
     expect(monthIsoWeeks('2026-10')).toEqual(['2026-W40', '2026-W41', '2026-W42', '2026-W43', '2026-W44'])
   })
 
@@ -21,7 +21,7 @@ describe('monthIsoWeeks', () => {
     expect(monthIsoWeeks('2026-11')).toEqual(['2026-W44', '2026-W45', '2026-W46', '2026-W47', '2026-W48', '2026-W49'])
   })
 
-  it('starts January in the last ISO week of the year before', () => {
+  it('starts January in the last week of the year before', () => {
     expect(monthIsoWeeks('2027-01')).toEqual(['2026-W53', '2027-W01', '2027-W02', '2027-W03', '2027-W04'])
   })
 })

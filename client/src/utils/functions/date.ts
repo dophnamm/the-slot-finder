@@ -25,7 +25,7 @@ export function toDateValue(date: Date): string {
   return dayjs(date).format(DATE_FORMAT.isoDate)
 }
 
-/** The ISO week of today, in the browser's time zone. */
+/** The week of today, in the browser's time zone. */
 export function currentIsoWeek(): string {
   return toIsoWeek(dayjs())
 }
@@ -44,13 +44,13 @@ export function shortWeekLabel(week: string): string {
 /** Monday and Sunday of an ISO week label such as `'2026-W42'`. */
 export function isoWeekRange(week: string): IsoWeekRange {
   const match = ISO_WEEK_PATTERN.exec(week)
-  if (!match) throw new Error(`Not an ISO week label: ${week}`)
+  if (!match) throw new Error(`Not a week label: ${week}`)
   const [, year, weekNumber] = match
   const start = dayjs(`${year}-${ISO_WEEK_ONE_DAY}`).isoWeek(Number(weekNumber)).startOf('isoWeek')
   return { start, end: start.endOf('isoWeek') }
 }
 
-/** Date range of an ISO week for display: `'2026-W42'` → `'Oct 12 – Oct 18'`. */
+/** Date range of a week for display: `'2026-W42'` → `'Oct 12 – Oct 18'`. */
 export function formatIsoWeekRange(week: string, format: string = DATE_FORMAT.shortDay): string {
   const { start, end } = isoWeekRange(week)
   return `${start.format(format)} – ${end.format(format)}`
@@ -76,7 +76,7 @@ export function formatIsoWeekSpan(from: string, to: string, format: string = DAT
   return `${isoWeekRange(from).start.format(format)} – ${isoWeekRange(to).end.format(format)}`
 }
 
-/** The ISO week `n` weeks after `week` (before it when `n` is negative). */
+/** The week `n` weeks after `week` (before it when `n` is negative). */
 export function addIsoWeeks(week: string, n: number): string {
   return toIsoWeek(isoWeekRange(week).start.add(n, 'week'))
 }
@@ -86,7 +86,7 @@ export function isoWeeksBetween(from: string, to: string): number {
   return isoWeekRange(to).start.diff(isoWeekRange(from).start, 'week')
 }
 
-/** Every ISO week from `from` through `to`, in order. */
+/** Every week from `from` through `to`, in order. */
 export function isoWeekList(from: string, to: string): string[] {
   const count = isoWeeksBetween(from, to)
   return Array.from({ length: Math.max(0, count) + 1 }, (_, i) => addIsoWeeks(from, i))
@@ -102,7 +102,7 @@ export function addMonths(month: string, n: number): string {
   return dayjs(month).add(n, 'month').format(DATE_FORMAT.isoMonth)
 }
 
-/** Every ISO week with a day in the month, in order: `'2026-10'` → `'2026-W40'` … `'2026-W44'`. */
+/** Every week with a day in the month, in order: `'2026-10'` → `'2026-W40'` … `'2026-W44'`. */
 export function monthIsoWeeks(month: string): string[] {
   const first = dayjs(month).startOf('month')
   return isoWeekList(toIsoWeek(first), toIsoWeek(first.endOf('month')))
@@ -118,12 +118,12 @@ export function isInMonth(date: string, month: string): boolean {
   return dayjs(date).format(DATE_FORMAT.isoMonth) === month
 }
 
-/** The date of an ISO weekday (1 = Monday … 7 = Sunday) in a week: `('2026-W42', 3)` → `'2026-10-14'`. */
+/** The date of a weekday (1 = Monday … 7 = Sunday) in a week: `('2026-W42', 3)` → `'2026-10-14'`. */
 export function isoWeekDate(week: string, isoWeekday: number): string {
   return isoWeekRange(week).start.isoWeekday(isoWeekday).format(DATE_FORMAT.isoDate)
 }
 
-/** The short name of an ISO weekday for a column header: `1` → `'Mon'`. */
+/** The short name of a weekday for a column header: `1` → `'Mon'`. */
 export function formatIsoWeekday(isoWeekday: number, format: string = DATE_FORMAT.weekdayShort): string {
   return dayjs().isoWeekday(isoWeekday).format(format)
 }
@@ -141,7 +141,7 @@ export function planningWindow(today: dayjs.ConfigType = dayjs()) {
   return { minWeek, maxWeek, minDate: isoWeekDate(minWeek, 1), maxDate: isoWeekDate(maxWeek, 7) }
 }
 
-/** Whether an ISO week is inside the planning window. */
+/** Whether a week is inside the planning window. */
 export function isWeekInWindow(week: string, today?: dayjs.ConfigType): boolean {
   const { minWeek, maxWeek } = planningWindow(today)
   return isIsoWeek(week) && week >= minWeek && week <= maxWeek

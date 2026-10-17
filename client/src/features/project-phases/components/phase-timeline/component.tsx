@@ -11,7 +11,7 @@ import {
 import type { PhaseTimelineProps } from './types'
 import { legendItems } from './utils'
 
-/** One row per phase over a grid of ISO weeks; the deadline week and, when shown, the current week are outlined. */
+/** One row per phase over a grid of weeks; the deadline week and, when shown, the current week are outlined. */
 export function PhaseTimeline({ weeks, deadlineWeek, currentWeek, rows }: PhaseTimelineProps) {
   const { t } = useTranslation()
   const showsCurrentWeek = weeks.includes(currentWeek)

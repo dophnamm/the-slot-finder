@@ -8,7 +8,7 @@ import { cn, formatIsoWeekRange, isIsoWeek, parseDateValue, todayDateValue, toIs
 import type { WeekPickerProps } from './types'
 import { weekDays } from './utils'
 
-/** An ISO week field: a calendar with week numbers where any day picks its whole week. */
+/** An week field: a calendar with week numbers where any day picks its whole week. */
 export function WeekPicker({
   id,
   name,

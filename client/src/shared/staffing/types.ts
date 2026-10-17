@@ -15,7 +15,7 @@ export type UnmetReason =
   | 'NO_ONE_IN_TEAM'
 export type PlanChangeKind = 'added' | 'removed' | 'changed'
 
-/** An assignment's hours in one ISO week. */
+/** An assignment's hours in one week. */
 export interface Allocation {
   week: string
   hours: number

@@ -14,7 +14,7 @@ import {
 } from './constants'
 import type { HeatmapGridProps } from './types'
 
-/** People grouped by primary expertise, one column per ISO week. */
+/** People grouped by primary expertise, one column per week. */
 export function HeatmapGrid({ data, expertiseId }: HeatmapGridProps) {
   const { t } = useTranslation()
   const groups = groupByExpertise(data.rows)

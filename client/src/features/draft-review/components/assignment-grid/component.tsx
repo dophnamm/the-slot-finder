@@ -84,7 +84,7 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
     <Section
       title={t('Assignments')}
       description={t(
-        'Hours per ISO week. Locked hours stay as they are when a draft is generated again; stretch is always locked. A week is coloured by the whole load of the person, as on the heatmap.',
+        'Hours per week. Locked hours stay as they are when a draft is generated again; stretch is always locked. A week is coloured by the whole load of the person, as on the heatmap.',
       )}
     >
       {editable && <p className="text-xs text-muted-foreground">{t('Drag hours to another week or person.')}</p>}

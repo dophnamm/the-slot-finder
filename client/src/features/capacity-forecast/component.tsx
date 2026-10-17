@@ -14,7 +14,7 @@ import { CAPACITY_FORECAST_LOADING_ROWS } from './constants'
 import type { CapacityForecastProps } from './types'
 import { useCapacityForecast } from './use-capacity-forecast'
 
-/** Free hours and unmet demand per expertise and ISO week, to see a crunch before it comes. */
+/** Free hours and unmet demand per expertise and week, to see a crunch before it comes. */
 export function CapacityForecast({ action }: CapacityForecastProps) {
   const { t } = useTranslation()
   const from = useWeekRange((state) => state.from)
@@ -32,7 +32,7 @@ export function CapacityForecast({ action }: CapacityForecastProps) {
       refreshing={isPlaceholderData}
       title={t('Capacity forecast')}
       description={t(
-        'Free hours per expertise and ISO week, against the demand the baseline does not cover yet, including incoming projects at their expected share.',
+        'Free hours per expertise and week, against the demand the baseline does not cover yet, including incoming projects at their expected share.',
       )}
       className="h-full min-h-0"
     >

@@ -6,7 +6,7 @@ export function getPerson(id: string) {
   return request<Person>({ url: PEOPLE_ENDPOINTS.detail(id) })
 }
 
-/** One person's weeks and days from one ISO week through another. */
+/** One person's weeks and days from one week through another. */
 export function getSchedule(personId: string, from: string, to: string) {
   return request<PersonSchedule>({ url: PEOPLE_ENDPOINTS.schedule(personId), params: { from, to } })
 }

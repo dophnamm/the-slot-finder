@@ -21,7 +21,7 @@ export function lockChanges(assignment: Assignment): NonNullable<DraftEdit['set'
   }))
 }
 
-/** ISO week labels have a fixed width, so text order is week order. */
+/** Week labels have a fixed width, so text order is week order. */
 export function inWindow(week: string, from: string, to: string): boolean {
   return week >= from && week <= to
 }

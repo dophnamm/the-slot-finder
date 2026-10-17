@@ -74,7 +74,7 @@ export type LanguageKey = {
   Back: string
   'Back to dashboard': string
   Baseline: string
-  'Baseline load against capacity per person and ISO week. Click a cell to see its assignments.': string
+  'Baseline load against capacity per person and week. Click a cell to see its assignments.': string
   Before: string
   'Before the change': string
   'Behind on delivery': string
@@ -208,7 +208,7 @@ export type LanguageKey = {
   'Find people, their expertises, levels, capacity and absences.': string
   Forecast: string
   Free: string
-  'Free hours per expertise and ISO week, against the demand the baseline does not cover yet, including incoming projects at their expected share.': string
+  'Free hours per expertise and week, against the demand the baseline does not cover yet, including incoming projects at their expected share.': string
   From: string
   'Free hours exist, but only in weeks under the minimum': string
   'Free hours exist, but the weekly expertise limit blocks them': string
@@ -242,7 +242,7 @@ export type LanguageKey = {
   'Hours moved': string
   'Hours must be a number from 0 to the weekly limit.': string
   'Hours per day': string
-  'Hours per ISO week. Locked hours stay as they are when a draft is generated again; stretch is always locked. A week is coloured by the whole load of the person, as on the heatmap.': string
+  'Hours per week. Locked hours stay as they are when a draft is generated again; stretch is always locked. A week is coloured by the whole load of the person, as on the heatmap.': string
   'Hours per week': string
   'Hours the planning engine could not place in this scenario.': string
   'How much of the schedule has passed: days since the start as a share of the whole span.': string
@@ -341,7 +341,7 @@ export type LanguageKey = {
   'Nobody’s hours change in this scenario.': string
   'Non-project hours': string
   'None this week': string
-  'Not an ISO week such as 2026-W41.': string
+  'Not a week such as 2026-W41.': string
   'Not primary': string
   'Not staffed yet': string
   'Not yet': string
