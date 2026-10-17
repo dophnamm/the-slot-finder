@@ -1,8 +1,8 @@
 # Program quick view
 
-**Goal:** from the Programs list, a planner or lead opens any program in place and sees its key figures, its projects and who works on it, without leaving the list. The program page's Members tab shows the same people in full.
+**Goal:** from the Programs list, a planner or manager opens any program in place and sees its key figures, its projects and who works on it, without leaving the list. The program page's Members tab shows the same people in full.
 
-**Roles:** planner, lead.
+**Roles:** planner, manager.
 **Target:** 16–17 Oct · **Depends on:** [program-metrics](program-metrics.md) · **Branch:** `feat/program-quick-view` · **Status:** Done (PR #21)
 
 ## In scope
@@ -24,7 +24,7 @@
 
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
-| GET | `/programs/{id}/members` | Everyone with baseline hours on the program's projects, most hours first | planner, lead |
+| GET | `/programs/{id}/members` | Everyone with baseline hours on the program's projects, most hours first | planner, manager |
 
 - Computed from the published baseline: assignments whose demand belongs to one of the program's projects, summed per person.
 - Each member: `person`, `total_hours`, `from_week` and `to_week` (first and last week with hours), `expertises` (hours per expertise and assignment kind, most hours first) and `projects` (by name).

@@ -1,6 +1,6 @@
 # Feature specs
 
-One spec per feature, in build order. Each spec holds the goal, scope, server and client work, acceptance criteria and a task checklist. The design behind them is in the [root README](../README.md), [`server/README.md`](../server/README.md) and [`client/README.md`](../client/README.md).
+One spec per feature, in build order. Each spec holds the goal, scope, server and client work, acceptance criteria and a task checklist. The design behind them is in the [root README](../../README.md), [`server/README.md`](../../server/README.md) and [`client/README.md`](../../client/README.md).
 
 **Demo:** Sunday 18 Oct 2026.
 
@@ -22,7 +22,7 @@ One spec per feature, in build order. Each spec holds the goal, scope, server an
 | 14 | [Program teams](program-teams.md) | A planner gives each program its team; the program's manager sees and staffs only that team, and the engine staffs a program from its team | 14–15 Oct | programs-and-demand, staffing-draft, member-calendar | Done |
 | 15 | [Ask AI](ask-ai.md) | Floating assistant for planners and Managers: plain-language questions answered only from read-only tools that run with the caller's rights (Gemini, Groq or OpenRouter, key from env) | 16 Oct | staffing-draft, team-heatmap, program-metrics, program-teams | Done |
 | 16 | [Guided tour](guided-tour.md) | First-time tour of the sidebar, one step per link the role can open and one on the account menu; started again from the account menu | 17 Oct | sign-in | Done |
-| 17 | [Capacity forecast](capacity-forecast.md) | By-expertise view of the dashboard heatmap, per expertise × week: free capacity, unmet confirmed demand, pipeline demand × confidence, overload and sustained overload | 17 Oct | team-heatmap, program-metrics, program-teams | Done |
+| 17 | [Capacity forecast](capacity-forecast.md) | By-expertise view of the dashboard heatmap, per expertise × week: free capacity, unmet confirmed demand, pipeline demand × the global pipeline confidence, overload and sustained overload | 17 Oct | team-heatmap, program-metrics, program-teams | Done |
 
 ## Schedule
 
@@ -44,7 +44,8 @@ Designed in the root README, not built for the demo:
 - Email and Slack notifications
 - Bench list
 - Plan churn
-- EAC hours
+- EAC hours, hours per point, contribution %, next milestone and cross-expertise share
+- Forecast overrides, per-project confidence and the `front` and `back` profiles
 - Program assistants and milestones
 - AI assistant beyond Ask AI: write actions, intake extraction, what-if chat, draft summaries and more tools (server README section 9)
 

@@ -2,7 +2,7 @@
 
 **Goal:** leads describe what each program needs: its projects, their ordered phases, and demand per expertise. This is the demand side for staffing (G1) in the [root README](../../README.md#1-problem-and-scope). A phase that ends later moves the phases after it.
 
-**Roles:** lead (own programs and projects), planner (all), specialist (none).
+**Roles:** manager (own programs and projects), planner (all), specialist (none).
 **Target:** 12 Oct · **Depends on:** [people-and-skills](people-and-skills.md) · **Branch:** `feat/programs-and-demand` · **Status:** Done (PR #6)
 
 ## In scope
@@ -34,16 +34,16 @@
 
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
-| GET, POST | `/programs` | List or create programs | planner, lead |
-| GET, PATCH | `/programs/{id}` | Program record; edit it | GET planner, lead · PATCH planner, lead (own) |
-| POST | `/programs/{id}/actions/{action}` | Change program state | planner, lead (own) |
-| GET, POST | `/programs/{id}/projects` | List or add projects | planner, lead (own for POST) |
-| GET | `/projects?status=` | Projects across programs, e.g. the intake queue | planner, lead |
-| GET, PATCH | `/projects/{id}` | Project record; edit it, including points | planner, lead (own) |
-| POST | `/projects/{id}/actions/{action}` | Change project state | planner, lead (own) |
-| GET, PUT | `/projects/{id}/phases` | Ordered phases (PUT replaces the list) | planner, lead (own) |
-| PATCH | `/phases/{id}` | Edit one phase; a later end week shifts later phases | planner, lead (own) |
-| PUT | `/projects/{id}/demands` | Replace the project's demand | planner, lead (own) |
+| GET, POST | `/programs` | List or create programs | planner, manager |
+| GET, PATCH | `/programs/{id}` | Program record; edit it | GET planner, manager · PATCH planner, manager (own) |
+| POST | `/programs/{id}/actions/{action}` | Change program state | planner, manager (own) |
+| GET, POST | `/programs/{id}/projects` | List or add projects | planner, manager (own for POST) |
+| GET | `/projects?status=` | Projects across programs, e.g. the intake queue | planner, manager |
+| GET, PATCH | `/projects/{id}` | Project record; edit it, including points | planner, manager (own) |
+| POST | `/projects/{id}/actions/{action}` | Change project state | planner, manager (own) |
+| GET, PUT | `/projects/{id}/phases` | Ordered phases (PUT replaces the list) | planner, manager (own) |
+| PATCH | `/phases/{id}` | Edit one phase; a later end week shifts later phases | planner, manager (own) |
+| PUT | `/projects/{id}/demands` | Replace the project's demand | planner, manager (own) |
 
 **Tables and migrations:** `programs`, `projects`, `project_phases`, `demands`, in two Atlas migrations: `programs` and `projects_phases_demand`.
 
@@ -53,7 +53,7 @@
 - Services own the transaction boundary. Handlers and repositories never begin one.
 
 **Weeks (`isoweek.Week`)**
-- The API speaks ISO week strings (`2026-W42`). Go code uses `isoweek.Week`.
+- The API speaks week strings (`2026-W42`). Go code uses `isoweek.Week`.
 - The database stores the week's Monday in a `date` column named `*_week_start`, e.g. `start_week_start`, `end_week_start`. Range queries and ordering are plain date comparisons.
 - A GORM `Scanner` / `Valuer` on `isoweek.Week` maps the type to and from that column.
 
@@ -119,5 +119,5 @@
 **Tests**
 - [x] Slip propagation: later shift, earlier no shift, rollback on failure (integration test against Postgres)
 - [x] `TxManager`: commit, rollback on error, rollback on panic, nested reuse
-- [x] RBAC: lead own vs other program
+- [x] RBAC: manager own vs other program
 - [x] Week round-trip through the database

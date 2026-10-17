@@ -2,7 +2,7 @@
 
 **Goal:** every user signs in through Keycloak and reaches exactly the screens and API their role allows. Every later feature, and so every goal (G1–G3 in the [root README](../../README.md#1-problem-and-scope)), builds on it.
 
-**Roles:** planner, lead, specialist.
+**Roles:** planner, manager, specialist.
 **Target:** 10–11 Oct · **Depends on:** none · **Branch:** `feat/sign-in` · **Status:** Done (PR #3)
 
 ## In scope
@@ -27,7 +27,7 @@
 
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
-| GET | `/me` | The signed-in user from the token: `id` (subject), `username`, `name`, `email`, `role` | planner, lead, specialist |
+| GET | `/me` | The signed-in user from the token: `id` (subject), `username`, `name`, `email`, `role` | planner, manager, specialist |
 
 **Tables:** none.
 
@@ -39,7 +39,7 @@
   - makes no Keycloak call per request
 - The issuer is the public Keycloak URL that the browser uses (`KEYCLOAK_PUBLIC_URL`). It may differ from the URL the server uses to fetch the JWKS (`KEYCLOAK_URL`), e.g. inside Docker.
 - Claims go into the request `context.Context`. Handlers and services read them through a nil-safe accessor.
-- A user's **role** is the highest of their realm roles, in the order planner, lead, specialist. A token without any of the three gets `403` on every protected route.
+- A user's **role** is the highest of their realm roles, in the order planner, manager, specialist. A token without any of the three gets `403` on every protected route.
 - Every 401 and 403 uses the `{ meta, data }` envelope.
 - `authz` exposes named checks (e.g. `CanViewPeople`). Handlers and services call the checks, never raw role lists.
 

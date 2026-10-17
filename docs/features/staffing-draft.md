@@ -2,7 +2,7 @@
 
 **Goal:** the Planner gets a squad for incoming projects in seconds, with a reason for every choice, edits it, and accepts it into the baseline. This covers G1 in the [root README](../../README.md#1-problem-and-scope).
 
-**Roles:** planner (generate, edit, accept, reject), lead (view drafts that touch their programs).
+**Roles:** planner (generate, edit, accept, reject any draft), manager (the same for drafts whose projects all belong to programs they lead).
 **Target:** 12–13 Oct · **Depends on:** [programs-and-demand](programs-and-demand.md) · **Branch:** `feat/staffing-draft` · **Status:** Done (PR #8)
 
 ## In scope
@@ -19,9 +19,9 @@
 
 ## Not now
 
-- Skill tags, preferred person, alternatives and their swap → [Later](README.md#later), design in [root README §5](../../README.md#5-planning-engine-the-core).
+- Skill tags and the preferred person → [Later](README.md#later), design in [root README §5](../../README.md#5-planning-engine-the-core).
 - Profiles `front` and `back`, and the repair pass → [Later](README.md#later).
-- What-if scenarios and plan churn → [Later](README.md#later).
+- Plan churn for drafts → [Later](README.md#later).
 - Re-plan drafts from change events → [replan-on-change](replan-on-change.md).
 
 ## Server
@@ -30,13 +30,13 @@
 
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
-| GET | `/plans/current` | The baseline | planner, lead |
-| POST | `/staffing-drafts` | Generate a draft: `{ projectIds }` | planner |
-| GET | `/staffing-drafts/{id}` | Draft with diff against the baseline, reasons and unmet | planner, lead |
-| PATCH | `/staffing-drafts/{id}/assignments` | Add or remove an assignment, change weekly hours, lock or unlock | planner |
-| POST | `/staffing-drafts/{id}/accept` | Publish (`{ baseVersion }`) | planner |
-| POST | `/staffing-drafts/{id}/reject` | Discard | planner |
-| GET | `/people/{id}/assignments?from=&to=` | A person's baseline assignments | planner, lead, the person themselves |
+| GET | `/plans/current` | The baseline | planner, manager |
+| POST | `/staffing-drafts` | Generate a draft: `{ projectIds }` | planner, manager (own) |
+| GET | `/staffing-drafts/{id}` | Draft with diff against the baseline, reasons and unmet | planner, manager |
+| PATCH | `/staffing-drafts/{id}/assignments` | Add or remove an assignment, change weekly hours, lock or unlock | planner, manager (own) |
+| POST | `/staffing-drafts/{id}/accept` | Publish (`{ baseVersion }`) | planner, manager (own) |
+| POST | `/staffing-drafts/{id}/reject` | Discard | planner, manager (own) |
+| GET | `/people/{id}/assignments?from=&to=` | A person's baseline assignments | planner, manager, the person themselves |
 
 **Tables and migration:** `plan`, `assignment`, `allocation`, plus a partial unique index. One Atlas migration (`make migrate-generate name=staffing_draft`).
 
@@ -67,7 +67,7 @@ At startup the server creates an empty published baseline (version 0) if none ex
 
 **As built**
 - Candidates rank by: holds the whole seat, then primary-expertise match, then the weighted score (deadline coverage, primary fit, balance, stability, continuity, levelFit), then person id. So a primary person wins whenever one can hold the seat, and a cross-expertise person wins when no primary person can.
-- The planning service passes each demand's window as its list of ISO weeks, so the engine does no week arithmetic. `PLANNING_HOUR_STEP` (default 1) rounds allocations to whole hours.
+- The planning service passes each demand's window as its list of weeks, so the engine does no week arithmetic. `PLANNING_HOUR_STEP` (default 1) rounds allocations to whole hours.
 - A demand never gets more distinct people than its `headcount`: once it has that many, only people already on it can take more hours, and what they cannot hold stays unmet (`NO_CAPACITY_BEFORE_DEADLINE`). With `headcount` 1, a week the only holder cannot work (leave, or a re-plan) gets nobody else, so those hours stay unmet until the Planner raises the headcount or adds a person by hand, whereas `headcount` 2 leaves a free seat for the other person.
 - Headcount is lowered when a seat would be smaller than one minimum week. Per demand, at most one allocation is below `minHoursPerWeek`: the last remainder.
 - `BLOCKED_BY_LOCKED` when the locked hours of qualified people inside the window are at least the missing hours; otherwise `NO_CAPACITY_BEFORE_DEADLINE`.

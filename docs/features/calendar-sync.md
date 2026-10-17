@@ -51,7 +51,7 @@
   - an `http` link and another host show the form's message, with no toast
   - connecting shows "Calendar connected." and planned leave marked "From calendar" on 21 Oct (4 h) and 26–28 Oct
   - approving it gives a re-plan draft after `REPLAN_DEBOUNCE`, and Sync now keeps it approved and leaves a hand-entered absence alone
-  - a lead sees no panel and gets `403`, and a specialist gets `403` on someone else's calendar
+  - a manager sees no panel and gets `403`, and a specialist gets `403` on someone else's calendar
   - no response and no log line holds the link
 
 ## Server

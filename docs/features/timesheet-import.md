@@ -39,13 +39,13 @@
 - Blank rows, which a spreadsheet saves as a line of commas, are skipped and do not count toward `TIMESHEET_MAX_ROWS`.
 - After a refused import the file field is emptied, so the fixed file (same name) can be picked again.
 - The seed fills the template rows of Data Migration and Checkout Revamp that have no actual hours and imports them, so a second run adds nothing.
-- Checked on the seeded stack: the program shows Burn 10 % (89 of 920 h), a file with problems on lines 5 and 7 saves nothing, the same file twice gives 0 added and 4 updated, a lead and a specialist get `403`, and the calendar shows "Worked 27.5 h".
+- Checked on the seeded stack: the program shows Burn 10 % (89 of 920 h), a file with problems on lines 5 and 7 saves nothing, the same file twice gives 0 added and 4 updated, a manager and a specialist get `403`, and the calendar shows "Worked 27.5 h".
 
 ## Server
 
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
-| GET | `/timesheets/template?from=&to=` | The CSV template for a range of ISO weeks (`text/csv`, downloaded as a file) | planner |
+| GET | `/timesheets/template?from=&to=` | The CSV template for a range of weeks (`text/csv`, downloaded as a file) | planner |
 | POST | `/timesheets/import` | Upload a filled-in template (`multipart/form-data`, field `file`). Returns how many rows were created, updated and skipped | planner |
 
 **Table:** `actual_hours`: `person_id`, `project_id`, `week_start`, `hours`, `updated_by`, timestamps. Unique on person, project and week. One Atlas migration: `make migrate-generate name=actual_hours`.
@@ -54,7 +54,7 @@
 - The header holds the required columns: `person_email`, `project_id`, `week`, `actual_hours`. Their order is free and the other columns are ignored, because they are there for people to read.
 - `person_email` belongs to a person.
 - `project_id` is a project that exists.
-- `week` is an ISO week (`2026-W41`) no later than the current week.
+- `week` is a week (`2026-W41`) no later than the current week.
 - `actual_hours` is empty, or a number from 0 to `TIMESHEET_MAX_WEEK_HOURS`.
 - The same person, project and week appear only once in the file.
 - A person may have actual hours on a project without baseline hours there. Helping out is allowed.
@@ -81,7 +81,7 @@
 2. After importing actual hours, the program shows Actual hours and Burn % = actual ÷ budget. Its projects do too.
 3. A file with an unknown email on line 5 and a future week on line 7 saves nothing and lists both problems.
 4. Importing the same file twice leaves the same data: rows are updated, not duplicated.
-5. A lead or a specialist gets `403` on both routes.
+5. A manager or a specialist gets `403` on both routes.
 6. The member calendar shows the worked hours for the imported weeks.
 
 ## Tasks

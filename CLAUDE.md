@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-The Slot Finder assigns incoming customer projects to cross-functional squads (PM, Analyst, Engineer, QA), forecasts who is overloaded or idle per ISO week, and re-plans when projects slip or people take leave. `README.md` is the architecture source of truth: goals, data model, metrics formulas, flows and ADRs. `docs/architecture.drawio` mirrors its diagrams. `server/README.md` and `client/README.md` hold the per-side details, API table and screens. `docs/features/` holds one spec per feature in build order (scope, acceptance criteria, tasks); read the feature's spec before building it. `docs/plans/` holds the step-by-step implementation plan of a feature, named like its spec. `docs/user-manual.md` is the manual for people who use the app.
+The Slot Finder assigns incoming customer projects to cross-functional squads (PM, Analyst, Engineer, QA), forecasts who is overloaded or idle per week, and re-plans when projects slip or people take leave. `README.md` is the architecture source of truth: goals, data model, metrics formulas, flows and ADRs. `docs/architecture.drawio` mirrors its diagrams. `server/README.md` and `client/README.md` hold the per-side details, API table and screens. `docs/features/` holds one spec per feature in build order (scope, acceptance criteria, tasks); read the feature's spec before building it. `docs/plans/` holds the step-by-step implementation plan of a feature, named like its spec. `docs/user-manual.md` is the manual for people who use the app.
 
 Status: the first seventeen features in `docs/features/README.md` are built (sign-in through capacity forecast). A program has a team, and the `manager` role, shown as **Manager**, sees and staffs only the teams of the programs they manage.
 
@@ -65,11 +65,11 @@ Compose lives in `server/docker-compose.yml` and reads `server/cmd/server/.env`.
 
 ### Domain flow
 
-A Program contains Projects. A Project is split into ordered **Phases** (week ranges) and has Demand: budget hours per expertise and minimum level, placed in one phase or across the whole project. A phase ending later shifts every later phase (`PhaseSlipped`) and triggers a re-plan; this is how "QA waits for Engineering" is modelled. Ownership is an `ASSIGNMENT` (person × demand, kind `primary` / `cross_expertise` / `stretch`) with weekly `ALLOCATION`s. A person can hold several expertises in the same week, against one shared capacity; the engine prefers primary-expertise people and never proposes stretch. The pure **Planning Engine**, `propose(snapshot, policy)`, turns people (skills, levels, tags, capacity) and demand (profile, required and preferred tags) into allocations. Capacity is weekly hours (effective-dated) minus non-project hours and absence, and 0 outside a person's start and end dates.
+A Program contains Projects. A Project is split into ordered **Phases** (week ranges) and has Demand: budget hours per expertise and minimum level, placed in one phase or across the whole project. A phase ending later shifts every later phase (`PhaseSlipped`) and triggers a re-plan; this is how "QA waits for Engineering" is modelled. Ownership is an `ASSIGNMENT` (person × demand, kind `primary` / `cross_expertise` / `stretch`) with weekly `ALLOCATION`s. A person can hold several expertises in the same week, against one shared capacity; the engine prefers primary-expertise people and never proposes stretch. The pure **Planning Engine**, `propose(snapshot, policy)`, turns people (skills, levels, capacity) and demand (budget hours, minimum level, week window) into allocations. Tags, preferred people and the front/back profiles are later. Capacity is weekly hours minus non-project hours and absence (effective-dated weekly hours: later), and 0 outside a person's start and end dates.
 - A result is saved as a versioned `PLAN` of kind `draft`, shown in the UI as a "staffing draft". The word "proposal" is avoided because it means a business proposal.
 - A Planner accepts the draft with `baseVersion` and it becomes the new `baseline`. A stale version gets `409`.
 - A ChangeEvent (leave, slipped deadline) triggers a re-plan. Events are debounced, and there is at most one open auto re-plan draft per baseline: later events are merged into it, keeping the Planner's edits and locks.
-- All metrics (utilization, gap, staffing %, Time/Scope/Planned burn %, EAC hours, capacity forecast) are computed on the server, as pure functions in `internal/metrics`. The formulas are in `README.md` section 7. Thresholds and policy defaults are server config (`server/README.md` section 8).
+- All metrics (utilization, gap, staffing %, Time/Scope/Planned burn %, capacity forecast; EAC hours later) are computed on the server, as pure functions in `internal/metrics`. The formulas are in `README.md` section 7. Thresholds and policy defaults are server config (`server/README.md` section 8).
 
 ### Server (Go, Echo v5, not Gin)
 
@@ -97,7 +97,7 @@ A Program contains Projects. A Project is split into ordered **Phases** (week ra
 - Layers:
   - `pages/` composes `features/`
   - features never import each other
-  - shared code lives in `shared/` (api, i18n, ui, components, stores, and domain modules such as `programs` and `expertises`), `utils/` (shared constants and functions, including the dayjs ISO-week helpers) and `resources/` (endpoints, routes, RBAC)
+  - shared code lives in `shared/` (api, i18n, ui, components, stores, and domain modules such as `programs` and `expertises`), `utils/` (shared constants and functions, including the dayjs week helpers) and `resources/` (endpoints, routes, RBAC)
 - HTTP goes only through `shared/api/http.ts`:
   - `request<T>()` returns the unwrapped `data`; `requestWithMeta<T>()` returns `{ data, meta }`.
   - Every failure becomes an `ApiError`.
@@ -117,7 +117,7 @@ Server:
   - DTO mapping lives in `dtos`.
   - Paths, roles, messages and error codes are constants in `internal/constants`.
   - Swagger and migrations are regenerated, not edited.
-- `writing-go-server-code`: error flow (repo raw → service `AppError` → handler `HandleError`), GORM through `r.db.From(ctx)` with `TxManager.Do` for multi-step writes, validation via custom tags, UTC and ISO weeks, FX DI, no package state.
+- `writing-go-server-code`: error flow (repo raw → service `AppError` → handler `HandleError`), GORM through `r.db.From(ctx)` with `TxManager.Do` for multi-step writes, validation via custom tags, UTC and weeks, FX DI, no package state.
 - `testing-go-server-code`: table-driven tests with testify mocks, handler tests through `httptest`, RBAC tests through the real middleware, `-tags=integration` for a real DB.
 
 Client:
