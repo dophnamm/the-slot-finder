@@ -79,6 +79,8 @@ export type LanguageKey = {
   Before: string
   'Before the change': string
   'Behind on delivery': string
+  Bench: string
+  'Bench ({count})': string
   Budget: string
   'Budget hours': string
   'Budget hours each demand needs and the hours this draft assigns.': string
@@ -338,6 +340,7 @@ export type LanguageKey = {
   'Nobody has this expertise': string
   'Nobody is assigned yet.': string
   'Nobody is in this team yet.': string
+  'Nobody is on the bench': string
   'Nobody is over 100 % in the coming weeks.': string
   'Nobody matches these filters.': string
   'Nobody’s hours change in this scenario.': string
@@ -619,6 +622,7 @@ export type LanguageKey = {
   '{expertise}, {hours} hrs per week, {nonProject} hrs of them non-project': string
   '{free} of {capacity} hrs free in the window': string
   '{gap} hrs short of {budget} hrs': string
+  '{hours} h free in {weeks} weeks': string
   '{hours} hrs': string
   '{hours} hrs non-project': string
   '{hours} hrs per day': string

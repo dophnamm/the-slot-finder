@@ -55,6 +55,7 @@ const data: RisksData = {
 }
 
 vi.mock('./use-risks', () => ({ useRisks: () => ({ data, isPending: false }) }))
+vi.mock('./use-bench', () => ({ useBench: () => ({ data: { weeks: 4, people: [] }, isPending: false }) }))
 
 afterEach(cleanup)
 
