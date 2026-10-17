@@ -199,6 +199,10 @@ func TestScenarioService_Create(t *testing.T) {
 			project *models.Project
 		}{
 			{name: "too many assumptions", in: []AssumptionInput{shift(1), shift(1), shift(1)}},
+			{name: "no assumptions", in: []AssumptionInput{}},
+			{name: "an unknown type", in: []AssumptionInput{{Type: "teleport"}}},
+			{name: "leave of more than 24 hours a day", in: []AssumptionInput{{Type: constants.AssumptionAddAbsence, PersonID: qaPersonID,
+				FromDate: time.Now(), ToDate: time.Now(), HoursPerDay: 25}}},
 			{name: "a shift of 0 weeks", in: []AssumptionInput{shift(0)}},
 			{name: "a shift past the limit", in: []AssumptionInput{shift(13)}},
 			{name: "a shift without a project", in: []AssumptionInput{{Type: constants.AssumptionShiftProject, Weeks: 1}}},

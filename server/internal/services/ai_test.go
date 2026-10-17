@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -196,6 +197,10 @@ func shiftArgs() map[string]any {
 	return map[string]any{"assumptions": []any{map[string]any{"type": constants.AssumptionShiftProject, "project_id": "p1", "weeks": 2.0}}}
 }
 
+func weeksArgs(weeks float64) map[string]any {
+	return map[string]any{"assumptions": []any{map[string]any{"type": constants.AssumptionShiftProject, "project_id": "p1", "weeks": weeks}}}
+}
+
 func TestAIService_CreateScenario(t *testing.T) {
 	changes := make([]models.ScenarioChange, 0, 7)
 	for i := 0; i < 7; i++ {
@@ -236,6 +241,12 @@ func TestAIService_CreateScenario(t *testing.T) {
 			call:    llm.FunctionCall{Name: constants.AIToolCreateScenario, Args: shiftArgs()},
 			err:     errors.NewAppError(constants.ProjectNotFound, constants.MsgProjectNotFound, errors.ErrorTypeNotFound, 404),
 			wantErr: constants.MsgProjectNotFound},
+		{name: "fractional weeks refused", role: constants.RolePlanner, wantErr: constants.MsgAssumptionWeeksInvalid,
+			call: llm.FunctionCall{Name: constants.AIToolCreateScenario, Args: weeksArgs(2.7)}},
+		{name: "huge weeks refused", role: constants.RolePlanner, wantErr: constants.MsgAssumptionWeeksInvalid,
+			call: llm.FunctionCall{Name: constants.AIToolCreateScenario, Args: weeksArgs(-1e20)}},
+		{name: "infinite weeks refused", role: constants.RolePlanner, wantErr: constants.MsgAssumptionWeeksInvalid,
+			call: llm.FunctionCall{Name: constants.AIToolCreateScenario, Args: weeksArgs(math.Inf(1))}},
 		{name: "manager refused with error", role: constants.RoleManager,
 			call: llm.FunctionCall{Name: constants.AIToolCreateScenario, Args: shiftArgs()}, wantErr: constants.MsgInsufficientPermissions},
 		{name: "second call in the same Ask refused", role: constants.RolePlanner, calls: 1,
@@ -259,7 +270,7 @@ func TestAIService_CreateScenario(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			authz := ProvideAuthzService(leadPeople{})
 			f := &fakeScenarios{authz: authz, view: scenarioView(changes...), err: tt.err}
-			svc := &aiService{authz: authz, scenarios: f, cfg: &config.Config{LLMMaxToolResultBytes: 100000}}
+			svc := &aiService{authz: authz, scenarios: f, cfg: &config.Config{LLMMaxToolResultBytes: 100000, ScenarioMaxShiftWeeks: 12}}
 			name := aiScenarioNamePrefix + truncateRunes(long, constants.AIScenarioNameMaxRunes)
 			saved := 0
 			ctx := asRole("kc-"+tt.role, tt.role)

@@ -228,4 +228,10 @@ const (
 	MsgAIUnknownTool    = "Unknown tool"
 	// MsgOneScenarioPerQuestion is what the model reads when it asks for a second scenario in one question.
 	MsgOneScenarioPerQuestion = "Only one scenario can be saved per question"
+	MsgAssumptionNotObject    = "each assumption must be an object"
+	MsgAssumptionWeeksInvalid = "weeks must be a whole number within the shift limit"
+	// MsgDateFormat takes the argument name.
+	MsgDateFormat            = "%s must be a date like 2026-10-19"
+	MsgAssumptionsRequired   = "A scenario needs at least one assumption"
+	MsgAssumptionTypeUnknown = "An assumption type must be shift_project or add_absence"
 )
