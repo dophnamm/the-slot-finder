@@ -2,16 +2,22 @@ import { Menu } from 'lucide-react'
 import { useState } from 'react'
 import { Outlet } from 'react-router'
 import { AskAi } from '@/features/ask-ai'
+import { GuidedTour } from '@/features/guided-tour'
+import { can } from '@/resources/rbac'
+import { useCurrentUser } from '@/shared/auth'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Sheet, SheetContent, SheetTitle } from '@/shared/ui/sheet'
 import { Breadcrumbs } from '../breadcrumbs'
 import { Sidebar } from './components/sidebar'
+import { visibleNavItems } from './components/sidebar/utils'
 import { PAGE_AREA_CLASS } from './constants'
 
 /** White sidebar and header around a gray page area; below lg the sidebar slides in from the left. */
 export function AppLayout() {
   const { t } = useTranslation()
+  const { data: user } = useCurrentUser()
+  const navLabels = visibleNavItems(user?.role).map((item) => item.label)
   const [isNavOpen, setIsNavOpen] = useState(false)
 
   const handleOpenNav = () => setIsNavOpen(true)
@@ -47,6 +53,7 @@ export function AppLayout() {
           </div>
         </main>
       </div>
+      <GuidedTour navLabels={navLabels} hasAskAi={can(user?.role, 'ai:ask')} />
       <AskAi />
     </div>
   )

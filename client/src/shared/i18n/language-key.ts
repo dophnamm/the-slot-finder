@@ -11,6 +11,7 @@ export type LanguageKey = {
   'A change produced a newer version of this draft.': string
   'A change produced a staffing draft for this program.': string
   'A customer engagement that groups projects under one timeline.': string
+  'A history of changes, such as leave or slipped deadlines, that triggered a re-plan.': string
   'A later end week moves every later phase by the same number of weeks.': string
   'A manager sees the people in the teams of the programs they manage.': string
   'A manager sees the programs they manage or lead a project in.': string
@@ -36,6 +37,7 @@ export type LanguageKey = {
   'Accept this staffing draft?': string
   Accepted: string
   'Accepted as baseline version {version}.': string
+  Account: string
   Actions: string
   Active: string
   Actual: string
@@ -62,11 +64,13 @@ export type LanguageKey = {
   Approve: string
   Approved: string
   'Approved absence always lowers capacity; planned absence does when the setting is on.': string
+  'Ask a question about your data, such as who is overloaded or which project is at risk.': string
   'Ask AI': string
   Assigned: string
   Assignments: string
   Assumptions: string
   'At risk': string
+  Back: string
   'Back to dashboard': string
   Baseline: string
   'Baseline load against capacity per person and ISO week. Click a cell to see its assignments.': string
@@ -194,6 +198,7 @@ export type LanguageKey = {
   'Export a holiday calendar from Google or Outlook as an .ics file.': string
   Failed: string
   File: string
+  'Find people, their expertises, levels, capacity and absences.': string
   Forecast: string
   From: string
   'From calendar': string
@@ -238,6 +243,7 @@ export type LanguageKey = {
   Inactive: string
   Incoming: string
   'Incoming projects across programs, highest priority and earliest deadline first.': string
+  'Incoming projects wait here. Propose a squad to turn one into a staffing draft.': string
   Intake: string
   'Intake queue': string
   'It becomes the baseline everyone plans against.': string
@@ -334,6 +340,7 @@ export type LanguageKey = {
   'One objective per line, e.g. Ship the new checkout.': string
   'Only the program team is listed. People with the expertise at the minimum level come first; the others would be stretch.': string
   Open: string
+  'Open a program to see its team, its projects and how well they are staffed.': string
   'Open Ask AI': string
   'Open draft ({status})': string
   'Open navigation': string
@@ -428,6 +435,7 @@ export type LanguageKey = {
   'Report leave or training. A planner approves it.': string
   Resume: string
   'Review draft': string
+  'Review staffing drafts, edit the weekly hours, then accept one as the new baseline.': string
   Risks: string
   Role: string
   'Run again': string
@@ -444,6 +452,7 @@ export type LanguageKey = {
   'Scope points': string
   Search: string
   'Secret iCal address': string
+  'See who is overloaded or idle each week, and which deadlines are at risk.': string
   Send: string
   'Sets the hours of {name} for many weeks at once. Locked weeks keep their hours.': string
   'Short {hours} hrs': string
@@ -475,6 +484,8 @@ export type LanguageKey = {
   'Swap person': string
   'Swapped {from} for {to}.': string
   'Sync now': string
+  'Take the tour': string
+  'Take the tour again from here.': string
   Team: string
   'Team heatmap': string
   'The assistant could not answer. Try again.': string
@@ -524,6 +535,7 @@ export type LanguageKey = {
   Training: string
   'Triggered by': string
   'Try a change, such as a project slipping or someone on leave, and see what it does to the plan. Nothing real changes.': string
+  'Try a what-if, such as a project moved or someone on leave, without touching the baseline.': string
   'Try again': string
   'Try another name or expertise, or clear the search.': string
   Type: string
@@ -559,6 +571,7 @@ export type LanguageKey = {
   'You can’t see this project': string
   'Your account is not linked to a person yet. Ask a planner to add you with the same email.': string
   'Your hours by week, leave and holidays.': string
+  'Your own month: hours per project each week, leave and holidays. Report an absence here.': string
   'Your question': string
   'Your role cannot open this page.': string
   'Your session has ended. Sign in again.': string

@@ -1,4 +1,4 @@
-import { ChevronsUpDown, LogOut } from 'lucide-react'
+import { ChevronsUpDown, LogOut, Route } from 'lucide-react'
 import { ROLE_LABELS } from '@/resources/rbac'
 import { signOut, useCurrentUser } from '@/shared/auth'
 import { useTranslation } from '@/shared/i18n'
@@ -12,8 +12,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu'
+import { useTourStore } from '@/shared/stores/tour-store'
 import { Skeleton } from '@/shared/ui/skeleton'
-import { LOADING_REVEAL_CLASS } from '@/utils/constants'
+import { ACCOUNT_TOUR_ANCHOR, LOADING_REVEAL_CLASS } from '@/utils/constants'
 import { cn } from '@/utils/functions'
 import { initials } from './utils'
 
@@ -21,6 +22,8 @@ import { initials } from './utils'
 export function AccountMenu() {
   const { t } = useTranslation()
   const { data: user, isPending } = useCurrentUser()
+
+  const requestTour = useTourStore((state) => state.requestStart)
 
   const handleSignOut = () => {
     void signOut()
@@ -39,7 +42,13 @@ export function AccountMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="ghost" className="h-10 w-full justify-start gap-2.5 rounded-xl px-1.5" />}
+        render={
+          <Button
+            variant="ghost"
+            data-tour={ACCOUNT_TOUR_ANCHOR}
+            className="h-10 w-full justify-start gap-2.5 rounded-xl px-1.5"
+          />
+        }
       >
         <span className="grid size-7 shrink-0 place-items-center rounded-full bg-secondary text-xs font-medium">
           {initials(name)}
@@ -55,6 +64,10 @@ export function AccountMenu() {
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        <DropdownMenuItem className="h-9 rounded-lg px-3" onClick={requestTour}>
+          <Route />
+          {t('Take the tour')}
+        </DropdownMenuItem>
         <DropdownMenuItem variant="destructive" className="h-9 rounded-lg px-3" onClick={handleSignOut}>
           <LogOut />
           {t('Sign out')}

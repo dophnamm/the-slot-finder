@@ -7,7 +7,7 @@ import { useOpenDrafts } from '@/shared/staffing'
 import { Badge } from '@/shared/ui/badge'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { LOADING_REVEAL_CLASS } from '@/utils/constants'
-import { cn, range } from '@/utils/functions'
+import { cn, navTourAnchor, range } from '@/utils/functions'
 import { AccountMenu } from './components/account-menu'
 import { Brand } from './components/brand'
 import { NAV_LOADING_ITEMS } from './constants'
@@ -35,7 +35,14 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             </div>
           ))}
         {navItems.map(({ to, label, icon: Icon }) => (
-          <NavLink key={to} to={to} end={to === ROUTES.dashboard} className={navLinkClassName} onClick={onNavigate}>
+          <NavLink
+            key={to}
+            to={to}
+            data-tour={navTourAnchor(label)}
+            end={to === ROUTES.dashboard}
+            className={navLinkClassName}
+            onClick={onNavigate}
+          >
             <Icon className="size-4 shrink-0" />
             {t(label)}
             {to === ROUTES.drafts && openDrafts.length > 0 && (
