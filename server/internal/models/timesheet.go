@@ -2,7 +2,7 @@ package models
 
 import "the-slot-finder/server/internal/isoweek"
 
-// ActualHours is the hours a person really worked on a project in one ISO week, imported
+// ActualHours is the hours a person really worked on a project in one week, imported
 // from a timesheet. It feeds Actual hours and Burn %; planning and capacity never read it.
 type ActualHours struct {
 	BaseModel

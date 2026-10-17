@@ -69,7 +69,7 @@ type PersonRef struct {
 	Name string `json:"name" example:"Lee Lead"`
 }
 
-// ProgramResponse is a program with its lead and the ISO weeks of its dates.
+// ProgramResponse is a program with its lead and the weeks of its dates.
 type ProgramResponse struct {
 	ID         string     `json:"id"`
 	Name       string     `json:"name" example:"Acme onboarding"`

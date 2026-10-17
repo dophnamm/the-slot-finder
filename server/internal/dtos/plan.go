@@ -19,7 +19,7 @@ func (r *PersonAssignmentsRequest) Normalize() {
 	r.To = strings.TrimSpace(r.To)
 }
 
-// AllocationResponse is an assignment's hours in one ISO week.
+// AllocationResponse is an assignment's hours in one week.
 type AllocationResponse struct {
 	Week   string  `json:"week" example:"2026-W42"`
 	Hours  float64 `json:"hours" example:"16"`

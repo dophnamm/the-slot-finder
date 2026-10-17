@@ -144,7 +144,7 @@ type draftBuilder struct {
 	absences repositories.AbsenceRepository
 	// teams limits each program's demand to its team; nil puts no limit (tests).
 	teams repositories.ProgramTeamRepository
-	// clock gives the current ISO week: only weeks from it on are planned.
+	// clock gives the current week: only weeks from it on are planned.
 	clock clock.Clock
 	cfg   *config.Config
 }

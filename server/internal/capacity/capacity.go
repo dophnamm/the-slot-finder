@@ -1,4 +1,4 @@
-// Package capacity computes how many project hours a person has in an ISO week.
+// Package capacity computes how many project hours a person has in a week.
 // It is pure: callers pass the person, their absences and the policy.
 package capacity
 

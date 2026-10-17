@@ -136,7 +136,7 @@ type Assignment struct {
 	Allocations []Allocation `gorm:"foreignKey:AssignmentID;constraint:OnDelete:CASCADE"`
 }
 
-// Allocation is the hours of an assignment in one ISO week, stored as the week's Monday.
+// Allocation is the hours of an assignment in one week, stored as the week's Monday.
 type Allocation struct {
 	BaseModel
 	AssignmentID string       `gorm:"column:assignment_id;type:uuid;not null;uniqueIndex:idx_allocations_assignment_week"`

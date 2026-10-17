@@ -84,7 +84,7 @@ const (
 	MsgNoPersonRecord            = "Your account has no person record; ask a planner to add you"
 	MsgLeadNotFound              = "lead_id does not match a person"
 	MsgMustUseAction             = "cannot be set here; use an action"
-	MsgWeekInvalid               = "must be an ISO week like 2026-W42"
+	MsgWeekInvalid               = "must be a week like 2026-W42"
 	MsgProjectsListed            = "Projects retrieved"
 	MsgProjectRetrieved          = "Project retrieved"
 	MsgProjectCreated            = "Project created"

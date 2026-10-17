@@ -36,7 +36,7 @@ type (
 	ScheduleAbsence = models.ScheduleAbsence
 )
 
-// ScheduleInput asks for one person's schedule from one ISO week through another.
+// ScheduleInput asks for one person's schedule from one week through another.
 type ScheduleInput struct {
 	PersonID string
 	From, To isoweek.Week

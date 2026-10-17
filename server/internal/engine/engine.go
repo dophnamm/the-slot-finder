@@ -1,5 +1,5 @@
 // Package engine proposes staffing: which people cover which demand, and how many hours
-// in each ISO week. It is a pure function of its input: no database, no clock, no config.
+// in each week. It is a pure function of its input: no database, no clock, no config.
 // The same request always gives the same result. It imports the standard library only.
 package engine
 
@@ -77,7 +77,7 @@ type Skill struct {
 type Person struct {
 	ID     string
 	Skills []Skill
-	// Capacity is the project hours per ISO week ("2026-W42"), with non-project hours,
+	// Capacity is the project hours per week ("2026-W42"), with non-project hours,
 	// absence and employment dates already applied. A missing week counts as 0.
 	Capacity map[string]float64
 }
@@ -107,7 +107,7 @@ func (d Demand) allows(personID string) bool {
 	return d.Candidates == nil || d.Candidates[personID]
 }
 
-// Allocation is the hours of one assignment in one ISO week.
+// Allocation is the hours of one assignment in one week.
 type Allocation struct {
 	Week   string
 	Hours  float64

@@ -71,7 +71,7 @@ func TestScheduleHandler_Get(t *testing.T) {
 			wantField  string
 		}{
 			{name: "missing from", target: path + "?to=2026-W43", wantStatus: http.StatusBadRequest, wantField: "from"},
-			{name: "not an ISO week", target: path + "?from=2026-W42&to=2026-43", wantStatus: http.StatusBadRequest, wantField: "to"},
+			{name: "not a week", target: path + "?from=2026-W42&to=2026-43", wantStatus: http.StatusBadRequest, wantField: "to"},
 			{name: "not a uuid", target: "/people/abc/schedule?from=2026-W42&to=2026-W43", wantStatus: http.StatusBadRequest},
 			{name: "someone else's schedule", target: path + "?from=2026-W42&to=2026-W43", wantStatus: http.StatusForbidden,
 				serviceErr: errors.ForbiddenError(constants.MsgInsufficientPermissions, nil)},

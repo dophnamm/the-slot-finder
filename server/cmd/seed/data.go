@@ -6,7 +6,7 @@ import (
 	"the-slot-finder/server/internal/constants"
 )
 
-// Demo data: the expertise catalogue, 12 people (the Keycloak demo users planner, lead and
+// Demo data: the expertise catalogue, 12 people (the Keycloak demo users planner, manager and
 // specialist among them), a few leave periods and company-wide holidays.
 
 type seedExpertise struct {

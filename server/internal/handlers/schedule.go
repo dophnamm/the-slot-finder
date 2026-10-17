@@ -24,7 +24,7 @@ func ProvideScheduleHandler(schedule services.ScheduleService, validate *validat
 
 // Get godoc
 // @Summary A person's schedule
-// @Description Per ISO week: capacity, load, utilization band, tentative flag and hours per project from the baseline, computed as on the heatmap. Per working day: the person's absences and the company-wide holidays. A range over SCHEDULE_MAX_WEEKS gets WEEK_RANGE_TOO_LONG. Planners and leads may read anyone; others only themselves.
+// @Description Per week: capacity, load, utilization band, tentative flag and hours per project from the baseline, computed as on the heatmap. Per working day: the person's absences and the company-wide holidays. A range over SCHEDULE_MAX_WEEKS gets WEEK_RANGE_TOO_LONG. Planners and leads may read anyone; others only themselves.
 // @Tags People
 // @Produce json
 // @Security BearerAuth

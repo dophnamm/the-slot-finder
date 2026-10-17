@@ -1337,7 +1337,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Assignments with hours from one ISO week through another. Specialists may read only their own.",
+                "description": "Assignments with hours from one week through another. Specialists may read only their own.",
                 "produces": [
                     "application/json"
                 ],
@@ -1709,7 +1709,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Per ISO week: capacity, load, utilization band, tentative flag and hours per project from the baseline, computed as on the heatmap. Per working day: the person's absences and the company-wide holidays. A range over SCHEDULE_MAX_WEEKS gets WEEK_RANGE_TOO_LONG. Planners and leads may read anyone; others only themselves.",
+                "description": "Per week: capacity, load, utilization band, tentative flag and hours per project from the baseline, computed as on the heatmap. Per working day: the person's absences and the company-wide holidays. A range over SCHEDULE_MAX_WEEKS gets WEEK_RANGE_TOO_LONG. Planners and leads may read anyone; others only themselves.",
                 "produces": [
                     "application/json"
                 ],

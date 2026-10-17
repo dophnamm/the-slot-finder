@@ -270,7 +270,7 @@ func (s *insightsService) heatmapRow(p models.Person, weeks []isoweek.Week, abse
 	return row
 }
 
-// workedByPersonWeek sums imported timesheet rows per person and ISO week. A week with rows is
+// workedByPersonWeek sums imported timesheet rows per person and week. A week with rows is
 // present even when they sum to 0, so the heatmap can tell "worked 0 h" from "nothing imported".
 func workedByPersonWeek(rows []models.ActualHours) map[string]map[isoweek.Week]float64 {
 	out := map[string]map[isoweek.Week]float64{}
