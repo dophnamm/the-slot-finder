@@ -4,6 +4,8 @@
 > **Technology:** Go server (Echo, Uber FX, GORM, PostgreSQL, Redis, Keycloak) and React client (Vite, Tailwind, shadcn/ui, TanStack Query, Zustand, Axios). See [section 12](#12-tech-stack). Sections 1–11 and 15 describe the design independently of the stack.
 > **Diagrams:** rendered inline below (Mermaid). The same set is in [`docs/architecture.drawio`](docs/architecture.drawio) for draw.io (9 pages).
 
+**User manual:** [docs/user-manual.md](docs/user-manual.md) for people who use the app.
+
 Details per part:
 - [`server/README.md`](server/README.md): modules, API, planning engine, data rules
 - [`client/README.md`](client/README.md): screens, feature modules, API usage rules
@@ -88,7 +90,7 @@ flowchart LR
 | Actor | What they do |
 |---|---|
 | **Resource Planner** | Sees team-wide load and each person's schedule, gives each program its team, generates staffing drafts, edits by hand, approves, builds what-if scenarios, imports timesheets |
-| **Manager** (role `lead`) | Manages the programs they lead: creates projects, declares demand (budget hours per expertise), milestones and scope points, manages assistants. Sees only the people in the teams of those programs, and proposes, edits and accepts staffing drafts for their projects from those teams |
+| **Manager** (role `manager`) | Manages the programs they lead: creates projects, declares demand (budget hours per expertise), milestones and scope points, manages assistants. Sees only the people in the teams of those programs, and proposes, edits and accepts staffing drafts for their projects from those teams |
 | **Specialist** | Sees which projects they work on, which weeks and for how many hours; reports leave; connects their calendar so out-of-office time becomes leave |
 | **Assistant** | Internal: read-only view of one program. External: no login, receives notifications only |
 
@@ -258,7 +260,7 @@ erDiagram
     string name
     string email
     string keycloak_id "links the Keycloak account"
-    string role "planner / lead / specialist"
+    string role "planner / manager / specialist"
     decimal weekly_hours "contracted hours per week, until a CAPACITY_CHANGE"
     decimal non_project_hours "kept for meetings, support, management; default from config"
     date start_date "null = already working"
@@ -738,7 +740,7 @@ sequenceDiagram
 | Topic | Decision |
 |---|---|
 | **Authentication** | Keycloak (OIDC) issues the JWT; the Client sends it as `Authorization: Bearer`. Unsafe requests also carry `X-CSRF-Token`. `/me` returns the user's role and the programs they assist |
-| **Authorization** | Keycloak roles: `planner` (everything), `lead` (shown as **Manager**: own programs and projects, the people of their program teams, drafts that cover only their programs), `specialist` (own schedule and leave), checked per route. Per-program rules (manager of this program, the people they may see, **internal assistant** read-only access) are checked in services against the database. **Everything is checked on the Server.** The Client uses roles only to show or hide controls |
+| **Authorization** | Keycloak roles: `planner` (everything), `manager` (shown as **Manager**: own programs and projects, the people of their program teams, drafts that cover only their programs), `specialist` (own schedule and leave), checked per route. Per-program rules (manager of this program, the people they may see, **internal assistant** read-only access) are checked in services against the database. **Everything is checked on the Server.** The Client uses roles only to show or hide controls |
 | **Concurrency** | `PLAN.version`. Accepting a draft requires `baseVersion`. If the baseline has changed, the Server returns `409` and the Client regenerates the draft |
 | **Transactions** | One business action is one transaction (accept = write all allocations + update plan states) |
 | **Errors** | Every response, success or error, uses one envelope: `{ meta: { error_code, message, code, page, page_size, total }, data }`, with a meaningful HTTP status. Field errors go in `data` |
@@ -783,7 +785,7 @@ sequenceDiagram
 | **HTTP + wiring** | Echo v5, Uber FX | FX wires providers in `cmd/server/main.go`; routes live in `cmd/server/routes/router.go` under `/api/v1` |
 | **Database** | PostgreSQL, GORM, Atlas migrations | Migrations are generated from GORM models into `cmd/migrations/sql` |
 | **Cache** | Redis | Background jobs use Postgres (outbox + `SKIP LOCKED`), not Redis |
-| **Auth** | Keycloak (JWT) | Roles `planner`, `lead`, `specialist` |
+| **Auth** | Keycloak (JWT) | Roles `planner`, `manager`, `specialist` |
 | **Observability** | Zap, OpenTelemetry, Sentry (optional) | Local stack: OTel collector + Jaeger via docker compose |
 | **API docs** | swaggo (Swagger 2.0, generated from handler annotations) | `server/docs/swagger.yaml` is the contract the Client builds against |
 | **Client** | React + TypeScript, Vite | |
