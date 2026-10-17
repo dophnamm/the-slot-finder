@@ -169,3 +169,20 @@ func (h *InsightsHandler) CapacityForecast(c *echo.Context) error {
 	}
 	return h.SuccessResponse(c, constants.MsgCapacityForecastRetrieved, dtos.NewCapacityForecastResponse(*forecast), nil)
 }
+
+// Bench godoc
+// @Summary Bench list
+// @Description People under UTILIZATION_UNDERUSED_BELOW in each of the next BENCH_WEEKS weeks, with their free hours, most free first. A manager sees the people of their teams.
+// @Tags Insights
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} object{meta=dtos.Meta,data=dtos.BenchResponse}
+// @Failure 403 {object} object{meta=dtos.Meta}
+// @Router /insights/bench [get]
+func (h *InsightsHandler) Bench(c *echo.Context) error {
+	bench, err := h.insights.Bench(c.Request().Context())
+	if err != nil {
+		return h.HandleError(c, err)
+	}
+	return h.SuccessResponse(c, constants.MsgBenchRetrieved, dtos.NewBenchResponse(*bench), nil)
+}

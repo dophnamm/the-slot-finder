@@ -185,3 +185,26 @@ func NewCapacityForecastResponse(f models.CapacityForecast) CapacityForecastResp
 	}
 	return CapacityForecastResponse{Weeks: weeks, Expertises: expertises}
 }
+
+// BenchPersonResponse is one person on the bench.
+type BenchPersonResponse struct {
+	PersonID         string  `json:"person_id"`
+	Name             string  `json:"name" example:"Quinn"`
+	PrimaryExpertise string  `json:"primary_expertise" example:"QA"`
+	FreeHours        float64 `json:"free_hours" example:"104"`
+}
+
+// BenchResponse is GET /insights/bench.
+type BenchResponse struct {
+	Weeks  int                   `json:"weeks" example:"4"`
+	People []BenchPersonResponse `json:"people"`
+}
+
+// NewBenchResponse maps a bench list; People is never nil.
+func NewBenchResponse(b models.Bench) BenchResponse {
+	people := make([]BenchPersonResponse, len(b.People))
+	for i, p := range b.People {
+		people[i] = BenchPersonResponse{PersonID: p.Person.ID, Name: p.Person.Name, PrimaryExpertise: p.PrimaryExpertise.Name, FreeHours: p.FreeHours}
+	}
+	return BenchResponse{Weeks: b.Weeks, People: people}
+}

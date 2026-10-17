@@ -156,6 +156,7 @@ const (
 	MsgMembersRetrieved          = "Program members retrieved"
 	MsgRisksRetrieved            = "Risks retrieved"
 	MsgCapacityForecastRetrieved = "Capacity forecast retrieved"
+	MsgBenchRetrieved            = "Bench retrieved"
 )
 
 // Request limit messages.

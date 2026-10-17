@@ -45,3 +45,27 @@ func TestNewHeatmapResponse_SustainedOverload(t *testing.T) {
 	require.NoError(t, err)
 	assert.Contains(t, string(body), `"sustained_overload":null`)
 }
+
+func TestNewBenchResponse(t *testing.T) {
+	quinn := models.BenchPerson{
+		Person:           models.Person{BaseModel: models.BaseModel{ID: "p1"}, Name: "Quinn"},
+		PrimaryExpertise: models.Expertise{Name: "QA"},
+		FreeHours:        104,
+	}
+	tests := []struct {
+		name  string
+		bench models.Bench
+		want  BenchResponse
+	}{
+		{name: "one person", bench: models.Bench{Weeks: 4, People: []models.BenchPerson{quinn}},
+			want: BenchResponse{Weeks: 4, People: []BenchPersonResponse{{PersonID: "p1", Name: "Quinn", PrimaryExpertise: "QA", FreeHours: 104}}}},
+		{name: "empty bench", bench: models.Bench{Weeks: 4}, want: BenchResponse{Weeks: 4, People: []BenchPersonResponse{}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := NewBenchResponse(tt.bench)
+			assert.Equal(t, tt.want, got)
+			assert.NotNil(t, got.People)
+		})
+	}
+}

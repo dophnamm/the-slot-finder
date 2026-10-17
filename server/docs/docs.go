@@ -648,6 +648,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/insights/bench": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "People under UTILIZATION_UNDERUSED_BELOW in each of the next BENCH_WEEKS weeks, with their free hours, most free first. A manager sees the people of their teams.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Insights"
+                ],
+                "summary": "Bench list",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.BenchResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/insights/capacity-forecast": {
             "get": {
                 "security": [
@@ -4474,6 +4518,41 @@ const docTemplate = `{
                 "weeks": {
                     "type": "integer",
                     "example": 2
+                }
+            }
+        },
+        "dtos.BenchPersonResponse": {
+            "type": "object",
+            "properties": {
+                "free_hours": {
+                    "type": "number",
+                    "example": 104
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Quinn"
+                },
+                "person_id": {
+                    "type": "string"
+                },
+                "primary_expertise": {
+                    "type": "string",
+                    "example": "QA"
+                }
+            }
+        },
+        "dtos.BenchResponse": {
+            "type": "object",
+            "properties": {
+                "people": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.BenchPersonResponse"
+                    }
+                },
+                "weeks": {
+                    "type": "integer",
+                    "example": 4
                 }
             }
         },

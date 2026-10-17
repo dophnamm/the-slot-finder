@@ -280,6 +280,8 @@ func TestRouter_People_RBAC(t *testing.T) {
 		{name: "manager cannot run a scenario again", method: http.MethodPost, path: "/scenarios/0192f3a4-0000-7000-8000-0000000000aa/rerun", token: "manager-token", wantStatus: http.StatusForbidden},
 		{name: "manager cannot delete a scenario", method: http.MethodDelete, path: "/scenarios/0192f3a4-0000-7000-8000-0000000000aa", token: "manager-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read program members", method: http.MethodGet, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/members", token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot read the bench", method: http.MethodGet, path: constants.PathBench, token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "no role cannot read the bench", method: http.MethodGet, path: constants.PathBench, token: "no-role-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the heatmap", method: http.MethodGet, path: constants.PathHeatmap, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the baseline", method: http.MethodGet, path: constants.PathCurrentPlan, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no role cannot read assignments", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/assignments", token: "no-role-token", wantStatus: http.StatusForbidden},

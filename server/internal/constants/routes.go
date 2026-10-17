@@ -57,6 +57,7 @@ const (
 	PathRisks   = "/insights/risks"
 
 	PathCapacityForecast = "/insights/capacity-forecast"
+	PathBench            = "/insights/bench"
 
 	PathEvents = "/events"
 
