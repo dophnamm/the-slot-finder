@@ -19,7 +19,7 @@ func summaryFixture(t *testing.T) *DraftView {
 	require.NoError(t, err)
 	phaseID := "phase-1"
 	project := models.Project{
-		BaseModel: models.BaseModel{ID: "proj-1"}, Name: "Checkout Revamp",
+		BaseModel: models.BaseModel{ID: "proj-1"}, Name: "Checkout Revamp", Program: &models.Program{Client: "Acme Corp"},
 		Phases: []models.ProjectPhase{{BaseModel: models.BaseModel{ID: phaseID}, StartWeek: from, EndWeek: to}},
 		Demands: []models.Demand{
 			{BaseModel: models.BaseModel{ID: "dem-qa"}, PhaseID: &phaseID, TotalHours: 40, Expertise: models.Expertise{Name: "QA"}},
@@ -64,6 +64,15 @@ func TestBuildDraftFacts(t *testing.T) {
 		assert.Equal(t, []unmetFact{{Expertise: "QA", Project: "Checkout Revamp", Hours: 20,
 			FirstWeek: "2026-W45", LastWeek: "2026-W47"}}, f.Unmet)
 	})
+	t.Run("a manual removal leaves a shortfall not in Plan.Unmet", func(t *testing.T) {
+		view := summaryFixture(t)
+		view.Plan.Assignments = view.Plan.Assignments[:2] // Bob's 50 h on Engineer are removed
+		f := buildDraftFacts(view)
+		require.Len(t, f.Unmet, 2)
+		assert.Equal(t, unmetFact{Expertise: "Engineer", Project: "Checkout Revamp", Hours: 50,
+			FirstWeek: f.Unmet[1].FirstWeek, LastWeek: f.Unmet[1].LastWeek}, f.Unmet[1])
+		assert.NotContains(t, templateSummary(f), "All demand is covered")
+	})
 	t.Run("hours added and removed from Changes", func(t *testing.T) {
 		f := buildDraftFacts(summaryFixture(t))
 		assert.InDelta(t, 20, f.HoursAdded, 1e-9)
@@ -72,7 +81,7 @@ func TestBuildDraftFacts(t *testing.T) {
 	t.Run("no names in the JSON", func(t *testing.T) {
 		raw, err := json.Marshal(buildDraftFacts(summaryFixture(t)))
 		require.NoError(t, err)
-		for _, secret := range []string{"Ada", "Lovelace", "Bob", "ada@example.com", "bob@example.com"} {
+		for _, secret := range []string{"Ada", "Lovelace", "Bob", "ada@example.com", "bob@example.com", "Acme"} {
 			assert.NotContains(t, string(raw), secret)
 		}
 	})
@@ -90,6 +99,11 @@ func TestTemplateSummary(t *testing.T) {
 				{Expertise: "QA", Project: "Checkout Revamp", Hours: 20, FirstWeek: "2026-W45", LastWeek: "2026-W47"}}},
 			want: "4 people on 6 assignments across 2 projects, 312 planned hours. " +
 				"20 h of QA is still uncovered on Checkout Revamp (2026-W45 to 2026-W47).",
+		},
+		{
+			name:  "every count at 1",
+			facts: draftFacts{People: 1, Assignments: 1, Projects: 1, PlannedHours: 8},
+			want:  "1 person on 1 assignment across 1 project, 8 planned hours. All demand is covered.",
 		},
 		{
 			name:  "no unmet hours",
