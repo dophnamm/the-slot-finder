@@ -6,7 +6,7 @@
 The Server is the **source of truth**. All data, permissions, state transitions, metrics and aggregated numbers live here. One Go codebase contains:
 
 - **Server API**: serves the Client under `/api/v1`
-- **Background jobs**: re-plan and calendar sync run in-process; import and notify are later
+- **Background jobs**: re-plan and calendar sync run in-process; notify is later
 - **Planning Engine**: a pure package used by the planning service
 
 ## 0. Run locally
@@ -92,7 +92,7 @@ Files per module follow the pattern `handlers/<module>.go`, `services/<module>.g
 | **planning** | Baseline, staffing drafts, scenarios; assignments and their kind (primary / cross-expertise / stretch) and alternatives; calls the engine; accept and publish | PLAN, ASSIGNMENT, ALLOCATION | none yet (`PlanPublished`: later) |
 | **insights** | Heatmap, utilization, program and project metrics, at-risk lists, capacity forecast, sustained overload, bench list (read-only). Plan churn, hours per point: later | none (read-only) | |
 | **events** | Records ChangeEvents, debounces them, assesses impact, creates re-plan jobs (one open auto draft per baseline) | CHANGE_EVENT | |
-| **integrations** | Calendar feeds (secret ICS links and the sync runner, which writes leave through **availability**), the LLM provider client (used by Ask AI), email sender. HR import and notifications (Email/Slack) to members: later | CALENDAR_FEED (import_job: later) | |
+| **integrations** | Calendar feeds (secret ICS links and the sync runner, which writes leave through **availability**), the LLM provider client (used by Ask AI), email sender. Notifications (Email/Slack) to members: later. No live HR connection: people come in by CSV upload (`POST /people/import`) | CALENDAR_FEED | |
 | **timesheets** | The timesheet template and import; actual hours per person, project and week | ACTUAL_HOURS | |
 | **ai** | Ask AI (built): read-only Q&A over the insights and planning data. Later: intake extraction, what-if chat, draft summaries. Runs the function-calling loop with the LLM; each tool wraps another module's service and runs with the caller's identity (section 9) | none | |
 
@@ -100,13 +100,15 @@ Files per module follow the pattern `handlers/<module>.go`, `services/<module>.g
 
 All paths below are under **`/api/v1`**. Every endpoint except health checks requires a Keycloak JWT (`Authorization: Bearer`); unsafe methods also need `X-CSRF-Token`. The Server checks permissions on every call: the role through `RequireRole` in the router, and per-program rules ("manager (own)") in the service. "manager (own)" means the manager of that program. A manager sees only the people in the teams of the programs they manage, plus themselves ("manager (team)" below); `AuthzService.VisiblePeople` answers that for the people list and detail, schedules, the heatmap and the risks.
 
-**Rate limits.** Every request counts against `RATE_LIMIT` per `RATE_LIMIT_DURATION` for its client IP. The routes that run the planning engine, read an uploaded file, fetch a URL or call the AI model also count against `RATE_LIMIT_HEAVY` per `RATE_LIMIT_HEAVY_DURATION` for each signed-in user on each route: `POST /staffing-drafts`, `POST /scenarios`, `POST /scenarios/{id}/rerun`, `POST /timesheets/import`, `POST /holidays/import`, `POST /ai/ask`, `PUT /people/{id}/calendar-feed` and `POST /people/{id}/calendar-feed/sync`. Over either limit the Server answers `429 RATE_LIMIT_EXCEEDED`, with a `Retry-After` header and `{ limit, window, retry_after }` in `data` (`retry_after` in seconds). The counters live in memory, one set per Server instance.
+**Rate limits.** Every request counts against `RATE_LIMIT` per `RATE_LIMIT_DURATION` for its client IP. The routes that run the planning engine, read an uploaded file, fetch a URL or call the AI model also count against `RATE_LIMIT_HEAVY` per `RATE_LIMIT_HEAVY_DURATION` for each signed-in user on each route: `POST /staffing-drafts`, `POST /scenarios`, `POST /scenarios/{id}/rerun`, `POST /timesheets/import`, `POST /people/import`, `POST /holidays/import`, `POST /ai/ask`, `PUT /people/{id}/calendar-feed` and `POST /people/{id}/calendar-feed/sync`. Over either limit the Server answers `429 RATE_LIMIT_EXCEEDED`, with a `Retry-After` header and `{ limit, window, retry_after }` in `data` (`retry_after` in seconds). The counters live in memory, one set per Server instance.
 
 **Identity and people**
 
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
 | GET | `/me` | Current user, role and person id (enabled features: later) | everyone |
+| GET | `/people/import-template` | CSV template for the people import: header and one example row | planner |
+| POST | `/people/import` | Upload a filled-in people CSV (multipart `file`). Every row is checked first; any problem gets `400 PEOPLE_IMPORT_INVALID` with `data.problems` (line, column, code), and nothing is saved. Creates new emails, updates known ones; returns `{ created, updated, unchanged }`. Over the size or row limit: `413 PEOPLE_IMPORT_TOO_LARGE` | planner |
 | GET | `/people` | List people with their skills | planner, manager (team) |
 | POST | `/people` | Create a person (start and end dates, non-project hours, which must not exceed weekly hours: `400 PERSON_NON_PROJECT_HOURS_INVALID`) | planner |
 | GET | `/people/{id}` | One person with their expertise, for the person page | planner, manager (team; else `403`) |
@@ -178,7 +180,6 @@ A manager reads only the programs they lead or lead a project in, and the people
 - `PATCH /programs/{id}/forecast`: set or clear `forecast_override_hours` per demand
 - `GET /projects/{id}/hours-suggestion`: suggested budget hours per expertise (`scope_points × hours_per_point`)
 - `GET /insights/churn?from=&to=`: plan churn per accepted draft
-- `POST /imports/{csv|hr}`: import data in the background
 - `GET /staffing-drafts/{id}/summary`: plain-language summary of a draft's diff, reasons and unmet demand
 - `POST /ai/intake-extractions`: suggested project from text or one file; saves nothing
 - `POST /ai/chat`: one turn of the AI assistant
@@ -314,7 +315,6 @@ Jobs are rows in Postgres, run by a runner inside the server process, started an
 | Job | Triggered by | Does |
 |---|---|---|
 | `replan` | ChangeEvents, batched over `REPLAN_DEBOUNCE` | Assesses impact. If there is a conflict, calls the engine, saves a staffing draft and alerts the Planner. If an auto draft is already open for the baseline, it regenerates that draft instead (see below) |
-| **Later** · `import` | `POST /imports/*` | Reads the source, validates it, writes through each module's public interface |
 | `calendar-sync` | Every `CALENDAR_SYNC_INTERVAL`, or `POST /people/{id}/calendar-feed/sync` | Fetches each due calendar feed, keeps its out-of-office events, and creates, moves or deletes the matching planned leave through **availability**, which records the change events. Claims feeds with `FOR UPDATE SKIP LOCKED`. The fetch runs before the database transaction. Each sync takes a Postgres advisory lock per feed until its transaction ends, and the lock covers only writing the leave: the runner skips a locked feed, and "Sync now" answers `409 CALENDAR_SYNC_RUNNING`. Leave that a person deletes by hand is kept as `source = calendar_dismissed` with its event UID, so the sync does not create it again. A failed fetch changes nothing and stores an error code |
 | **Later** · `notify` | `PlanPublished`, alerts | Sends Email/Slack messages to the affected members |
 
@@ -374,6 +374,7 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `TIMESHEET_TEMPLATE_WEEKS` · `TIMESHEET_MAX_WEEKS` | Past weeks in the timesheet template by default, and the largest range | 4 · 12 |
 | `TIMESHEET_MAX_WEEK_HOURS` | Most actual hours one row may hold | 80 |
 | `TIMESHEET_MAX_BYTES` · `TIMESHEET_MAX_ROWS` | Largest timesheet file accepted | 1MB · 5000 |
+| `PEOPLE_IMPORT_MAX_BYTES` · `PEOPLE_IMPORT_MAX_ROWS` | Largest people file accepted | 1MB · 1000 |
 | `CALENDAR_FEED_KEY` | 32-byte key (base64) that encrypts calendar links. A secret: never logged. Empty turns calendar sync off | empty |
 | `CALENDAR_ALLOWED_HOSTS` | Hosts a calendar link may point to | calendar.google.com, outlook.office365.com, outlook.live.com |
 | `CALENDAR_SYNC_INTERVAL` · `CALENDAR_SYNC_BATCH_SIZE` | How often the runner syncs each calendar, and how many it claims at once | 15m · 20 |

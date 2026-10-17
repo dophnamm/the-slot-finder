@@ -25,7 +25,7 @@ One spec per feature, in build order. Each spec holds the goal, scope, server an
 | 17 | [Capacity forecast](capacity-forecast.md) | By-expertise view of the dashboard heatmap, per expertise × week: free capacity, unmet confirmed demand, pipeline demand × the global pipeline confidence, overload and sustained overload | 17 Oct | team-heatmap, program-metrics, program-teams | Done |
 | 18 | [Skill and program events](skill-and-program-events.md) | A skill change re-plans the person's projects; a program end-date move is recorded in the change history | 17–18 Oct | people-and-skills, replan-on-change | Done |
 | 19 | [Bench list](bench-list.md) | People idle for the next weeks, shown on the Risks card | 17–18 Oct | team-heatmap | Done |
-| 20 | [People import](people-import.md) | CSV import of many people at once: new emails are created, known ones updated, all or nothing | 17–18 Oct | people-and-skills, skill-and-program-events | Planned |
+| 20 | [People import](people-import.md) | CSV import of many people at once: new emails are created, known ones updated, all or nothing | 17–18 Oct | people-and-skills, skill-and-program-events | Done |
 
 ## Schedule
 
@@ -42,7 +42,6 @@ Designed in the root README, not built for the demo:
 
 - Holidays per location
 - More scenario assumptions (new project, planned hire, demand change) and turning a scenario into a draft
-- CSV import
 - Email and Slack notifications
 - Plan churn
 - EAC hours, hours per point, contribution %, cross-expertise share

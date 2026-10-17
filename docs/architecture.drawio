@@ -14,7 +14,7 @@
         <mxCell id="v-3" value="Resource Planner&lt;br&gt;&lt;i&gt;coordinates capacity&lt;/i&gt;" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="90" y="125" width="40" height="70" />
         </mxCell>
-        <mxCell id="e-4" value="reviews drafts, runs what-ifs,&lt;br&gt;imports timesheets" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.094;entryDx=0;entryDy=0;" edge="1" parent="1" source="v-3" target="v-2">
+        <mxCell id="e-4" value="reviews drafts, runs what-ifs,&lt;br&gt;imports timesheets and people" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.094;entryDx=0;entryDy=0;" edge="1" parent="1" source="v-3" target="v-2">
           <mxGeometry as="geometry" relative="1" />
         </mxCell>
         <mxCell id="v-5" value="Manager" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
@@ -100,7 +100,7 @@
         <mxCell id="v-9" value="&lt;b&gt;Job queue&lt;/b&gt;&lt;br&gt;&lt;i&gt;in-process&lt;/i&gt;" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="860" y="385" width="200" height="60" />
         </mxCell>
-        <mxCell id="v-10" value="&lt;b&gt;Background Worker&lt;/b&gt;&lt;br&gt;re-plan · calendar sync&lt;br&gt;import · notify" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+        <mxCell id="v-10" value="&lt;b&gt;Background Worker&lt;/b&gt;&lt;br&gt;re-plan · calendar sync&lt;br&gt;notify" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="860" y="580" width="200" height="80" />
         </mxCell>
         <mxCell id="v-11" value="&lt;b&gt;Database&lt;/b&gt;&lt;br&gt;relational" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
@@ -144,7 +144,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e-23" value="import ·&lt;br&gt;calendar sync ·&lt;br&gt;notify" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=block;startFill=1;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="v-10" target="v-12">
+        <mxCell id="e-23" value="calendar sync ·&lt;br&gt;notify" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=block;startFill=1;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="v-10" target="v-12">
           <mxGeometry as="geometry" relative="1" />
         </mxCell>
         <mxCell id="v-24" value="&lt;b&gt;LLM API&lt;/b&gt; (later)&lt;br&gt;function calling&lt;br&gt;&lt;i&gt;Gemini planned&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;dashed=1;" vertex="1" parent="1">
@@ -175,7 +175,7 @@
         <mxCell id="v-2" value="server/ (one codebase)" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=none;verticalAlign=top;align=left;spacingLeft=12;spacingTop=6;fontStyle=1;strokeColor=#6c8ebf;fontColor=#1f3b63;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="40" y="50" width="1420" height="760" />
         </mxCell>
-        <mxCell id="v-3" value="&lt;b&gt;Integrations&lt;/b&gt;&lt;br&gt;&lt;i&gt;importers (CSV, HR) · calendar feeds (ICS)&lt;br&gt;notifier · LLM client&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" vertex="1" parent="1">
+        <mxCell id="v-3" value="&lt;b&gt;Integrations&lt;/b&gt;&lt;br&gt;&lt;i&gt;calendar feeds (ICS)&lt;br&gt;notifier · LLM client&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="400" y="80" width="280" height="80" />
         </mxCell>
         <mxCell id="v-4" value="&lt;b&gt;AI assistant&lt;/b&gt; (later)&lt;br&gt;&lt;i&gt;intake extraction · what-if chat&lt;br&gt;draft summary · Q&amp;amp;A&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">

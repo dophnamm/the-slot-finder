@@ -32,7 +32,7 @@ Sign in with a demo user (`planner`, `manager` or `specialist`; the `manager` ro
 | `/drafts` | **Drafts**: every open staffing draft, manual and re-plan, newest first: when it was made, its origin, the projects and programs it covers, the baseline version (with Stale) and its unmet demands; a row opens the draft review. The sidebar item shows the open count, and the list refreshes every 15 s. A manager sees only drafts whose projects all belong to programs they manage. Empty: "No open staffing drafts." | planner, manager | `/plans/drafts` |
 | `/scenarios` | **Scenarios**: the what-if list (assumptions, baseline version with Stale, people changed, hours moved, unmet) and **New scenario** (move a project, add leave) | planner | `/scenarios`, `/projects`, `/people` |
 | `/scenarios/:id` | **Scenario**: assumptions and figures, Run again, Delete, changes week by week (Moved / Added / Removed / Changed; the person and the project in each change link to their pages), unmet demand, links to the projects planned again | planner | `/scenarios/:id`, `/scenarios/:id/rerun` |
-| `/people` | **People**: two tabs. **People**: expertise and level matrix, start and end dates, **Import timesheet**, **Add person**; each row opens the person. **Holidays**: company holidays with their names, **Import holidays** (an iCalendar file or link, e.g. a public holiday calendar from Google) and **Add holiday**; a manager reads both tabs without the buttons, and sees only the people of their program teams and themselves | planner, manager (read only) | `/people`, `/people/:id/absences`, `/holidays`, `/holidays/import`, `/timesheets/template`, `/timesheets/import` |
+| `/people` | **People**: two tabs. **People**: expertise and level matrix, start and end dates, **Import timesheet**, **Import people**, **Add person**; each row opens the person. **Import people** opens a dialog: **Download template**, a file picker and **Import**. A `400` shows the problems table (line, column, message); success shows a toast with the counts, and the people lists refresh. **Holidays**: company holidays with their names, **Import holidays** (an iCalendar file or link, e.g. a public holiday calendar from Google) and **Add holiday**; a manager reads both tabs without the buttons, and sees only the people of their program teams and themselves | planner, manager (read only) | `/people`, `/people/:id/absences`, `/holidays`, `/holidays/import`, `/timesheets/template`, `/timesheets/import`, `/people/import-template`, `/people/import` |
 | `/people/:id` | **Person**: tabs **Schedule** (month calendar, Monday to Sunday with days off shaded: absences, holidays, weekly load against capacity, hours per project, worked hours), **Absences** (Approve, **Add absence**) and **Calendar sync** (the calendar link and its status); a manager sees the schedule without tabs, and **You can’t see this person** for someone outside their program teams | planner, manager (read only) | `/people/:id/schedule`, `/people/:id/absences`, `/people/:id/calendar-feed` |
 | `/me` | **My schedule**: tabs **Schedule** (my month calendar: hours per project each week, leave, holidays), **My absences** (report leave) and **Calendar sync** (connect my calendar) | specialist | `/me`, `/people/:id/schedule`, `/people/:id/absences`, `/people/:id/calendar-feed` (id from `/me`) |
 | `/events` | **Change history** and re-plan status | planner | `/events` |
@@ -186,7 +186,7 @@ client/
     ├── pages/                    ← one folder per route, e.g. program-detail/ → ProgramDetailPage
     ├── features/                 ← one folder per feature
     │   ├── health/               ← api.ts · use-health.ts · types.ts · index.ts
-    │   ├── people/ · absences/ · holidays/ · person-calendar/ · calendar-feed/ · timesheet-import/
+    │   ├── people/ · absences/ · holidays/ · person-calendar/ · calendar-feed/ · timesheet-import/ · people-import/
     │   ├── programs/ · program-overview/ · program-projects/ · program-team/   ← component.tsx · types.ts · index.ts · components/<child>/
     │   ├── project-summary/ · project-phases/ · demand-form/
     │   ├── intake/ · drafts-inbox/
@@ -209,7 +209,7 @@ client/
         ├── auth/                 ← OIDC client (oidc-client-ts), session functions, useCurrentUser
         ├── i18n/                 ← language-key.ts (LanguageKey), translate.ts (t, translate), locales/, language-store.ts
         ├── ui/                   ← shadcn components, managed by the shadcn CLI
-        ├── components/           ← components used by several features, e.g. page-placeholder/, pager/, status-badge/
+        ├── components/           ← components used by several features, e.g. page-placeholder/, pager/, status-badge/, problem-table/
         ├── ai/                   ← Ask AI: api.ts, use-ask-ai.ts, types.ts
         ├── programs/ · expertises/ · staffing/ · events/ · people/ · scenarios/ · utilization/ · week-range/ · hooks/   ← API calls, query hooks and types shared by several features
         └── stores/               ← auth-store.ts (Zustand)

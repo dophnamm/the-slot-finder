@@ -1,6 +1,6 @@
 # The Slot Finder: System Architecture
 
-> **Status:** design v0.4. Nineteen features are built ([`docs/features/README.md`](docs/features/README.md)). Parts marked **(later)** are design only and not built.
+> **Status:** design v0.4. Twenty features are built ([`docs/features/README.md`](docs/features/README.md)). Parts marked **(later)** are design only and not built.
 > **Technology:** Go server (Echo, Uber FX, GORM, PostgreSQL, Redis, Keycloak) and React client (Vite, Tailwind, shadcn/ui, TanStack Query, Zustand, Axios). See [section 12](#12-tech-stack). Sections 1–11 and 15 describe the design independently of the stack.
 > **Diagrams:** rendered inline below (Mermaid). The same set is in [`docs/architecture.drawio`](docs/architecture.drawio) for draw.io (9 pages).
 
@@ -60,7 +60,7 @@ flowchart LR
   notify["Email / Slack / Teams"]
   llm["LLM API<br/>function calling · Gemini, Groq or OpenRouter"]
 
-  planner -->|"reviews drafts, runs what-ifs, imports timesheets"| sf
+  planner -->|"reviews drafts, runs what-ifs, imports timesheets and people"| sf
   lead -->|"manages programs, demand, deadlines; staffs from the program team"| sf
   spec -->|"views schedule, reports leave, connects calendar"| sf
   intake -->|"new projects"| sf
@@ -94,7 +94,7 @@ flowchart TB
     api["<b>Server API</b><br/>modular monolith · REST/JSON"]
     engine["<b>Planning Engine</b><br/>pure library, no I/O"]
     queue[["Job queue"]]
-    worker["<b>Background Worker</b><br/>re-plan · calendar sync · import · notify"]
+    worker["<b>Background Worker</b><br/>re-plan · calendar sync · notify"]
     db[("<b>Database</b><br/>relational")]
   end
 
@@ -109,7 +109,7 @@ flowchart TB
   queue --> worker
   worker --> engine
   worker -->|"read / write"| db
-  worker <-->|"import · calendar sync · notify"| ext
+  worker <-->|"calendar sync · notify"| ext
   api -.->|"AI assistant: Ask AI (built)"| llm
 ```
 
@@ -118,7 +118,7 @@ flowchart TB
 | **Client** | Shows heatmaps, program pages, forms, drafts and diffs; calls the API | Computing plans or metrics, deciding permissions |
 | **Server API** | Source of truth: data, permissions, state transitions, transactions, metrics | The scheduling algorithm (that lives in the Engine) |
 | **Planning Engine** | The pure function `propose(snapshot, policy) → result` | Database or network access |
-| **Background Worker** | Heavy or asynchronous jobs: re-planning after changes, calendar sync, imports, notifications. These run inside the server process; a separate worker process comes later | Serving user requests |
+| **Background Worker** | Heavy or asynchronous jobs: re-planning after changes, calendar sync, notifications. These run inside the server process; a separate worker process comes later | Serving user requests |
 | **Job queue** | Passes jobs from the API to the Worker: rows in Postgres (change events as a transactional outbox), claimed with `FOR UPDATE SKIP LOCKED`. No separate queue service | |
 | **Database** | Stores people, skills, absences and holidays, calendar feeds, programs and their teams, projects, demand, plans, allocations, actual hours, events and audit records. | |
 
@@ -130,7 +130,7 @@ The `server/` folder holds the Server API, the Background Worker and the Plannin
 
 ```mermaid
 flowchart TB
-  integ["<b>Integrations</b><br/>calendar feeds (ICS) · LLM client · email sender<br/>importers (HR) and notifier: later"]
+  integ["<b>Integrations</b><br/>calendar feeds (ICS) · LLM client · email sender<br/>notifier: later"]
   ai["<b>AI assistant</b><br/>Ask AI (built, read-only)<br/>later: intake extraction · what-if chat<br/>draft summary"]
 
   subgraph data["Data modules"]

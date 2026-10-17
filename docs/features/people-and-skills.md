@@ -19,7 +19,6 @@
 
 - Holidays per location → [Later](README.md#later).
 - `location` and `timezone` on PERSON: columns can wait until holidays per location.
-- CSV and HR import → [Later](README.md#later).
 
 ## Server
 

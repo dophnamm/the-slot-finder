@@ -3,7 +3,7 @@
 **Goal:** a planner adds or updates many people at once from a CSV file exported from HR. This is the CSV import deferred in [people-and-skills](people-and-skills.md#not-now).
 
 **Roles:** planner.
-**Target:** 17–18 Oct · **Depends on:** [people-and-skills](people-and-skills.md), [skill-and-program-events](skill-and-program-events.md) (for `SkillChanged` on update) · **Branch:** `feat/people-import` · **Status:** Planned
+**Target:** 17–18 Oct · **Depends on:** [people-and-skills](people-and-skills.md), [skill-and-program-events](skill-and-program-events.md) (for `SkillChanged` on update) · **Branch:** `feat/people-import` · **Status:** Done
 
 ## In scope
 
@@ -88,26 +88,26 @@
 ## Tasks
 
 **Server**
-- [ ] Constants: paths, role list, messages, error codes, CSV column names, settings
-- [ ] CSV parser with a row check per problem code
-- [ ] Service: build the template; check every row; save in one `TxManager.Do` through the existing person update and create logic
-- [ ] Handlers (CSV download, multipart upload), routes, Swagger
-- [ ] Settings `PEOPLE_IMPORT_MAX_BYTES` and `PEOPLE_IMPORT_MAX_ROWS`
+- [x] Constants: paths, role list, messages, error codes, CSV column names, settings
+- [x] CSV parser with a row check per problem code
+- [x] Service: build the template; check every row; save in one `TxManager.Do` through the existing person update and create logic
+- [x] Handlers (CSV download, multipart upload), routes, Swagger
+- [x] Settings `PEOPLE_IMPORT_MAX_BYTES` and `PEOPLE_IMPORT_MAX_ROWS`
 
 **Client**
-- [ ] Endpoints, types and hooks through `shared/api/http.ts`
-- [ ] Import people dialog with the template link, file picker and problems table
-- [ ] Problems table moved to `src/shared/components`, or a copy, as the builder decides
+- [x] Endpoints, types and hooks through `shared/api/http.ts`
+- [x] Import people dialog with the template link, file picker and problems table
+- [x] Problems table moved to `src/shared/components`, or a copy, as the builder decides
 
 **Tests**
-- [ ] Parser table tests: each problem code
-- [ ] Service: create, update, unchanged, one bad row saves nothing, events recorded on update
-- [ ] Handler and RBAC: manager and specialist `403`; size limit `413`
-- [ ] Client: the problems table on `400`; the success toast
+- [x] Parser table tests: each problem code
+- [x] Service: create, update, unchanged, one bad row saves nothing, events recorded on update
+- [x] Handler and RBAC: manager and specialist `403`; size limit `413`
+- [x] Client: the problems table on `400`; the success toast
 
 **Docs** (same PR)
-- [ ] [README.md](../../README.md): the integrations node (importers now synchronous `POST /people/import`, not later); any `/imports` or import job text
-- [ ] [server/README.md](../../server/README.md): the routes table; remove the Later `POST /imports/*` bullet and the "Later · import" job row, or reword them; the config table; the integrations row ("HR import")
-- [ ] [client/README.md](../../client/README.md): the People screen
-- [ ] [people-and-skills](people-and-skills.md): the "CSV and HR import" bullet under Not now
-- [ ] [user-manual](../user-manual.md): the People section
+- [x] [README.md](../../README.md): the integrations node (importers now synchronous `POST /people/import`, not later); any `/imports` or import job text
+- [x] [server/README.md](../../server/README.md): the routes table; remove the Later `POST /imports/*` bullet and the "Later · import" job row, or reword them; the config table; the integrations row ("HR import")
+- [x] [client/README.md](../../client/README.md): the People screen
+- [x] [people-and-skills](people-and-skills.md): the "CSV and HR import" bullet under Not now
+- [x] [user-manual](../user-manual.md): the People section

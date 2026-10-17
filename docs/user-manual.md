@@ -130,6 +130,13 @@ Open **People** from the sidebar. The screen has two tabs: **People** and **Holi
 
 Click a row to open the person's page (see [Leave and absences](#9-leave-and-absences)). Rows show each person's expertise and level matrix, start and end dates and location.
 
+**Import people (Planner).** Click **Import people** to add or update many people from a CSV file.
+1. Click **Download template**. The file has the column headers and one example row.
+2. Fill in one row per person, and delete the example row. Required columns: `name`, `email`, `weekly_hours`, `primary_expertise`, `primary_level` (1 to 5). Optional: `role` (planner, manager or specialist; empty means specialist), `non_project_hours`, `start_date` and `end_date` (YYYY-MM-DD), `other_skills` (for example `QA:2;Analyst:1`).
+3. Choose the file, then click **Import**.
+
+The import is all or nothing. One row with a problem saves nothing, and the problems table gives the line, the column and the problem. A new email adds a person. An email already known updates that person: an empty optional cell keeps the current value, and the skills are replaced by the file's list, so an empty `other_skills` removes the secondary skills. Rows that change nothing are skipped. People missing from the file are not changed, and the import never changes whether a person is active. A person who signs in with the same verified email is linked to their row.
+
 **Hours rules.**
 - **Weekly hours** are the contracted hours per week.
 - **Non-project hours** are kept for meetings, support and management. They must not exceed weekly hours.
