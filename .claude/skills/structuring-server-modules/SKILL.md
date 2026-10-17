@@ -31,10 +31,10 @@ Then wire it in:
 | Kind | Lives in |
 |---|---|
 | Route path | `internal/constants/routes.go`, e.g. `PathPeople = "/people"` |
-| Role list for a route | `internal/constants/roles.go`, e.g. `PeopleViewRoles = []string{RolePlanner, RoleLead}` |
+| Role list for a route | `internal/constants/roles.go`, e.g. `PeopleViewRoles = []string{RolePlanner, RoleManager}` |
 | Response message | `internal/constants/messages.go`, e.g. `MsgPeopleListed` |
 | Error code | `internal/constants/error_codes.go`, e.g. `PersonEmailAlreadyExists = "PERSON_EMAIL_ALREADY_EXISTS"` |
-| Allowed values in validation | A custom tag in `internal/utils/validation.go` (`validate:"role"`), not `oneof=planner lead` |
+| Allowed values in validation | A custom tag in `internal/utils/validation.go` (`validate:"role"`), not `oneof=planner manager` |
 | Paging limits | `constants.DefaultPage`, `DefaultPageSize`, `MaxPageSize`, applied by `PageableRequest.Normalize()` |
 | Operation and resource names for errors | Unexported constants at the top of the service file: `opCreatePerson`, `resourcePerson` |
 | Setting, URL, timeout, secret | A field in `internal/config/config.go`, read with `getEnv`, added to `cmd/server/.env.example`. Never `os.Getenv` elsewhere |

@@ -630,7 +630,7 @@ and append:
 
 ```go
 func TestInsightsService_ActualHours(t *testing.T) {
-	lead := asRole("kc-lead", constants.RoleLead)
+	lead := asRole("kc-manager", constants.RoleManager)
 
 	t.Run("without actual hours, actual and burn stay unknown", func(t *testing.T) {
 		overview, err := newMetricsService(t).ProgramOverview(lead, metricsProgramID)
@@ -1454,7 +1454,7 @@ func TestTimesheetService_Import(t *testing.T) {
 	})
 
 	t.Run("only planners import", func(t *testing.T) {
-		_, err := newTimesheetService(nil, nil, nil).Import(asRole("kc-lead", constants.RoleLead), importFile(tsHeader))
+		_, err := newTimesheetService(nil, nil, nil).Import(asRole("kc-manager", constants.RoleManager), importFile(tsHeader))
 		requireStatus(t, err, http.StatusForbidden)
 	})
 }
@@ -1770,7 +1770,7 @@ func TestTimesheetService_Template(t *testing.T) {
 	}
 
 	t.Run("only planners", func(t *testing.T) {
-		_, err := newTemplateService(nil, nil).Template(asRole("kc-lead", constants.RoleLead), TemplateInput{})
+		_, err := newTemplateService(nil, nil).Template(asRole("kc-manager", constants.RoleManager), TemplateInput{})
 		requireStatus(t, err, http.StatusForbidden)
 	})
 }
@@ -2183,9 +2183,9 @@ func TestTimesheetHandler_Import(t *testing.T) {
 Add RBAC rows to the table in `TestRouter_People_RBAC` (`cmd/server/routes/router_test.go`):
 
 ```go
-		{name: "lead cannot download the timesheet template", method: http.MethodGet, path: constants.PathTimesheetTemplate, token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "lead cannot download the timesheet template", method: http.MethodGet, path: constants.PathTimesheetTemplate, token: "manager-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot download the timesheet template", method: http.MethodGet, path: constants.PathTimesheetTemplate, token: "specialist-token", wantStatus: http.StatusForbidden},
-		{name: "lead cannot import a timesheet", method: http.MethodPost, path: constants.PathTimesheetImport, token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "lead cannot import a timesheet", method: http.MethodPost, path: constants.PathTimesheetImport, token: "manager-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot import a timesheet", method: http.MethodPost, path: constants.PathTimesheetImport, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no token cannot import a timesheet", method: http.MethodPost, path: constants.PathTimesheetImport, wantStatus: http.StatusUnauthorized},
 ```
@@ -3643,7 +3643,7 @@ Expected: lint, tests and build pass on both sides; the integration tests PASS.
   2. Import actual hours: the program shows Actual hours and Burn % = actual ÷ budget, and so do its projects.
   3. A file with an unknown email on line 5 and a future week on line 7: nothing saved, both problems listed.
   4. The same file twice: rows updated, not duplicated (the toast says `0 rows added, N updated`).
-  5. As `lead` and as `specialist`: `GET /api/v1/timesheets/template` and `POST /api/v1/timesheets/import` answer `403`.
+  5. As `manager` and as `specialist`: `GET /api/v1/timesheets/template` and `POST /api/v1/timesheets/import` answer `403`.
   6. The person page and My schedule show "Worked N h" on the imported weeks.
 
 - [ ] **Step 3: Update the docs**
