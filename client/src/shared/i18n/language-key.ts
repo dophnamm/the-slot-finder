@@ -506,6 +506,8 @@ export type LanguageKey = {
   'Start – deadline': string
   Status: string
   Stretch: string
+  'Summarize this draft': string
+  Summary: string
   'Summed over {count} project that is not cancelled.': string
   'Summed over {count} projects that are not cancelled.': string
   Superseded: string
@@ -520,6 +522,7 @@ export type LanguageKey = {
   'Team heatmap': string
   'Team member added': string
   'Team member removed': string
+  'Template summary': string
   'The assistant could not answer. Try again.': string
   'The assistant is at its usage limit. Try again in a minute.': string
   'The assistant is at its usage limit. Try again in {seconds} second.': string
@@ -604,6 +607,7 @@ export type LanguageKey = {
   'Whole project': string
   Worked: string
   'Workload (hrs)': string
+  'Written by AI': string
   'You can’t see this person': string
   'You can’t see this program': string
   'You can’t see this project': string
