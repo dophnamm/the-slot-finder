@@ -225,6 +225,8 @@ type Config struct {
 	AlertHorizonWeeks int
 	// SustainedOverloadWeeks is how many weeks in a row over 100 % make a sustained overload.
 	SustainedOverloadWeeks int
+	// PipelineConfidencePercent weights the demand of incoming projects in the capacity forecast, until a project has its own confidence.
+	PipelineConfidencePercent float64
 	// DraftAlternativesLimit is how many people a staffing draft offers to swap in for an assignment.
 	DraftAlternativesLimit int
 
@@ -377,8 +379,9 @@ func Load() (*Config, error) {
 		ScopeLagThreshold: getEnvAsFloat("SCOPE_LAG_THRESHOLD", 20),
 		AlertHorizonWeeks: getEnvAsInt("ALERT_HORIZON_WEEKS", 4),
 
-		SustainedOverloadWeeks: getEnvAsInt("SUSTAINED_OVERLOAD_WEEKS", 3),
-		DraftAlternativesLimit: getEnvAsInt("DRAFT_ALTERNATIVES_LIMIT", 5),
+		SustainedOverloadWeeks:    getEnvAsInt("SUSTAINED_OVERLOAD_WEEKS", 3),
+		PipelineConfidencePercent: getEnvAsFloat("PIPELINE_CONFIDENCE_PERCENT", 50),
+		DraftAlternativesLimit:    getEnvAsInt("DRAFT_ALTERNATIVES_LIMIT", 5),
 
 		LLMAPIKey:             llmAPIKey,
 		LLMProvider:           llmProvider,

@@ -181,6 +181,7 @@ func registerInsightRoutes(v1 *echo.Group, authenticated, heavy echo.MiddlewareF
 	roles := middlewares.RequireRole(constants.InsightRoles...)
 	v1.GET(constants.PathHeatmap, insightsHandler.Heatmap, authenticated, roles)
 	v1.GET(constants.PathRisks, insightsHandler.Risks, authenticated, roles)
+	v1.GET(constants.PathCapacityForecast, insightsHandler.CapacityForecast, authenticated, roles)
 	v1.POST(constants.PathAIAsk, aiHandler.Ask, authenticated, roles, heavy)
 }
 

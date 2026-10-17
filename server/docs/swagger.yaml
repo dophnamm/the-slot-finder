@@ -259,6 +259,20 @@ definitions:
       last_synced_at:
         type: string
     type: object
+  dtos.CapacityForecastResponse:
+    properties:
+      expertises:
+        items:
+          $ref: '#/definitions/dtos.ExpertiseForecastResponse'
+        type: array
+      weeks:
+        example:
+        - 2026-W42
+        - 2026-W43
+        items:
+          type: string
+        type: array
+    type: object
   dtos.ChangeEventResponse:
     properties:
       attempts:
@@ -605,6 +619,8 @@ definitions:
         - LEVEL_TOO_LOW
         - NO_CAPACITY_BEFORE_DEADLINE
         - BLOCKED_BY_LOCKED
+        - BLOCKED_BY_EXPERTISE_LIMIT
+        - BELOW_MIN_HOURS
         - NO_ONE_IN_TEAM
         type: string
     type: object
@@ -775,6 +791,23 @@ definitions:
         - superseded
         type: string
     type: object
+  dtos.ExpertiseForecastResponse:
+    properties:
+      expertise:
+        example: QA
+        type: string
+      expertise_id:
+        type: string
+      sustained_overload:
+        allOf:
+        - $ref: '#/definitions/dtos.OverloadRunResponse'
+        description: SustainedOverload is the first run of overloaded weeks long enough
+          to warn about; null when there is none.
+      weeks:
+        items:
+          $ref: '#/definitions/dtos.ForecastWeekResponse'
+        type: array
+    type: object
   dtos.ExpertiseHoursResponse:
     properties:
       expertise:
@@ -818,6 +851,76 @@ definitions:
         type: number
       understaffed:
         type: boolean
+    type: object
+  dtos.ForecastPersonResponse:
+    properties:
+      band:
+        enum:
+        - unavailable
+        - underused
+        - healthy
+        - near_full
+        - overloaded
+        type: string
+      capacity:
+        example: 36
+        type: number
+      free_hours:
+        description: FreeHours is capacity − load, never below 0.
+        example: 4
+        type: number
+      load:
+        example: 32
+        type: number
+      name:
+        example: Erin
+        type: string
+      overloaded:
+        type: boolean
+      person_id:
+        type: string
+      utilization:
+        description: Utilization is load ÷ capacity; null when capacity is 0.
+        example: 0.89
+        type: number
+    type: object
+  dtos.ForecastWeekResponse:
+    properties:
+      capacity:
+        example: 72
+        type: number
+      free_hours:
+        description: FreeHours is capacity − load per person, never below 0.
+        example: 12
+        type: number
+      load:
+        example: 60
+        type: number
+      overloaded:
+        type: boolean
+      people:
+        description: People are the expertise's people in the week, highest load first;
+          those with no capacity and no load are left out.
+        items:
+          $ref: '#/definitions/dtos.ForecastPersonResponse'
+        type: array
+      pipeline_hours:
+        description: PipelineHours is the demand of incoming projects × the pipeline
+          confidence.
+        example: 10
+        type: number
+      shortfall_hours:
+        description: ShortfallHours is unmet plus pipeline hours that free capacity
+          cannot take.
+        example: 6
+        type: number
+      unmet_hours:
+        description: UnmetHours is confirmed demand the baseline does not cover.
+        example: 8
+        type: number
+      week:
+        example: 2026-W42
+        type: string
     type: object
   dtos.GenerateDraftRequest:
     properties:
@@ -1704,6 +1807,8 @@ definitions:
         - LEVEL_TOO_LOW
         - NO_CAPACITY_BEFORE_DEADLINE
         - BLOCKED_BY_LOCKED
+        - BLOCKED_BY_EXPERTISE_LIMIT
+        - BELOW_MIN_HOURS
         - NO_ONE_IN_TEAM
         type: string
     type: object
@@ -2406,6 +2511,57 @@ paths:
       summary: Import holidays from a calendar
       tags:
       - Holidays
+  /insights/capacity-forecast:
+    get:
+      description: 'Per expertise (the primary skill of the people) and week: capacity,
+        baseline load, free hours, confirmed demand the baseline does not cover (unmet_hours),
+        incoming projects'' demand weighted by PIPELINE_CONFIDENCE_PERCENT (pipeline_hours),
+        the shortfall free capacity cannot take, and an overloaded flag. sustained_overload
+        is the first run of SUSTAINED_OVERLOAD_WEEKS or more overloaded weeks. Weeks
+        default and are capped like the heatmap''s. A manager gets their teams'' capacity
+        and the demand of the programs they may read.'
+      parameters:
+      - description: First week
+        example: 2026-W42
+        in: query
+        name: from
+        type: string
+      - description: Last week
+        example: 2026-W53
+        in: query
+        name: to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.CapacityForecastResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Capacity forecast by expertise
+      tags:
+      - Insights
   /insights/heatmap:
     get:
       description: Person × week load, capacity, utilization band and hours per expertise

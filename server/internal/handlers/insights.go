@@ -133,3 +133,39 @@ func (h *InsightsHandler) Risks(c *echo.Context) error {
 	}
 	return h.SuccessResponse(c, constants.MsgRisksRetrieved, dtos.NewRisksResponse(*risks), nil)
 }
+
+// CapacityForecast godoc
+// @Summary Capacity forecast by expertise
+// @Description Per expertise (the primary skill of the people) and week: capacity, baseline load, free hours, confirmed demand the baseline does not cover (unmet_hours), incoming projects' demand weighted by PIPELINE_CONFIDENCE_PERCENT (pipeline_hours), the shortfall free capacity cannot take, and an overloaded flag. sustained_overload is the first run of SUSTAINED_OVERLOAD_WEEKS or more overloaded weeks. Weeks default and are capped like the heatmap's. A manager gets their teams' capacity and the demand of the programs they may read.
+// @Tags Insights
+// @Produce json
+// @Security BearerAuth
+// @Param from query string false "First week" example(2026-W42)
+// @Param to query string false "Last week" example(2026-W53)
+// @Success 200 {object} object{meta=dtos.Meta,data=dtos.CapacityForecastResponse}
+// @Failure 400 {object} object{meta=dtos.Meta}
+// @Failure 403 {object} object{meta=dtos.Meta}
+// @Router /insights/capacity-forecast [get]
+func (h *InsightsHandler) CapacityForecast(c *echo.Context) error {
+	var req dtos.CapacityForecastRequest
+	if err := echo.BindQueryParams(c, &req); err != nil {
+		return h.ValidationErrorResponse(c, constants.MsgInvalidRequest, errors.ParseValidationErrors(err))
+	}
+	req.Normalize()
+	if err := h.validate.Struct(req); err != nil {
+		return h.ValidationErrorResponse(c, constants.MsgInvalidRequest, errors.ParseValidationErrors(err))
+	}
+	var in services.HeatmapInput
+	var err error
+	if in.From, err = optionalWeek(req.From); err != nil {
+		return h.HandleError(c, err)
+	}
+	if in.To, err = optionalWeek(req.To); err != nil {
+		return h.HandleError(c, err)
+	}
+	forecast, err := h.insights.CapacityForecast(c.Request().Context(), in)
+	if err != nil {
+		return h.HandleError(c, err)
+	}
+	return h.SuccessResponse(c, constants.MsgCapacityForecastRetrieved, dtos.NewCapacityForecastResponse(*forecast), nil)
+}
