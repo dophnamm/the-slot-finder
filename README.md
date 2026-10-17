@@ -816,6 +816,6 @@ the-slot-finder/
 - The Server keeps no chat history. The Client sends the visible conversation with each message.
 - Provider, key, the model per task and limits are server config ([`server/README.md`](server/README.md#8-settings)). Details: [`server/README.md`](server/README.md#9-ai-assistant).
 
-The draft summary sends only counts, hours and project names, never person names, emails or customer names.
+The draft summary sends only counts, hours, week labels, expertise names and project names, never person names, emails or customer names.
 
 **Open question:** customer documents and personnel data would be sent to an external LLM. The company data policy must approve this before the feature is enabled.
