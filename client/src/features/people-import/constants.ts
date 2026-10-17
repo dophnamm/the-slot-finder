@@ -23,7 +23,7 @@ export const ROW_PROBLEM_LABELS: Record<PeopleImportProblemCode, PlainKey> = {
   NAME_INVALID: 'The name is empty or too long.',
   EMAIL_INVALID: 'Not a valid email address.',
   ROLE_INVALID: 'The role must be planner, manager or specialist.',
-  HOURS_INVALID: 'Hours must be a number within the allowed limit.',
+  HOURS_INVALID: 'Weekly hours must be above 0 and at most 80, and non-project hours no more than weekly hours.',
   DATE_INVALID: 'Not a date such as 2026-10-19, or the end is before the start.',
   EXPERTISE_UNKNOWN: 'No expertise has this name.',
   LEVEL_INVALID: 'The level must be a whole number from 1 to 5.',
