@@ -73,6 +73,7 @@ type aiService struct {
 	insights InsightsService
 	staffing StaffingService
 	projects ProjectService
+	people   PeopleService
 	authz    AuthzService
 	clock    clock.Clock
 	cfg      *config.Config
@@ -80,9 +81,9 @@ type aiService struct {
 
 // ProvideAIService creates the AI service.
 func ProvideAIService(client llm.Client, insights InsightsService, staffing StaffingService, projects ProjectService,
-	authz AuthzService, clk clock.Clock, cfg *config.Config,
+	people PeopleService, authz AuthzService, clk clock.Clock, cfg *config.Config,
 ) AIService {
-	return &aiService{llm: client, insights: insights, staffing: staffing, projects: projects, authz: authz, clock: clk, cfg: cfg}
+	return &aiService{llm: client, insights: insights, staffing: staffing, projects: projects, people: people, authz: authz, clock: clk, cfg: cfg}
 }
 
 func (s *aiService) Ask(ctx context.Context, in AskInput) (string, error) {
@@ -283,6 +284,8 @@ func (s *aiService) dispatch(ctx context.Context, call llm.FunctionCall) ([]byte
 			return nil, err
 		}
 		out = dtos.NewProjectDetailResponse(*project, isoweek.Of(s.clock.Now()))
+	case constants.AIToolFindProjects, constants.AIToolFindPeople:
+		return s.find(ctx, call)
 	case constants.AIToolProgramOverview:
 		overview, err := s.insights.ProgramOverview(ctx, argString(call.Args, "program_id"))
 		if err != nil {
@@ -293,6 +296,98 @@ func (s *aiService) dispatch(ctx context.Context, call llm.FunctionCall) ([]byte
 		return nil, errors.ValidationError(constants.MsgAIUnknownTool, fmt.Errorf("unknown tool %q", call.Name))
 	}
 	return json.Marshal(out)
+}
+
+// find runs a find tool and returns its matches as JSON.
+func (s *aiService) find(ctx context.Context, call llm.FunctionCall) ([]byte, error) {
+	query := argString(call.Args, "query")
+	if call.Name == constants.AIToolFindProjects {
+		projects, err := s.findProjects(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+		return json.Marshal(map[string]any{"projects": projects})
+	}
+	people, err := s.findPeople(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(map[string]any{"people": people})
+}
+
+// aiFoundProject and aiFoundPerson are the short matches of the find tools: enough to pick one and ask for details.
+type aiFoundProject struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Program  string `json:"program"`
+	Deadline string `json:"deadline"`
+}
+
+type aiFoundPerson struct {
+	ID               string `json:"id"`
+	Name             string `json:"name"`
+	PrimaryExpertise string `json:"primary_expertise"`
+}
+
+// findProjects returns up to AIFindMaxResults projects the caller may read whose name contains query.
+// shortcut: it scans the first MaxPageSize projects, move the name filter into the repository past that.
+func (s *aiService) findProjects(ctx context.Context, query string) ([]aiFoundProject, error) {
+	page, err := s.projects.ListByStatus(ctx, ListProjectsInput{Page: 1, PageSize: constants.MaxPageSize})
+	if err != nil {
+		return nil, err
+	}
+	found := []aiFoundProject{}
+	for _, p := range page.Data {
+		if len(found) == constants.AIFindMaxResults {
+			break
+		}
+		if !nameContains(p.Name, query) {
+			continue
+		}
+		item := aiFoundProject{ID: p.ID, Name: p.Name, Deadline: p.Deadline.Format(constants.DateLayout)}
+		if p.Program != nil {
+			item.Program = p.Program.Name
+		}
+		found = append(found, item)
+	}
+	return found, nil
+}
+
+// findPeople returns up to AIFindMaxResults people the caller may see whose name contains query.
+// shortcut: it scans the first MaxPageSize people, move the name filter into the repository past that.
+func (s *aiService) findPeople(ctx context.Context, query string) ([]aiFoundPerson, error) {
+	if _, err := s.authz.Require(ctx, CanViewPeople); err != nil {
+		return nil, err
+	}
+	scope, err := s.authz.VisiblePeople(ctx)
+	if err != nil {
+		return nil, err
+	}
+	page, err := s.people.List(ctx, ListPeopleInput{Page: 1, PageSize: constants.MaxPageSize, Limited: !scope.All, Among: scope.IDs()})
+	if err != nil {
+		return nil, err
+	}
+	found := []aiFoundPerson{}
+	for _, p := range page.Data {
+		if len(found) == constants.AIFindMaxResults {
+			break
+		}
+		if !nameContains(p.Name, query) {
+			continue
+		}
+		item := aiFoundPerson{ID: p.ID, Name: p.Name}
+		for _, skill := range p.Skills {
+			if skill.IsPrimary {
+				item.PrimaryExpertise = skill.Expertise.Name
+			}
+		}
+		found = append(found, item)
+	}
+	return found, nil
+}
+
+func nameContains(name, query string) bool {
+	return strings.Contains(strings.ToLower(name), strings.ToLower(query))
 }
 
 func argString(args map[string]any, key string) string {
@@ -359,6 +454,18 @@ func aiToolDeclarations() []llm.FunctionDeclaration {
 			Name:        constants.AIToolProject,
 			Description: "One project with its phases, demand per expertise, dates, staffing and progress metrics.",
 			Parameters:  object([]string{"project_id"}, map[string]any{"project_id": str("Project id")}),
+		},
+		{
+			Name: constants.AIToolFindProjects,
+			Description: "Find projects by part of their name, up to 5, with id, program and deadline. " +
+				"Use it to turn a project name the user said into an id.",
+			Parameters: object([]string{"query"}, map[string]any{"query": str("Part of the project name")}),
+		},
+		{
+			Name: constants.AIToolFindPeople,
+			Description: "Find people by part of their name, up to 5, with id and primary expertise. " +
+				"Use it to turn a person name the user said into an id.",
+			Parameters: object([]string{"query"}, map[string]any{"query": str("Part of the person name")}),
 		},
 		{
 			Name: constants.AIToolProgramOverview,

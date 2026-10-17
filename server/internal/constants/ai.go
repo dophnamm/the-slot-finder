@@ -53,4 +53,9 @@ const (
 	AIToolProject          = "get_project"
 	AIToolProgramOverview  = "get_program_overview"
 	AIToolCapacityForecast = "get_capacity_forecast"
+	AIToolFindProjects     = "find_projects"
+	AIToolFindPeople       = "find_people"
+
+	// AIFindMaxResults caps the matches a find tool returns.
+	AIFindMaxResults = 5
 )
