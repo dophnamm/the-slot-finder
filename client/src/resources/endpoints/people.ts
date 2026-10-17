@@ -2,6 +2,8 @@ const person = (id: string) => `/people/${encodeURIComponent(id)}`
 
 export const PEOPLE_ENDPOINTS = {
   list: '/people',
+  import: '/people/import',
+  importTemplate: '/people/import-template',
   detail: person,
   skills: (id: string) => `${person(id)}/skills`,
   absences: (id: string) => `${person(id)}/absences`,

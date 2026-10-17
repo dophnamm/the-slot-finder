@@ -63,6 +63,7 @@ export type LanguageKey = {
   'All expertises': string
   'All programs': string
   'Allocate hours': string
+  'An expertise appears more than once for this person.': string
   Approve: string
   Approved: string
   'Approved absence always lowers capacity; planned absence does when the setting is on.': string
@@ -131,6 +132,7 @@ export type LanguageKey = {
   Covers: string
   'Create scenario': string
   Created: string
+  'Created {created}, updated {updated}, unchanged {unchanged}': string
   'Cross-expertise': string
   'Current phase': string
   'Customer engagements and their projects.': string
@@ -154,6 +156,7 @@ export type LanguageKey = {
   'Download template': string
   'Download the template': string
   'Download the template for past weeks: it lists every person, project and week planned in the baseline, with project_id already filled in. Fill in actual_hours only, keep the other columns, then import the file. One row with a problem saves nothing.': string
+  'Download the template, add one row per person, then import the file. A person with a known email is updated, a new email adds a person. One row with a problem saves nothing.': string
   Draft: string
   'Draft accepted. It is now the baseline.': string
   'Draft created': string
@@ -245,6 +248,7 @@ export type LanguageKey = {
   'Hours in {week}': string
   'Hours moved': string
   'Hours must be a number from 0 to the weekly limit.': string
+  'Hours must be a number within the allowed limit.': string
   'Hours per day': string
   'Hours per week. Locked hours stay as they are when a draft is generated again; stretch is always locked. A week is coloured by the whole load of the person, as on the heatmap.': string
   'Hours per week': string
@@ -253,6 +257,7 @@ export type LanguageKey = {
   'ICS file': string
   Import: string
   'Import holidays': string
+  'Import people': string
   'Import the filled-in file': string
   'Import timesheet': string
   Inactive: string
@@ -312,6 +317,7 @@ export type LanguageKey = {
   'No changes against the baseline.': string
   'No changes yet.': string
   'No demand yet.': string
+  'No expertise has this name.': string
   'No expertise to forecast.': string
   'No free capacity in the window': string
   'No goal yet.': string
@@ -347,6 +353,8 @@ export type LanguageKey = {
   'Non-project hours': string
   'non-project hours': string
   'None this week': string
+  'Not a date such as 2026-10-19, or the end is before the start.': string
+  'Not a valid email address.': string
   'Not a week such as 2026-W41.': string
   'Not primary': string
   'Not staffed yet': string
@@ -384,6 +392,7 @@ export type LanguageKey = {
   People: string
   'People appear here once a staffing draft for this program is accepted.': string
   'People changed': string
+  'People file': string
   Person: string
   'Person saved.': string
   Phase: string
@@ -399,6 +408,11 @@ export type LanguageKey = {
   'Planned again:': string
   'Planned burn': string
   'Short of free hours': string
+  'Skills must look like QA:2;Analyst:1.': string
+  'The level must be a whole number from 1 to 5.': string
+  'The name is empty or too long.': string
+  'The role must be planner, manager or specialist.': string
+  'The same email appears more than once.': string
   '{hours} hrs free': string
   "Planned hours as a share of a person's capacity in a week; over 100% is overloaded.": string
   'Planned hours as a share of budget hours.': string
