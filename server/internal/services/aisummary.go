@@ -32,7 +32,7 @@ type unmetFact struct {
 }
 
 // buildDraftFacts reduces a draft to counts, hours and unmet demand. Unmet hours are the demand's
-// hours minus what the draft assigns now, for the demands the engine left uncovered.
+// hours minus what the draft assigns now, for every demand left short, by the engine or by hand.
 func buildDraftFacts(view *DraftView) draftFacts {
 	f := draftFacts{Projects: len(view.Projects), IsReplan: len(view.Events) > 0, Unmet: []unmetFact{}}
 	people := map[string]bool{}
@@ -50,14 +50,10 @@ func buildDraftFacts(view *DraftView) draftFacts {
 			f.HoursRemoved -= d
 		}
 	}
-	uncovered := map[string]bool{}
-	for _, u := range view.Plan.Unmet {
-		uncovered[u.DemandID] = true
-	}
 	for _, p := range view.Projects {
 		for _, d := range p.Demands {
 			hours := d.TotalHours - assigned[d.ID]
-			if !uncovered[d.ID] || hours <= hoursEpsilon {
+			if hours <= hoursEpsilon {
 				continue
 			}
 			from, to := p.DemandWindow(d)
@@ -72,8 +68,9 @@ func buildDraftFacts(view *DraftView) draftFacts {
 // templateSummary is the plain-English fallback written from the facts alone.
 func templateSummary(f draftFacts) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "%d people on %d assignments across %d projects, %s planned hours.", f.People, f.Assignments,
-		f.Projects, formatHours(f.PlannedHours))
+	fmt.Fprintf(&b, "%s on %s across %s, %s planned hours.", count(f.People, "person", "people"),
+		count(f.Assignments, "assignment", "assignments"), count(f.Projects, "project", "projects"),
+		formatHours(f.PlannedHours))
 	if len(f.Unmet) == 0 {
 		b.WriteString(" All demand is covered.")
 	}
@@ -103,3 +100,11 @@ func numbersKnown(text string, factsJSON string) bool {
 
 // round2 rounds hours to hundredths, as formatHours shows them.
 func round2(v float64) float64 { return math.Round(v*hourPrecision) / hourPrecision }
+
+// count writes n with the singular noun for 1 and the plural otherwise.
+func count(n int, singular, plural string) string {
+	if n == 1 {
+		return fmt.Sprintf("%d %s", n, singular)
+	}
+	return fmt.Sprintf("%d %s", n, plural)
+}
