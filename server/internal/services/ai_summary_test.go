@@ -72,7 +72,7 @@ func TestAIService_SummarizeDraft(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			staffing := draftStaffing{view: view, err: tt.getErr}
-			svc := ProvideAIService(tt.fake, nil, staffing, nil, nil, ProvideAuthzService(leadPeople{}), nil,
+			svc := ProvideAIService(tt.fake, nil, staffing, nil, nil, nil, ProvideAuthzService(leadPeople{}), nil,
 				&config.Config{LLMAPIKey: tt.apiKey})
 			got, err := svc.SummarizeDraft(asRole("kc-planner", constants.RolePlanner), "draft-1")
 			if tt.wantErr != nil {
@@ -88,7 +88,7 @@ func TestAIService_SummarizeDraft(t *testing.T) {
 
 	t.Run("facts passed to the LLM have no person name", func(t *testing.T) {
 		fake := &fakeLLM{replies: []string{"2 people."}}
-		svc := ProvideAIService(fake, nil, draftStaffing{view: view}, nil, nil, ProvideAuthzService(leadPeople{}), nil,
+		svc := ProvideAIService(fake, nil, draftStaffing{view: view}, nil, nil, nil, ProvideAuthzService(leadPeople{}), nil,
 			&config.Config{LLMAPIKey: "k"})
 		_, err := svc.SummarizeDraft(asRole("kc-planner", constants.RolePlanner), "draft-1")
 		require.NoError(t, err)

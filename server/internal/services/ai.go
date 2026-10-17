@@ -5,8 +5,12 @@ import (
 	"encoding/json"
 	stderrors "errors"
 	"fmt"
+	"math"
 	"net/http"
+	"slices"
+	"sort"
 	"strings"
+	"time"
 
 	"the-slot-finder/server/internal/clock"
 	"the-slot-finder/server/internal/config"
@@ -17,6 +21,7 @@ import (
 	"the-slot-finder/server/internal/isoweek"
 	"the-slot-finder/server/internal/logger"
 	"the-slot-finder/server/internal/models"
+	"the-slot-finder/server/internal/request"
 
 	"go.uber.org/zap"
 )
@@ -24,6 +29,8 @@ import (
 const (
 	opAskAI    = "ask_ai"
 	resourceAI = "ai"
+	// aiScenarioNamePrefix starts the name of every scenario the assistant saves.
+	aiScenarioNamePrefix = "What-if (AI): "
 )
 
 // aiSummaryPrompt tells the model how to summarize a staffing draft from its facts.
@@ -69,21 +76,23 @@ type AIService interface {
 }
 
 type aiService struct {
-	llm      llm.Client
-	insights InsightsService
-	staffing StaffingService
-	projects ProjectService
-	people   PeopleService
-	authz    AuthzService
-	clock    clock.Clock
-	cfg      *config.Config
+	llm       llm.Client
+	insights  InsightsService
+	staffing  StaffingService
+	projects  ProjectService
+	people    PeopleService
+	scenarios ScenarioService
+	authz     AuthzService
+	clock     clock.Clock
+	cfg       *config.Config
 }
 
 // ProvideAIService creates the AI service.
 func ProvideAIService(client llm.Client, insights InsightsService, staffing StaffingService, projects ProjectService,
-	people PeopleService, authz AuthzService, clk clock.Clock, cfg *config.Config,
+	people PeopleService, scenarios ScenarioService, authz AuthzService, clk clock.Clock, cfg *config.Config,
 ) AIService {
-	return &aiService{llm: client, insights: insights, staffing: staffing, projects: projects, people: people, authz: authz, clock: clk, cfg: cfg}
+	return &aiService{llm: client, insights: insights, staffing: staffing, projects: projects, people: people, scenarios: scenarios,
+		authz: authz, clock: clk, cfg: cfg}
 }
 
 func (s *aiService) Ask(ctx context.Context, in AskInput) (string, error) {
@@ -98,11 +107,15 @@ func (s *aiService) Ask(ctx context.Context, in AskInput) (string, error) {
 	if in.PageContext != "" {
 		question = "Page context: " + in.PageContext + "\n\n" + question
 	}
+	principal, _ := request.PrincipalFromContext(ctx)
 	req := llm.Request{
 		SystemInstruction: &llm.Content{Parts: []llm.Part{{Text: aiSystemPrompt}}},
 		Contents:          []llm.Content{{Role: constants.LLMRoleUser, Parts: []llm.Part{{Text: question}}}},
-		Tools:             []llm.Tool{{FunctionDeclarations: aiToolDeclarations()}},
+		Tools:             []llm.Tool{{FunctionDeclarations: aiToolDeclarations(principal.Role)}},
 	}
+	// Scenarios saved in this question; local to the call so requests share nothing.
+	saved := 0
+	name := aiScenarioNamePrefix + truncateRunes(in.Question, constants.AIScenarioNameMaxRunes)
 	var lastText string
 	for round := 0; round < s.cfg.LLMMaxToolRounds; round++ {
 		if round == s.cfg.LLMMaxToolRounds-1 {
@@ -121,7 +134,7 @@ func (s *aiService) Ask(ctx context.Context, in AskInput) (string, error) {
 		for _, part := range resp.Content.Parts {
 			text.WriteString(part.Text)
 			if part.FunctionCall != nil {
-				results = append(results, s.runTool(ctx, *part.FunctionCall))
+				results = append(results, s.runTool(ctx, *part.FunctionCall, name, &saved))
 			}
 		}
 		if text.Len() > 0 {
@@ -208,9 +221,9 @@ func upstreamError(err error) *errors.AppError {
 }
 
 // runTool runs one tool call and wraps its JSON result, or its error message, for the model.
-func (s *aiService) runTool(ctx context.Context, call llm.FunctionCall) llm.Part {
+func (s *aiService) runTool(ctx context.Context, call llm.FunctionCall, scenarioName string, saved *int) llm.Part {
 	result := map[string]any{}
-	data, err := s.dispatch(ctx, call)
+	data, err := s.dispatch(ctx, call, scenarioName, saved)
 	var sent string
 	if err != nil {
 		if appErr, ok := stderrors.AsType[*errors.AppError](err); ok {
@@ -231,7 +244,7 @@ func (s *aiService) runTool(ctx context.Context, call llm.FunctionCall) llm.Part
 
 // dispatch calls the service behind a tool with the caller's ctx, so their checks apply, and
 // returns the result as JSON, mapped through the same DTOs as the API.
-func (s *aiService) dispatch(ctx context.Context, call llm.FunctionCall) ([]byte, error) {
+func (s *aiService) dispatch(ctx context.Context, call llm.FunctionCall, scenarioName string, saved *int) ([]byte, error) {
 	var out any
 	switch call.Name {
 	case constants.AIToolHeatmap:
@@ -286,6 +299,8 @@ func (s *aiService) dispatch(ctx context.Context, call llm.FunctionCall) ([]byte
 		out = dtos.NewProjectDetailResponse(*project, isoweek.Of(s.clock.Now()))
 	case constants.AIToolFindProjects, constants.AIToolFindPeople:
 		return s.find(ctx, call)
+	case constants.AIToolCreateScenario:
+		return s.createScenario(ctx, call, scenarioName, saved)
 	case constants.AIToolProgramOverview:
 		overview, err := s.insights.ProgramOverview(ctx, argString(call.Args, "program_id"))
 		if err != nil {
@@ -313,6 +328,106 @@ func (s *aiService) find(ctx context.Context, call llm.FunctionCall) ([]byte, er
 		return nil, err
 	}
 	return json.Marshal(map[string]any{"people": people})
+}
+
+// aiScenarioChange and aiScenarioResult are what create_scenario tells the model.
+type aiScenarioChange struct {
+	Person string  `json:"person"`
+	Demand string  `json:"demand"`
+	Before float64 `json:"before"`
+	After  float64 `json:"after"`
+}
+
+type aiScenarioResult struct {
+	ScenarioID    string             `json:"scenario_id"`
+	Name          string             `json:"name"`
+	PeopleChanged int                `json:"people_changed"`
+	HoursMoved    float64            `json:"hours_moved"`
+	UnmetHours    float64            `json:"unmet_hours"`
+	TopChanges    []aiScenarioChange `json:"top_changes"`
+}
+
+// createScenario saves one what-if as the caller; the scenario service applies its own role check.
+func (s *aiService) createScenario(ctx context.Context, call llm.FunctionCall, name string, saved *int) ([]byte, error) {
+	if *saved > 0 {
+		return nil, errors.ValidationError(constants.MsgOneScenarioPerQuestion, fmt.Errorf("second %s call", call.Name))
+	}
+	assumptions, err := argAssumptions(call.Args)
+	if err != nil {
+		return nil, err
+	}
+	view, err := s.scenarios.Create(ctx, CreateScenarioInput{Name: name, Assumptions: assumptions})
+	if err != nil {
+		return nil, err
+	}
+	*saved++
+	out := aiScenarioResult{ScenarioID: view.Plan.ID, Name: name, TopChanges: []aiScenarioChange{}}
+	if view.Plan.Name != nil {
+		out.Name = *view.Plan.Name
+	}
+	if sum := view.Plan.Summary; sum != nil {
+		out.PeopleChanged, out.HoursMoved, out.UnmetHours = sum.PeopleChanged, sum.HoursMoved, sum.UnmetHours
+	}
+	changes := append([]models.ScenarioChange{}, view.Changes...)
+	sort.SliceStable(changes, func(i, j int) bool {
+		return math.Abs(changes[i].After-changes[i].Before) > math.Abs(changes[j].After-changes[j].Before)
+	})
+	for _, c := range changes[:min(len(changes), constants.AIScenarioMaxChanges)] {
+		item := aiScenarioChange{Person: c.PersonName, Before: c.Before, After: c.After}
+		if c.Demand != nil {
+			item.Demand = c.Demand.Expertise.Name
+			if c.Demand.Project != nil {
+				item.Demand = c.Demand.Project.Name + " - " + item.Demand
+			}
+		}
+		out.TopChanges = append(out.TopChanges, item)
+	}
+	return json.Marshal(out)
+}
+
+// argAssumptions reads the assumptions list; a malformed entry is a validation error the model can read.
+func argAssumptions(args map[string]any) ([]AssumptionInput, error) {
+	list, _ := args["assumptions"].([]any)
+	out := make([]AssumptionInput, 0, len(list))
+	for _, item := range list {
+		m, ok := item.(map[string]any)
+		if !ok {
+			return nil, errors.ValidationError("each assumption must be an object", fmt.Errorf("assumption is %T", item))
+		}
+		a := AssumptionInput{Type: argString(m, "type"), ProjectID: argString(m, "project_id"), PersonID: argString(m, "person_id")}
+		weeks, _ := m["weeks"].(float64)
+		a.Weeks = int(weeks)
+		a.HoursPerDay, _ = m["hours_per_day"].(float64)
+		var err error
+		if a.FromDate, err = argDate(m, "from_date"); err != nil {
+			return nil, err
+		}
+		if a.ToDate, err = argDate(m, "to_date"); err != nil {
+			return nil, err
+		}
+		out = append(out, a)
+	}
+	return out, nil
+}
+
+// argDate reads an optional date such as 2026-10-19.
+func argDate(args map[string]any, key string) (time.Time, error) {
+	text := argString(args, key)
+	if text == "" {
+		return time.Time{}, nil
+	}
+	day, err := time.Parse(constants.DateLayout, text)
+	if err != nil {
+		return time.Time{}, errors.ValidationError(fmt.Sprintf("%s must be a date like 2026-10-19", key), err)
+	}
+	return day, nil
+}
+
+func truncateRunes(text string, limit int) string {
+	if runes := []rune(text); len(runes) > limit {
+		return string(runes[:limit])
+	}
+	return text
 }
 
 // aiFoundProject and aiFoundPerson are the short matches of the find tools: enough to pick one and ask for details.
@@ -406,8 +521,8 @@ func argWeek(args map[string]any, key string) (*isoweek.Week, error) {
 	return &week, nil
 }
 
-// aiToolDeclarations lists the tools the model may call, with their arguments.
-func aiToolDeclarations() []llm.FunctionDeclaration {
+// aiToolDeclarations lists the tools the model may call, with their arguments: only those the role may use.
+func aiToolDeclarations(role string) []llm.FunctionDeclaration {
 	str := func(description string) map[string]any {
 		return map[string]any{"type": "STRING", "description": description}
 	}
@@ -418,7 +533,10 @@ func aiToolDeclarations() []llm.FunctionDeclaration {
 		}
 		return schema
 	}
-	return []llm.FunctionDeclaration{
+	num := func(description string) map[string]any {
+		return map[string]any{"type": "NUMBER", "description": description}
+	}
+	decls := []llm.FunctionDeclaration{
 		{
 			Name: constants.AIToolHeatmap,
 			Description: "Per person and week: load, capacity, utilization band and hours per expertise from the baseline. " +
@@ -472,4 +590,24 @@ func aiToolDeclarations() []llm.FunctionDeclaration {
 			Parameters: object([]string{"program_id"}, map[string]any{"program_id": str("Program id")}),
 		},
 	}
+	if !slices.Contains(constants.ScenarioRoles, role) {
+		return decls
+	}
+	assumption := object([]string{"type"}, map[string]any{
+		"type":          str(fmt.Sprintf("%s (move a project, needs project_id and weeks) or %s (needs person_id, from_date, to_date, hours_per_day)", constants.AssumptionShiftProject, constants.AssumptionAddAbsence)),
+		"project_id":    str("Project id, for a shift"),
+		"weeks":         num("Weeks to shift the project, negative for earlier"),
+		"person_id":     str("Person id, for an absence"),
+		"from_date":     str("First day of the absence, like 2026-10-19"),
+		"to_date":       str("Last day of the absence, like 2026-10-23"),
+		"hours_per_day": num("Hours of capacity lost per day"),
+	})
+	return append(decls, llm.FunctionDeclaration{
+		Name: constants.AIToolCreateScenario,
+		Description: "Save a what-if scenario: the baseline planned again if projects slip or people are away. It changes no real data. " +
+			"Use it once, only when the user asks what would happen; get the ids with the find tools first. Returns the effect and the biggest changes.",
+		Parameters: object([]string{"assumptions"}, map[string]any{
+			"assumptions": map[string]any{"type": "ARRAY", "items": assumption, "description": "The hypothetical changes"},
+		}),
+	})
 }
