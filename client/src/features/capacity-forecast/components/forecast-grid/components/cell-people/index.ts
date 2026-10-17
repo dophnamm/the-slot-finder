@@ -1,0 +1,1 @@
+export { CellPeople } from './component'

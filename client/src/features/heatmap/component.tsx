@@ -6,21 +6,23 @@ import { TableLoading } from '@/shared/components/table-loading'
 import { useDebouncedValue } from '@/shared/hooks'
 import { useTranslation } from '@/shared/i18n'
 import { Table, TableBody } from '@/shared/ui/table'
+import { useWeekRange } from '@/shared/week-range'
 import { SEARCH_DEBOUNCE_MS } from '@/utils/constants'
 import { addIsoWeeks } from '@/utils/functions'
 import { HeatmapFilters } from './components/heatmap-filters'
 import { HeatmapGrid } from './components/heatmap-grid'
 import { HeatmapLegend } from './components/heatmap-legend'
 import { HEATMAP_LOADING_ROWS } from './constants'
+import type { HeatmapProps } from './types'
 import { useHeatmap } from './use-heatmap'
 import { useHeatmapFilters } from './use-heatmap-filters'
 import { filterRows } from './utils'
 
 /** Who is overloaded or underused in the weeks ahead, from the baseline. */
-export function Heatmap() {
+export function Heatmap({ action }: HeatmapProps) {
   const { t } = useTranslation()
-  const from = useHeatmapFilters((state) => state.from)
-  const weeks = useHeatmapFilters((state) => state.weeks)
+  const from = useWeekRange((state) => state.from)
+  const weeks = useWeekRange((state) => state.weeks)
   const expertiseId = useHeatmapFilters((state) => state.expertiseId)
   const programId = useHeatmapFilters((state) => state.programId)
   const search = useHeatmapFilters((state) => state.search)
@@ -37,6 +39,7 @@ export function Heatmap() {
 
   return (
     <Section
+      action={action}
       refreshing={isPlaceholderData}
       title={t('Team heatmap')}
       description={t('Baseline load against capacity per person and ISO week. Click a cell to see its assignments.')}

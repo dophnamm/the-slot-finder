@@ -1,0 +1,1 @@
+export { OverloadBadge } from './component'
