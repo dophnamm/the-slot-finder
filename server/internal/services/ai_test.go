@@ -21,21 +21,25 @@ type listProjects struct {
 	ProjectService
 	authz    AuthzService
 	projects []models.Project
+	got      *ListProjectsInput
 }
 
-func (l listProjects) ListByStatus(ctx context.Context, _ ListProjectsInput) (*dtos.DataResponse[models.Project], error) {
+func (l listProjects) ListByStatus(ctx context.Context, in ListProjectsInput) (*dtos.DataResponse[models.Project], error) {
 	if _, err := l.authz.ProgramReader(ctx); err != nil {
 		return nil, err
 	}
+	*l.got = in
 	return &dtos.DataResponse[models.Project]{Data: l.projects}, nil
 }
 
 type listPeople struct {
 	PeopleService
 	people []models.Person
+	got    *ListPeopleInput
 }
 
-func (l listPeople) List(context.Context, ListPeopleInput) (*dtos.DataResponse[models.Person], error) {
+func (l listPeople) List(_ context.Context, in ListPeopleInput) (*dtos.DataResponse[models.Person], error) {
+	*l.got = in
 	return &dtos.DataResponse[models.Person]{Data: l.people}, nil
 }
 
@@ -95,13 +99,15 @@ func TestAIService_FindProjects(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			authz := ProvideAuthzService(leadPeople{})
-			svc := &aiService{authz: authz, projects: listProjects{authz: authz, projects: tt.projects}}
+			var in ListProjectsInput
+			svc := &aiService{authz: authz, projects: listProjects{authz: authz, projects: tt.projects, got: &in}}
 			out, err := runFind(t, svc, asRole("kc-"+tt.role, tt.role), constants.AIToolFindProjects, tt.query)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
+			assert.Equal(t, constants.NoLimit, in.PageSize)
 			items := out["projects"].([]any)
 			got := []string{}
 			for _, it := range items {
@@ -136,13 +142,15 @@ func TestAIService_FindPeople(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc := &aiService{authz: ProvideAuthzService(leadPeople{}), people: listPeople{people: tt.people}}
+			var in ListPeopleInput
+			svc := &aiService{authz: ProvideAuthzService(leadPeople{}), people: listPeople{people: tt.people, got: &in}}
 			out, err := runFind(t, svc, asRole("kc-"+tt.role, tt.role), constants.AIToolFindPeople, tt.query)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
+			assert.Equal(t, constants.NoLimit, in.PageSize)
 			got := []string{}
 			for _, it := range out["people"].([]any) {
 				m := it.(map[string]any)
