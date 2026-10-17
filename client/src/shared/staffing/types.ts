@@ -6,7 +6,13 @@ import type { UtilizationBands } from '@/shared/utilization'
 export type PlanStatus = 'draft' | 'published' | 'rejected' | 'superseded'
 export type AssignmentKind = 'primary' | 'cross_expertise' | 'stretch'
 export type UnmetReason =
-  'NO_SKILL' | 'LEVEL_TOO_LOW' | 'NO_CAPACITY_BEFORE_DEADLINE' | 'BLOCKED_BY_LOCKED' | 'NO_ONE_IN_TEAM'
+  | 'NO_SKILL'
+  | 'LEVEL_TOO_LOW'
+  | 'NO_CAPACITY_BEFORE_DEADLINE'
+  | 'BLOCKED_BY_LOCKED'
+  | 'BLOCKED_BY_EXPERTISE_LIMIT'
+  | 'BELOW_MIN_HOURS'
+  | 'NO_ONE_IN_TEAM'
 export type PlanChangeKind = 'added' | 'removed' | 'changed'
 
 /** An assignment's hours in one ISO week. */
