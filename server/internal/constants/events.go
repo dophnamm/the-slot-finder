@@ -18,6 +18,9 @@ const (
 	EventSkillChanged = "SkillChanged"
 	// EventTeamChanged: a person joined or left a program's team.
 	EventTeamChanged = "TeamChanged"
+	// EventProgramSlipped: a program's end date moved. It opens no re-plan: the projects carry
+	// their own dates.
+	EventProgramSlipped = "ProgramSlipped"
 )
 
 // Change event statuses. The runner claims pending events and ends them as no_impact or
