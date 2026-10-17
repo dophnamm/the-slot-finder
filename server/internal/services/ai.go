@@ -23,6 +23,7 @@ import (
 	"the-slot-finder/server/internal/models"
 	"the-slot-finder/server/internal/request"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -399,6 +400,11 @@ func argAssumptions(args map[string]any, maxWeeks int) ([]AssumptionInput, error
 			return nil, errors.ValidationError(constants.MsgAssumptionNotObject, fmt.Errorf("assumption is %T", item))
 		}
 		a := AssumptionInput{Type: argString(m, "type"), ProjectID: argString(m, "project_id"), PersonID: argString(m, "person_id")}
+		for _, id := range []string{a.ProjectID, a.PersonID} {
+			if id != "" && uuid.Validate(id) != nil {
+				return nil, errors.ValidationError(constants.MsgAssumptionIDInvalid, fmt.Errorf("id %q", id))
+			}
+		}
 		weeks, _ := m["weeks"].(float64)
 		if math.IsNaN(weeks) || weeks != math.Trunc(weeks) || math.Abs(weeks) > float64(maxWeeks) {
 			return nil, errors.ValidationError(constants.MsgAssumptionWeeksInvalid, fmt.Errorf("weeks %v", weeks))
@@ -453,6 +459,7 @@ type aiFoundPerson struct {
 
 // findProjects returns up to AIFindMaxResults projects the caller may read whose name contains query.
 func (s *aiService) findProjects(ctx context.Context, query string) ([]aiFoundProject, error) {
+	// shortcut: in-memory name filter, move to an ILIKE in the repository past ~1000 rows
 	page, err := s.projects.ListByStatus(ctx, ListProjectsInput{Page: 1, PageSize: constants.NoLimit})
 	if err != nil {
 		return nil, err
@@ -483,6 +490,7 @@ func (s *aiService) findPeople(ctx context.Context, query string) ([]aiFoundPers
 	if err != nil {
 		return nil, err
 	}
+	// shortcut: in-memory name filter, move to an ILIKE in the repository past ~1000 rows
 	page, err := s.people.List(ctx, ListPeopleInput{Page: 1, PageSize: constants.NoLimit, Limited: !scope.All, Among: scope.IDs()})
 	if err != nil {
 		return nil, err

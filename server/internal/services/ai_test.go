@@ -193,12 +193,21 @@ func scenarioView(changes ...models.ScenarioChange) *ScenarioView {
 		Summary: &models.ScenarioSummary{PeopleChanged: 2, HoursMoved: 30, UnmetHours: 4}}, Changes: changes}
 }
 
+const (
+	testUUID1 = "11111111-1111-4111-8111-111111111111"
+	testUUID2 = "22222222-2222-4222-8222-222222222222"
+)
+
+func idArgs(key, id string) map[string]any {
+	return map[string]any{"assumptions": []any{map[string]any{"type": constants.AssumptionShiftProject, key: id, "weeks": 2.0}}}
+}
+
 func shiftArgs() map[string]any {
-	return map[string]any{"assumptions": []any{map[string]any{"type": constants.AssumptionShiftProject, "project_id": "p1", "weeks": 2.0}}}
+	return map[string]any{"assumptions": []any{map[string]any{"type": constants.AssumptionShiftProject, "project_id": testUUID1, "weeks": 2.0}}}
 }
 
 func weeksArgs(weeks float64) map[string]any {
-	return map[string]any{"assumptions": []any{map[string]any{"type": constants.AssumptionShiftProject, "project_id": "p1", "weeks": weeks}}}
+	return map[string]any{"assumptions": []any{map[string]any{"type": constants.AssumptionShiftProject, "project_id": testUUID1, "weeks": weeks}}}
 }
 
 func TestAIService_CreateScenario(t *testing.T) {
@@ -225,15 +234,15 @@ func TestAIService_CreateScenario(t *testing.T) {
 				assert.EqualValues(t, 30, out["hours_moved"])
 				assert.EqualValues(t, 4, out["unmet_hours"])
 				require.Len(t, f.created, 1)
-				assert.Equal(t, AssumptionInput{Type: constants.AssumptionShiftProject, ProjectID: "p1", Weeks: 2}, f.created[0].Assumptions[0])
+				assert.Equal(t, AssumptionInput{Type: constants.AssumptionShiftProject, ProjectID: testUUID1, Weeks: 2}, f.created[0].Assumptions[0])
 			}},
 		{name: "valid absence saves", role: constants.RolePlanner,
 			call: llm.FunctionCall{Name: constants.AIToolCreateScenario, Args: map[string]any{"assumptions": []any{map[string]any{
-				"type": constants.AssumptionAddAbsence, "person_id": "u1", "from_date": "2026-10-19", "to_date": "2026-10-23", "hours_per_day": 8.0}}}},
+				"type": constants.AssumptionAddAbsence, "person_id": testUUID2, "from_date": "2026-10-19", "to_date": "2026-10-23", "hours_per_day": 8.0}}}},
 			check: func(t *testing.T, _ map[string]any, f *fakeScenarios) {
 				require.Len(t, f.created, 1)
 				a := f.created[0].Assumptions[0]
-				assert.Equal(t, "u1", a.PersonID)
+				assert.Equal(t, testUUID2, a.PersonID)
 				assert.Equal(t, 8.0, a.HoursPerDay)
 				assert.Equal(t, "2026-10-23", a.ToDate.Format(constants.DateLayout))
 			}},
@@ -247,6 +256,10 @@ func TestAIService_CreateScenario(t *testing.T) {
 			call: llm.FunctionCall{Name: constants.AIToolCreateScenario, Args: weeksArgs(-1e20)}},
 		{name: "infinite weeks refused", role: constants.RolePlanner, wantErr: constants.MsgAssumptionWeeksInvalid,
 			call: llm.FunctionCall{Name: constants.AIToolCreateScenario, Args: weeksArgs(math.Inf(1))}},
+		{name: "non-uuid project id refused", role: constants.RolePlanner, wantErr: constants.MsgAssumptionIDInvalid,
+			call: llm.FunctionCall{Name: constants.AIToolCreateScenario, Args: idArgs("project_id", "p1")}},
+		{name: "non-uuid person id refused", role: constants.RolePlanner, wantErr: constants.MsgAssumptionIDInvalid,
+			call: llm.FunctionCall{Name: constants.AIToolCreateScenario, Args: idArgs("person_id", "x")}},
 		{name: "manager refused with error", role: constants.RoleManager,
 			call: llm.FunctionCall{Name: constants.AIToolCreateScenario, Args: shiftArgs()}, wantErr: constants.MsgInsufficientPermissions},
 		{name: "second call in the same Ask refused", role: constants.RolePlanner, calls: 1,

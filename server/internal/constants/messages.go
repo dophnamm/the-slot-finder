@@ -230,6 +230,8 @@ const (
 	MsgOneScenarioPerQuestion = "Only one scenario can be saved per question"
 	MsgAssumptionNotObject    = "each assumption must be an object"
 	MsgAssumptionWeeksInvalid = "weeks must be a whole number within the shift limit"
+	// MsgAssumptionIDInvalid is what the model reads when a project_id or person_id is not a uuid.
+	MsgAssumptionIDInvalid = "project_id and person_id must be ids from find_projects or find_people, not names"
 	// MsgDateFormat takes the argument name.
 	MsgDateFormat            = "%s must be a date like 2026-10-19"
 	MsgAssumptionsRequired   = "A scenario needs at least one assumption"
