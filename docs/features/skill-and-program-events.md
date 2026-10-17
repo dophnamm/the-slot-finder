@@ -1,6 +1,6 @@
 # Skill and program events
 
-**Goal:** two more change events. A change to a person's skills triggers an automatic re-plan. A move of a program's end date is recorded in the change history. Both use the outbox from [replan-on-change](replan-on-change.md).
+**Goal:** two more change events. A change to a person's skills triggers an automatic re-plan. A move of a program's end date is recorded in the change history. Both use the outbox from [replan-on-change](replan-on-change.md). The change history also gets a readable line for every event type.
 
 **Roles:** planner (skills); planner and manager of the program (end date).
 **Target:** 17–18 Oct · **Depends on:** [people-and-skills](people-and-skills.md), [replan-on-change](replan-on-change.md) · **Branch:** `feat/skill-and-program-events` · **Status:** Planned
@@ -15,7 +15,8 @@
   - Recorded in the same transaction as the save. Wrap the save in `TxManager.Do` if it is not already.
   - Payload: program id, program name, old end date, new end date.
 - **Event type list.** The enum in `server/internal/dtos/event.go:31` lists only four types today. List every type, then regenerate Swagger.
-- **Change history.** The client shows a readable line for both new types, for example "Skills changed: Quinn" and "Program end moved: Checkout Revamp 2026-W44 → 2026-W46". The builder finds the component that renders event types and adds the lines, with i18n keys in `LanguageKey`.
+- **Change history.** The client's shared `EventSummary` shows a readable line for every event type: the two new ones and the four that render nothing today (`DemandChanged`, `PersonCapacityChanged`, `ProjectStatusChanged`, `TeamChanged`). Examples: "Skills changed" → "Quinn: skills changed"; "Checkout Revamp: end moved from 2026-W44 to 2026-W46"; "Checkout Revamp: demand changed"; "Quinn: weekly hours, end date changed"; "Checkout Revamp: Planned → Active"; "Quinn added to the Checkout Revamp team".
+  - **`TeamChanged` names.** Its payload gains the program name and the person name, so the line can name both. Rows recorded before this change have no names and fall back to "Team member added" or "Team member removed".
 
 ## Not now
 
@@ -42,10 +43,11 @@
 - `ProgramSlipped` is recorded whenever the `end_date` value changes, even inside the same week. The payload stores dates (YYYY-MM-DD); the client shows them as week labels with the week helpers in `@/utils/functions`.
 - `ProgramSlipped` has no case in `eventScope`, so it opens no projects.
 - The event type enum in `dtos/event.go` lists all types. Regenerate Swagger with `make swagger-load`. Never edit `docs/` by hand.
+- `TeamChange` gains `program` (program name) and `person_name`, filled where `TeamChanged` is recorded (`server/internal/services/team.go`, Add and Remove).
 
 ## Client
 
-- The change history shows one readable line for `SkillChanged` and one for `ProgramSlipped`.
+- `EventSummary` (`client/src/shared/components/event-summary/component.tsx`) has a line for all ten event types.
 - The new strings are in `LanguageKey`.
 
 ## Acceptance criteria
@@ -55,6 +57,8 @@
 3. A person loses an expertise, or drops below a demand's `min_level`, while holding unlocked baseline hours on that demand. The auto re-plan draft no longer gives them those hours: they go to someone else or to `unmet`. Locked allocations stay as they are.
 4. A person gains an expertise. An understaffed project that needs it is reconsidered in the draft.
 5. A program end-date move shows in the change history. It opens no project, so the runner ends it as `no_impact`, unless real conflicts exist.
+6. Every event type shows a readable line in the change history; none is blank.
+7. Adding Quinn to the Checkout Revamp team shows "Quinn added to the Checkout Revamp team"; an older `TeamChanged` row without names shows "Team member added".
 
 ## Tasks
 
@@ -65,16 +69,18 @@
 - [ ] `touchedProjects` and `eventScope` handle `SkillChanged`
 - [ ] One skill-set comparison function, shared with people-import
 - [ ] Event type enum in `dtos/event.go` lists every type; regenerate Swagger
+- [ ] TeamChange payload carries the program and person names
 
 **Client**
-- [ ] Change history lines for both types, with i18n keys in `LanguageKey`
+- [ ] A history line for every event type, with i18n keys in `LanguageKey`
 
 **Tests**
 - [ ] Service: `SkillChanged` recorded on a real change, nothing on an identical save
 - [ ] Service: `ProgramSlipped` recorded on an end-date change, nothing on an identical save
+- [ ] Service: `TeamChanged` payload names the program and the person
 - [ ] `eventScope` test for `SkillChanged`
 - [ ] Re-plan test: a lost expertise moves the unlocked hours
-- [ ] Client: the history lines for both types
+- [ ] Client: one line per event type, the missing-payload case and the old TeamChanged fallback
 
 **Docs** (same PR)
 - [ ] [README.md](../../README.md): the event list in the module diagram edge label and the CHANGE_EVENT `type` column. Move `SkillChanged` and `ProgramSlipped` to built; remove `PersonLeft`

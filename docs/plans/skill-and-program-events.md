@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Record `SkillChanged` when a person's skills change (and re-plan) and `ProgramSlipped` when a program's end date moves (change history only).
+**Goal:** Record `SkillChanged` when a person's skills change (and re-plan) and `ProgramSlipped` when a program's end date moves (change history only). Every event type gets a readable line in the change history.
 
 **Architecture:** Both events go through the existing outbox: the service calls `s.events.Record(ctx, ChangeInput{...})` inside the same `s.tx.Do` as the save. The re-plan runner treats `SkillChanged` like `PersonCapacityChanged`. The engine already drops unlocked hours of someone who no longer has the skill (`keepFeasible`, `server/internal/engine/greedy.go:119`), so no engine change. The client's shared `EventSummary` gets one line per new type.
 
@@ -26,7 +26,7 @@
 2. A skills save rejected by `checkSkills` (two primaries, unknown expertise) records nothing and saves nothing. Test: Task 1, case "rejected skills record nothing".
 3. A program edit that changes only the name or the start date records no `ProgramSlipped`; an end date moved earlier does record it (same as `ProjectSlipped`). Test: Task 3 cases.
 4. `SkillChanged` for a person with no baseline hours ends `no_impact` unless some project is understaffed; it never fails the runner. Test: Task 2, eventScope case "skill change, nothing understaffed".
-5. An event row whose payload misses a field (older rows) still renders without crashing: every payload read uses `?? ''`. Test: Task 4, case "missing payload fields".
+5. An event row whose payload misses a field (older rows) still renders: every payload read uses `?? ''`, and an old `TeamChanged` without names reads "Team member added". Test: Task 5, cases "missing payload fields" and "old team row".
 
 ---
 
@@ -185,50 +185,92 @@ Set the `enums:` tag at `dtos/event.go:31` to the ten types above; run `cd serve
 
 - [ ] **Step 7: Commit** `chore(server): list every change event type in the API docs`
 
-### Task 4: Change history lines (client)
+### Task 4: TeamChanged payload carries names
 
 **Files:**
-- Modify: `client/src/shared/events/types.ts` (`ChangeEventType` line 2, `ChangeEventPayload` 6-17)
-- Modify: `client/src/shared/components/event-summary/component.tsx` (switch at 6-50)
-- Modify: `client/src/shared/i18n/language-key.ts` (two keys, sorted)
+- Modify: `server/internal/services/event.go` (`TeamChange` ~64-68)
+- Modify: `server/internal/services/team.go` (Add ~95-110, Remove ~120-135)
+- Test: the existing test that asserts the `TeamChanged` payload (find it with `grep -rn TeamChange server/internal/services/*_test.go`); add the name asserts there
+
+**Interfaces:**
+- Produces:
+
+```go
+// TeamChange is the payload of TeamChanged.
+type TeamChange struct {
+	ProgramID  string `json:"program_id"`
+	Program    string `json:"program"`
+	PersonID   string `json:"person_id"`
+	PersonName string `json:"person_name"`
+	Change     string `json:"change"`
+}
+```
+
+- Consumes: `constants.TeamChangeAdded` (`"added"`), `constants.TeamChangeRemoved` (`"removed"`).
+
+- [ ] **Step 1: Write the failing test** — adding Quinn to the "Checkout Revamp" team records `TeamChange{ProgramID, Program: "Checkout Revamp", PersonID, PersonName: "Quinn", Change: constants.TeamChangeAdded}`; removing Quinn records the same names with `constants.TeamChangeRemoved`.
+
+- [ ] **Step 2: Run, expect FAIL** — `cd server && go test ./internal/services -run Team -v`
+
+- [ ] **Step 3: Implement** — fill `Program` and `PersonName` where `TeamChanged` is recorded. Use the program and person the service already loads; if it does not load them yet, load them through the repositories it already holds, before the transaction.
+
+- [ ] **Step 4: Run, expect PASS** — `cd server && go test ./internal/services` and `make check-server` from the repo root
+
+- [ ] **Step 5: Commit** `feat(server): name the program and person in TeamChanged`
+
+### Task 5: Change history lines (client)
+
+**Files:**
+- Modify: `client/src/shared/events/types.ts` (`ChangeEventType`, `ChangeEventPayload`)
+- Modify: `client/src/shared/events/constants.ts` (new `CAPACITY_FIELD_LABELS`, team change values)
+- Modify: `client/src/shared/components/event-summary/component.tsx` (the switch)
+- Create if needed: `client/src/shared/components/event-summary/utils.ts` (helpers; `component.tsx` holds only the component)
+- Modify: `client/src/shared/i18n/language-key.ts` (new keys, sorted)
 - Test: `client/src/shared/components/event-summary/component.test.tsx` (create)
 
 **Interfaces:**
-- Consumes: payload keys from Tasks 1 and 3: `person_name`; `program`, `old_end_date`, `new_end_date`.
-- Produces: `ChangeEventType` includes `'SkillChanged' | 'ProgramSlipped'`; `ChangeEventPayload` gains `program?: string`, `old_end_date?: string`, `new_end_date?: string`.
+- Consumes payload keys: `person_name` (SkillChanged, PersonCapacityChanged, TeamChanged), `fields` (PersonCapacityChanged: `weekly_hours`, `non_project_hours`, `start_date`, `end_date`, `active`), `project` (DemandChanged), `name`, `old_status`, `new_status` (ProjectStatusChanged), `program`, `old_end_date`, `new_end_date` (ProgramSlipped), `program`, `change` (TeamChanged: `added` / `removed`).
+- Produces: `ChangeEventType` lists all ten types: `AbsenceAdded`, `AbsenceRemoved`, `PhaseSlipped`, `ProjectSlipped`, `ProjectStatusChanged`, `DemandChanged`, `PersonCapacityChanged`, `TeamChanged`, `SkillChanged`, `ProgramSlipped`. `ChangeEventPayload` gains the optional fields above.
 
-- [ ] **Step 1: Write the failing test** (`component.test.tsx`, Vitest + Testing Library)
-  - "skill change": `{ type: 'SkillChanged', payload: { person_name: 'Quinn' } }` → text `Quinn: skills changed`
-  - "program slip": `{ type: 'ProgramSlipped', payload: { program: 'Checkout Revamp', old_end_date: '2026-10-30', new_end_date: '2026-11-13' } }` → text `Checkout Revamp: end moved from 2026-W44 to 2026-W46`
+- [ ] **Step 1: Write the failing test** (`component.test.tsx`, Vitest + Testing Library), one case per line:
+  - "skill change": `{ type: 'SkillChanged', payload: { person_name: 'Quinn' } }` → `Quinn: skills changed`
+  - "program slip": `{ type: 'ProgramSlipped', payload: { program: 'Checkout Revamp', old_end_date: '2026-10-30', new_end_date: '2026-11-13' } }` → `Checkout Revamp: end moved from 2026-W44 to 2026-W46`
+  - "demand change": `{ type: 'DemandChanged', payload: { project: 'Checkout Revamp' } }` → `Checkout Revamp: demand changed`
+  - "capacity change": `{ type: 'PersonCapacityChanged', payload: { person_name: 'Quinn', fields: ['weekly_hours', 'end_date'] } }` → `Quinn: weekly hours, end date changed`
+  - "status change": `{ type: 'ProjectStatusChanged', payload: { name: 'Checkout Revamp', old_status: 'planned', new_status: 'active' } }` → `Checkout Revamp: ` + the existing labels of those two statuses joined by ` → ` (e.g. `Checkout Revamp: Planned → Active`)
+  - "team added": `{ type: 'TeamChanged', payload: { person_name: 'Quinn', program: 'Checkout Revamp', change: 'added' } }` → `Quinn added to the Checkout Revamp team`
+  - "team removed": same with `change: 'removed'` → `Quinn removed from the Checkout Revamp team`
+  - "old team row": `{ type: 'TeamChanged', payload: { change: 'added' } }` → `Team member added`
   - "missing payload fields": `{ type: 'ProgramSlipped', payload: {} }` renders without throwing
 
-- [ ] **Step 2: Run, expect FAIL**
-
-Run: `cd client && npx vitest run src/shared/components/event-summary/component.test.tsx`
+- [ ] **Step 2: Run, expect FAIL** — `cd client && npx vitest run src/shared/components/event-summary/component.test.tsx`
 
 - [ ] **Step 3: Implement**
+  - Keys: `'{person}: skills changed'`, `'{program}: end moved from {from} to {to}'`, `'{project}: demand changed'`, `'{person}: {fields} changed'`, `'{name}: {from} → {to}'`, `'{person} added to the {program} team'`, `'{person} removed from the {program} team'`, `'Team member added'`, `'Team member removed'`, and the five capacity field labels `'weekly hours'`, `'non-project hours'`, `'start date'`, `'end date'`, `'active status'`.
+  - `CAPACITY_FIELD_LABELS` maps the five field names to those label keys; an unknown field name is skipped; the translated labels are joined with `, `.
+  - Status labels: reuse the client's existing project status label map (find it, e.g. `grep -rn "planned" client/src/shared client/src/utils --include=*.ts`); do not add a second copy.
+  - Week labels with `toIsoWeek` from `@/utils/functions`.
+  - Every payload read uses `?? ''`; `TeamChanged` without `person_name` or `program` uses `'Team member added'` / `'Team member removed'`.
+  - Follow the `translating-client-text` and `structuring-client-components` skills.
 
-Keys: `'{person}: skills changed'` and `'{program}: end moved from {from} to {to}'`. `SkillChanged` → `t('{person}: skills changed', { person: payload.person_name ?? '' })`. `ProgramSlipped` → `t('{program}: end moved from {from} to {to}', { program: payload.program ?? '', from: payload.old_end_date ? toIsoWeek(payload.old_end_date) : '', to: payload.new_end_date ? toIsoWeek(payload.new_end_date) : '' })`, with `toIsoWeek` from `@/utils/functions`. Follow the `translating-client-text` skill for any other locale file it requires.
+- [ ] **Step 4: Run, expect PASS** — `cd client && npx vitest run src/shared/components/event-summary && npm run lint && npx tsc -b`
 
-- [ ] **Step 4: Run, expect PASS**
+- [ ] **Step 5: Commit** `feat(client): show a line for every change event type`
 
-Run: `cd client && npx vitest run src/shared/components/event-summary && npm run lint && npx tsc -b`
+### Task 6: Docs
 
-- [ ] **Step 5: Commit** `feat(client): show SkillChanged and ProgramSlipped in the change history`
-
-### Task 5: Docs
-
-Written by the docs agent from the diff of Tasks 1–4, reviewed before commit. Server-side docs ride in a server commit; client-side docs in a client commit.
+Written by the docs agent from the diff of Tasks 1–5, reviewed before commit. Server-side docs ride in a server commit; client-side docs in a client commit.
 
 - [ ] `README.md`: the domain-events edge label in the module diagram and the `CHANGE_EVENT.type` column list `SkillChanged` and `ProgramSlipped` as built; remove `PersonLeft`
 - [ ] `server/README.md`: the people row (`PersonJoined`, `PersonLeft`, `SkillChanged`: later) → `SkillChanged` built, `PersonJoined` and `PersonLeft` gone; `PATCH /programs/{id}` records `ProgramSlipped`; `PUT /people/{id}/skills` records `SkillChanged`
 - [ ] `docs/features/replan-on-change.md`: replace the `PersonLeft` bullet with one line: a person leaving is an `end_date` or `active` change, which records `PersonCapacityChanged`
 - [ ] `docs/architecture.drawio`: event labels (XML stays valid)
 - [ ] `docs/user-manual.md`: only if it lists what triggers a re-plan
+- [ ] `client/README.md`: only if it describes the change history lines
 - [ ] `docs/features/README.md` row 18 → Done; tick the spec's tasks
 - [ ] Commit `docs: describe SkillChanged and ProgramSlipped` (server and root docs); a separate `docs(client): ...` commit only if `client/README.md` changes
 
-### Task 6: Final check
+### Task 7: Final check
 
 - [ ] `make check` from the repo root passes (lint, test, build, both sides)
 - [ ] If Docker runs: `cd server && go test -tags=integration ./internal/services -run 'Replan|Outbox'` passes
