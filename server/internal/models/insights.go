@@ -1,6 +1,9 @@
 package models
 
-import "the-slot-finder/server/internal/isoweek"
+import (
+	"the-slot-finder/server/internal/isoweek"
+	"the-slot-finder/server/internal/metrics"
+)
 
 // Heatmap is the person × week matrix of baseline load against capacity. It is computed,
 // not stored.
@@ -70,4 +73,18 @@ type MemberExpertise struct {
 	Expertise Expertise
 	Kind      string
 	Hours     float64
+}
+
+// CapacityForecast is capacity against demand per expertise × week. It is computed, not stored.
+type CapacityForecast struct {
+	Weeks      []isoweek.Week
+	Expertises []ExpertiseForecast
+}
+
+// ExpertiseForecast is one expertise's weeks, parallel to CapacityForecast.Weeks.
+type ExpertiseForecast struct {
+	Expertise Expertise
+	Weeks     []metrics.ForecastWeek
+	// Sustained is the first run of SUSTAINED_OVERLOAD_WEEKS or more overloaded weeks; nil when there is none.
+	Sustained *OverloadRun
 }

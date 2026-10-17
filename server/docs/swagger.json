@@ -645,6 +645,77 @@
                 }
             }
         },
+        "/insights/capacity-forecast": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Per expertise (the primary skill of the people) and week: capacity, baseline load, free hours, confirmed demand the baseline does not cover (unmet_hours), incoming projects' demand weighted by PIPELINE_CONFIDENCE_PERCENT (pipeline_hours), the shortfall free capacity cannot take, and an overloaded flag. sustained_overload is the first run of SUSTAINED_OVERLOAD_WEEKS or more overloaded weeks. Weeks default and are capped like the heatmap's. A manager gets their teams' capacity and the demand of the programs they may read.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Insights"
+                ],
+                "summary": "Capacity forecast by expertise",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "2026-W42",
+                        "description": "First week",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-W53",
+                        "description": "Last week",
+                        "name": "to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.CapacityForecastResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/insights/heatmap": {
             "get": {
                 "security": [
@@ -4423,6 +4494,27 @@
                 }
             }
         },
+        "dtos.CapacityForecastResponse": {
+            "type": "object",
+            "properties": {
+                "expertises": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ExpertiseForecastResponse"
+                    }
+                },
+                "weeks": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "2026-W42",
+                        "2026-W43"
+                    ]
+                }
+            }
+        },
         "dtos.ChangeEventResponse": {
             "type": "object",
             "properties": {
@@ -4890,6 +4982,8 @@
                         "LEVEL_TOO_LOW",
                         "NO_CAPACITY_BEFORE_DEADLINE",
                         "BLOCKED_BY_LOCKED",
+                        "BLOCKED_BY_EXPERTISE_LIMIT",
+                        "BELOW_MIN_HOURS",
                         "NO_ONE_IN_TEAM"
                     ]
                 }
@@ -5119,6 +5213,32 @@
                 }
             }
         },
+        "dtos.ExpertiseForecastResponse": {
+            "type": "object",
+            "properties": {
+                "expertise": {
+                    "type": "string",
+                    "example": "QA"
+                },
+                "expertise_id": {
+                    "type": "string"
+                },
+                "sustained_overload": {
+                    "description": "SustainedOverload is the first run of overloaded weeks long enough to warn about; null when there is none.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dtos.OverloadRunResponse"
+                        }
+                    ]
+                },
+                "weeks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ForecastWeekResponse"
+                    }
+                }
+            }
+        },
         "dtos.ExpertiseHoursResponse": {
             "type": "object",
             "properties": {
@@ -5179,6 +5299,96 @@
                 },
                 "understaffed": {
                     "type": "boolean"
+                }
+            }
+        },
+        "dtos.ForecastPersonResponse": {
+            "type": "object",
+            "properties": {
+                "band": {
+                    "type": "string",
+                    "enum": [
+                        "unavailable",
+                        "underused",
+                        "healthy",
+                        "near_full",
+                        "overloaded"
+                    ]
+                },
+                "capacity": {
+                    "type": "number",
+                    "example": 36
+                },
+                "free_hours": {
+                    "description": "FreeHours is capacity − load, never below 0.",
+                    "type": "number",
+                    "example": 4
+                },
+                "load": {
+                    "type": "number",
+                    "example": 32
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Erin"
+                },
+                "overloaded": {
+                    "type": "boolean"
+                },
+                "person_id": {
+                    "type": "string"
+                },
+                "utilization": {
+                    "description": "Utilization is load ÷ capacity; null when capacity is 0.",
+                    "type": "number",
+                    "example": 0.89
+                }
+            }
+        },
+        "dtos.ForecastWeekResponse": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "type": "number",
+                    "example": 72
+                },
+                "free_hours": {
+                    "description": "FreeHours is capacity − load per person, never below 0.",
+                    "type": "number",
+                    "example": 12
+                },
+                "load": {
+                    "type": "number",
+                    "example": 60
+                },
+                "overloaded": {
+                    "type": "boolean"
+                },
+                "people": {
+                    "description": "People are the expertise's people in the week, highest load first; those with no capacity and no load are left out.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ForecastPersonResponse"
+                    }
+                },
+                "pipeline_hours": {
+                    "description": "PipelineHours is the demand of incoming projects × the pipeline confidence.",
+                    "type": "number",
+                    "example": 10
+                },
+                "shortfall_hours": {
+                    "description": "ShortfallHours is unmet plus pipeline hours that free capacity cannot take.",
+                    "type": "number",
+                    "example": 6
+                },
+                "unmet_hours": {
+                    "description": "UnmetHours is confirmed demand the baseline does not cover.",
+                    "type": "number",
+                    "example": 8
+                },
+                "week": {
+                    "type": "string",
+                    "example": "2026-W42"
                 }
             }
         },
@@ -6408,6 +6618,8 @@
                         "LEVEL_TOO_LOW",
                         "NO_CAPACITY_BEFORE_DEADLINE",
                         "BLOCKED_BY_LOCKED",
+                        "BLOCKED_BY_EXPERTISE_LIMIT",
+                        "BELOW_MIN_HOURS",
                         "NO_ONE_IN_TEAM"
                     ]
                 }

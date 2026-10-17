@@ -242,3 +242,49 @@ func TestSustainedOverload(t *testing.T) {
 		})
 	}
 }
+
+func TestCapacityForecast(t *testing.T) {
+	weeks := []ForecastInput{
+		{Capacity: 36, Load: 40, FreeHours: 0, UnmetHours: 10},
+		{Capacity: 36, Load: 38, FreeHours: 0, PipelineHours: 20},
+		{Capacity: 36, Load: 40, FreeHours: 0},
+		{Capacity: 72, Load: 30, FreeHours: 42, UnmetHours: 10, PipelineHours: 20},
+		{Capacity: 0, Load: 0},
+	}
+	got, start, length, sustained := CapacityForecast(weeks, 50, 3)
+
+	require.Len(t, got, len(weeks))
+	assert.True(t, sustained)
+	assert.Equal(t, 0, start)
+	assert.Equal(t, 3, length)
+	assert.InDelta(t, 10, got[0].ShortfallHours, 1e-9, "confirmed demand with nothing free")
+	assert.InDelta(t, 10, got[1].ExpectedPipelineHours, 1e-9, "20 h at 50 %")
+	assert.InDelta(t, 10, got[1].ShortfallHours, 1e-9)
+	assert.False(t, got[2].ShortfallHours > 0)
+	assert.InDelta(t, 0, got[3].ShortfallHours, 1e-9, "20 h of demand fit in 42 free hours")
+	assert.True(t, got[0].Overloaded)
+	assert.False(t, got[3].Overloaded)
+	assert.False(t, got[4].Overloaded, "no capacity and no load")
+
+	_, _, _, sustained = CapacityForecast(weeks[:2], 50, 3)
+	assert.False(t, sustained, "two weeks are not sustained")
+}
+
+func TestRankForecastPeople(t *testing.T) {
+	got := RankForecastPeople([]ForecastPerson{
+		{PersonID: "a", Name: "Ann", Capacity: 36, Load: 20},
+		{PersonID: "b", Name: "Bob", Capacity: 36, Load: 40},
+		{PersonID: "c", Name: "Cy", Capacity: 0, Load: 0},
+		{PersonID: "d", Name: "Di", Capacity: 0, Load: 4},
+		{PersonID: "e", Name: "Al", Capacity: 36, Load: 20},
+	})
+
+	require.Len(t, got, 4, "no capacity and no load is dropped")
+	assert.Equal(t, []string{"b", "e", "a", "d"}, []string{got[0].PersonID, got[1].PersonID, got[2].PersonID, got[3].PersonID},
+		"highest load first, then name")
+	assert.True(t, got[0].Overloaded)
+	assert.InDelta(t, 0, got[0].FreeHours, 1e-9, "never below 0")
+	assert.True(t, got[3].Overloaded, "load without capacity")
+	assert.False(t, got[1].Overloaded)
+	assert.InDelta(t, 16, got[1].FreeHours, 1e-9)
+}

@@ -195,6 +195,20 @@ func (s *aiService) dispatch(ctx context.Context, call llm.FunctionCall) ([]byte
 			return nil, err
 		}
 		out = dtos.NewHeatmapResponse(*heatmap)
+	case constants.AIToolCapacityForecast:
+		var in HeatmapInput
+		var err error
+		if in.From, err = argWeek(call.Args, "from"); err != nil {
+			return nil, err
+		}
+		if in.To, err = argWeek(call.Args, "to"); err != nil {
+			return nil, err
+		}
+		forecast, err := s.insights.CapacityForecast(ctx, in)
+		if err != nil {
+			return nil, err
+		}
+		out = dtos.NewCapacityForecastResponse(*forecast)
 	case constants.AIToolRisks:
 		risks, err := s.insights.Risks(ctx)
 		if err != nil {
@@ -269,6 +283,15 @@ func aiToolDeclarations() []llm.FunctionDeclaration {
 				"to":           str("Last ISO week, like 2026-W53"),
 				"expertise_id": str("Only people who hold or work on this expertise"),
 				"program_id":   str("Only the people of this program's team"),
+			}),
+		},
+		{
+			Name: constants.AIToolCapacityForecast,
+			Description: "Per expertise and ISO week: capacity, load, free hours, unmet confirmed demand, pipeline demand weighted by " +
+				"confidence, shortfall and overload. Use it for hiring signals, who is short or will crunch.",
+			Parameters: object(nil, map[string]any{
+				"from": str("First ISO week, like 2026-W42"),
+				"to":   str("Last ISO week, like 2026-W53"),
 			}),
 		},
 		{

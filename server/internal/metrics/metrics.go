@@ -4,6 +4,7 @@ package metrics
 
 import (
 	"math"
+	"sort"
 	"time"
 )
 
@@ -202,4 +203,85 @@ func SustainedOverload(overloaded []bool, minWeeks int) (start, length int, foun
 		return len(overloaded) - run, run, true
 	}
 	return 0, 0, false
+}
+
+// ForecastInput is one expertise in one week: the hours of the people whose primary skill it is, and
+// the demand still to staff.
+type ForecastInput struct {
+	Capacity float64
+	Load     float64
+	// FreeHours is what the people can still take: capacity − load per person, never below 0.
+	FreeHours float64
+	// UnmetHours is confirmed demand (planned or active projects) the baseline does not cover.
+	UnmetHours float64
+	// PipelineHours is the unweighted demand of incoming projects.
+	PipelineHours float64
+}
+
+// ForecastPerson is one person's standing in one expertise × week cell of the forecast.
+type ForecastPerson struct {
+	PersonID string
+	Name     string
+	Capacity float64
+	Load     float64
+	// Utilization and Band are the heatmap's, for the same person and week.
+	Utilization *float64
+	Band        string
+	// FreeHours is capacity − load, never below 0.
+	FreeHours float64
+	// Overloaded is load above capacity.
+	Overloaded bool
+}
+
+// RankForecastPeople drops people with no capacity and no load, derives free hours and the overload
+// flag, and sorts by highest load first (then name, then id, so the order is stable).
+func RankForecastPeople(people []ForecastPerson) []ForecastPerson {
+	out := make([]ForecastPerson, 0, len(people))
+	for _, p := range people {
+		if p.Capacity <= epsilon && p.Load <= epsilon {
+			continue
+		}
+		p.FreeHours = math.Max(0, p.Capacity-p.Load)
+		p.Overloaded = p.Load > p.Capacity+epsilon
+		out = append(out, p)
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		a, b := out[i], out[j]
+		if math.Abs(a.Load-b.Load) > epsilon {
+			return a.Load > b.Load
+		}
+		if a.Name != b.Name {
+			return a.Name < b.Name
+		}
+		return a.PersonID < b.PersonID
+	})
+	return out
+}
+
+// ForecastWeek is a ForecastInput with its derived figures.
+type ForecastWeek struct {
+	ForecastInput
+	// People are the people of the expertise in the week, highest load first; set by the caller.
+	People []ForecastPerson
+	// ExpectedPipelineHours is PipelineHours × confidence.
+	ExpectedPipelineHours float64
+	// ShortfallHours is the demand, confirmed and expected, that free capacity cannot take.
+	ShortfallHours float64
+	// Overloaded is load above capacity.
+	Overloaded bool
+}
+
+// CapacityForecast derives each week's shortfall and overload (README §7, capacity forecast), and
+// the first run of at least minWeeks overloaded weeks, like SustainedOverload.
+func CapacityForecast(weeks []ForecastInput, confidencePercent float64, minWeeks int) (out []ForecastWeek, start, length int, sustained bool) {
+	out = make([]ForecastWeek, len(weeks))
+	overloaded := make([]bool, len(weeks))
+	for i, w := range weeks {
+		expected := w.PipelineHours * confidencePercent / 100
+		overloaded[i] = w.Load > w.Capacity+epsilon
+		out[i] = ForecastWeek{ForecastInput: w, ExpectedPipelineHours: expected,
+			ShortfallHours: math.Max(0, w.UnmetHours+expected-w.FreeHours), Overloaded: overloaded[i]}
+	}
+	start, length, sustained = SustainedOverload(overloaded, minWeeks)
+	return out, start, length, sustained
 }

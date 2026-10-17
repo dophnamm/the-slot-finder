@@ -98,3 +98,90 @@ func NewHeatmapResponse(h models.Heatmap) HeatmapResponse {
 	}
 	return HeatmapResponse{Weeks: weeks, Rows: rows}
 }
+
+// CapacityForecastRequest is the query of GET /insights/capacity-forecast. Weeks default like the heatmap's.
+type CapacityForecastRequest struct {
+	From string `json:"from" query:"from" validate:"omitempty,isoweek"`
+	To   string `json:"to" query:"to" validate:"omitempty,isoweek"`
+}
+
+// Normalize trims the values.
+func (r *CapacityForecastRequest) Normalize() {
+	r.From = strings.TrimSpace(r.From)
+	r.To = strings.TrimSpace(r.To)
+}
+
+// ForecastPersonResponse is one person of an expertise in one week; figures are hours, like the heatmap's cell.
+type ForecastPersonResponse struct {
+	PersonID string  `json:"person_id"`
+	Name     string  `json:"name" example:"Erin"`
+	Capacity float64 `json:"capacity" example:"36"`
+	Load     float64 `json:"load" example:"32"`
+	// FreeHours is capacity − load, never below 0.
+	FreeHours float64 `json:"free_hours" example:"4"`
+	// Utilization is load ÷ capacity; null when capacity is 0.
+	Utilization *float64 `json:"utilization" example:"0.89"`
+	Band        string   `json:"band" enums:"unavailable,underused,healthy,near_full,overloaded"`
+	Overloaded  bool     `json:"overloaded"`
+}
+
+// ForecastWeekResponse is one expertise in one week. All figures are hours.
+type ForecastWeekResponse struct {
+	Week     string  `json:"week" example:"2026-W42"`
+	Capacity float64 `json:"capacity" example:"72"`
+	Load     float64 `json:"load" example:"60"`
+	// FreeHours is capacity − load per person, never below 0.
+	FreeHours float64 `json:"free_hours" example:"12"`
+	// UnmetHours is confirmed demand the baseline does not cover.
+	UnmetHours float64 `json:"unmet_hours" example:"8"`
+	// PipelineHours is the demand of incoming projects × the pipeline confidence.
+	PipelineHours float64 `json:"pipeline_hours" example:"10"`
+	// ShortfallHours is unmet plus pipeline hours that free capacity cannot take.
+	ShortfallHours float64 `json:"shortfall_hours" example:"6"`
+	Overloaded     bool    `json:"overloaded"`
+	// People are the expertise's people in the week, highest load first; those with no capacity and no load are left out.
+	People []ForecastPersonResponse `json:"people"`
+}
+
+// ExpertiseForecastResponse is one expertise's weeks.
+type ExpertiseForecastResponse struct {
+	ExpertiseID string                 `json:"expertise_id"`
+	Expertise   string                 `json:"expertise" example:"QA"`
+	Weeks       []ForecastWeekResponse `json:"weeks"`
+	// SustainedOverload is the first run of overloaded weeks long enough to warn about; null when there is none.
+	SustainedOverload *OverloadRunResponse `json:"sustained_overload"`
+}
+
+// CapacityForecastResponse is the expertise × week forecast.
+type CapacityForecastResponse struct {
+	Weeks      []string                    `json:"weeks" example:"2026-W42,2026-W43"`
+	Expertises []ExpertiseForecastResponse `json:"expertises"`
+}
+
+// NewCapacityForecastResponse maps a capacity forecast.
+func NewCapacityForecastResponse(f models.CapacityForecast) CapacityForecastResponse {
+	weeks := make([]string, len(f.Weeks))
+	for i, w := range f.Weeks {
+		weeks[i] = w.String()
+	}
+	expertises := make([]ExpertiseForecastResponse, 0, len(f.Expertises))
+	for _, e := range f.Expertises {
+		cells := make([]ForecastWeekResponse, len(e.Weeks))
+		for i, w := range e.Weeks {
+			people := make([]ForecastPersonResponse, len(w.People))
+			for j, p := range w.People {
+				people[j] = ForecastPersonResponse{PersonID: p.PersonID, Name: p.Name, Capacity: p.Capacity, Load: p.Load,
+					FreeHours: p.FreeHours, Utilization: p.Utilization, Band: p.Band, Overloaded: p.Overloaded}
+			}
+			cells[i] = ForecastWeekResponse{Week: weeks[i], Capacity: w.Capacity, Load: w.Load, FreeHours: w.FreeHours,
+				UnmetHours: w.UnmetHours, PipelineHours: w.ExpectedPipelineHours, ShortfallHours: w.ShortfallHours, Overloaded: w.Overloaded,
+				People: people}
+		}
+		item := ExpertiseForecastResponse{ExpertiseID: e.Expertise.ID, Expertise: e.Expertise.Name, Weeks: cells}
+		if e.Sustained != nil {
+			item.SustainedOverload = &OverloadRunResponse{FromWeek: e.Sustained.From.String(), Weeks: e.Sustained.Weeks}
+		}
+		expertises = append(expertises, item)
+	}
+	return CapacityForecastResponse{Weeks: weeks, Expertises: expertises}
+}

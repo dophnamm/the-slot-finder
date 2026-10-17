@@ -43,9 +43,10 @@ const (
 
 // Tools the model may call. Each one reads through an existing service, so roles apply.
 const (
-	AIToolHeatmap         = "get_heatmap"
-	AIToolRisks           = "get_risks"
-	AIToolOpenDrafts      = "list_open_drafts"
-	AIToolProject         = "get_project"
-	AIToolProgramOverview = "get_program_overview"
+	AIToolHeatmap          = "get_heatmap"
+	AIToolRisks            = "get_risks"
+	AIToolOpenDrafts       = "list_open_drafts"
+	AIToolProject          = "get_project"
+	AIToolProgramOverview  = "get_program_overview"
+	AIToolCapacityForecast = "get_capacity_forecast"
 )

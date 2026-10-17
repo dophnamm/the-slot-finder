@@ -19,13 +19,14 @@ import (
 )
 
 const (
-	opHeatmap         = "heatmap"
-	opProgramOverview = "program_overview"
-	opProgramMembers  = "program_members"
-	opProjectMetrics  = "project_metrics"
-	opRisks           = "risks"
-	resourceHeatmap   = "heatmap"
-	resourceMetrics   = "metrics"
+	opHeatmap          = "heatmap"
+	opCapacityForecast = "capacity_forecast"
+	opProgramOverview  = "program_overview"
+	opProgramMembers   = "program_members"
+	opProjectMetrics   = "project_metrics"
+	opRisks            = "risks"
+	resourceHeatmap    = "heatmap"
+	resourceMetrics    = "metrics"
 )
 
 // HeatmapInput asks for the heatmap of a week range, optionally for one expertise or for the
@@ -46,6 +47,10 @@ type InsightsService interface {
 	// expertise per week. With an expertise, it keeps people who hold that skill or work on
 	// it in the range. With a program, it keeps the program's team, for whoever may read it.
 	Heatmap(ctx context.Context, in HeatmapInput) (*models.Heatmap, error)
+	// CapacityForecast is, per expertise and week, free capacity of the people whose primary skill it is, the
+	// confirmed demand the baseline does not cover, and incoming projects' demand weighted by confidence. A
+	// manager gets their teams' capacity and the demand of the programs they may read. Only From and To are used.
+	CapacityForecast(ctx context.Context, in HeatmapInput) (*models.CapacityForecast, error)
 	// ProgramOverview is a program's progress and cost figures summed over its projects that
 	// are not cancelled, with staffing by expertise.
 	ProgramOverview(ctx context.Context, programID string) (*models.ProgramOverview, error)
@@ -617,4 +622,110 @@ func (s *insightsService) Risks(ctx context.Context) (*models.Risks, error) {
 		}
 	}
 	return risks, nil
+}
+
+func (s *insightsService) CapacityForecast(ctx context.Context, in HeatmapInput) (*models.CapacityForecast, error) {
+	if _, err := s.authz.Require(ctx, CanViewInsights); err != nil {
+		return nil, err
+	}
+	reader, err := s.authz.ProgramReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	scope, err := s.authz.VisiblePeople(ctx)
+	if err != nil {
+		return nil, err
+	}
+	in.ExpertiseID, in.ProgramID, in.team = "", "", nil
+	heatmap, err := s.heatmap(ctx, in, scope)
+	if err != nil {
+		return nil, err
+	}
+	projects, planned, _, today, err := s.metricsData(ctx, "", opCapacityForecast)
+	if err != nil {
+		return nil, err
+	}
+
+	series := map[string]*models.ExpertiseForecast{}
+	inputs := map[string][]metrics.ForecastInput{}
+	people := map[string][][]metrics.ForecastPerson{}
+	expertise := func(e models.Expertise) []metrics.ForecastInput {
+		if inputs[e.ID] == nil {
+			inputs[e.ID] = make([]metrics.ForecastInput, len(heatmap.Weeks))
+			people[e.ID] = make([][]metrics.ForecastPerson, len(heatmap.Weeks))
+			series[e.ID] = &models.ExpertiseForecast{Expertise: e}
+		}
+		return inputs[e.ID]
+	}
+	for _, row := range heatmap.Rows {
+		if row.PrimaryExpertise.ID == "" {
+			continue
+		}
+		weeks := expertise(row.PrimaryExpertise)
+		for i, cell := range row.Cells {
+			weeks[i].Capacity += cell.Capacity
+			weeks[i].Load += cell.Load
+			weeks[i].FreeHours += max(0, cell.Capacity-cell.Load)
+			people[row.PrimaryExpertise.ID][i] = append(people[row.PrimaryExpertise.ID][i], metrics.ForecastPerson{
+				PersonID: row.Person.ID, Name: row.Person.Name, Capacity: cell.Capacity, Load: cell.Load,
+				Utilization: cell.Utilization, Band: cell.Band})
+		}
+	}
+
+	addPipelineDemand(projects, planned, readablePrograms(projects, reader), isoweek.Of(today), heatmap.Weeks[0], expertise)
+
+	out := &models.CapacityForecast{Weeks: heatmap.Weeks, Expertises: make([]models.ExpertiseForecast, 0, len(series))}
+	for id, e := range series {
+		weeks, start, length, sustained := metrics.CapacityForecast(inputs[id], s.cfg.PipelineConfidencePercent, s.cfg.SustainedOverloadWeeks)
+		for i := range weeks {
+			weeks[i].People = metrics.RankForecastPeople(people[id][i])
+		}
+		e.Weeks = weeks
+		if sustained {
+			e.Sustained = &models.OverloadRun{From: heatmap.Weeks[start], Weeks: length}
+		}
+		out.Expertises = append(out.Expertises, *e)
+	}
+	sort.SliceStable(out.Expertises, func(i, j int) bool {
+		a, b := out.Expertises[i].Expertise, out.Expertises[j].Expertise
+		if a.Sequence != b.Sequence {
+			return a.Sequence < b.Sequence
+		}
+		return a.Name < b.Name
+	})
+	return out, nil
+}
+
+// addPipelineDemand spreads each readable project's unplanned demand hours over its remaining weeks.
+func addPipelineDemand(projects []models.Project, planned map[string]plannedHours, readable func(string) bool, current, first isoweek.Week, expertise func(models.Expertise) []metrics.ForecastInput) {
+	for _, p := range projects {
+		incoming := p.Status == constants.ProjectStatusIncoming
+		if !readable(p.ProgramID) || (!incoming && p.Status != constants.ProjectStatusPlanned && p.Status != constants.ProjectStatusActive) {
+			continue
+		}
+		for _, d := range p.Demands {
+			left := d.TotalHours - planned[d.ID].total
+			from, to := p.DemandWindow(d)
+			if current.After(from) {
+				from = current
+			}
+			if left <= hoursEpsilon || to.Before(from) {
+				continue
+			}
+			// Flat spread over the window's remaining weeks (the only profile built).
+			each := left / float64(isoweek.WeeksBetween(from, to)+1)
+			weeks := expertise(d.Expertise)
+			for _, week := range isoweek.Range(from, to) {
+				i := isoweek.WeeksBetween(first, week)
+				if i < 0 || i >= len(weeks) {
+					continue
+				}
+				if incoming {
+					weeks[i].PipelineHours += each
+				} else {
+					weeks[i].UnmetHours += each
+				}
+			}
+		}
+	}
 }
