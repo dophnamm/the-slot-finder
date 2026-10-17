@@ -388,13 +388,18 @@ func (p *planner) freeHours(person *Person, d Demand) []float64 {
 		if kept[week] {
 			continue
 		}
-		set := p.expertises[person.ID][week]
-		if !set[d.Expertise] && p.policy.MaxExpertisesPerPersonWeek > 0 && len(set) >= p.policy.MaxExpertisesPerPersonWeek {
+		if p.expertiseLimited(person, d, week) {
 			continue
 		}
 		out[i] = math.Max(0, person.Capacity[week]*p.policy.MaxUtilization-p.load[person.ID][week])
 	}
 	return out
+}
+
+// expertiseLimited reports whether a new expertise would pass the person's weekly limit.
+func (p *planner) expertiseLimited(person *Person, d Demand, week string) bool {
+	set := p.expertises[person.ID][week]
+	return !set[d.Expertise] && p.policy.MaxExpertisesPerPersonWeek > 0 && len(set) >= p.policy.MaxExpertisesPerPersonWeek
 }
 
 // commit books the candidate's hours and records them on their assignment.
@@ -462,17 +467,31 @@ func (p *planner) skillGap(d Demand) UnmetReason {
 	return UnmetNoSkill
 }
 
-// capacityGap blames locked allocations when they hold at least the missing hours of the
-// qualified people inside the window.
+// capacityGap names the cause of a shortfall: the first cause that covers the missing hours of
+// the qualified people inside the window (locked allocations, the weekly expertise limit,
+// free hours only in weeks under the minimum), else plain lack of capacity.
+// shortcut: each cause is tested alone, so a mix of causes reads as no capacity.
 func (p *planner) capacityGap(d Demand, qualified []*Person, missing float64) UnmetReason {
-	locked := 0.0
+	locked, limited, small := 0.0, 0.0, 0.0
 	for _, person := range qualified {
-		for _, week := range d.Weeks {
+		free := p.freeHours(person, d)
+		for i, week := range d.Weeks {
 			locked += p.lockedLoad[person.ID][week]
+			if p.expertiseLimited(person, d, week) {
+				limited += math.Max(0, person.Capacity[week]*p.policy.MaxUtilization-p.load[person.ID][week])
+			}
+			if free[i] > epsilon && free[i] < p.policy.MinHoursPerWeek-epsilon {
+				small += free[i]
+			}
 		}
 	}
-	if locked >= missing-epsilon {
+	switch {
+	case locked >= missing-epsilon:
 		return UnmetBlockedByLocked
+	case limited >= missing-epsilon:
+		return UnmetBlockedByExpertiseLimit
+	case small >= missing-epsilon:
+		return UnmetBelowMinHours
 	}
 	return UnmetNoCapacity
 }

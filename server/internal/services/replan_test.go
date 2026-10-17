@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	stderrors "errors"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -141,7 +142,9 @@ func TestReplanService_RunOnce(t *testing.T) {
 		plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(1), nil).Once()
 		plans.On("FindOpenAutoDraft", mock.Anything, 1).Return(nil, gorm.ErrRecordNotFound)
 		events.On("Finish", mock.Anything, "e2", constants.EventStatusNoImpact, (*string)(nil), []string{}).Return(nil)
-		svc := newReplanService(plans, events, new(MockProjectRepository))
+		projects := new(MockProjectRepository)
+		projects.On("ListForMetrics", mock.Anything, "").Return([]models.Project{}, nil)
+		svc := newReplanService(plans, events, projects)
 
 		_, err := svc.RunOnce(t.Context())
 		require.Error(t, err)
@@ -163,6 +166,7 @@ func TestReplanService_RunOnce(t *testing.T) {
 		plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(1), nil)
 		plans.On("FindOpenAutoDraft", mock.Anything, 1).Return(nil, gorm.ErrRecordNotFound)
 		events.On("Finish", mock.Anything, "e1", constants.EventStatusNoImpact, (*string)(nil), []string{}).Return(nil)
+		projects.On("ListForMetrics", mock.Anything, "").Return([]models.Project{}, nil)
 		n, err := newReplanService(plans, events, projects).RunOnce(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, 1, n)
@@ -221,6 +225,8 @@ func TestReplanService_RunOnce_EventScope(t *testing.T) {
 		event    models.ChangeEvent
 		baseline func(t *testing.T, project *models.Project) []models.Assignment
 		want     string
+		// wantNote: the no_impact event gets a note that an understaffed project was left alone.
+		wantNote bool
 	}{
 		{name: "changed demand on an understaffed project plans it again",
 			event: models.ChangeEvent{Type: constants.EventDemandChanged, ProjectIDs: []string{projectID}}, want: constants.EventStatusDraftCreated},
@@ -229,7 +235,7 @@ func TestReplanService_RunOnce_EventScope(t *testing.T) {
 		{name: "a team change plans the program's projects again",
 			event: models.ChangeEvent{Type: constants.EventTeamChanged, ProjectIDs: []string{projectID}}, want: constants.EventStatusDraftCreated},
 		{name: "a team change on another project is no impact",
-			event: models.ChangeEvent{Type: constants.EventTeamChanged, ProjectIDs: []string{"other"}}, want: constants.EventStatusNoImpact},
+			event: models.ChangeEvent{Type: constants.EventTeamChanged, ProjectIDs: []string{"other"}}, want: constants.EventStatusNoImpact, wantNote: true},
 		{name: "a person's capacity change may free hours for an understaffed project",
 			event: models.ChangeEvent{Type: constants.EventPersonCapacityChanged, Payload: map[string]any{"person_id": qaPersonID}},
 			want:  constants.EventStatusDraftCreated},
@@ -267,6 +273,10 @@ func TestReplanService_RunOnce_EventScope(t *testing.T) {
 			absences.On("ListOverlapping", mock.Anything, mock.Anything, mock.Anything).Return([]models.Absence{}, nil)
 			plans.On("CreateWithAssignments", mock.Anything, mock.Anything).Return(nil).Maybe()
 			var finished string
+			var note string
+			events.On("Annotate", mock.Anything, []string{"e1"}, mock.Anything).Run(func(args mock.Arguments) {
+				note = args.String(2)
+			}).Return(nil).Maybe()
 			events.On("Finish", mock.Anything, "e1", mock.Anything, mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 				finished = args.String(2)
 			}).Return(nil)
@@ -276,6 +286,11 @@ func TestReplanService_RunOnce_EventScope(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, 1, n)
 			assert.Equal(t, tt.want, finished)
+			if tt.wantNote {
+				assert.Equal(t, fmt.Sprintf(constants.EventNoteUnderstaffed, 1), note)
+			} else {
+				assert.Empty(t, note)
+			}
 		})
 	}
 }
