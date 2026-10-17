@@ -10,79 +10,85 @@ import (
 	"the-slot-finder/server/internal/constants"
 )
 
-// Groq speaks the OpenAI chat completions shape. These types are only its wire format.
-type groqMessage struct {
-	Role       string         `json:"role"`
-	Content    string         `json:"content,omitempty"`
-	ToolCalls  []groqToolCall `json:"tool_calls,omitempty"`
-	ToolCallID string         `json:"tool_call_id,omitempty"`
+// Groq and OpenRouter speak the OpenAI chat completions shape. These types are only its wire format.
+type openaiMessage struct {
+	Role       string           `json:"role"`
+	Content    string           `json:"content,omitempty"`
+	ToolCalls  []openaiToolCall `json:"tool_calls,omitempty"`
+	ToolCallID string           `json:"tool_call_id,omitempty"`
 }
 
-type groqToolCall struct {
-	ID       string           `json:"id"`
-	Type     string           `json:"type"`
-	Function groqFunctionCall `json:"function"`
+type openaiToolCall struct {
+	ID       string             `json:"id"`
+	Type     string             `json:"type"`
+	Function openaiFunctionCall `json:"function"`
 }
 
-type groqFunctionCall struct {
+type openaiFunctionCall struct {
 	Name string `json:"name"`
 	// Arguments is a JSON object encoded as a string.
 	Arguments string `json:"arguments"`
 }
 
-type groqTool struct {
+type openaiTool struct {
 	Type     string              `json:"type"`
 	Function FunctionDeclaration `json:"function"`
 }
 
-type groqRequest struct {
-	Model           string        `json:"model"`
-	Messages        []groqMessage `json:"messages"`
-	Tools           []groqTool    `json:"tools,omitempty"`
-	ReasoningEffort string        `json:"reasoning_effort,omitempty"`
+type openaiRequest struct {
+	Model           string          `json:"model"`
+	Messages        []openaiMessage `json:"messages"`
+	Tools           []openaiTool    `json:"tools,omitempty"`
+	ReasoningEffort string          `json:"reasoning_effort,omitempty"`
+	Temperature     float64         `json:"temperature"`
 }
 
-type groqReply struct {
+type openaiReply struct {
 	Choices []struct {
-		Message groqMessage `json:"message"`
+		Message openaiMessage `json:"message"`
 	} `json:"choices"`
 }
 
-type groqClient struct {
-	http   *http.Client
-	apiKey string
-	model  string
+// openaiClient talks to one OpenAI-compatible endpoint. lowReasoning is Groq only: it sends
+// reasoning_effort for the gpt-oss models, which OpenRouter does not take under that name.
+type openaiClient struct {
+	http         *http.Client
+	url          string
+	apiKey       string
+	model        string
+	temperature  float64
+	lowReasoning bool
 }
 
-func (c *groqClient) Generate(ctx context.Context, req Request) (*Response, error) {
-	body, err := toGroqRequest(c.model, req)
+func (c *openaiClient) Generate(ctx context.Context, req Request) (*Response, error) {
+	body, err := toOpenAIRequest(c, req)
 	if err != nil {
 		return nil, err
 	}
-	var reply groqReply
-	if err := postJSON(ctx, c.http, constants.GroqChatURL, constants.GroqAuthHeader,
-		constants.GroqAuthScheme+c.apiKey, body, &reply); err != nil {
+	var reply openaiReply
+	if err := postJSON(ctx, c.http, c.url, constants.OpenAIAuthHeader,
+		constants.OpenAIAuthScheme+c.apiKey, body, &reply); err != nil {
 		return nil, err
 	}
 	if len(reply.Choices) == 0 {
 		return &Response{}, nil
 	}
-	return fromGroqMessage(reply.Choices[0].Message)
+	return fromOpenAIMessage(reply.Choices[0].Message)
 }
 
-func toGroqRequest(model string, req Request) (groqRequest, error) {
-	out := groqRequest{Model: model}
-	if strings.HasPrefix(model, constants.GroqReasoningModelPrefix) {
+func toOpenAIRequest(c *openaiClient, req Request) (openaiRequest, error) {
+	out := openaiRequest{Model: c.model, Temperature: c.temperature}
+	if c.lowReasoning && strings.HasPrefix(c.model, constants.GroqReasoningModelPrefix) {
 		out.ReasoningEffort = constants.GroqReasoningEffortLow
 	}
 	if req.SystemInstruction != nil {
-		out.Messages = append(out.Messages, groqMessage{Role: constants.GroqRoleSystem, Content: joinText(req.SystemInstruction.Parts)})
+		out.Messages = append(out.Messages, openaiMessage{Role: constants.OpenAIRoleSystem, Content: joinText(req.SystemInstruction.Parts)})
 	}
 	// pending holds the calls of the last assistant message that have no result yet.
-	var pending []groqToolCall
+	var pending []openaiToolCall
 	for i, content := range req.Contents {
 		if content.Role == constants.LLMRoleModel {
-			msg, err := toGroqAssistant(i, content)
+			msg, err := toOpenAIAssistant(i, content)
 			if err != nil {
 				return out, err
 			}
@@ -90,28 +96,28 @@ func toGroqRequest(model string, req Request) (groqRequest, error) {
 			out.Messages = append(out.Messages, msg)
 			continue
 		}
-		toolMsgs, err := toGroqToolMessages(content, &pending)
+		toolMsgs, err := toOpenAIToolMessages(content, &pending)
 		if err != nil {
 			return out, err
 		}
 		out.Messages = append(out.Messages, toolMsgs...)
 		if text := joinText(content.Parts); text != "" {
-			out.Messages = append(out.Messages, groqMessage{Role: constants.GroqRoleUser, Content: text})
+			out.Messages = append(out.Messages, openaiMessage{Role: constants.OpenAIRoleUser, Content: text})
 		}
 	}
 	for _, tool := range req.Tools {
 		for _, decl := range tool.FunctionDeclarations {
 			decl.Parameters = lowerTypes(decl.Parameters)
-			out.Tools = append(out.Tools, groqTool{Type: constants.GroqToolTypeFunc, Function: decl})
+			out.Tools = append(out.Tools, openaiTool{Type: constants.OpenAIToolTypeFunc, Function: decl})
 		}
 	}
 	return out, nil
 }
 
-// toGroqAssistant gives each tool call the id call_<content index>_<call index>, so the same
+// toOpenAIAssistant gives each tool call the id call_<content index>_<call index>, so the same
 // history always yields the same ids.
-func toGroqAssistant(contentIndex int, content Content) (groqMessage, error) {
-	msg := groqMessage{Role: constants.GroqRoleAssistant, Content: joinText(content.Parts)}
+func toOpenAIAssistant(contentIndex int, content Content) (openaiMessage, error) {
+	msg := openaiMessage{Role: constants.OpenAIRoleAssistant, Content: joinText(content.Parts)}
 	for _, part := range content.Parts {
 		if part.FunctionCall == nil {
 			continue
@@ -120,19 +126,19 @@ func toGroqAssistant(contentIndex int, content Content) (groqMessage, error) {
 		if err != nil {
 			return msg, fmt.Errorf("encode tool call arguments: %w", err)
 		}
-		msg.ToolCalls = append(msg.ToolCalls, groqToolCall{
+		msg.ToolCalls = append(msg.ToolCalls, openaiToolCall{
 			ID:       fmt.Sprintf("call_%d_%d", contentIndex, len(msg.ToolCalls)),
-			Type:     constants.GroqToolTypeFunc,
-			Function: groqFunctionCall{Name: part.FunctionCall.Name, Arguments: string(args)},
+			Type:     constants.OpenAIToolTypeFunc,
+			Function: openaiFunctionCall{Name: part.FunctionCall.Name, Arguments: string(args)},
 		})
 	}
 	return msg, nil
 }
 
-// toGroqToolMessages answers each function response with the id of the first unanswered call of
+// toOpenAIToolMessages answers each function response with the id of the first unanswered call of
 // the same name from the assistant message before it.
-func toGroqToolMessages(content Content, pending *[]groqToolCall) ([]groqMessage, error) {
-	var msgs []groqMessage
+func toOpenAIToolMessages(content Content, pending *[]openaiToolCall) ([]openaiMessage, error) {
+	var msgs []openaiMessage
 	for _, part := range content.Parts {
 		if part.FunctionResponse == nil {
 			continue
@@ -152,12 +158,12 @@ func toGroqToolMessages(content Content, pending *[]groqToolCall) ([]groqMessage
 		if err != nil {
 			return nil, fmt.Errorf("encode tool result: %w", err)
 		}
-		msgs = append(msgs, groqMessage{Role: constants.GroqRoleTool, ToolCallID: id, Content: string(data)})
+		msgs = append(msgs, openaiMessage{Role: constants.OpenAIRoleTool, ToolCallID: id, Content: string(data)})
 	}
 	return msgs, nil
 }
 
-func fromGroqMessage(msg groqMessage) (*Response, error) {
+func fromOpenAIMessage(msg openaiMessage) (*Response, error) {
 	var parts []Part
 	if msg.Content != "" {
 		parts = append(parts, Part{Text: msg.Content})

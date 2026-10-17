@@ -1,4 +1,4 @@
-// Package llm is a small client for the Gemini generateContent and Groq chat completions REST APIs.
+// Package llm is a small client for the Gemini generateContent and the OpenAI-style chat completions REST APIs (Groq, OpenRouter).
 package llm
 
 import (
@@ -59,6 +59,13 @@ type Request struct {
 	SystemInstruction *Content  `json:"systemInstruction,omitempty"`
 	Contents          []Content `json:"contents"`
 	Tools             []Tool    `json:"tools,omitempty"`
+	// GenerationConfig is set by the Gemini client from LLM_TEMPERATURE.
+	GenerationConfig *GenerationConfig `json:"generationConfig,omitempty"`
+}
+
+// GenerationConfig holds the sampling settings of a Gemini call.
+type GenerationConfig struct {
+	Temperature float64 `json:"temperature"`
 }
 
 // Response is the first candidate's content; empty when the model returned none.
@@ -86,12 +93,17 @@ func ProvideClient(cfg *config.Config) (Client, error) {
 	switch cfg.LLMProvider {
 	case constants.LLMProviderGemini:
 		return &geminiClient{
-			http:   httpClient,
-			apiKey: cfg.LLMAPIKey,
-			url:    constants.LLMBaseURL + cfg.LLMModel + constants.LLMGenerateMethod,
+			http:        httpClient,
+			apiKey:      cfg.LLMAPIKey,
+			url:         constants.LLMBaseURL + cfg.LLMModel + constants.LLMGenerateMethod,
+			temperature: cfg.LLMTemperature,
 		}, nil
 	case constants.LLMProviderGroq:
-		return &groqClient{http: httpClient, apiKey: cfg.LLMAPIKey, model: cfg.LLMModel}, nil
+		return &openaiClient{http: httpClient, url: constants.GroqChatURL, apiKey: cfg.LLMAPIKey, model: cfg.LLMModel,
+			temperature: cfg.LLMTemperature, lowReasoning: true}, nil
+	case constants.LLMProviderOpenRouter:
+		return &openaiClient{http: httpClient, url: constants.OpenRouterChatURL, apiKey: cfg.LLMAPIKey, model: cfg.LLMModel,
+			temperature: cfg.LLMTemperature}, nil
 	default:
 		return nil, errors.InternalError("Invalid LLM provider", fmt.Errorf("invalid LLM provider: %s", cfg.LLMProvider)).
 			WithOperation("initialize_llm_client").
@@ -137,6 +149,8 @@ type geminiClient struct {
 	http   *http.Client
 	apiKey string
 	url    string
+
+	temperature float64
 }
 
 type generateReply struct {
@@ -147,6 +161,7 @@ type generateReply struct {
 
 func (c *geminiClient) Generate(ctx context.Context, req Request) (*Response, error) {
 	var reply generateReply
+	req.GenerationConfig = &GenerationConfig{Temperature: c.temperature}
 	if err := postJSON(ctx, c.http, c.url, constants.LLMAPIKeyHeader, c.apiKey, req, &reply); err != nil {
 		return nil, err
 	}

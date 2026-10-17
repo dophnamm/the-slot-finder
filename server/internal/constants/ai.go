@@ -1,23 +1,31 @@
 package constants
 
-// Ask AI (Google Gemini or Groq, chosen with LLM_PROVIDER). Each provider has its own key and model variables.
+// Ask AI (Google Gemini, Groq or OpenRouter, chosen with LLM_PROVIDER). Each provider has its own key and model variables.
 const (
 	// DefaultGeminiModel is the Gemini default; model IDs change (older ones close to new accounts), so confirm it in AI Studio.
 	DefaultGeminiModel = "gemini-3.5-flash"
 	// DefaultGroqModel is the Groq default; model IDs change, so confirm it in the Groq console.
 	DefaultGroqModel = "openai/gpt-oss-120b"
 	// GroqChatURL is Groq's OpenAI-compatible chat completions endpoint.
-	GroqChatURL    = "https://api.groq.com/openai/v1/chat/completions"
-	GroqAuthHeader = "Authorization"
-	GroqAuthScheme = "Bearer "
+	GroqChatURL = "https://api.groq.com/openai/v1/chat/completions"
+	// DefaultOpenRouterModel is the free router: it picks a free model that has the features the request needs, such as
+	// tool calling. Model ids change, so confirm it on openrouter.ai/models.
+	DefaultOpenRouterModel = "openrouter/free"
+	// OpenRouterChatURL is OpenRouter's OpenAI-compatible chat completions endpoint.
+	OpenRouterChatURL = "https://openrouter.ai/api/v1/chat/completions"
+	// DefaultLLMTemperature is low so the same question gets a consistent answer.
+	DefaultLLMTemperature = 0.2
+	// Groq and OpenRouter both speak the OpenAI chat completions shape.
+	OpenAIAuthHeader = "Authorization"
+	OpenAIAuthScheme = "Bearer "
 	// GroqReasoningModelPrefix marks the models that accept reasoning_effort; a low effort spends fewer tokens per answer.
 	GroqReasoningModelPrefix = "openai/gpt-oss"
 	GroqReasoningEffortLow   = "low"
-	GroqRoleSystem           = "system"
-	GroqRoleUser             = "user"
-	GroqRoleAssistant        = "assistant"
-	GroqRoleTool             = "tool"
-	GroqToolTypeFunc         = "function"
+	OpenAIRoleSystem         = "system"
+	OpenAIRoleUser           = "user"
+	OpenAIRoleAssistant      = "assistant"
+	OpenAIRoleTool           = "tool"
+	OpenAIToolTypeFunc       = "function"
 	// LLMBaseURL is the Gemini REST endpoint; the model and :generateContent follow it.
 	LLMBaseURL        = "https://generativelanguage.googleapis.com/v1beta/models/"
 	LLMGenerateMethod = ":generateContent"
