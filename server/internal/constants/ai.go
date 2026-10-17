@@ -56,6 +56,8 @@ const (
 	AIToolFindProjects     = "find_projects"
 	AIToolFindPeople       = "find_people"
 	AIToolCreateScenario   = "create_scenario"
+	// AIToolSuggestProject is the output function of intake extraction; it runs nothing.
+	AIToolSuggestProject = "suggest_project"
 
 	// AIFindMaxResults caps the matches a find tool returns.
 	AIFindMaxResults = 5

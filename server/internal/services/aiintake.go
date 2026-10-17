@@ -1,7 +1,11 @@
 package services
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"math"
+	"net/http"
 	"regexp"
 	"sort"
 	"strings"
@@ -9,9 +13,13 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"go.uber.org/zap"
 	"golang.org/x/text/unicode/norm"
 
 	"the-slot-finder/server/internal/constants"
+	"the-slot-finder/server/internal/errors"
+	"the-slot-finder/server/internal/integration/llm"
+	"the-slot-finder/server/internal/logger"
 	"the-slot-finder/server/internal/models"
 )
 
@@ -254,4 +262,124 @@ func parseIntakeDate(s *string) *time.Time {
 		return nil
 	}
 	return &t
+}
+
+// IntakeInput is a brief and the extra names the user asked to hide.
+type IntakeInput struct {
+	Text      string
+	MaskTerms []string
+}
+
+// IntakeResult is a validated suggestion, what validation changed, and what masking hid.
+type IntakeResult struct {
+	Suggestion Suggestion
+	Warnings   []string
+	Masked     maskCounts
+}
+
+// intakeAttempts is how many times the model may be asked for a usable suggest_project call.
+const intakeAttempts = 2
+
+func (s *aiService) ExtractIntake(ctx context.Context, in IntakeInput) (*IntakeResult, error) {
+	// Creating a project needs a planner, or a manager who leads a program; the program is chosen later.
+	reader, err := s.authz.ProgramReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	programs, err := s.programs.List(ctx, ListProgramsInput{PageSize: constants.NoLimit})
+	if err != nil {
+		return nil, err
+	}
+	customers := make([]string, 0, len(programs.Data))
+	leads := false
+	for _, p := range programs.Data {
+		customers = append(customers, p.Client)
+		leads = leads || (p.LeadID != nil && *p.LeadID == reader.LeadID)
+	}
+	if !reader.All && !leads {
+		return nil, errors.ForbiddenError(constants.MsgInsufficientPermissions, nil).WithOperation(opIntakeAI).WithResource(resourceAI)
+	}
+	catalogue, err := s.people.ListExpertises(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if s.cfg.LLMAPIKey == "" {
+		return nil, errors.NewAppError(constants.AINotConfigured, constants.MsgAINotConfigured, errors.ErrorTypeExternal,
+			http.StatusServiceUnavailable).WithOperation(opIntakeAI).WithResource(resourceAI)
+	}
+	// Only the masked text goes into the request; the original is never sent or logged.
+	masked, counts := maskBrief(in.Text, customers, in.MaskTerms)
+	var names strings.Builder
+	for _, e := range catalogue {
+		fmt.Fprintf(&names, "- %s (id %s)\n", e.Name, e.ID)
+	}
+	req := llm.Request{
+		SystemInstruction: &llm.Content{Parts: []llm.Part{{Text: aiIntakePrompt + names.String()}}},
+		Contents:          []llm.Content{{Role: constants.LLMRoleUser, Parts: []llm.Part{{Text: masked}}}},
+		Tools:             []llm.Tool{{FunctionDeclarations: []llm.FunctionDeclaration{suggestProjectDeclaration()}}},
+	}
+	for attempt := 0; attempt < intakeAttempts; attempt++ {
+		resp, err := s.llm.Generate(ctx, req)
+		if err != nil {
+			logger.Log.Warn("Intake extraction model call failed", zap.Error(err))
+			return nil, upstreamError(err).WithOperation(opIntakeAI).WithResource(resourceAI)
+		}
+		if raw, ok := parseSuggestion(resp.Content); ok {
+			suggestion, warnings := validateSuggestion(raw, masked, catalogue)
+			return &IntakeResult{Suggestion: suggestion, Warnings: warnings, Masked: counts}, nil
+		}
+		logger.Log.Warn("Intake extraction answer was not a suggestion", zap.Int("attempt", attempt+1))
+	}
+	return nil, errors.NewAppError(constants.AIUpstreamFailed, constants.MsgAIIntakeBadAnswer, errors.ErrorTypeExternal,
+		http.StatusBadGateway).WithOperation(opIntakeAI).WithResource(resourceAI)
+}
+
+// parseSuggestion reads the arguments of the suggest_project call; false when there is none or they do not fit.
+func parseSuggestion(c llm.Content) (rawSuggestion, bool) {
+	for _, part := range c.Parts {
+		if part.FunctionCall == nil || part.FunctionCall.Name != constants.AIToolSuggestProject {
+			continue
+		}
+		data, err := json.Marshal(part.FunctionCall.Args)
+		if err != nil {
+			return rawSuggestion{}, false
+		}
+		var raw rawSuggestion
+		if err := json.Unmarshal(data, &raw); err != nil {
+			return rawSuggestion{}, false
+		}
+		return raw, true
+	}
+	return rawSuggestion{}, false
+}
+
+// suggestProjectDeclaration is the output function: it runs nothing, its arguments are the suggestion.
+func suggestProjectDeclaration() llm.FunctionDeclaration {
+	field := func(kind, description string) map[string]any {
+		return map[string]any{"type": kind, "description": description, "nullable": true}
+	}
+	demand := map[string]any{
+		"type":     "OBJECT",
+		"required": []string{"expertise_name", "total_hours", "quote"},
+		"properties": map[string]any{
+			"expertise_name": map[string]any{"type": "STRING", "description": "One name from the expertise list"},
+			"total_hours":    map[string]any{"type": "NUMBER", "description": "Budget hours the text states"},
+			"min_level":      field("INTEGER", "Minimum level 1 to 5, only if the text says it"),
+			"quote":          map[string]any{"type": "STRING", "description": "The exact span of the text that supports this demand"},
+		},
+	}
+	return llm.FunctionDeclaration{
+		Name:        constants.AIToolSuggestProject,
+		Description: "Suggest one project from the brief. Leave a field null when the text does not say it.",
+		Parameters: map[string]any{
+			"type": "OBJECT",
+			"properties": map[string]any{
+				"name":           field("STRING", "Project name"),
+				"start_earliest": field("STRING", "Earliest start, YYYY-MM-DD"),
+				"deadline":       field("STRING", "Deadline, YYYY-MM-DD"),
+				"scope_points":   field("NUMBER", "Scope points, only if the text says it"),
+				"demands":        map[string]any{"type": "ARRAY", "items": demand},
+			},
+		},
+	}
 }
