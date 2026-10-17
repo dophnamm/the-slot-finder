@@ -30,7 +30,7 @@
 
 **As built**
 - The question and the page path are sent alone: there is no chat history on the server, and the client keeps the messages in memory. A reload clears them.
-- A failed question shows the shared error toast and an inline line under the panel; the question stays in the list.
+- A failed question gets no toast: the chat adds a reply in the error colour that says to try again (at the usage limit, how many seconds to wait); the question stays in the list.
 - Tool errors are not failures of the question. The model gets the error text (for example a `403` from a tool) and must say that it could not read that data.
 
 ## Not now
@@ -79,9 +79,9 @@
 5. A question over 500 characters is rejected with `400` by the server; the client does not let the user type past 500.
 6. A specialist sees no widget, and `POST /ai/ask` answers `403` for them.
 7. The widget opens on a project page with that route path sent as `page_context`; a reload clears the messages.
-8. A failed model call shows the error toast and the inline line, and the question stays in the list.
+8. A failed model call adds an error-coloured reply to the chat and shows no toast, and the question stays in the list.
 9. With `LLM_PROVIDER=groq` and a Groq key, a question gets an answer through the same route; with `LLM_PROVIDER=other`, the server does not start.
-10. A rate-limited model reply answers `429 AI_RATE_LIMITED`; when `data.retry_after` is sent, the toast says how many seconds to wait.
+10. A rate-limited model reply answers `429 AI_RATE_LIMITED`; when `data.retry_after` is sent, the error reply in the chat says how many seconds to wait.
 11. A click on the dimmed layer closes an open panel, and the round button closes it too.
 12. The header button switches the panel to the larger size and back; the width and height animate.
 13. While a question is pending, the typing indicator shows; it is gone when the answer or the error line appears.
@@ -99,7 +99,7 @@
 - [ ] Tests: service loop with a fake `llm.Client`, tool scoping for a Manager, `503` without a key, route roles in `router_test.go` (the heavy list does not yet include `POST /ai/ask`)
 
 **Client**
-- [x] Widget, panel, message list, question form, placeholder and inline error; mounted in the app layout; `ai:ask` permission
+- [x] Widget, panel, message list, question form, placeholder and error reply in the chat; mounted in the app layout; `ai:ask` permission
 - [ ] Tests: widget hidden for a specialist, question sent with the route path, error line shown
 
 **Still to verify**
