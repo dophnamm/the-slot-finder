@@ -166,12 +166,8 @@ func (s *peopleImportService) stored(ctx context.Context, rows []peopleRow) (map
 		return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opImportPeople).WithResource(resourcePeopleImport)
 	}
 	out := make(map[string]*models.Person, len(found))
-	for _, p := range found {
-		person, err := s.repo.FindWithSkills(ctx, p.ID)
-		if err != nil {
-			return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opImportPeople).WithResource(resourcePeopleImport)
-		}
-		out[strings.ToLower(p.Email)] = person
+	for i, p := range found {
+		out[strings.ToLower(p.Email)] = &found[i]
 	}
 	return out, nil
 }
@@ -382,7 +378,7 @@ func parsePeopleRow(record []string, columns map[string]int, line int, expertise
 	if addr, err := mail.ParseAddress(row.Email); err != nil || addr.Address != row.Email || len(row.Email) > peopleMaxEmailLength {
 		problem(constants.PeopleImportColumnEmail, constants.PeopleImportEmailInvalid)
 	}
-	if role := cell(constants.PeopleImportColumnRole); role != "" {
+	if role := strings.ToLower(cell(constants.PeopleImportColumnRole)); role != "" {
 		if !slices.Contains(constants.Roles, role) {
 			problem(constants.PeopleImportColumnRole, constants.PeopleImportRoleInvalid)
 		} else {

@@ -88,9 +88,6 @@ func TestPeopleImportService_Import(t *testing.T) {
 	run := func(ctx context.Context, in ImportInput, stored ...models.Person) (*recordingPeople, *models.PeopleImportResult, error) {
 		people, repo := newRecordingPeople(), new(MockPersonRepository)
 		repo.On("ListByEmails", mock.Anything, mock.Anything).Return(stored, nil)
-		for _, p := range stored {
-			repo.On("FindWithSkills", mock.Anything, p.ID).Return(&p, nil)
-		}
 		result, err := ProvidePeopleImportService(people, repo, ProvideAuthzService(leadPeople{}), passthroughTx{},
 			peopleImportConfig()).Import(ctx, in)
 		return people, result, err
@@ -195,7 +192,6 @@ func TestPeopleImportService_Import(t *testing.T) {
 		people.updateErr = assert.AnError
 		stored := quinn()
 		repo.On("ListByEmails", mock.Anything, mock.Anything).Return([]models.Person{stored}, nil)
-		repo.On("FindWithSkills", mock.Anything, piQuinnID).Return(&stored, nil)
 		_, err := ProvidePeopleImportService(people, repo, ProvideAuthzService(leadPeople{}), passthroughTx{},
 			peopleImportConfig()).Import(planner, importFile(piHeader+quinnRow("36", "", "3", other)))
 		require.ErrorIs(t, err, assert.AnError)
@@ -234,7 +230,7 @@ func parsePeople(t *testing.T, csv string) ([]peopleRow, []RowProblem) {
 }
 
 func TestParsePeopleCSV_Rows(t *testing.T) {
-	role, nonProject := "manager", 4.0
+	role, nonProject, specialist := "manager", 4.0, "specialist"
 	start := time.Date(2026, 11, 2, 0, 0, 0, 0, time.UTC)
 	end := time.Date(2027, 6, 30, 0, 0, 0, 0, time.UTC)
 	minimal := peopleRow{Line: 2, Name: "Quinn", Email: "quinn@x.io", WeeklyHours: 36,
@@ -247,6 +243,9 @@ func TestParsePeopleCSV_Rows(t *testing.T) {
 		{name: "full row", csv: peopleHeader + "Quinn,QUINN@x.io,manager,36,4,2026-11-02,2027-06-30,qa,3,Engineer:2;Analyst:1\n",
 			want: peopleRow{Line: 2, Name: "Quinn", Email: "quinn@x.io", Role: &role, WeeklyHours: 36, NonProjectHours: &nonProject,
 				StartDate: &start, EndDate: &end, Skills: []SkillInput{{"qa-id", 3, true}, {"eng-id", 2, false}, {"an-id", 1, false}}}},
+		{name: "role in any case", csv: "name,email,role,weekly_hours,primary_expertise,primary_level\nQuinn,quinn@x.io,Specialist,36,QA,3\n",
+			want: peopleRow{Line: 2, Name: "Quinn", Email: "quinn@x.io", Role: &specialist, WeeklyHours: 36,
+				Skills: []SkillInput{{ExpertiseID: "qa-id", Level: 3, Primary: true}}}},
 		{name: "required cells only", csv: "name,email,weekly_hours,primary_expertise,primary_level\nQuinn,quinn@x.io,36,QA,3\n", want: minimal},
 		{name: "header case and spaces", csv: "Name, EMAIL ,Weekly_Hours,Primary_Expertise,PRIMARY_LEVEL\nQuinn,quinn@x.io,36,qa,3\n", want: minimal},
 		{name: "unknown column ignored", csv: "name,team,email,weekly_hours,primary_expertise,primary_level\nQuinn,core,quinn@x.io,36,qa,3\n", want: minimal},
