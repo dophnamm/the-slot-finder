@@ -9,4 +9,5 @@ export const STAFFING_ENDPOINTS = {
     `${draft(id)}/assignments/${encodeURIComponent(assignmentId)}/alternatives`,
   accept: (id: string) => `${draft(id)}/accept`,
   reject: (id: string) => `${draft(id)}/reject`,
+  summary: (id: string) => `${draft(id)}/summary`,
 } as const

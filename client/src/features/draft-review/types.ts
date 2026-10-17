@@ -9,3 +9,9 @@ export interface StaffablePerson {
   active: boolean
   skills: { expertise: string; level: number; primary: boolean }[]
 }
+
+/** The written summary of a staffing draft; `template` means the AI was unavailable. */
+export interface DraftSummary {
+  summary: string
+  source: 'ai' | 'template'
+}

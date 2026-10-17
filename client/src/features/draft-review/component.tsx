@@ -8,6 +8,7 @@ import { canEditDraft, useDraft } from '@/shared/staffing'
 import { AssignmentGrid } from './components/assignment-grid'
 import { DemandCoverage } from './components/demand-coverage'
 import { DraftHeader } from './components/draft-header'
+import { DraftSummary } from './components/draft-summary'
 import { PlanChanges } from './components/plan-changes'
 import type { DraftReviewProps } from './types'
 
@@ -35,6 +36,7 @@ export function DraftReview({ draftId }: DraftReviewProps) {
   return (
     <div className="flex flex-col gap-8">
       <DraftHeader draft={draft} editable={editable} />
+      <DraftSummary draft={draft} />
       <DemandCoverage demands={draft.demands} />
       <AssignmentGrid draft={draft} editable={editable} />
       <PlanChanges changes={draft.changes} />
