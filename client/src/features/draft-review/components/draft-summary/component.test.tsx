@@ -53,4 +53,13 @@ describe('DraftSummary', () => {
     rerender(<DraftSummary draft={draft('a')} />)
     expect(screen.queryByText(TEXT)).toBeNull()
   })
+
+  it('keeps the text when the draft is unchanged', () => {
+    answerWith('ai')
+    const d = draft('a')
+    const { rerender } = render(<DraftSummary draft={d} />)
+    clickSummarize()
+    rerender(<DraftSummary draft={d} />)
+    expect(screen.getByText(TEXT)).toBeTruthy()
+  })
 })
