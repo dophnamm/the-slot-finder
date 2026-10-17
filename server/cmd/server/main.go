@@ -52,12 +52,13 @@ func NewHTTPServer(lc fx.Lifecycle,
 	calendarFeedHandler *handlers.CalendarFeedHandler,
 	teamHandler *handlers.ProgramTeamHandler,
 	holidayImportHandler *handlers.HolidayImportHandler,
+	peopleImportHandler *handlers.PeopleImportHandler,
 	aiHandler *handlers.AIHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
 	db *db.PostgresDB,
 ) *http.Server {
-	handler := routes.Router(healthHandler, identityHandler, personHandler, absenceHandler, programHandler, projectHandler, planHandler, staffingHandler, insightsHandler, eventHandler, scenarioHandler, scheduleHandler, timesheetHandler, calendarFeedHandler, teamHandler, holidayImportHandler, aiHandler, verifier, cfg)
+	handler := routes.Router(healthHandler, identityHandler, personHandler, absenceHandler, programHandler, projectHandler, planHandler, staffingHandler, insightsHandler, eventHandler, scenarioHandler, scheduleHandler, timesheetHandler, calendarFeedHandler, teamHandler, holidayImportHandler, peopleImportHandler, aiHandler, verifier, cfg)
 
 	srv := &http.Server{
 		Addr:              cfg.AppHTTPServer,
@@ -237,6 +238,7 @@ func appOptions(cfg *config.Config) []fx.Option {
 			handlers.ProvideScenarioHandler,
 			handlers.ProvideScheduleHandler,
 			handlers.ProvideTimesheetHandler,
+			handlers.ProvidePeopleImportHandler,
 			handlers.ProvideCalendarFeedHandler,
 			handlers.ProvideProgramTeamHandler,
 			handlers.ProvideHolidayImportHandler,

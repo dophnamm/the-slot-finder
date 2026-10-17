@@ -99,7 +99,7 @@ func newTestRouterWith(cfg *config.Config, availability services.AvailabilitySer
 	calendarFeeds := handlers.ProvideCalendarFeedHandler(nil, nil)
 	return Router(health, identity, person, absence, program, project, plan, staffing, insights, events, scenarios, schedule,
 		timesheets, calendarFeeds, handlers.ProvideProgramTeamHandler(nil, nil),
-		handlers.ProvideHolidayImportHandler(nil, nil), handlers.ProvideAIHandler(nil, nil), verifier, cfg)
+		handlers.ProvideHolidayImportHandler(nil, nil), handlers.ProvidePeopleImportHandler(nil), handlers.ProvideAIHandler(nil, nil), verifier, cfg)
 }
 
 func baseConfig() *config.Config {
@@ -293,6 +293,12 @@ func TestRouter_People_RBAC(t *testing.T) {
 		{name: "manager cannot import a timesheet", method: http.MethodPost, path: constants.PathTimesheetImport, token: "manager-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot import a timesheet", method: http.MethodPost, path: constants.PathTimesheetImport, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no token cannot import a timesheet", method: http.MethodPost, path: constants.PathTimesheetImport, wantStatus: http.StatusUnauthorized},
+		{name: "manager cannot download the people template", method: http.MethodGet, path: constants.PathPeopleImportTemplate, token: "manager-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot download the people template", method: http.MethodGet, path: constants.PathPeopleImportTemplate, token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "manager cannot import people", method: http.MethodPost, path: constants.PathPeopleImport, token: "manager-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot import people", method: http.MethodPost, path: constants.PathPeopleImport, token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "no token cannot import people", method: http.MethodPost, path: constants.PathPeopleImport, wantStatus: http.StatusUnauthorized},
+		{name: "no token cannot download the people template", method: http.MethodGet, path: constants.PathPeopleImportTemplate, wantStatus: http.StatusUnauthorized},
 		{name: "no role cannot read a calendar", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/calendar-feed", token: "no-role-token", wantStatus: http.StatusForbidden},
 		{name: "no token cannot connect a calendar", method: http.MethodPut, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/calendar-feed", wantStatus: http.StatusUnauthorized},
 		{name: "no role cannot sync a calendar", method: http.MethodPost, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/calendar-feed/sync", token: "no-role-token", wantStatus: http.StatusForbidden},

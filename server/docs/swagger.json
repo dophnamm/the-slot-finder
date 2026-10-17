@@ -1081,6 +1081,145 @@
                 }
             }
         },
+        "/people/import": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Upload a filled-in template as the multipart field \"file\". Every row is checked first: any problem saves nothing and returns 400 PEOPLE_IMPORT_INVALID with data.problems [{line, column, code}]. A person is matched by email: a new one is created, an existing one is updated, and a row that changes nothing is counted as unchanged. A file over PEOPLE_IMPORT_MAX_BYTES or PEOPLE_IMPORT_MAX_ROWS gets 413 PEOPLE_IMPORT_TOO_LARGE.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "People"
+                ],
+                "summary": "Import people",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Filled-in people template (CSV)",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.PeopleImportResultResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "object",
+                                    "properties": {
+                                        "problems": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/services.RowProblem"
+                                            }
+                                        }
+                                    }
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.RateLimitResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/people/import-template": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "A CSV with the header of the people file and one example row whose primary expertise is the first expertise in the catalogue.",
+                "produces": [
+                    "text/csv"
+                ],
+                "tags": [
+                    "People"
+                ],
+                "summary": "People import template",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/people/{id}": {
             "get": {
                 "security": [
@@ -5779,6 +5918,23 @@
                 "week": {
                     "type": "string",
                     "example": "2026-W44"
+                }
+            }
+        },
+        "dtos.PeopleImportResultResponse": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "unchanged": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "updated": {
+                    "type": "integer",
+                    "example": 3
                 }
             }
         },
