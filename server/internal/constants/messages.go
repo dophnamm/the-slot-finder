@@ -226,4 +226,6 @@ const (
 	MsgAIEmptyAnswer    = "The AI service returned no answer"
 	MsgAIToolFailed     = "The data could not be read"
 	MsgAIUnknownTool    = "Unknown tool"
+	// MsgOneScenarioPerQuestion is what the model reads when it asks for a second scenario in one question.
+	MsgOneScenarioPerQuestion = "Only one scenario can be saved per question"
 )

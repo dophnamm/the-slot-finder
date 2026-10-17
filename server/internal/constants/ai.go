@@ -55,7 +55,12 @@ const (
 	AIToolCapacityForecast = "get_capacity_forecast"
 	AIToolFindProjects     = "find_projects"
 	AIToolFindPeople       = "find_people"
+	AIToolCreateScenario   = "create_scenario"
 
 	// AIFindMaxResults caps the matches a find tool returns.
 	AIFindMaxResults = 5
+	// AIScenarioMaxChanges caps the changes create_scenario returns, largest first.
+	AIScenarioMaxChanges = 5
+	// AIScenarioNameMaxRunes is how much of the question goes into the scenario name.
+	AIScenarioNameMaxRunes = 60
 )
