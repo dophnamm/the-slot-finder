@@ -35,3 +35,6 @@ export const CAPACITY_FIELD_LABELS: Record<string, PlainKey> = {
 
 /** The `change` values of a TeamChanged event. */
 export const TEAM_CHANGE_ADDED = 'added'
+
+/** The `kind` of a ProjectStatusChanged event that changed a program. */
+export const STATUS_KIND_PROGRAM = 'program'
