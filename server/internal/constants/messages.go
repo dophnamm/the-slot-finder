@@ -219,6 +219,7 @@ const (
 // Ask AI messages.
 const (
 	MsgAIAnswered       = "Question answered"
+	MsgDraftSummarized  = "Draft summarized"
 	MsgAINotConfigured  = "Ask AI is not set up on this server"
 	MsgAIUpstreamFailed = "The AI service could not answer; try again later"
 	MsgAIRateLimited    = "The AI assistant is at its usage limit; try again later"

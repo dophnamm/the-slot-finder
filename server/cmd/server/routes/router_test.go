@@ -99,7 +99,16 @@ func newTestRouterWith(cfg *config.Config, availability services.AvailabilitySer
 	calendarFeeds := handlers.ProvideCalendarFeedHandler(nil, nil)
 	return Router(health, identity, person, absence, program, project, plan, staffing, insights, events, scenarios, schedule,
 		timesheets, calendarFeeds, handlers.ProvideProgramTeamHandler(nil, nil),
-		handlers.ProvideHolidayImportHandler(nil, nil), handlers.ProvidePeopleImportHandler(nil), handlers.ProvideAIHandler(nil, nil), verifier, cfg)
+		handlers.ProvideHolidayImportHandler(nil, nil), handlers.ProvidePeopleImportHandler(nil), handlers.ProvideAIHandler(fakeAI{}, nil), verifier, cfg)
+}
+
+// fakeAI summarizes any draft, so a request that passes the role check gets 200.
+type fakeAI struct {
+	services.AIService
+}
+
+func (fakeAI) SummarizeDraft(_ context.Context, _ string) (*models.DraftSummary, error) {
+	return &models.DraftSummary{Summary: "ok", Source: constants.SummarySourceTemplate}, nil
 }
 
 func baseConfig() *config.Config {
@@ -224,6 +233,7 @@ func TestRouter_HeavyRateLimit(t *testing.T) {
 		{http.MethodPost, constants.PathHolidayImport},
 		{http.MethodPut, constants.PathPersonCalendarFeed},
 		{http.MethodPost, constants.PathPersonCalendarFeedSync},
+		{http.MethodPost, constants.PathStaffingDraftSummary},
 	}
 	for _, route := range heavy {
 		t.Run(route.method+" "+route.path, func(t *testing.T) {
@@ -302,6 +312,11 @@ func TestRouter_People_RBAC(t *testing.T) {
 		{name: "no role cannot read a calendar", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/calendar-feed", token: "no-role-token", wantStatus: http.StatusForbidden},
 		{name: "no token cannot connect a calendar", method: http.MethodPut, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/calendar-feed", wantStatus: http.StatusUnauthorized},
 		{name: "no role cannot sync a calendar", method: http.MethodPost, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/calendar-feed/sync", token: "no-role-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot summarize a staffing draft", method: http.MethodPost, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa/summary", token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "no role cannot summarize a staffing draft", method: http.MethodPost, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa/summary", token: "no-role-token", wantStatus: http.StatusForbidden},
+		{name: "manager can summarize a staffing draft", method: http.MethodPost, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa/summary", token: "manager-token", wantStatus: http.StatusOK},
+		{name: "planner can summarize a staffing draft", method: http.MethodPost, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa/summary", token: "planner-token", wantStatus: http.StatusOK},
+		{name: "no token cannot summarize a staffing draft", method: http.MethodPost, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa/summary", wantStatus: http.StatusUnauthorized},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

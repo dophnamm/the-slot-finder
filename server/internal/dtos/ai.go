@@ -1,6 +1,10 @@
 package dtos
 
-import "strings"
+import (
+	"strings"
+
+	"the-slot-finder/server/internal/models"
+)
 
 // AskAIRequest is a question to the assistant.
 type AskAIRequest struct {
@@ -17,4 +21,15 @@ func (r *AskAIRequest) Normalize() {
 // AskAIResponse is the assistant's answer.
 type AskAIResponse struct {
 	Answer string `json:"answer"`
+}
+
+// DraftSummaryResponse is a short summary of a staffing draft and where it came from ("ai" or "template").
+type DraftSummaryResponse struct {
+	Summary string `json:"summary"`
+	Source  string `json:"source" enums:"ai,template"`
+}
+
+// NewDraftSummaryResponse maps a draft summary to its response.
+func NewDraftSummaryResponse(s models.DraftSummary) DraftSummaryResponse {
+	return DraftSummaryResponse{Summary: s.Summary, Source: s.Source}
 }

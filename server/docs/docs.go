@@ -4151,6 +4151,92 @@ const docTemplate = `{
                 }
             }
         },
+        "/staffing-drafts/{id}/summary": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a short plain-English summary of a staffing draft. source is \"ai\" when the model wrote it and \"template\" when the model is not set up or failed and the server built it from the draft's facts. A manager can summarize only drafts of projects in programs they lead.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AI"
+                ],
+                "summary": "Summarize a staffing draft",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Staffing draft ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.DraftSummaryResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/timesheets/import": {
             "post": {
                 "security": [
@@ -5354,6 +5440,21 @@ const docTemplate = `{
                         "2026-W42",
                         "2026-W43"
                     ]
+                }
+            }
+        },
+        "dtos.DraftSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "source": {
+                    "type": "string",
+                    "enum": [
+                        "ai",
+                        "template"
+                    ]
+                },
+                "summary": {
+                    "type": "string"
                 }
             }
         },

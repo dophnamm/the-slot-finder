@@ -761,6 +761,16 @@ definitions:
           type: string
         type: array
     type: object
+  dtos.DraftSummaryResponse:
+    properties:
+      source:
+        enum:
+        - ai
+        - template
+        type: string
+      summary:
+        type: string
+    type: object
   dtos.DraftWeekHours:
     properties:
       hours:
@@ -4852,6 +4862,63 @@ paths:
       summary: Reject a staffing draft
       tags:
       - Staffing drafts
+  /staffing-drafts/{id}/summary:
+    post:
+      description: Returns a short plain-English summary of a staffing draft. source
+        is "ai" when the model wrote it and "template" when the model is not set up
+        or failed and the server built it from the draft's facts. A manager can summarize
+        only drafts of projects in programs they lead.
+      parameters:
+      - description: Staffing draft ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.DraftSummaryResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Summarize a staffing draft
+      tags:
+      - AI
   /timesheets/import:
     post:
       consumes:
