@@ -151,7 +151,7 @@ flowchart TB
   engine["<b>Planning Engine</b><br/>pure library"]
   iam["<b>Identity & Access</b><br/>login, roles · used by every API route"]
 
-  integ -->|"import"| data
+  integ -->|"calendar sync, holiday import"| data
   integ -->|"calendar sync: out-of-office → planned leave"| avail
   data -.->|"domain events: AbsenceAdded, AbsenceRemoved, PhaseSlipped, ProjectSlipped,<br/>DemandChanged, ProjectStatusChanged, PersonCapacityChanged, TeamChanged,<br/>SkillChanged, ProgramSlipped"| events
   events -->|"triggers re-plan"| planning
