@@ -34,6 +34,10 @@ const (
 	LLMRoleUser  = "user"
 	LLMRoleModel = "model"
 
+	// Where a draft summary came from: the model, or the template written from the facts.
+	SummarySourceAI       = "ai"
+	SummarySourceTemplate = "template"
+
 	// LLMToolCutMarker ends a tool result that was cut at LLM_MAX_TOOL_RESULT_BYTES.
 	LLMToolCutMarker = "...[data cut: the result was too long, ask for a narrower range or one program]"
 
