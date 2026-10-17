@@ -77,9 +77,9 @@ func newTeamServiceRecording(t *testing.T, teams *memoryTeams, projects *MockPro
 	t.Helper()
 	programs := new(MockProgramRepository)
 	lead := leadPersonID
-	programs.On("FindWithLead", mock.Anything, teamProgramID).Return(&models.Program{BaseModel: models.BaseModel{ID: teamProgramID}, LeadID: &lead}, nil)
+	programs.On("FindWithLead", mock.Anything, teamProgramID).Return(&models.Program{BaseModel: models.BaseModel{ID: teamProgramID}, Name: "Checkout Revamp", LeadID: &lead}, nil)
 	people := new(MockPersonRepository)
-	people.On("FindWithSkills", mock.Anything, teamPersonID).Return(&models.Person{BaseModel: models.BaseModel{ID: teamPersonID}}, nil).Maybe()
+	people.On("FindWithSkills", mock.Anything, teamPersonID).Return(&models.Person{BaseModel: models.BaseModel{ID: teamPersonID}, Name: "Quinn"}, nil).Maybe()
 	plans := new(MockPlanRepository)
 	plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(1), nil).Maybe()
 	return ProvideProgramTeamService(teams, programs, projects, people, plans, authz, passthroughTx{}, events)
@@ -125,7 +125,8 @@ func TestProgramTeamService_AddAndRemove(t *testing.T) {
 	require.Len(t, events.events, 1)
 	assert.Equal(t, constants.EventTeamChanged, events.events[0].Type)
 	assert.Equal(t, []string{"p-active"}, events.events[0].ProjectIDs, "only the projects a draft may cover")
-	assert.Equal(t, constants.TeamChangeAdded, events.events[0].Payload.(TeamChange).Change)
+	assert.Equal(t, TeamChange{ProgramID: teamProgramID, Program: "Checkout Revamp", PersonID: teamPersonID, PersonName: "Quinn",
+		Change: constants.TeamChangeAdded}, events.events[0].Payload)
 
 	requireAppError(t, service.Add(planner, teamProgramID, teamPersonID), constants.TeamMemberExists, http.StatusConflict)
 	requireStatus(t, service.Add(asRole("kc-manager", constants.RoleManager), teamProgramID, teamPersonID), http.StatusForbidden)
@@ -133,7 +134,8 @@ func TestProgramTeamService_AddAndRemove(t *testing.T) {
 
 	require.NoError(t, service.Remove(planner, teamProgramID, teamPersonID))
 	require.Len(t, events.events, 2)
-	assert.Equal(t, constants.TeamChangeRemoved, events.events[1].Payload.(TeamChange).Change)
+	assert.Equal(t, TeamChange{ProgramID: teamProgramID, Program: "Checkout Revamp", PersonID: teamPersonID, PersonName: "Quinn",
+		Change: constants.TeamChangeRemoved}, events.events[1].Payload)
 	requireAppError(t, service.Remove(planner, teamProgramID, teamPersonID), constants.TeamMemberNotFound, http.StatusNotFound)
 	assert.Len(t, events.events, 2, "removing someone who is not in the team records nothing")
 

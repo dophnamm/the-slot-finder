@@ -89,11 +89,9 @@ func (s *programTeamService) Add(ctx context.Context, programID, personID string
 	if _, err := s.authz.Require(ctx, CanManageAllPrograms); err != nil {
 		return err
 	}
-	if _, err := s.programs.FindWithLead(ctx, programID); err != nil {
-		return notFoundOrDatabase(err, constants.ProgramNotFound, constants.MsgProgramNotFound, resourceProgram, opAddTeamMember)
-	}
-	if _, err := s.people.FindWithSkills(ctx, personID); err != nil {
-		return notFoundOrDatabase(err, constants.PersonNotFound, constants.MsgPersonNotFound, resourcePerson, opAddTeamMember)
+	program, person, err := s.findProgramAndPerson(ctx, programID, personID, opAddTeamMember)
+	if err != nil {
+		return err
 	}
 	affected, err := s.plannableProjects(ctx, programID, opAddTeamMember)
 	if err != nil {
@@ -104,7 +102,8 @@ func (s *programTeamService) Add(ctx context.Context, programID, personID string
 			return err
 		}
 		return s.events.Record(ctx, ChangeInput{Type: constants.EventTeamChanged, ProjectIDs: affected,
-			Payload: TeamChange{ProgramID: programID, PersonID: personID, Change: constants.TeamChangeAdded}})
+			Payload: TeamChange{ProgramID: programID, Program: program.Name, PersonID: personID, PersonName: person.Name,
+				Change: constants.TeamChangeAdded}})
 	})
 	if err != nil {
 		if stderrors.Is(err, gorm.ErrDuplicatedKey) {
@@ -120,6 +119,10 @@ func (s *programTeamService) Remove(ctx context.Context, programID, personID str
 	if _, err := s.authz.Require(ctx, CanManageAllPrograms); err != nil {
 		return err
 	}
+	program, person, err := s.findProgramAndPerson(ctx, programID, personID, opRemoveTeamMember)
+	if err != nil {
+		return err
+	}
 	affected, err := s.plannableProjects(ctx, programID, opRemoveTeamMember)
 	if err != nil {
 		return err
@@ -131,7 +134,8 @@ func (s *programTeamService) Remove(ctx context.Context, programID, personID str
 			return err
 		}
 		return s.events.Record(ctx, ChangeInput{Type: constants.EventTeamChanged, ProjectIDs: affected,
-			Payload: TeamChange{ProgramID: programID, PersonID: personID, Change: constants.TeamChangeRemoved}})
+			Payload: TeamChange{ProgramID: programID, Program: program.Name, PersonID: personID, PersonName: person.Name,
+				Change: constants.TeamChangeRemoved}})
 	})
 	if err != nil {
 		return errors.DatabaseError(constants.MsgTeamSaveFailed, err).WithOperation(opRemoveTeamMember).WithResource(resourceTeam)
@@ -141,6 +145,19 @@ func (s *programTeamService) Remove(ctx context.Context, programID, personID str
 			http.StatusNotFound).WithOperation(opRemoveTeamMember).WithResource(resourceTeam)
 	}
 	return nil
+}
+
+// findProgramAndPerson loads both, so a change event can name them.
+func (s *programTeamService) findProgramAndPerson(ctx context.Context, programID, personID, op string) (*models.Program, *models.Person, error) {
+	program, err := s.programs.FindWithLead(ctx, programID)
+	if err != nil {
+		return nil, nil, notFoundOrDatabase(err, constants.ProgramNotFound, constants.MsgProgramNotFound, resourceProgram, op)
+	}
+	person, err := s.people.FindWithSkills(ctx, personID)
+	if err != nil {
+		return nil, nil, notFoundOrDatabase(err, constants.PersonNotFound, constants.MsgPersonNotFound, resourcePerson, op)
+	}
+	return program, person, nil
 }
 
 // plannableProjects is the ids of the program's projects a draft may cover: the ones a team

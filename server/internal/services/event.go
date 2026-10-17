@@ -77,9 +77,11 @@ type SkillChange struct {
 
 // TeamChange is the payload of TeamChanged; Change is constants.TeamChangeAdded or Removed.
 type TeamChange struct {
-	ProgramID string `json:"program_id"`
-	PersonID  string `json:"person_id"`
-	Change    string `json:"change"`
+	ProgramID  string `json:"program_id"`
+	Program    string `json:"program"`
+	PersonID   string `json:"person_id"`
+	PersonName string `json:"person_name"`
+	Change     string `json:"change"`
 }
 
 // ProgramEndChange is the payload of ProgramSlipped.
