@@ -11,9 +11,6 @@ export const PROGRAM_ENDPOINTS = {
   members: (id: string) => `${program(id)}/members`,
   team: (id: string) => `${program(id)}/team`,
   teamMember: (id: string, personId: string) => `${program(id)}/team/${encodeURIComponent(personId)}`,
-  assistants: (id: string) => `${program(id)}/assistants`,
-  assistant: (id: string, assistantId: string) => `${program(id)}/assistants/${encodeURIComponent(assistantId)}`,
-  milestones: (id: string) => `${program(id)}/milestones`,
   forecast: (id: string) => `${program(id)}/forecast`,
 } as const
 
