@@ -207,6 +207,10 @@ type Config struct {
 	TimesheetMaxBytes      int64
 	TimesheetMaxRows       int
 
+	// People import (docs/features/people-import.md): the largest file in bytes and rows.
+	PeopleImportMaxBytes int64
+	PeopleImportMaxRows  int
+
 	// Calendar sync (docs/features/calendar-sync.md): the key that encrypts calendar links (empty
 	// turns the feature off), where a link may point, how often and how far ahead the runner
 	// reads, which titles mean out of office, and the limits on one fetch.
@@ -368,6 +372,8 @@ func Load() (*Config, error) {
 		TimesheetMaxWeekHours:  getEnvAsFloat("TIMESHEET_MAX_WEEK_HOURS", 80),
 		TimesheetMaxBytes:      int64(getEnvAsInt("TIMESHEET_MAX_BYTES", 1<<20)),
 		TimesheetMaxRows:       getEnvAsInt("TIMESHEET_MAX_ROWS", 5000),
+		PeopleImportMaxBytes:   int64(getEnvAsInt("PEOPLE_IMPORT_MAX_BYTES", 1<<20)),
+		PeopleImportMaxRows:    getEnvAsInt("PEOPLE_IMPORT_MAX_ROWS", 1000),
 
 		CalendarFeedKey:       getEnv("CALENDAR_FEED_KEY", ""),
 		CalendarAllowedHosts:  getEnvAsList("CALENDAR_ALLOWED_HOSTS", defaultCalendarAllowedHosts),

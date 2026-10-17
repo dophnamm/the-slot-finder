@@ -40,7 +40,7 @@ const TimesheetProblemsKey = "problems"
 // The timesheet file: the multipart field of an upload, and the download's type and name.
 const (
 	TimesheetFormField                 = "file"
-	TimesheetContentType               = "text/csv; charset=utf-8"
+	TimesheetContentType               = CSVContentType
 	TimesheetFileName                  = "timesheet.csv"
 	ContentDispositionAttachmentFormat = "attachment; filename=%q"
 )
