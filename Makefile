@@ -8,7 +8,7 @@ COMPOSE    := docker compose -f $(SERVER_DIR)/docker-compose.yml --env-file $(SE
 INFRA      := postgres redis keycloak otel-collector jaeger
 
 .DEFAULT_GOAL := help
-.PHONY: help setup env up down logs ps infra dev server client migrate seed keycloak-theme lint lint-server lint-client test test-server test-client build build-server build-client check check-server check-client reset-data
+.PHONY: help setup env up down logs ps infra dev server client migrate seed keycloak-theme lint lint-server lint-client test test-server test-client build build-server build-client check check-server check-client check-llm reset-data
 
 help: ## List the commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -97,6 +97,9 @@ check: check-server check-client ## Lint, test and build everything
 check-server: lint-server test-server build-server ## Lint, test and build the server only
 
 check-client: lint-client test-client build-client ## Lint, test and build the client only
+
+check-llm: ## Send one tiny request to the Ask AI provider in server/.env and show the status and limits
+	@sh scripts/check-llm.sh
 
 reset-data: ## Stop containers and DELETE all local data (Postgres, Redis, Keycloak volumes)
 	$(COMPOSE) down -v
