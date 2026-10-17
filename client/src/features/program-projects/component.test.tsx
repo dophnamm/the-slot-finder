@@ -28,6 +28,7 @@ vi.mock('@/shared/programs', async (importOriginal) => ({
 }))
 vi.mock('@/shared/components/propose-squad-button', () => ({ ProposeSquadButton: () => null }))
 vi.mock('@/shared/components/project-form-dialog', () => ({ ProjectFormDialog: () => null }))
+vi.mock('@/shared/ai', () => ({ useExtractIntake: () => ({ mutate: vi.fn(), isPending: false }) }))
 
 afterEach(() => {
   cleanup()
@@ -66,5 +67,16 @@ describe('ProgramProjects ordering', () => {
   it('offers no ordering to someone who cannot edit the program', () => {
     renderProjects('manager', 'someone-else')
     expect(screen.queryByRole('button', { name: translate('Move {name}', { name: 'Loyalty' }) })).toBeNull()
+  })
+})
+
+describe('ProgramProjects brief button', () => {
+  it('opens the brief dialog for someone who can add projects, and is hidden otherwise', () => {
+    renderProjects('planner')
+    fireEvent.click(screen.getByRole('button', { name: translate('New project from a brief') }))
+    expect(screen.getByRole('dialog')).toBeTruthy()
+    cleanup()
+    renderProjects('specialist', 'x')
+    expect(screen.queryByRole('button', { name: translate('New project from a brief') })).toBeNull()
   })
 })

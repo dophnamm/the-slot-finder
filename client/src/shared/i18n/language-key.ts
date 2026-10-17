@@ -82,6 +82,7 @@ export type LanguageKey = {
   'Behind on delivery': string
   Bench: string
   'Bench ({count})': string
+  Brief: string
   Budget: string
   'Budget hours': string
   'Budget hours each demand needs and the hours this draft assigns.': string
@@ -136,6 +137,8 @@ export type LanguageKey = {
   'Cross-expertise': string
   'Current phase': string
   'Customer engagements and their projects.': string
+  'Customer names, emails and phone numbers are hidden before the text goes to the AI.': string
+  'Customer or contact names to hide (comma separated)': string
   Dashboard: string
   'Dashboard view': string
   Dates: string
@@ -176,6 +179,7 @@ export type LanguageKey = {
   'e.g. 8': string
   'e.g. Acme Commerce Platform': string
   'e.g. Acme Retail': string
+  'e.g. Acme, Jane Doe': string
   'e.g. Alex Nguyen': string
   'e.g. alex@company.com': string
   'e.g. Checkout Revamp': string
@@ -233,6 +237,7 @@ export type LanguageKey = {
   Headcount: string
   Healthy: string
   'Hi, I can answer questions about the page you are on. What would you like to know?': string
+  'Hidden before sending: {emails}, {customers}, {phones}': string
   'Hide details': string
   Holiday: string
   'Holiday added.': string
@@ -304,6 +309,7 @@ export type LanguageKey = {
   Needed: string
   'New phase': string
   'New program': string
+  'New project from a brief': string
   'New scenario': string
   Next: string
   'Next 3 weeks': string
@@ -388,6 +394,7 @@ export type LanguageKey = {
   'Page {page} of {pages}': string
   'Past the end date': string
   'Past weeks show worked hours when a timesheet was imported.': string
+  'Paste the customer’s brief or email here.': string
   People: string
   'People appear here once a staffing draft for this program is accepted.': string
   'People changed': string
@@ -506,6 +513,7 @@ export type LanguageKey = {
   'Start – deadline': string
   Status: string
   Stretch: string
+  'Suggest project': string
   'Summarize this draft': string
   Summary: string
   'Summed over {count} project that is not cancelled.': string
@@ -589,6 +597,7 @@ export type LanguageKey = {
   'Unmet demand': string
   'Unmet demands': string
   'Until {date}': string
+  'Use at most 10 names of 100 characters each.': string
   'Use the secret iCal address from Google Calendar or Outlook. It starts with https://.': string
   'Use whole hours': string
   Utilization: string
@@ -619,11 +628,18 @@ export type LanguageKey = {
   'Your session has ended. Sign in again.': string
   '{added} added, {skipped} already there.': string
   '{client} · manager: {manager} · {timeline}': string
+  '{count} / {max} characters': string
   '{count} attempts: {error}': string
   '{count} change is waiting for review.': string
   '{count} changes are waiting for review.': string
+  '{count} customer name': string
+  '{count} customer names': string
+  '{count} email': string
+  '{count} emails': string
   '{count} locked week is skipped.': string
   '{count} locked weeks are skipped.': string
+  '{count} phone': string
+  '{count} phones': string
   '{count} week × {hours} hrs = {total} hrs': string
   '{count} weeks': string
   '{count} weeks × {hours} hrs = {total} hrs': string

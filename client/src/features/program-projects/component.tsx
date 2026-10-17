@@ -10,6 +10,7 @@ import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 import { PROJECT_TABLE_COLUMNS } from './constants'
+import { IntakeDialog } from './components/intake-dialog'
 import { ProjectRow } from './components/project-row'
 import type { ProgramProjectsProps } from './types'
 import { useProjectOrder } from './use-project-order'
@@ -24,11 +25,13 @@ export function ProgramProjects({ programId }: ProgramProjectsProps) {
   const { data: program } = useProgram(programId)
   const { data: projects = [], isPending } = useProgramProjects(programId)
   const [adding, setAdding] = useState(false)
+  const [suggesting, setSuggesting] = useState(false)
   const canAdd = program !== undefined && canEdit(user, [program.lead]) && isOpenStatus(program.status)
   const canReorder = canAdd && projects.length > 1
   const { rows, draggingId, handlers } = useProjectOrder(programId, projects)
 
   const handleAdd = () => setAdding(true)
+  const handleSuggest = () => setSuggesting(true)
 
   return (
     <Section
@@ -38,7 +41,16 @@ export function ProgramProjects({ programId }: ProgramProjectsProps) {
           ? t('Drag a row to change the order: the top project has the highest priority.')
           : t('Ordered by priority, then deadline.')
       }
-      action={canAdd && <Button onClick={handleAdd}>{t('Add project')}</Button>}
+      action={
+        canAdd && (
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleSuggest}>
+              {t('New project from a brief')}
+            </Button>
+            <Button onClick={handleAdd}>{t('Add project')}</Button>
+          </div>
+        )
+      }
     >
       <Table>
         <TableHeader>
@@ -74,6 +86,7 @@ export function ProgramProjects({ programId }: ProgramProjectsProps) {
         </TableBody>
       </Table>
       {adding && <ProjectFormDialog open={adding} programId={programId} project={null} onOpenChange={setAdding} />}
+      {suggesting && <IntakeDialog open={suggesting} onOpenChange={setSuggesting} />}
     </Section>
   )
 }
