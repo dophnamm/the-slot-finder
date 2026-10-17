@@ -1,15 +1,18 @@
 package services
 
 import (
+	"math"
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
 	"golang.org/x/text/unicode/norm"
 
 	"the-slot-finder/server/internal/constants"
+	"the-slot-finder/server/internal/models"
 )
 
 // maskCounts is returned to the client as "masked".
@@ -133,4 +136,122 @@ func maskTerm(text, term string) (string, int) {
 	}
 	b.WriteString(text[pos:])
 	return b.String(), count
+}
+
+// rawSuggestion mirrors the suggest_project arguments. It is untrusted model output.
+type rawSuggestion struct {
+	Name          string      `json:"name"`
+	StartEarliest *string     `json:"start_earliest"`
+	Deadline      *string     `json:"deadline"`
+	ScopePoints   *float64    `json:"scope_points"`
+	Demands       []rawDemand `json:"demands"`
+}
+
+type rawDemand struct {
+	ExpertiseName string  `json:"expertise_name"`
+	TotalHours    float64 `json:"total_hours"`
+	MinLevel      *int    `json:"min_level"`
+	Quote         string  `json:"quote"`
+}
+
+// Suggestion is a validated project suggestion.
+type Suggestion struct {
+	Name          string
+	StartEarliest *string
+	Deadline      *string
+	ScopePoints   *float64
+	Demands       []SuggestedDemand
+}
+
+// SuggestedDemand is a validated demand, tied to a catalogue expertise.
+type SuggestedDemand struct {
+	ExpertiseID   string
+	ExpertiseName string
+	TotalHours    float64
+	MinLevel      *int
+	Quote         string
+}
+
+// normalizeForQuote makes two texts comparable: normalised, lower case, one space between words.
+func normalizeForQuote(s string) string {
+	return strings.Join(strings.Fields(strings.ToLower(normalizeText(s))), " ")
+}
+
+// validateSuggestion keeps only what the masked brief supports and the catalogue knows; the rest is dropped or nulled,
+// each with a warning. It never creates an expertise.
+func validateSuggestion(raw rawSuggestion, maskedText string, catalogue []models.Expertise) (Suggestion, []string) {
+	var warnings []string
+	out := Suggestion{Name: strings.TrimSpace(normalizeText(raw.Name))}
+	if r := []rune(out.Name); len(r) > constants.IntakeMaxNameChars {
+		out.Name = strings.TrimSpace(string(r[:constants.IntakeMaxNameChars]))
+	}
+	for _, p := range []string{constants.MaskEmail, constants.MaskCustomer, constants.MaskPhone} {
+		if strings.Contains(out.Name, p) {
+			warnings = append(warnings, constants.WarnPlaceholderInName)
+			break
+		}
+	}
+
+	start, deadline := parseIntakeDate(raw.StartEarliest), parseIntakeDate(raw.Deadline)
+	if start != nil && deadline != nil && deadline.Before(*start) {
+		start, deadline = nil, nil
+		warnings = append(warnings, constants.WarnDatesOrder)
+	}
+	out.StartEarliest, out.Deadline = formatIntakeDate(start), formatIntakeDate(deadline)
+	if raw.ScopePoints != nil && *raw.ScopePoints >= 0 && !math.IsInf(*raw.ScopePoints, 0) {
+		out.ScopePoints = raw.ScopePoints
+	}
+
+	byName := make(map[string]models.Expertise, len(catalogue))
+	for _, e := range catalogue {
+		byName[strings.ToLower(strings.TrimSpace(normalizeText(e.Name)))] = e
+	}
+	haystack := normalizeForQuote(maskedText)
+	seen := map[string]bool{}
+	for _, d := range raw.Demands {
+		quote := normalizeForQuote(d.Quote)
+		if quote == "" || !strings.Contains(haystack, quote) {
+			warnings = append(warnings, constants.WarnDemandNoQuote)
+			continue
+		}
+		e, ok := byName[strings.ToLower(strings.TrimSpace(normalizeText(d.ExpertiseName)))]
+		if !ok {
+			warnings = append(warnings, constants.WarnDemandUnknownExpertise)
+			continue
+		}
+		if !(d.TotalHours > 0 && d.TotalHours <= constants.IntakeMaxHours) {
+			warnings = append(warnings, constants.WarnDemandHours)
+			continue
+		}
+		if seen[e.ID] {
+			warnings = append(warnings, constants.WarnDemandDuplicateExpertise)
+		}
+		seen[e.ID] = true
+		demand := SuggestedDemand{ExpertiseID: e.ID, ExpertiseName: e.Name, TotalHours: d.TotalHours, Quote: strings.TrimSpace(d.Quote)}
+		if d.MinLevel != nil && *d.MinLevel >= constants.IntakeMinLevel && *d.MinLevel <= constants.IntakeMaxLevel {
+			demand.MinLevel = d.MinLevel
+		}
+		out.Demands = append(out.Demands, demand)
+	}
+	return out, warnings
+}
+
+func formatIntakeDate(t *time.Time) *string {
+	if t == nil {
+		return nil
+	}
+	s := t.Format(constants.DateLayout)
+	return &s
+}
+
+// parseIntakeDate returns the date, or nil when it is absent or not a real YYYY-MM-DD date.
+func parseIntakeDate(s *string) *time.Time {
+	if s == nil {
+		return nil
+	}
+	t, err := time.Parse(constants.DateLayout, strings.TrimSpace(*s))
+	if err != nil {
+		return nil
+	}
+	return &t
 }

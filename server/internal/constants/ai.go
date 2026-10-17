@@ -79,4 +79,22 @@ const (
 	IntakeMaxMaskTerms = 10
 	// IntakeMaxMaskTermChars is the longest extra name, in characters.
 	IntakeMaxMaskTermChars = 100
+
+	// IntakeMaxHours is the most hours one suggested demand may ask for.
+	IntakeMaxHours = 20000
+	// IntakeMaxNameChars is the longest suggested project name, in characters.
+	IntakeMaxNameChars = 200
+	// IntakeMinLevel and IntakeMaxLevel bound a suggested minimum level.
+	IntakeMinLevel = 1
+	IntakeMaxLevel = 5
+)
+
+// Warnings shown with a suggested project.
+const (
+	WarnDemandNoQuote            = "Dropped a demand: no matching text"
+	WarnDemandUnknownExpertise   = "Dropped a demand: unknown expertise"
+	WarnDemandHours              = "Dropped a demand: hours out of range"
+	WarnDemandDuplicateExpertise = "Several demands for one expertise: check they are not repeated"
+	WarnDatesOrder               = "Ignored the dates: the deadline is before the start"
+	WarnPlaceholderInName        = "The name contains hidden text: rename the project"
 )
