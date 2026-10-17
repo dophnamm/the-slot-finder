@@ -307,6 +307,12 @@ definitions:
         - AbsenceRemoved
         - PhaseSlipped
         - ProjectSlipped
+        - ProjectStatusChanged
+        - DemandChanged
+        - PersonCapacityChanged
+        - TeamChanged
+        - SkillChanged
+        - ProgramSlipped
         type: string
     type: object
   dtos.ConnectCalendarFeedRequest:
