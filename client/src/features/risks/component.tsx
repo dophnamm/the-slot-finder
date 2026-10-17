@@ -31,7 +31,7 @@ export function Risks() {
       card
       title={t('Risks')}
       description={t(
-        'Projects that are understaffed, at risk or behind on delivery, and people over 100 % in the coming weeks.',
+        'Projects that are understaffed, at risk or behind on delivery, people over 100 % in the coming weeks, and people on the bench.',
       )}
       className="h-full min-h-0"
       contentClassName="gap-5 overflow-y-auto"

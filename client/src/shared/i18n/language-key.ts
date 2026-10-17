@@ -431,7 +431,7 @@ export type LanguageKey = {
   Projects: string
   'Projects ({count})': string
   'Projects added to a program wait here until a staffing draft covers them.': string
-  'Projects that are understaffed, at risk or behind on delivery, and people over 100 % in the coming weeks.': string
+  'Projects that are understaffed, at risk or behind on delivery, people over 100 % in the coming weeks, and people on the bench.': string
   'Propose squad': string
   'Put on hold': string
   'Re-plan': string
