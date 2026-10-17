@@ -1,18 +1,16 @@
 import { cn } from 'cn'
 import { MarkdownText } from '../markdown-text'
+import { BUBBLE_CLASS, BUBBLE_ROLE_CLASSES } from './constants'
 import type { MessageBubbleProps } from './types'
 
 export function MessageBubble({ message }: MessageBubbleProps) {
-  const isUser = message.role === 'user'
+  const isAnswer = message.role === 'assistant'
   return (
     <div
-      className={cn(
-        'max-w-[85%] rounded-lg px-3 py-2 text-sm has-[table]:w-full has-[table]:max-w-full',
-        isUser && 'whitespace-pre-wrap',
-        isUser ? 'self-end bg-primary text-primary-foreground' : 'self-start bg-muted text-foreground',
-      )}
+      role={message.role === 'error' ? 'alert' : undefined}
+      className={cn(BUBBLE_CLASS, BUBBLE_ROLE_CLASSES[message.role])}
     >
-      {isUser ? message.text : <MarkdownText text={message.text} />}
+      {isAnswer ? <MarkdownText text={message.text} /> : message.text}
     </div>
   )
 }
