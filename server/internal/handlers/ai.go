@@ -52,3 +52,28 @@ func (h *AIHandler) Ask(c *echo.Context) error {
 	}
 	return h.SuccessResponse(c, constants.MsgAIAnswered, dtos.AskAIResponse{Answer: answer}, nil)
 }
+
+// SummarizeDraft godoc
+// @Summary Summarize a staffing draft
+// @Description Returns a short plain-English summary of a staffing draft. source is "ai" when the model wrote it and "template" when the model is not set up or failed and the server built it from the draft's facts. A manager can summarize only drafts of projects in programs they lead.
+// @Tags AI
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Staffing draft ID"
+// @Success 200 {object} object{meta=dtos.Meta,data=dtos.DraftSummaryResponse}
+// @Failure 400 {object} object{meta=dtos.Meta}
+// @Failure 403 {object} object{meta=dtos.Meta}
+// @Failure 404 {object} object{meta=dtos.Meta}
+// @Failure 429 {object} object{meta=dtos.Meta}
+// @Router /staffing-drafts/{id}/summary [post]
+func (h *AIHandler) SummarizeDraft(c *echo.Context) error {
+	id, ok := h.pathID(c)
+	if !ok {
+		return nil
+	}
+	summary, err := h.ai.SummarizeDraft(c.Request().Context(), id)
+	if err != nil {
+		return h.HandleError(c, err)
+	}
+	return h.SuccessResponse(c, constants.MsgDraftSummarized, dtos.NewDraftSummaryResponse(*summary), nil)
+}

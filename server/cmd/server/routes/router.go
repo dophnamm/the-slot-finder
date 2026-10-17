@@ -185,6 +185,7 @@ func registerInsightRoutes(v1 *echo.Group, authenticated, heavy echo.MiddlewareF
 	v1.GET(constants.PathCapacityForecast, insightsHandler.CapacityForecast, authenticated, roles)
 	v1.GET(constants.PathBench, insightsHandler.Bench, authenticated, roles)
 	v1.POST(constants.PathAIAsk, aiHandler.Ask, authenticated, roles, heavy)
+	v1.POST(constants.PathStaffingDraftSummary, aiHandler.SummarizeDraft, authenticated, roles, heavy)
 }
 
 // registerPlanRoutes adds the baseline, people's assignments and staffing drafts.
