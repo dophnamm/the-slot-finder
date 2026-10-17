@@ -60,12 +60,15 @@ func TestTouchedProjects(t *testing.T) {
 		{BaseModel: models.BaseModel{ID: "leave"}, Payload: map[string]any{"person_id": "ada", "from_date": "2026-10-12", "to_date": "2026-10-13"}},
 		{BaseModel: models.BaseModel{ID: "holiday"}, Payload: map[string]any{"from_date": "2026-10-21", "to_date": "2026-10-21"}},
 		{BaseModel: models.BaseModel{ID: "broken"}, Payload: map[string]any{}},
+		{BaseModel: models.BaseModel{ID: "skill"}, Type: constants.EventSkillChanged, OccurredAt: time.Date(2026, 10, 12, 9, 0, 0, 0, time.UTC),
+			Payload: map[string]any{"person_id": "ada"}},
 	}
 	touched := touchedProjects(events, assignments)
 	assert.Equal(t, []string{"X"}, touched["slip"])
 	assert.Equal(t, []string{"A"}, touched["leave"])
 	assert.Equal(t, []string{"C"}, touched["holiday"], "a holiday touches everyone who works that week")
 	assert.Empty(t, touched["broken"])
+	assert.Equal(t, []string{"A"}, touched["skill"], "a skill change touches the projects the person has hours on from then on")
 }
 
 func TestHandEditsSurviveAMerge(t *testing.T) {
@@ -241,6 +244,12 @@ func TestReplanService_RunOnce_EventScope(t *testing.T) {
 			want:  constants.EventStatusDraftCreated},
 		{name: "a person's capacity change with nothing understaffed is no impact",
 			event:    models.ChangeEvent{Type: constants.EventPersonCapacityChanged, Payload: map[string]any{"person_id": qaPersonID}},
+			baseline: staffed, want: constants.EventStatusNoImpact},
+		{name: "skill change opens understaffed projects",
+			event: models.ChangeEvent{Type: constants.EventSkillChanged, Payload: map[string]any{"person_id": qaPersonID}},
+			want:  constants.EventStatusDraftCreated},
+		{name: "skill change, nothing understaffed",
+			event:    models.ChangeEvent{Type: constants.EventSkillChanged, Payload: map[string]any{"person_id": qaPersonID}},
 			baseline: staffed, want: constants.EventStatusNoImpact},
 		{name: "a cancelled project frees capacity for an understaffed one",
 			event: models.ChangeEvent{Type: constants.EventProjectStatusChanged, ProjectIDs: []string{"cancelled"},

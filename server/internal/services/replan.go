@@ -402,7 +402,7 @@ func conflictingProjects(assignments []models.Assignment, capacityOf func(person
 }
 
 // touchedProjects is, per event, the projects it touches: those it was recorded with; for a
-// capacity change the projects the person has hours on from then on; or for absence the
+// capacity or skill change the projects the person has hours on from then on; or for absence the
 // projects the person (everyone, for a holiday) has hours on in those dates.
 func touchedProjects(events []models.ChangeEvent, assignments []models.Assignment) map[string][]string {
 	out := make(map[string][]string, len(events))
@@ -411,7 +411,7 @@ func touchedProjects(events []models.ChangeEvent, assignments []models.Assignmen
 			out[e.ID] = e.ProjectIDs
 			continue
 		}
-		if e.Type == constants.EventPersonCapacityChanged {
+		if e.Type == constants.EventPersonCapacityChanged || e.Type == constants.EventSkillChanged {
 			out[e.ID] = projectsOfPersonFrom(assignments, stringField(e.Payload, payloadPersonID), isoweek.Of(e.OccurredAt))
 			continue
 		}
@@ -466,7 +466,7 @@ func projectsOfPersonFrom(assignments []models.Assignment, personID string, from
 // eventScope is the projects to plan again because of what the events changed, beyond the
 // baseline's conflicts. A changed demand, a team change or a project that became plannable
 // again opens the projects it names; freed capacity (a project that stopped being plannable,
-// or a person's capacity changing) opens every project. Either way only projects the baseline
+// or a person's capacity or skills changing) opens every project. Either way only projects the baseline
 // leaves understaffed are returned: nothing else could gain from a new draft.
 func (s *draftBuilder) eventScope(ctx context.Context, events []models.ChangeEvent, assignments []models.Assignment) ([]string, error) {
 	named := map[string]bool{}
@@ -485,7 +485,7 @@ func (s *draftBuilder) eventScope(ctx context.Context, events []models.ChangeEve
 			} else {
 				freed = true
 			}
-		case constants.EventPersonCapacityChanged:
+		case constants.EventPersonCapacityChanged, constants.EventSkillChanged:
 			freed = true
 		}
 	}

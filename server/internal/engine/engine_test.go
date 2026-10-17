@@ -267,6 +267,37 @@ func TestPropose_ReplanKeepsWhatStillFits(t *testing.T) {
 		"Bao has 4 h a week left, under the minimum, so the 20 h lost to leave stay unmet")
 }
 
+func TestPropose_ReplanDropsHoursOfSomeoneWhoLostTheSkill(t *testing.T) {
+	window := weekRange(44, 4)
+	d1 := demand("d1", qa, 2, 40, window)
+	d1.Headcount = 2
+	held := []Allocation{{Week: window[0], Hours: 10, Locked: true}, {Week: window[1], Hours: 10}, {Week: window[2], Hours: 10}, {Week: window[3], Hours: 10}}
+	req := Request{Policy: testPolicy(),
+		People: []Person{
+			person("p", 36, window, Skill{Expertise: engineer, Level: 4, Primary: true}), // no QA any more
+			person("q", 36, window, Skill{Expertise: qa, Level: 3, Primary: true}),
+		},
+		Demands: []Demand{d1},
+		Existing: []ExistingAssignment{
+			{PersonID: "p", DemandID: "d1", ProjectID: "pr-d1", ProgramID: "pg", Expertise: qa, Kind: KindPrimary, Allocations: held},
+		},
+	}
+
+	result := Propose(req)
+	byPerson := map[string]map[string]float64{}
+	for _, a := range result.Assignments {
+		byPerson[a.PersonID] = hoursByWeek(a)
+	}
+	assert.Equal(t, map[string]float64{window[0]: 10}, byPerson["p"], "P keeps only the locked week")
+	assert.InDelta(t, 30, func() float64 {
+		sum := 0.0
+		for _, h := range byPerson["q"] {
+			sum += h
+		}
+		return sum
+	}(), epsilon, "the unlocked hours go to Q")
+}
+
 func TestPropose_HigherPriorityGoesFirst(t *testing.T) {
 	window := weekRange(42, 4)
 	high := demand("high", qa, 2, 40, window)
