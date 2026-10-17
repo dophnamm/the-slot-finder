@@ -291,3 +291,96 @@ func TestAIService_CreateScenario(t *testing.T) {
 		})
 	}
 }
+
+// scriptedLLM answers each Generate call with the next scripted content and records the requests.
+type scriptedLLM struct {
+	script   []llm.Content
+	requests []llm.Request
+}
+
+func (f *scriptedLLM) Generate(_ context.Context, req llm.Request) (*llm.Response, error) {
+	f.requests = append(f.requests, req)
+	if len(f.requests) > len(f.script) {
+		return nil, fmt.Errorf("scriptedLLM has no reply for call %d", len(f.requests))
+	}
+	return &llm.Response{Content: f.script[len(f.requests)-1]}, nil
+}
+
+func callPart(name string, args map[string]any) llm.Part {
+	return llm.Part{FunctionCall: &llm.FunctionCall{Name: name, Args: args}}
+}
+
+func textContent(text string) llm.Content { return llm.Content{Parts: []llm.Part{{Text: text}}} }
+
+func TestAIService_AskWhatIf(t *testing.T) {
+	const answer = "Saved the scenario; it is on the Scenarios page."
+	question := "What if Checkout slips 3 weeks? " + strings.Repeat("é", 70)
+	find := callPart(constants.AIToolFindProjects, map[string]any{"query": "Checkout"})
+	create := callPart(constants.AIToolCreateScenario, shiftArgs())
+	tests := []struct {
+		name         string
+		role         string
+		maxBytes     int
+		script       []llm.Content
+		wantCreated  int
+		wantRequests int
+		check        func(t *testing.T, f *scriptedLLM, s *fakeScenarios)
+	}{
+		{name: "find_projects, then create_scenario, then final text", role: constants.RolePlanner, maxBytes: 100000,
+			script:      []llm.Content{{Parts: []llm.Part{find}}, {Parts: []llm.Part{create}}, textContent(answer)},
+			wantCreated: 1, wantRequests: 3,
+			check: func(t *testing.T, f *scriptedLLM, s *fakeScenarios) {
+				// The name comes from the question only, not from the page context.
+				assert.Equal(t, aiScenarioNamePrefix+truncateRunes(question, constants.AIScenarioNameMaxRunes), s.created[0].Name)
+			}},
+		{name: "tool result cut still applies", role: constants.RolePlanner, maxBytes: 20,
+			script:      []llm.Content{{Parts: []llm.Part{create}}, textContent(answer)},
+			wantCreated: 1, wantRequests: 2,
+			check: func(t *testing.T, f *scriptedLLM, _ *fakeScenarios) {
+				last := f.requests[1].Contents[len(f.requests[1].Contents)-1]
+				sent := last.Parts[0].FunctionResponse.Response["result"].(string)
+				assert.True(t, strings.HasSuffix(sent, constants.LLMToolCutMarker))
+				assert.Len(t, sent, 20+len(constants.LLMToolCutMarker))
+			}},
+		{name: "two create_scenario calls in one Ask", role: constants.RolePlanner, maxBytes: 100000,
+			script:      []llm.Content{{Parts: []llm.Part{create, create}}, textContent(answer)},
+			wantCreated: 1, wantRequests: 2,
+			check: func(t *testing.T, f *scriptedLLM, _ *fakeScenarios) {
+				last := f.requests[1].Contents[len(f.requests[1].Contents)-1]
+				require.Len(t, last.Parts, 2)
+				assert.NotNil(t, last.Parts[0].FunctionResponse.Response["result"])
+				assert.Equal(t, constants.MsgOneScenarioPerQuestion, last.Parts[1].FunctionResponse.Response["error"])
+			}},
+		{name: "manager Ask has no create_scenario in the tools", role: constants.RoleManager, maxBytes: 100000,
+			script:       []llm.Content{textContent(answer)},
+			wantRequests: 1,
+			check: func(t *testing.T, f *scriptedLLM, _ *fakeScenarios) {
+				for _, d := range f.requests[0].Tools[0].FunctionDeclarations {
+					assert.NotEqual(t, constants.AIToolCreateScenario, d.Name)
+				}
+			}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			authz := ProvideAuthzService(leadPeople{})
+			scenarios := &fakeScenarios{authz: authz, view: scenarioView()}
+			fake := &scriptedLLM{script: tt.script}
+			svc := &aiService{llm: fake, authz: authz, scenarios: scenarios, projects: listProjects{authz: authz,
+				projects: namedProjects("Checkout"), got: new(ListProjectsInput)},
+				cfg: &config.Config{LLMAPIKey: "k", LLMMaxToolRounds: 5, LLMMaxToolResultBytes: tt.maxBytes, ScenarioMaxShiftWeeks: 12}}
+			got, err := svc.Ask(asRole("kc-"+tt.role, tt.role), AskInput{Question: question, PageContext: "program p1"})
+			require.NoError(t, err)
+			assert.Equal(t, answer, got)
+			assert.Len(t, scenarios.created, tt.wantCreated)
+			assert.Len(t, fake.requests, tt.wantRequests)
+			tt.check(t, fake, scenarios)
+		})
+	}
+}
+
+func TestAISystemPrompt_WhatIfRules(t *testing.T) {
+	for _, want := range []string{constants.AIToolFindProjects, constants.AIToolFindPeople, constants.AIToolCreateScenario,
+		"what-if", "Scenarios page", "Never invent ids", "2026-W45", "YYYY-MM-DD"} {
+		assert.Contains(t, aiSystemPrompt, want)
+	}
+}
