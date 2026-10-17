@@ -2,14 +2,14 @@
 
 **Goal:** a planner or a Manager asks a question in plain language, such as "who is overloaded next week?" or "what is at risk in Acme?", from a widget on every screen. The answer comes only from data the assistant reads through read-only tools, and those tools run with the caller's own rights.
 
-**Roles:** planner and lead (Manager) ask questions; the tools apply their rules, so a Manager gets answers about their own programs and teams only. Specialist sees no widget and gets `403` from the route.
+**Roles:** planner and manager (shown as Manager) ask questions; the tools apply their rules, so a Manager gets answers about their own programs and teams only. Specialist sees no widget and gets `403` from the route.
 **Target:** 16 Oct · **Depends on:** [staffing-draft](staffing-draft.md), [team-heatmap](team-heatmap.md), [program-metrics](program-metrics.md), [program-teams](program-teams.md) · **Branch:** `feat/ask-ai` · **Status:** Done, not yet verified end to end (no PR yet, see Still to verify)
 
 ## In scope
 
 - **Question.** A planner or Manager types a question of up to 500 characters in the **Ask AI** panel. The client sends the current route path as `page_context`, so "this project" can be answered on a project page.
 - **Model.** Gemini through Google AI Studio (default), Groq or OpenRouter, chosen with `LLM_PROVIDER`. Each provider has its own key and model: `GEMINI_API_KEY` and `GEMINI_MODEL` (default `gemini-3.5-flash`), `GROQ_API_KEY` and `GROQ_MODEL` (default `openai/gpt-oss-120b`), `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` (default `openrouter/free`, a router that picks a free model with the features the request needs). Switching provider means changing `LLM_PROVIDER` only, with its key in the environment. `LLM_TEMPERATURE` (default 0.2) goes to every provider. Model IDs change quickly (`gemini-2.5-flash` is closed to new accounts and answers 404), so production should set the model variable explicitly and confirm IDs in AI Studio, the Groq console or openrouter.ai/models. The client sits behind an interface (`llm.Client`), so the service does not know the provider.
-- **Tools.** The model may call five read-only tools. Each one calls an existing service as the caller, so the same checks apply as on the API:
+- **Tools.** The model may call six read-only tools. Each one calls an existing service as the caller, so the same checks apply as on the API:
 
   | Tool | Wraps |
   |---|---|
@@ -18,15 +18,16 @@
   | `list_open_drafts` | open staffing drafts |
   | `get_project` | one project with phases, demand and metrics |
   | `get_program_overview` | a program's time, scope, burn, staffing and gap |
+  | `get_capacity_forecast` | capacity forecast per expertise and week |
 
-- **System prompt.** It names the domain vocabulary (program, project, phase, demand, draft, baseline, utilization, gap, roles, ISO weeks) and holds the answer rules (below).
+- **System prompt.** It names the domain vocabulary (program, project, phase, demand, draft, baseline, utilization, gap, roles, weeks) and holds the answer rules (below).
 - **Limits.**
   - a tool result longer than `LLM_MAX_TOOL_RESULT_BYTES` (8000) is compacted first (nulls and empty values dropped, long lists trimmed with an `_omitted_items` count), and only cut with a marker if that still does not fit;
   - one question takes at most `LLM_MAX_TOOL_ROUNDS` (5) model calls, each with its own `LLM_TIMEOUT` (30s);
   - `POST /ai/ask` is on the heavy rate limit (`RATE_LIMIT_HEAVY`, 20 per 30 s per user by default).
 - **No key.** Without the chosen provider's key (`GEMINI_API_KEY`, `GROQ_API_KEY` or `OPENROUTER_API_KEY`) the route answers `503 AI_NOT_CONFIGURED`, and the server still starts.
 - **Upstream failure.** A failed or empty model reply answers `502 AI_UPSTREAM_FAILED`. A `402` (no credits) and any other non-200 reply from the provider count as failed too. A rate-limited reply (HTTP 429 from the provider) answers `429 AI_RATE_LIMITED`, with `data.retry_after` in seconds when the provider sends one.
-- **Widget.** A round button fixed at the bottom-right of every screen, shown only with the `ai:ask` permission (planner, lead). It opens a panel with the messages, a question field and a typing indicator while the answer is pending. Escape closes the open panel.
+- **Widget.** A round button fixed at the bottom-right of every screen, shown only with the `ai:ask` permission (planner, manager). It opens a panel with the messages, a question field and a typing indicator while the answer is pending. Escape closes the open panel.
 - **Try again.** The error reply has a button, on the last message only, that re-sends the last question without a new user message.
 - **Operator check.** `make check-llm` (`scripts/check-llm.sh`) sends one tiny request to the provider in `server/cmd/server/.env` and prints the HTTP status with its meaning, plus the rate-limit headers when the provider sends them. It never prints a key and exits non-zero on a non-200.
 
@@ -55,7 +56,7 @@
 
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
-| POST | `/ai/ask` | Body `{ question, page_context? }`; returns `{ answer }`. `400` when the question is empty or over 500 characters; `503 AI_NOT_CONFIGURED`; `429 AI_RATE_LIMITED` (with `data.retry_after` when sent); `502 AI_UPSTREAM_FAILED` | planner, lead (through the tools) |
+| POST | `/ai/ask` | Body `{ question, page_context? }`; returns `{ answer }`. `400` when the question is empty or over 500 characters; `503 AI_NOT_CONFIGURED`; `429 AI_RATE_LIMITED` (with `data.retry_after` when sent); `502 AI_UPSTREAM_FAILED` | planner, manager (through the tools) |
 
 - **Code:** `handlers/ai.go`, `services/ai.go` (the loop and the tool dispatch), `dtos/ai.go`, `services/ai_compact.go` (tool result compaction), `integration/llm` (`llm.go`: the `Client` interface, the provider switch and the shared HTTP helper, with the Gemini client; `openai.go`: the OpenAI-compatible client for Groq and OpenRouter), `constants/ai.go` (tool names, model settings), `constants/third_party_provider.go` (provider names), route `registerInsightRoutes` in `cmd/server/routes/router.go`.
 - **Settings:** `LLM_PROVIDER` (`gemini`, `groq` or `openrouter`; any other value fails at startup), `GEMINI_API_KEY` and `GEMINI_MODEL`, `GROQ_API_KEY` and `GROQ_MODEL`, `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` (keys are secrets, empty by default), `LLM_TIMEOUT`, `LLM_MAX_TOOL_ROUNDS`, `LLM_MAX_TOOL_RESULT_BYTES`, `LLM_TEMPERATURE`, in `cmd/server/.env.example`.

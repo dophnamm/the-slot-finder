@@ -2,16 +2,16 @@
 
 **Goal:** the system knows who can do what, at which level, and how many hours each person has free per week. This is the supply side for staffing (G1) and the heatmap (G2) in the [root README](../../README.md#1-problem-and-scope).
 
-**Roles:** planner (manages people), lead (reads), specialist (own absences).
+**Roles:** planner (manages people), manager (reads), specialist (own absences).
 **Target:** 11 Oct · **Depends on:** [sign-in](sign-in.md) · **Branch:** `feat/people-and-skills` · **Status:** Done (PR #5)
 
 ## In scope
 
 - PERSON: name, email, `keycloak_id`, role, `weekly_hours`, `non_project_hours`, `start_date`, `end_date`, `active`.
 - EXPERTISE catalogue (PM, Analyst, Engineer, QA) and PERSON_SKILL (level 1–5, exactly one primary).
-- ABSENCE: personal leave, and **company-wide holidays only** (`person_id` and `location` both null).
+- ABSENCE: personal leave, and **company-wide holidays only** (`person_id` null).
 - `capacity(person, week)` as in the [root README §6](../../README.md#6-data-model), without capacity changes or location holidays.
-- `isoweek.Week`: the Go type for ISO weeks (`2026-W42`). Capacity is the first code that needs it.
+- `isoweek.Week`: the Go type for weeks (`2026-W42`). Capacity is the first code that needs it.
 - `/me` gains `person_id`, linked by `keycloak_id`, falling back to email on the first sign-in.
 - Seed data: 12 people, 4 expertises, 3 leave periods, company-wide holidays, and the three demo users as people.
 
@@ -28,7 +28,7 @@
 
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
-| GET, POST | `/people` | List or create people | GET planner, lead · POST planner |
+| GET, POST | `/people` | List or create people | GET planner, manager · POST planner |
 | PATCH | `/people/{id}` | Edit a person (hours, dates, active) | planner |
 | PUT | `/people/{id}/skills` | Replace expertise and levels | planner |
 | GET, POST | `/people/{id}/absences` | Leave calendar | planner, the person themselves |

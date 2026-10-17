@@ -2,7 +2,7 @@
 
 **Goal:** a first-time user gets a short tour of the left sidebar: one step per link the role can open, a step on the Ask AI button for the roles that can use it, then a step on the account menu. The account menu can start the tour again.
 
-**Roles:** everyone who signs in (planner, lead, specialist). Each role gets steps only for the links it can see.
+**Roles:** everyone who signs in (planner, manager, specialist). Each role gets steps only for the links it can see.
 **Target:** 17 Oct · **Depends on:** [sign-in](sign-in.md) · **Branch:** `feat/guided-tour` · **Status:** Done, not yet verified in a browser (see Still to verify)
 
 ## In scope

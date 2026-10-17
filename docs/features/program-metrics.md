@@ -2,7 +2,7 @@
 
 **Goal:** each program shows how far along it is and whether it is understaffed, and the team sees one list of risks. This covers G1 and G2 in the [root README](../../README.md#1-problem-and-scope).
 
-**Roles:** planner, lead.
+**Roles:** planner, manager.
 **Target:** 16 Oct · **Depends on:** [staffing-draft](staffing-draft.md) · **Branch:** `feat/program-metrics` · **Status:** Done (PR #16)
 
 ## In scope
@@ -30,9 +30,9 @@
 
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
-| GET | `/programs/{id}/overview` | Header metrics, scope and cost figures, staffing by expertise | planner, lead |
-| GET | `/programs/{id}/projects` | Projects with Time / Scope / Planned burn / Staffing and at-risk flags | planner, lead |
-| GET | `/insights/risks` | Understaffed, at-risk and behind-on-delivery projects; overloaded people | planner, lead |
+| GET | `/programs/{id}/overview` | Header metrics, scope and cost figures, staffing by expertise | planner, manager |
+| GET | `/programs/{id}/projects` | Projects with Time / Scope / Planned burn / Staffing and at-risk flags | planner, manager |
+| GET | `/insights/risks` | Understaffed, at-risk and behind-on-delivery projects; overloaded people | planner, manager |
 
 **Tables:** none new.
 

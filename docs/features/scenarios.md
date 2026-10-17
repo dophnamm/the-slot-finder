@@ -46,7 +46,7 @@
 - Turning a scenario straight into a staffing draft. That draft would plan for changes that did not happen. → [Later](README.md#later)
 - More assumption types: a new project, a planned hire (a future `start_date`), a capacity change, a demand change → [Later](README.md#later).
 - The AI what-if chat → [Later](README.md#later).
-- Scenarios for leads.
+- Scenarios for managers.
 
 ## Server
 
@@ -98,7 +98,7 @@ The [server README](../../server/README.md#3-api-restjson) lists `GET /scenarios
 3. Two assumptions combine in one scenario.
 4. The changes, churn and unmet shown match the scenario's plan against the baseline.
 5. After a draft is accepted, the scenario shows "Stale"; Run again computes it against the new baseline.
-6. A lead or a specialist gets `403` on every scenario route. `POST /staffing-drafts/{scenarioId}/accept` gets `404`.
+6. A manager or a specialist gets `403` on every scenario route. `POST /staffing-drafts/{scenarioId}/accept` gets `404`.
 7. Deleting a scenario removes its plan, assignments and allocations.
 
 ## Tasks

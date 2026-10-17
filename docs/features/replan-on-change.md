@@ -2,7 +2,7 @@
 
 **Goal:** when an absence or a phase slip breaks the plan, the Planner gets a re-plan draft with a diff, without recalculating anything by hand. This covers G3 in the [root README](../../README.md#1-problem-and-scope).
 
-**Roles:** specialist and lead cause changes (leave, phase slips), planner reviews the draft, lead sees the banner on their program.
+**Roles:** specialist and manager cause changes (leave, phase slips), planner reviews the draft, manager sees the banner on their program.
 **Target:** 15 Oct · **Depends on:** [staffing-draft](staffing-draft.md) · **Branch:** `feat/replan-on-change` · **Status:** Done (PR #14)
 
 ## In scope
@@ -30,8 +30,8 @@
 
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
-| GET | `/events?programId=` | Change history and processing status; drives the banner | planner, lead |
-| GET | `/staffing-drafts/{id}` | The re-plan draft, with its linked events | planner, lead |
+| GET | `/events?programId=` | Change history and processing status; drives the banner | planner, manager |
+| GET | `/staffing-drafts/{id}` | The re-plan draft, with its linked events | planner, manager |
 
 **Tables and migration:**
 - `change_event` with the design columns (`type`, `payload`, `occurred_at`, `status`, `draft_id`)
@@ -45,7 +45,7 @@
   `SELECT … FROM change_event WHERE status = 'pending' AND available_at <= now() ORDER BY occurred_at FOR UPDATE SKIP LOCKED LIMIT :batch`.
   Two server instances never claim the same row.
 - **Debounce:** an event is only claimed once it is older than `REPLAN_DEBOUNCE`, so events close together are claimed in one batch.
-- The batch ends as `no_impact` or `draft_created`, with the draft id.
+- The batch ends as `no_impact` or `draft_created` (with the draft id). An event that keeps failing ends as `failed`.
 - On error, `attempts` goes up, `available_at` moves by `REPLAN_RETRY_BACKOFF × attempts`, and `last_error` is kept. After `REPLAN_MAX_ATTEMPTS` the status becomes `failed`, which shows in the change history.
 - Processing is idempotent. Re-running a batch regenerates the same open auto draft instead of creating a second one.
 - **Merge:** if an auto draft is open for the baseline, it is regenerated from the baseline plus all linked events, keeping manual assignments and locks. The old version becomes `superseded`, and a write to it gets `409 DRAFT_SUPERSEDED` ([server/README §6](../../server/README.md#6-background-jobs)).

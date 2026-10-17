@@ -2,26 +2,26 @@
 
 **Goal:** see per expertise and week whether the team has the capacity for the work ahead, confirmed and expected, so a Planner can hire or bring in contractors before a crunch. This covers the capacity forecast in the [root README §7](../../README.md#7-metrics).
 
-**Roles:** planner, lead (Manager: their teams' capacity and the demand of the programs they may read).
+**Roles:** planner, manager (Manager: their teams' capacity and the demand of the programs they may read).
 **Target:** 17 Oct · **Depends on:** [team-heatmap](team-heatmap.md), [program-metrics](program-metrics.md), [program-teams](program-teams.md) · **Branch:** `feat/capacity-forecast` · **Status:** Done
 
 ## In scope
 
-- `GET /insights/capacity-forecast`: per expertise × ISO week, from the baseline and the open demand.
+- `GET /insights/capacity-forecast`: per expertise × week, from the baseline and the open demand.
 - Capacity, load and free hours of the people whose **primary** expertise it is; free hours never count an overloaded person against a free one.
 - Unmet confirmed demand: hours of `planned` and `active` projects the baseline does not cover yet.
-- Pipeline demand: the same for `incoming` projects, times a confidence.
+- Pipeline demand: the same for `incoming` projects, times the global `PIPELINE_CONFIDENCE_PERCENT`.
 - An overload flag per cell, and the first sustained overload run per expertise.
 - The people behind a cell: who is in the expertise that week and how each stands, shown in a popover on click.
 - The Ask AI tool `get_capacity_forecast`.
 
 ## Not now
 
-- A confidence on each project (`confidence`, [root README §5](../../README.md#5-data-model)): the field is not built, so one setting, `PIPELINE_CONFIDENCE_PERCENT`, weights every incoming project.
-- Shortfall in FTE (`FTE_WEEKLY_HOURS`) and a sustained shortfall run, such as "short 1.5 FTE QA in W50 to W03" → [Later](README.md#later).
+- A confidence on each project (`confidence`, [root README §6](../../README.md#6-data-model)): the field is not built, so one setting, `PIPELINE_CONFIDENCE_PERCENT`, weights every incoming project.
+- FTE shortfall signals: the forecast shows hours only.
 - Demand profiles other than `flat`: the engine only lays out `flat` today.
 - Splitting a cross-expertise person's capacity across expertises: all of it counts for their primary expertise.
-- Filters by expertise or program in the by-expertise view, and the FTE view.
+- Filters by expertise or program in the by-expertise view.
 
 ## Server
 
@@ -29,7 +29,7 @@
 
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
-| GET | `/insights/capacity-forecast?from=&to=` | Expertise × week figures | planner, lead (team) |
+| GET | `/insights/capacity-forecast?from=&to=` | Expertise × week figures | planner, manager (team) |
 
 **Tables:** none new.
 
