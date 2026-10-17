@@ -2,7 +2,7 @@ import { TEAM_CHANGE_ADDED } from '@/shared/events'
 import { useTranslation } from '@/shared/i18n'
 import { formatDate, formatDateRange, toIsoWeek } from '@/utils/functions'
 import type { EventSummaryProps } from './types'
-import { capacityFieldKeys, statusKey } from './utils'
+import { capacityFieldLabels, statusKey } from './utils'
 
 /** One sentence for a change: who is away, or what moved or changed. */
 export function EventSummary({ event }: EventSummaryProps) {
@@ -74,9 +74,7 @@ export function EventSummary({ event }: EventSummaryProps) {
         <span>
           {t('{person}: {fields} changed', {
             person,
-            fields: capacityFieldKeys(payload.fields ?? [])
-              .map(t)
-              .join(', '),
+            fields: capacityFieldLabels(payload.fields ?? [], t),
           })}
         </span>
       )

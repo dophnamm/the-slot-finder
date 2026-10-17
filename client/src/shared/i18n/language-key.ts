@@ -40,8 +40,8 @@ export type LanguageKey = {
   Account: string
   Actions: string
   Active: string
-  Actual: string
   'active status': string
+  Actual: string
   'Add absence': string
   'Add assumption': string
   'Add at least one expertise.': string
@@ -396,10 +396,6 @@ export type LanguageKey = {
   'Planned again:': string
   'Planned burn': string
   'Short of free hours': string
-  'start date': string
-  'Team member added': string
-  'Team member removed': string
-  'weekly hours': string
   '{hours} hrs free': string
   "Planned hours as a share of a person's capacity in a week; over 100% is overloaded.": string
   'Planned hours as a share of budget hours.': string
@@ -493,6 +489,7 @@ export type LanguageKey = {
   'Staffing draft not found': string
   Stale: string
   'Start closing': string
+  'start date': string
   'Start date': string
   'Start week': string
   'Start – deadline': string
@@ -510,6 +507,8 @@ export type LanguageKey = {
   'Take the tour again from here.': string
   Team: string
   'Team heatmap': string
+  'Team member added': string
+  'Team member removed': string
   'The assistant could not answer. Try again.': string
   'The assistant is at its usage limit. Try again in a minute.': string
   'The assistant is at its usage limit. Try again in {seconds} second.': string
@@ -579,6 +578,7 @@ export type LanguageKey = {
   'Wait until the change is saved.': string
   Waiting: string
   Week: string
+  'weekly hours': string
   'Weekly hours': string
   Weeks: string
   'Weeks (minus is earlier)': string

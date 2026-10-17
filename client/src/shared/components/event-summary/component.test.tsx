@@ -1,6 +1,7 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { ChangeEvent, ChangeEventPayload, ChangeEventType } from '@/shared/events'
+import { PROGRAM_STATUS_LABELS } from '@/shared/programs'
 import { EventSummary } from './component'
 
 afterEach(cleanup)
@@ -38,6 +39,11 @@ describe('EventSummary', () => {
       'ProjectStatusChanged',
       { name: 'Checkout Revamp', old_status: 'planned', new_status: 'active' },
       'Checkout Revamp: Planned → Active',
+    ],
+    [
+      'ProjectStatusChanged',
+      { name: 'Checkout Revamp', kind: 'program', old_status: 'open', new_status: 'closing' },
+      `Checkout Revamp: ${PROGRAM_STATUS_LABELS.open} → ${PROGRAM_STATUS_LABELS.closing}`,
     ],
     [
       'TeamChanged',

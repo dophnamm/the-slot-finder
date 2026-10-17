@@ -4,6 +4,7 @@ export {
   EVENT_STATUS_LABELS,
   EVENTS_QUERY_KEY,
   OPEN_REPLAN_DRAFT_STATUS,
+  STATUS_KIND_PROGRAM,
   TEAM_CHANGE_ADDED,
 } from './constants'
 export type { ChangeEvent, ChangeEventPayload, ChangeEventStatus, ChangeEventType } from './types'
