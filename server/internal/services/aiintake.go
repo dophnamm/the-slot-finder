@@ -70,7 +70,7 @@ var placeholderWords = map[string]bool{"email": true, "customer": true, "phone":
 func normalizeText(s string) string {
 	return strings.Map(func(r rune) rune {
 		switch r {
-		case '\u00AD', '\u200B', '\u200C', '\u200D', '\uFEFF':
+		case '\u00AD', '\u200B', '\u200C', '\u200D', '\u2060', '\uFEFF':
 			return -1
 		case '\u00A0':
 			return ' '
@@ -109,7 +109,12 @@ func isWordRune(r rune) bool { return r == '_' || unicode.IsLetter(r) || unicode
 // maskTerm replaces every whole-word, case-insensitive match of term. Go's \b only knows ASCII, so the edges are
 // checked on runes; an edge that is not a word character (as in "C++") needs no boundary.
 func maskTerm(text, term string) (string, int) {
-	re := regexp.MustCompile("(?i)" + regexp.QuoteMeta(term))
+	// Any run of whitespace (newline, double or thin space) joins the words of a name.
+	words := strings.Fields(term)
+	for i, w := range words {
+		words[i] = regexp.QuoteMeta(w)
+	}
+	re := regexp.MustCompile(`(?i)` + strings.Join(words, `[\s\p{Z}]+`))
 	first, _ := utf8.DecodeRuneInString(term)
 	last, _ := utf8.DecodeLastRuneInString(term)
 	var b strings.Builder
