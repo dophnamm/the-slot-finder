@@ -23,7 +23,7 @@ func TestProgramTeams_Postgres(t *testing.T) {
 	pdb := dbtest.NewPostgres(t)
 	dbtest.ApplyMigrations(t, pdb)
 	planner := asRole("kc-planner", constants.RolePlanner)
-	manager := asRole("kc-lead", constants.RoleLead)
+	manager := asRole("kc-manager", constants.RoleManager)
 
 	qa := models.Expertise{BaseModel: models.NewBaseModel(), Name: "QA", Sequence: 4}
 	require.NoError(t, pdb.Create(&qa).Error)
@@ -37,7 +37,7 @@ func TestProgramTeams_Postgres(t *testing.T) {
 		require.NoError(t, pdb.Create(&models.PersonSkill{PersonID: p.ID, ExpertiseID: qa.ID, Level: level, IsPrimary: true}).Error)
 		return p
 	}
-	lee := newPerson(leadPersonID, "lee", 1) // the manager of Acme; leadPeople maps kc-lead to this id
+	lee := newPerson(leadPersonID, "lee", 1) // the manager of Acme; leadPeople maps kc-manager to this id
 	ada := newPerson("", "ada", 3)
 	bea := newPerson("", "bea", 5) // stronger than Ada, but not in Acme's team
 

@@ -96,17 +96,17 @@ type AuthzService interface {
 	// their own person record (matched by Keycloak id, then email).
 	RequireSelfOr(ctx context.Context, personID string, check Check) (request.Principal, error)
 	// RequireLeadOf lets the signed-in user through when check passes, or when they hold the
-	// lead role and their person record is one of leadIDs (nil entries are ignored).
+	// manager role and their person record is one of leadIDs (nil entries are ignored).
 	RequireLeadOf(ctx context.Context, check Check, leadIDs ...*string) (request.Principal, error)
 	// VisiblePeople says whose people data the signed-in user may read: everyone for a
-	// planner; for a manager (lead) themselves and the teams of the programs they read (see
+	// planner; for a manager themselves and the teams of the programs they read (see
 	// ProgramReader); for anyone else themselves only.
 	VisiblePeople(ctx context.Context) (PeopleScope, error)
 	// RequireVisiblePerson lets the signed-in user through when VisiblePeople allows personID,
 	// and answers 403 otherwise.
 	RequireVisiblePerson(ctx context.Context, personID string) (request.Principal, error)
 	// ProgramReader says whose programs the signed-in user may read: every program for a
-	// planner, and for a manager (lead) the programs they lead or lead a project in. Anyone
+	// planner, and for a manager the programs they lead or lead a project in. Anyone
 	// else gets a 403 error.
 	ProgramReader(ctx context.Context) (ProgramReader, error)
 }
@@ -218,7 +218,7 @@ func (s authzService) RequireLeadOf(ctx context.Context, check Check, leadIDs ..
 	if check(principal) {
 		return principal, nil
 	}
-	if s.people != nil && principal.HasAnyRole(constants.RoleLead) {
+	if s.people != nil && principal.HasAnyRole(constants.RoleManager) {
 		self, err := s.people.FindForPrincipal(ctx, principal)
 		if err != nil {
 			return request.Principal{}, err
@@ -254,7 +254,7 @@ func (s authzService) VisiblePeople(ctx context.Context) (PeopleScope, error) {
 		return scope, nil
 	}
 	scope.ids[self.ID] = true
-	if s.teams == nil || !principal.HasAnyRole(constants.RoleLead) {
+	if s.teams == nil || !principal.HasAnyRole(constants.RoleManager) {
 		return scope, nil
 	}
 	team, err := s.teams.PersonIDsLedBy(ctx, self.ID)

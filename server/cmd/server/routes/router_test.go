@@ -78,7 +78,7 @@ func newTestRouter(cfg *config.Config) *echo.Echo {
 func newTestRouterWith(cfg *config.Config, availability services.AvailabilityService) *echo.Echo {
 	verifier := fakeVerifier{
 		"planner-token":    userClaims("planner", constants.RolePlanner, "offline_access"),
-		"lead-token":       userClaims("lead", constants.RoleLead),
+		"manager-token":    userClaims("manager", constants.RoleManager),
 		"specialist-token": userClaims("specialist", constants.RoleSpecialist),
 		"no-role-token":    userClaims("nobody", "offline_access"),
 	}
@@ -138,7 +138,7 @@ func TestRouter_Me_RBAC(t *testing.T) {
 		wantRole   string
 	}{
 		{name: "planner", token: "planner-token", wantStatus: http.StatusOK, wantCode: constants.Success, wantRole: constants.RolePlanner},
-		{name: "lead", token: "lead-token", wantStatus: http.StatusOK, wantCode: constants.Success, wantRole: constants.RoleLead},
+		{name: "manager", token: "manager-token", wantStatus: http.StatusOK, wantCode: constants.Success, wantRole: constants.RoleManager},
 		{name: "specialist", token: "specialist-token", wantStatus: http.StatusOK, wantCode: constants.Success, wantRole: constants.RoleSpecialist},
 		{name: "no application role", token: "no-role-token", wantStatus: http.StatusForbidden, wantCode: constants.Forbidden},
 		{name: "invalid token", token: "forged", wantStatus: http.StatusUnauthorized, wantCode: constants.Unauthorized},
@@ -251,11 +251,11 @@ func TestRouter_People_RBAC(t *testing.T) {
 		wantStatus int
 	}{
 		{name: "specialist cannot list people", method: http.MethodGet, path: constants.PathPeople, token: "specialist-token", wantStatus: http.StatusForbidden},
-		{name: "lead cannot create people", method: http.MethodPost, path: constants.PathPeople, token: "lead-token", wantStatus: http.StatusForbidden},
-		{name: "lead cannot edit skills", method: http.MethodPut, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/skills", token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "manager cannot create people", method: http.MethodPost, path: constants.PathPeople, token: "manager-token", wantStatus: http.StatusForbidden},
+		{name: "manager cannot edit skills", method: http.MethodPut, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/skills", token: "manager-token", wantStatus: http.StatusForbidden},
 		{name: "no token", method: http.MethodGet, path: constants.PathExpertises, wantStatus: http.StatusUnauthorized},
-		{name: "lead cannot add holidays", method: http.MethodPost, path: constants.PathHolidays, token: "lead-token", wantStatus: http.StatusForbidden},
-		{name: "lead cannot import holidays", method: http.MethodPost, path: constants.PathHolidayImport, token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "manager cannot add holidays", method: http.MethodPost, path: constants.PathHolidays, token: "manager-token", wantStatus: http.StatusForbidden},
+		{name: "manager cannot import holidays", method: http.MethodPost, path: constants.PathHolidayImport, token: "manager-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot list programs", method: http.MethodGet, path: constants.PathPrograms, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot create programs", method: http.MethodPost, path: constants.PathPrograms, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the intake queue", method: http.MethodGet, path: constants.PathProjects, token: "specialist-token", wantStatus: http.StatusForbidden},
@@ -263,8 +263,8 @@ func TestRouter_People_RBAC(t *testing.T) {
 		{name: "specialist cannot reorder projects", method: http.MethodPut, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/project-order", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no role cannot read absences", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/absences", token: "no-role-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read a program team", method: http.MethodGet, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/team", token: "specialist-token", wantStatus: http.StatusForbidden},
-		{name: "lead cannot add a team member", method: http.MethodPost, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/team", token: "lead-token", wantStatus: http.StatusForbidden},
-		{name: "lead cannot remove a team member", method: http.MethodDelete, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/team/0192f3a4-0000-7000-8000-0000000000bb", token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "manager cannot add a team member", method: http.MethodPost, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/team", token: "manager-token", wantStatus: http.StatusForbidden},
+		{name: "manager cannot remove a team member", method: http.MethodDelete, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/team/0192f3a4-0000-7000-8000-0000000000bb", token: "manager-token", wantStatus: http.StatusForbidden},
 		{name: "no token cannot read a program team", method: http.MethodGet, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/team", wantStatus: http.StatusUnauthorized},
 		{name: "specialist cannot generate a staffing draft", method: http.MethodPost, path: constants.PathStaffingDrafts, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot accept a staffing draft", method: http.MethodPost, path: "/staffing-drafts/0192f3a4-0000-7000-8000-0000000000aa/accept", token: "specialist-token", wantStatus: http.StatusForbidden},
@@ -274,11 +274,11 @@ func TestRouter_People_RBAC(t *testing.T) {
 		{name: "specialist cannot read the change history", method: http.MethodGet, path: constants.PathEvents, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the risks", method: http.MethodGet, path: constants.PathRisks, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read a program overview", method: http.MethodGet, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/overview", token: "specialist-token", wantStatus: http.StatusForbidden},
-		{name: "lead cannot list scenarios", method: http.MethodGet, path: constants.PathScenarios, token: "lead-token", wantStatus: http.StatusForbidden},
-		{name: "lead cannot create a scenario", method: http.MethodPost, path: constants.PathScenarios, token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "manager cannot list scenarios", method: http.MethodGet, path: constants.PathScenarios, token: "manager-token", wantStatus: http.StatusForbidden},
+		{name: "manager cannot create a scenario", method: http.MethodPost, path: constants.PathScenarios, token: "manager-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read a scenario", method: http.MethodGet, path: "/scenarios/0192f3a4-0000-7000-8000-0000000000aa", token: "specialist-token", wantStatus: http.StatusForbidden},
-		{name: "lead cannot run a scenario again", method: http.MethodPost, path: "/scenarios/0192f3a4-0000-7000-8000-0000000000aa/rerun", token: "lead-token", wantStatus: http.StatusForbidden},
-		{name: "lead cannot delete a scenario", method: http.MethodDelete, path: "/scenarios/0192f3a4-0000-7000-8000-0000000000aa", token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "manager cannot run a scenario again", method: http.MethodPost, path: "/scenarios/0192f3a4-0000-7000-8000-0000000000aa/rerun", token: "manager-token", wantStatus: http.StatusForbidden},
+		{name: "manager cannot delete a scenario", method: http.MethodDelete, path: "/scenarios/0192f3a4-0000-7000-8000-0000000000aa", token: "manager-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read program members", method: http.MethodGet, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/members", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the heatmap", method: http.MethodGet, path: constants.PathHeatmap, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the baseline", method: http.MethodGet, path: constants.PathCurrentPlan, token: "specialist-token", wantStatus: http.StatusForbidden},
@@ -286,9 +286,9 @@ func TestRouter_People_RBAC(t *testing.T) {
 		{name: "specialist cannot read a person", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no role cannot read a schedule", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/schedule", token: "no-role-token", wantStatus: http.StatusForbidden},
 		{name: "no token cannot read a schedule", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/schedule", wantStatus: http.StatusUnauthorized},
-		{name: "lead cannot download the timesheet template", method: http.MethodGet, path: constants.PathTimesheetTemplate, token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "manager cannot download the timesheet template", method: http.MethodGet, path: constants.PathTimesheetTemplate, token: "manager-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot download the timesheet template", method: http.MethodGet, path: constants.PathTimesheetTemplate, token: "specialist-token", wantStatus: http.StatusForbidden},
-		{name: "lead cannot import a timesheet", method: http.MethodPost, path: constants.PathTimesheetImport, token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "manager cannot import a timesheet", method: http.MethodPost, path: constants.PathTimesheetImport, token: "manager-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot import a timesheet", method: http.MethodPost, path: constants.PathTimesheetImport, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no token cannot import a timesheet", method: http.MethodPost, path: constants.PathTimesheetImport, wantStatus: http.StatusUnauthorized},
 		{name: "no role cannot read a calendar", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/calendar-feed", token: "no-role-token", wantStatus: http.StatusForbidden},
@@ -370,7 +370,7 @@ func TestRouter_ApproveAbsence_RBAC(t *testing.T) {
 		wantStatus int
 	}{
 		{name: "a planner approves", token: "planner-token", wantStatus: http.StatusOK},
-		{name: "a lead cannot approve", token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "a manager cannot approve", token: "manager-token", wantStatus: http.StatusForbidden},
 		{name: "a specialist cannot approve", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no token", wantStatus: http.StatusUnauthorized},
 	}

@@ -90,7 +90,7 @@ func scheduleFixture(t *testing.T, assignments []models.Assignment) scheduleRepo
 
 func newScheduleService(repos scheduleRepos) ScheduleService {
 	// The specialist is the person on show; the manager leads a program whose team holds them.
-	authz := ProvideTeamAuthzService(selfFinder{"kc-specialist": schedPersonID, "kc-lead": managerPersonID},
+	authz := ProvideTeamAuthzService(selfFinder{"kc-specialist": schedPersonID, "kc-manager": managerPersonID},
 		ledTeams{managerPersonID: {schedPersonID}})
 	cfg := heatmapConfig()
 	cfg.ScheduleMaxWeeks = schedMaxWeeks
@@ -171,8 +171,8 @@ func TestScheduleService_Get(t *testing.T) {
 			personID   string
 			wantStatus int // 0 means success
 		}{
-			{name: "a manager reads someone in the teams they lead", ctx: asRole("kc-lead", constants.RoleLead), personID: schedPersonID},
-			{name: "a manager cannot read someone outside them", ctx: asRole("kc-lead", constants.RoleLead), personID: schedOtherID,
+			{name: "a manager reads someone in the teams they lead", ctx: asRole("kc-manager", constants.RoleManager), personID: schedPersonID},
+			{name: "a manager cannot read someone outside them", ctx: asRole("kc-manager", constants.RoleManager), personID: schedOtherID,
 				wantStatus: http.StatusForbidden},
 			{name: "a specialist reads their own", ctx: specialist, personID: schedPersonID},
 			{name: "a specialist cannot read someone else", ctx: specialist, personID: schedOtherID, wantStatus: http.StatusForbidden},

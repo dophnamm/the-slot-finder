@@ -177,10 +177,10 @@ func newPlanService(plans *MockPlanRepository, people *MockPersonRepository) Pla
 }
 
 func TestPlanService_Current(t *testing.T) {
-	t.Run("a lead reads the baseline", func(t *testing.T) {
+	t.Run("a manager reads the baseline", func(t *testing.T) {
 		plans := new(MockPlanRepository)
 		plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(3), nil)
-		plan, err := newPlanService(plans, nil).Current(asRole("kc-lead", constants.RoleLead))
+		plan, err := newPlanService(plans, nil).Current(asRole("kc-manager", constants.RoleManager))
 		require.NoError(t, err)
 		assert.Equal(t, 3, plan.Version)
 	})
@@ -232,7 +232,7 @@ func TestPlanService_PersonAssignments(t *testing.T) {
 		plans.On("FindBaselineSummary", mock.Anything).Return(publishedBaseline(1), nil)
 		plans.On("ListPersonAssignments", mock.Anything, baselineID, teamMemberID, from, to).Return([]models.Assignment{withHours}, nil)
 		service := ProvidePlanService(plans, people, newVisibilityAuthz())
-		lead := asRole("kc-lead", constants.RoleLead)
+		lead := asRole("kc-manager", constants.RoleManager)
 		got, err := service.PersonAssignments(lead, PersonAssignmentsInput{PersonID: teamMemberID, From: from, To: to})
 		require.NoError(t, err)
 		assert.Len(t, got, 1)

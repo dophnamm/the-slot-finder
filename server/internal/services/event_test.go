@@ -114,7 +114,7 @@ func TestEventService_Record(t *testing.T) {
 }
 
 func TestEventService_List(t *testing.T) {
-	lead := asRole("kc-lead", constants.RoleLead)
+	lead := asRole("kc-manager", constants.RoleManager)
 
 	t.Run("a program keeps the events of its projects", func(t *testing.T) {
 		events, projects := new(MockChangeEventRepository), new(MockProjectRepository)
@@ -153,7 +153,7 @@ func TestEventService_List(t *testing.T) {
 	t.Run("a manager without a person record sees nothing", func(t *testing.T) {
 		events := new(MockChangeEventRepository)
 		page, err := ProvideEventService(events, nil, ProvideAuthzService(leadPeople{}), clock.NewFixed(eventTime)).
-			List(asRole("kc-other-lead", constants.RoleLead), ListEventsInput{Page: 1, PageSize: 20})
+			List(asRole("kc-other-manager", constants.RoleManager), ListEventsInput{Page: 1, PageSize: 20})
 		require.NoError(t, err)
 		assert.Empty(t, page.Data)
 		events.AssertNotCalled(t, "List", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
@@ -309,7 +309,7 @@ func TestPeopleService_RecordsCapacityChange(t *testing.T) {
 		{name: "deactivated", input: UpdatePersonInput{Active: new(false)}, wantFields: []string{"active"}},
 		{name: "several at once", input: UpdatePersonInput{WeeklyHours: new(24.0), Active: new(false)}, wantFields: []string{"weekly_hours", "active"}},
 		{name: "same value again", input: UpdatePersonInput{WeeklyHours: new(40.0), StartDate: DateChange{Set: true, Value: &start}}},
-		{name: "name and role do not move capacity", input: UpdatePersonInput{Name: new("Alex B."), Role: new(constants.RoleLead)}},
+		{name: "name and role do not move capacity", input: UpdatePersonInput{Name: new("Alex B."), Role: new(constants.RoleManager)}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -258,8 +258,8 @@ func TestAvailabilityService_CreateHoliday(t *testing.T) {
 		repo.AssertExpectations(t)
 	})
 
-	t.Run("lead cannot", func(t *testing.T) {
-		_, err := newAvailability(new(MockAbsenceRepository)).CreateHoliday(asRole("kc-lead", constants.RoleLead),
+	t.Run("manager cannot", func(t *testing.T) {
+		_, err := newAvailability(new(MockAbsenceRepository)).CreateHoliday(asRole("kc-manager", constants.RoleManager),
 			CreateHolidayInput{FromDate: day, ToDate: day, HoursPerDay: 8})
 		requireStatus(t, err, http.StatusForbidden)
 	})
@@ -305,7 +305,7 @@ func TestAvailabilityService_Approve(t *testing.T) {
 		{name: "already approved", ctx: planner, absence: approved, wantStatus: http.StatusConflict, wantCode: constants.AbsenceNotPlanned},
 		{name: "a holiday", ctx: planner, absence: holiday, wantStatus: http.StatusConflict, wantCode: constants.AbsenceNotPlanned},
 		{name: "not found", ctx: planner, findErr: gorm.ErrRecordNotFound, wantStatus: http.StatusNotFound, wantCode: constants.AbsenceNotFound},
-		{name: "a lead cannot approve", ctx: asRole("kc-lead", constants.RoleLead), absence: planned(), wantStatus: http.StatusForbidden},
+		{name: "a manager cannot approve", ctx: asRole("kc-manager", constants.RoleManager), absence: planned(), wantStatus: http.StatusForbidden},
 		{name: "a specialist cannot approve their own", ctx: asRole("kc-specialist", constants.RoleSpecialist), absence: planned(),
 			wantStatus: http.StatusForbidden},
 	}

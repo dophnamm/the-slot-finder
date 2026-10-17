@@ -117,7 +117,7 @@ func TestHolidayImportService_Import(t *testing.T) {
 
 	t.Run("only planners import", func(t *testing.T) {
 		_, err := newHolidayImportService(new(MockAbsenceRepository), &fetchedCalendar{}, &recordedEvents{}).Import(
-			asRole("kc-lead", constants.RoleLead), ImportHolidaysInput{File: strings.NewReader(holidayICS), From: from, To: to, HoursPerDay: 8})
+			asRole("kc-manager", constants.RoleManager), ImportHolidaysInput{File: strings.NewReader(holidayICS), From: from, To: to, HoursPerDay: 8})
 		requireStatus(t, err, http.StatusForbidden)
 	})
 }

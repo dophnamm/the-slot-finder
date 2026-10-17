@@ -41,7 +41,7 @@ type seedProgram struct {
 
 var programs = []seedProgram{
 	{
-		name: "Acme Commerce Platform", client: "Acme Retail", leadEmail: "lead@slot-finder.local",
+		name: "Acme Commerce Platform", client: "Acme Retail", leadEmail: "manager@slot-finder.local",
 		team: []string{"alex@slot-finder.local", "bao@slot-finder.local", "chi@slot-finder.local", "dung@slot-finder.local",
 			"khanh@slot-finder.local", "hoa@slot-finder.local", "planner@slot-finder.local", "specialist@slot-finder.local"},
 		start: day(2026, time.September, 28), end: day(2026, time.December, 18),
@@ -49,18 +49,18 @@ var programs = []seedProgram{
 		objectives: []string{"Ship the new checkout.", "Launch the loyalty program.", "Retire the legacy order database."},
 		projects: []seedProject{
 			{name: "Checkout Revamp", priority: 1, start: day(2026, time.October, 12), deadline: day(2026, time.December, 11),
-				scopePoints: 120, donePts: 30, leadEmail: "lead@slot-finder.local",
+				scopePoints: 120, donePts: 30, leadEmail: "manager@slot-finder.local",
 				phases: []seedPhase{{"Discovery", "2026-W42", "2026-W43"}, {"Build", "2026-W44", "2026-W48"}, {"Test", "2026-W48", "2026-W50"}},
 				demands: []seedDemand{
 					{expertisePM, "", 3, 1, 60}, {expertiseAnalyst, "Discovery", 3, 1, 60},
 					{expertiseEngineer, "Build", 3, 2, 320}, {expertiseQA, "Test", 3, 1, 100},
 				}},
 			{name: "Loyalty Program", priority: 2, start: day(2026, time.November, 2), deadline: day(2026, time.December, 18),
-				scopePoints: 80, leadEmail: "lead@slot-finder.local",
+				scopePoints: 80, leadEmail: "manager@slot-finder.local",
 				phases:  []seedPhase{{"Build", "2026-W45", "2026-W49"}, {"Test", "2026-W49", "2026-W51"}},
 				demands: []seedDemand{{expertiseEngineer, "Build", 4, 1, 160}, {expertiseQA, "Test", 2, 1, 60}}},
 			{name: "Data Migration", priority: 3, start: day(2026, time.October, 12), deadline: day(2026, time.November, 13),
-				scopePoints: 40, donePts: 10, leadEmail: "lead@slot-finder.local",
+				scopePoints: 40, donePts: 10, leadEmail: "manager@slot-finder.local",
 				phases:  []seedPhase{{"Build", "2026-W42", "2026-W45"}, {"Test", "2026-W45", "2026-W46"}},
 				demands: []seedDemand{{expertiseEngineer, "Build", 3, 1, 72}, {expertiseQA, "Test", 3, 1, 40}}},
 		},

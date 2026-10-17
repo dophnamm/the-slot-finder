@@ -493,7 +493,7 @@ definitions:
       role:
         enum:
         - planner
-        - lead
+        - manager
         - specialist
         example: planner
         type: string
@@ -3389,8 +3389,8 @@ paths:
   /plans/drafts:
     get:
       description: Every staffing draft that is still open, newest first, manual and
-        auto re-plan. A manager (lead) sees only drafts whose projects all belong
-        to programs they manage.
+        auto re-plan. A manager sees only drafts whose projects all belong to programs
+        they manage.
       produces:
       - application/json
       responses:

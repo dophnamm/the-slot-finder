@@ -65,7 +65,7 @@ var expertises = []seedExpertise{
 var people = []seedPerson{
 	{name: "Pat Planner", email: "planner@slot-finder.local", role: constants.RolePlanner, weeklyHours: 40, nonProjectHours: 12,
 		skills: []seedSkill{{expertisePM, 4, true}, {expertiseAnalyst, 3, false}}},
-	{name: "Lee Lead", email: "lead@slot-finder.local", role: constants.RoleLead, weeklyHours: 40, nonProjectHours: 8,
+	{name: "Mia Manager", email: "manager@slot-finder.local", role: constants.RoleManager, weeklyHours: 40, nonProjectHours: 8,
 		skills: []seedSkill{{expertisePM, 5, true}, {expertiseEngineer, 3, false}}},
 	{name: "Sam Specialist", email: "specialist@slot-finder.local", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,
 		skills: []seedSkill{{expertiseEngineer, 4, true}, {expertiseQA, 3, false}}},
@@ -83,7 +83,7 @@ var people = []seedPerson{
 		skills: []seedSkill{{expertiseAnalyst, 4, true}, {expertisePM, 2, false}}},
 	{name: "Linh Hoang", email: "linh@slot-finder.local", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,
 		skills: []seedSkill{{expertiseAnalyst, 3, true}, {expertiseQA, 3, false}}},
-	{name: "Minh Bui", email: "minh@slot-finder.local", role: constants.RoleLead, weeklyHours: 40, nonProjectHours: 8,
+	{name: "Minh Bui", email: "minh@slot-finder.local", role: constants.RoleManager, weeklyHours: 40, nonProjectHours: 8,
 		skills: []seedSkill{{expertisePM, 3, true}}},
 	// Joins in November: capacity is 0 before the start date.
 	{name: "Quang Ngo", email: "quang@slot-finder.local", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,

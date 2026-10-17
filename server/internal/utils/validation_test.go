@@ -23,7 +23,7 @@ func TestRegisterValidations_Role(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "planner", role: constants.RolePlanner},
-		{name: "lead", role: constants.RoleLead},
+		{name: "manager", role: constants.RoleManager},
 		{name: "specialist", role: constants.RoleSpecialist},
 		{name: "unknown role", role: "admin", wantErr: true},
 		{name: "empty", role: "", wantErr: true},

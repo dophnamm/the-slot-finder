@@ -89,13 +89,13 @@ func TestProgramTeamService_List(t *testing.T) {
 	teams := &memoryTeams{members: map[string][]string{teamProgramID: {teamPersonID}}}
 	service := newTeamService(t, teams)
 
-	members, err := service.List(asRole("kc-lead", constants.RoleLead), teamProgramID)
+	members, err := service.List(asRole("kc-manager", constants.RoleManager), teamProgramID)
 	require.NoError(t, err, "the program's manager reads its team")
 	require.Len(t, members, 1)
 	assert.Equal(t, teamPersonID, members[0].Person.ID)
 	assert.Nil(t, members[0].Hours, "no hours in the baseline yet")
 
-	_, err = service.List(asRole("kc-other-lead", constants.RoleLead), teamProgramID)
+	_, err = service.List(asRole("kc-other-manager", constants.RoleManager), teamProgramID)
 	requireStatus(t, err, http.StatusForbidden)
 }
 
@@ -103,9 +103,9 @@ func TestProgramTeamService_List_ProjectLead(t *testing.T) {
 	teams := &memoryTeams{members: map[string][]string{teamProgramID: {teamPersonID}}}
 	projects := new(MockProjectRepository)
 	projects.On("LeadsProjectIn", mock.Anything, teamProgramID, otherPersonID2).Return(true, nil)
-	authz := ProvideAuthzService(selfFinder{"kc-project-lead": otherPersonID2})
+	authz := ProvideAuthzService(selfFinder{"kc-project-manager": otherPersonID2})
 
-	members, err := newTeamServiceWith(t, teams, projects, authz).List(asRole("kc-project-lead", constants.RoleLead), teamProgramID)
+	members, err := newTeamServiceWith(t, teams, projects, authz).List(asRole("kc-project-manager", constants.RoleManager), teamProgramID)
 	require.NoError(t, err, "the lead of one of the program's projects reads its team")
 	require.Len(t, members, 1)
 }
@@ -128,7 +128,7 @@ func TestProgramTeamService_AddAndRemove(t *testing.T) {
 	assert.Equal(t, constants.TeamChangeAdded, events.events[0].Payload.(TeamChange).Change)
 
 	requireAppError(t, service.Add(planner, teamProgramID, teamPersonID), constants.TeamMemberExists, http.StatusConflict)
-	requireStatus(t, service.Add(asRole("kc-lead", constants.RoleLead), teamProgramID, teamPersonID), http.StatusForbidden)
+	requireStatus(t, service.Add(asRole("kc-manager", constants.RoleManager), teamProgramID, teamPersonID), http.StatusForbidden)
 	assert.Len(t, events.events, 1, "a refused change records nothing")
 
 	require.NoError(t, service.Remove(planner, teamProgramID, teamPersonID))
