@@ -151,6 +151,9 @@ func (s *peopleService) Create(ctx context.Context, in CreatePersonInput) (*mode
 	if in.NonProjectHours != nil {
 		nonProject = *in.NonProjectHours
 	}
+	if err := checkNonProjectHours(nonProject, in.WeeklyHours, opCreatePerson); err != nil {
+		return nil, err
+	}
 	person := &models.Person{
 		BaseModel:       models.NewBaseModel(),
 		Name:            in.Name,
@@ -203,6 +206,9 @@ func (s *peopleService) Update(ctx context.Context, id string, in UpdatePersonIn
 		person.Active = *in.Active
 	}
 	if err := checkDates(person.StartDate, person.EndDate, opUpdatePerson); err != nil {
+		return nil, err
+	}
+	if err := checkNonProjectHours(person.NonProjectHours, person.WeeklyHours, opUpdatePerson); err != nil {
 		return nil, err
 	}
 
@@ -350,6 +356,14 @@ func (s *peopleService) checkSkills(ctx context.Context, skills []SkillInput, op
 func checkDates(start, end *time.Time, op string) error {
 	if start != nil && end != nil && end.Before(*start) {
 		return errors.NewAppError(constants.PersonDatesInvalid, constants.MsgPersonDatesInvalid,
+			errors.ErrorTypeValidation, http.StatusBadRequest).WithOperation(op).WithResource(resourcePerson)
+	}
+	return nil
+}
+
+func checkNonProjectHours(nonProject, weekly float64, op string) error {
+	if nonProject > weekly {
+		return errors.NewAppError(constants.PersonNonProjectHoursInvalid, constants.MsgPersonNonProjectHoursInvalid,
 			errors.ErrorTypeValidation, http.StatusBadRequest).WithOperation(op).WithResource(resourcePerson)
 	}
 	return nil

@@ -19,6 +19,8 @@ type AbsenceRepository interface {
 	// ListOverlapping returns every absence, personal or holiday, that touches the dates
 	// from through to.
 	ListOverlapping(ctx context.Context, from, to time.Time) ([]models.Absence, error)
+	// HasOverlapForPerson reports whether the person has an absence touching from through to.
+	HasOverlapForPerson(ctx context.Context, personID string, from, to time.Time) (bool, error)
 	// ListCalendarLeave returns a person's absences read from their calendar, oldest first.
 	ListCalendarLeave(ctx context.Context, personID string) ([]models.Absence, error)
 	// DismissCalendarLeave deletes calendar leave by hand and remembers its event UID, so a
@@ -69,6 +71,14 @@ func (r *absenceRepository) ListOverlapping(ctx context.Context, from, to time.T
 		Order("from_date ASC").Order("id ASC").
 		Find(&absences).Error
 	return absences, err
+}
+
+func (r *absenceRepository) HasOverlapForPerson(ctx context.Context, personID string, from, to time.Time) (bool, error) {
+	var count int64
+	err := r.db.From(ctx).Model(&models.Absence{}).
+		Where("person_id = ? AND from_date <= ? AND to_date >= ?", personID, to, from).
+		Count(&count).Error
+	return count > 0, err
 }
 
 func (r *absenceRepository) ApprovePlanned(ctx context.Context, id string) (bool, error) {

@@ -154,6 +154,16 @@ func (s *availabilityService) Create(ctx context.Context, in CreateAbsenceInput)
 		return nil, err
 	}
 
+	overlaps, err := s.repo.HasOverlapForPerson(ctx, in.PersonID, in.FromDate, in.ToDate)
+	if err != nil {
+		return nil, errors.DatabaseError(constants.MsgAbsenceCreateFailed, err).
+			WithOperation(opCreateAbsence).WithResource(resourceAbsence)
+	}
+	if overlaps {
+		return nil, errors.NewAppError(constants.AbsenceOverlaps, constants.MsgAbsenceOverlaps, errors.ErrorTypeConflict,
+			http.StatusConflict).WithOperation(opCreateAbsence).WithResource(resourceAbsence)
+	}
+
 	// Only planners approve; anyone else reports planned absence.
 	status := in.Status
 	if status == "" || !CanManageAbsences(principal) {

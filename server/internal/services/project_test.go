@@ -277,7 +277,7 @@ func TestProjectService_ReplacePhases(t *testing.T) {
 			return len(rows) == 3 && rows[0].Name == "Discovery" && rows[0].Sequence == 1 && rows[1].ID == buildID && rows[2].Sequence == 3
 		})).Return(nil)
 		_, err := newProjectService(repo, nil).ReplacePhases(planner, projectID, []PhaseInput{
-			{Name: "Discovery", StartWeek: mustWeek(t, "2026-W40"), EndWeek: mustWeek(t, "2026-W41")},
+			{Name: "Discovery", StartWeek: mustWeek(t, "2026-W42"), EndWeek: mustWeek(t, "2026-W42")},
 			{ID: new(buildID), Name: "Build", StartWeek: mustWeek(t, "2026-W42"), EndWeek: mustWeek(t, "2026-W47")},
 			{ID: new(testID), Name: "Test", StartWeek: mustWeek(t, "2026-W46"), EndWeek: mustWeek(t, "2026-W51")},
 		})
@@ -453,11 +453,13 @@ func TestProjectService_WeekWindow(t *testing.T) {
 			}},
 		{name: "replace phases with a phase exactly at the window edge",
 			run: func(t *testing.T, repo *MockProjectRepository, _ *MockProgramRepository) error {
-				repo.On("FindDetail", mock.Anything, projectID).Return(buildAndTest(t), nil)
+				edge := isoweek.Of(acceptedAt).AddWeeks(projectConfig().ProjectWindowWeeks)
+				project := buildAndTest(t)
+				project.Deadline = edge.Monday()
+				repo.On("FindDetail", mock.Anything, projectID).Return(project, nil)
 				repo.On("CountDemandsInPhases", mock.Anything, mock.Anything).Return(int64(0), nil)
 				repo.On("DeletePhases", mock.Anything, mock.Anything).Return(nil)
 				repo.On("SavePhases", mock.Anything, mock.Anything).Return(nil)
-				edge := isoweek.Of(acceptedAt).AddWeeks(projectConfig().ProjectWindowWeeks)
 				_, err := newProjectService(repo, nil).ReplacePhases(planner, projectID, []PhaseInput{{Name: "Edge", StartWeek: edge, EndWeek: edge}})
 				return err
 			}},
@@ -656,4 +658,58 @@ func TestProjectService_Reorder(t *testing.T) {
 		_, err := newProjectService(projects, programs).Reorder(asRole("kc-lead", constants.RoleLead), programID, []string{first, second, third})
 		requireStatus(t, err, http.StatusForbidden)
 	})
+}
+
+func TestProjectService_PhasesInsideProject(t *testing.T) {
+	planner := asRole("kc-planner", constants.RolePlanner)
+	tests := []struct {
+		name     string
+		run      func(t *testing.T, repo *MockProjectRepository) error
+		wantCode string // "" means success
+	}{
+		{name: "replace: a new phase before the start week", wantCode: constants.PhaseOutsideProject,
+			run: func(t *testing.T, repo *MockProjectRepository) error {
+				repo.On("FindDetail", mock.Anything, projectID).Return(buildAndTest(t), nil)
+				_, err := newProjectService(repo, nil).ReplacePhases(planner, projectID, []PhaseInput{
+					{Name: "Early", StartWeek: mustWeek(t, "2026-W41"), EndWeek: mustWeek(t, "2026-W42")}})
+				return err
+			}},
+		{name: "replace: a new phase after the deadline week", wantCode: constants.PhaseOutsideProject,
+			run: func(t *testing.T, repo *MockProjectRepository) error {
+				repo.On("FindDetail", mock.Anything, projectID).Return(buildAndTest(t), nil)
+				_, err := newProjectService(repo, nil).ReplacePhases(planner, projectID, []PhaseInput{
+					{Name: "Late", StartWeek: mustWeek(t, "2026-W50"), EndWeek: mustWeek(t, "2026-W52")}})
+				return err
+			}},
+		{name: "update: an end past the deadline week", wantCode: constants.PhaseOutsideProject,
+			run: func(t *testing.T, repo *MockProjectRepository) error {
+				project := buildAndTest(t)
+				build := project.Phases[0]
+				repo.On("FindPhase", mock.Anything, buildID).Return(&build, nil)
+				repo.On("FindDetail", mock.Anything, projectID).Return(project, nil)
+				_, err := newProjectService(repo, nil).UpdatePhase(planner, buildID, UpdatePhaseInput{EndWeek: new(mustWeek(t, "2026-W52"))})
+				return err
+			}},
+		{name: "project dates: a deadline before the last phase end", wantCode: constants.ProjectDatesExcludePhases,
+			run: func(t *testing.T, repo *MockProjectRepository) error {
+				repo.On("FindDetail", mock.Anything, projectID).Return(buildAndTest(t), nil)
+				deadline := time.Date(2026, time.December, 4, 0, 0, 0, 0, time.UTC)
+				_, err := newProjectService(repo, nil).Update(planner, projectID, UpdateProjectInput{Deadline: &deadline})
+				return err
+			}},
+		{name: "project dates: a start after the first phase start", wantCode: constants.ProjectDatesExcludePhases,
+			run: func(t *testing.T, repo *MockProjectRepository) error {
+				repo.On("FindDetail", mock.Anything, projectID).Return(buildAndTest(t), nil)
+				start := time.Date(2026, time.October, 26, 0, 0, 0, 0, time.UTC)
+				_, err := newProjectService(repo, nil).Update(planner, projectID, UpdateProjectInput{StartEarliest: &start})
+				return err
+			}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := new(MockProjectRepository)
+			requireAppError(t, tt.run(t, repo), tt.wantCode, http.StatusBadRequest)
+			repo.AssertNotCalled(t, "SavePhases", mock.Anything, mock.Anything)
+		})
+	}
 }

@@ -69,6 +69,11 @@ func (m *MockAbsenceRepository) ListOverlapping(ctx context.Context, from, to ti
 	return args.Get(0).([]models.Absence), args.Error(1)
 }
 
+func (m *MockAbsenceRepository) HasOverlapForPerson(ctx context.Context, personID string, from, to time.Time) (bool, error) {
+	args := m.Called(ctx, personID, from, to)
+	return args.Bool(0), args.Error(1)
+}
+
 func (m *MockAbsenceRepository) ListCalendarLeave(ctx context.Context, personID string) ([]models.Absence, error) {
 	args := m.Called(ctx, personID)
 	return args.Get(0).([]models.Absence), args.Error(1)
@@ -138,6 +143,7 @@ func TestAvailabilityService_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			repo := new(MockAbsenceRepository)
+			repo.On("HasOverlapForPerson", mock.Anything, tt.in.PersonID, tt.in.FromDate, tt.in.ToDate).Return(false, nil).Maybe()
 			if tt.wantErr == 0 {
 				repo.On("Create", mock.Anything, mock.MatchedBy(func(a *models.Absence) bool {
 					return a.Status == tt.wantStatus && *a.PersonID == tt.in.PersonID && a.Type == tt.in.Type &&
@@ -153,6 +159,35 @@ func TestAvailabilityService_Create(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantStatus, absence.Status)
 			repo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestAvailabilityService_Create_Overlap(t *testing.T) {
+	from := time.Date(2026, time.October, 19, 0, 0, 0, 0, time.UTC)
+	in := CreateAbsenceInput{PersonID: otherPersonID, FromDate: from, ToDate: from.AddDate(0, 0, 4), HoursPerDay: 8, Type: constants.AbsenceTypeLeave}
+	tests := []struct {
+		name     string
+		overlaps bool
+		wantCode string // "" means success
+	}{
+		{name: "free dates", overlaps: false},
+		{name: "overlaps an existing absence", overlaps: true, wantCode: constants.AbsenceOverlaps},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := new(MockAbsenceRepository)
+			repo.On("HasOverlapForPerson", mock.Anything, in.PersonID, in.FromDate, in.ToDate).Return(tt.overlaps, nil)
+			if tt.wantCode == "" {
+				repo.On("Create", mock.Anything, mock.Anything).Return(nil)
+			}
+			_, err := newAvailability(repo).Create(asRole("kc-planner", constants.RolePlanner), in)
+			if tt.wantCode == "" {
+				require.NoError(t, err)
+				return
+			}
+			requireAppError(t, err, tt.wantCode, http.StatusConflict)
+			repo.AssertNotCalled(t, "Create", mock.Anything, mock.Anything)
 		})
 	}
 }
