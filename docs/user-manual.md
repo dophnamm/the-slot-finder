@@ -1,28 +1,40 @@
 # The Slot Finder: user manual
 
-This manual is for the people who use the app: Planners, Managers and Specialists. It explains each screen, what you can do on it, and what the messages mean. For setup and technical detail, see the [root README](../README.md), [`server/README.md`](../server/README.md) and [`client/README.md`](../client/README.md).
+This manual is for the people who review the app with the demo accounts below: Planners, Managers and Specialists. It explains each screen, what you can do on it, and what the messages mean.[^1]
 
-The Slot Finder assigns customer projects to squads (PM, Analyst, Engineer, QA), shows who is overloaded or idle each ISO week (for example `2026-W42`), and proposes a new plan when a project slips or someone takes leave. Nothing changes the real plan until a staffing draft is accepted: by a Planner, or by a Manager for their own programs.
+The Slot Finder assigns customer projects to squads (PM, Analyst, Engineer, QA), shows who is overloaded or idle each week (for example `2026-W42`), and proposes a new plan when a project slips or someone takes leave. Nothing changes the real plan until a staffing draft is accepted: by a Planner, or by the Manager of the program it covers.
+
+## Accounts for review
+
+Three accounts are already created, one per role. Sign in with each to see what that role sees (see [Roles](#3-roles)):
+
+| Username | Password | Name | Role | Start here |
+|---|---|---|---|---|
+| `planner` | `P@ssw0rd123` | Pat Planner | **Planner** | **Dashboard**: the whole team, every program, drafts, scenarios and events |
+| `manager` | `P@ssw0rd123` | Mia Manager | **Manager** | **Dashboard**: only the programs Mia manages (Acme Commerce Platform) |
+| `specialist` | `P@ssw0rd123` | Sam Specialist | **Specialist** | **My schedule**: Sam's own hours, leave and holidays |
 
 ## Contents
 
 1. [Sign in](#1-sign-in)
-2. [Roles](#2-roles)
-3. [Dashboard](#3-dashboard)
-4. [People and skills](#4-people-and-skills)
-5. [Programs and projects](#5-programs-and-projects)
-6. [Staffing drafts](#6-staffing-drafts)
-7. [What-if scenarios](#7-what-if-scenarios)
-8. [Leave and absences](#8-leave-and-absences)
-9. [Events and re-plan](#9-events-and-re-plan)
-10. [Ask AI](#10-ask-ai)
-11. [Guided tour](#11-guided-tour)
-12. [Glossary](#12-glossary)
-13. [Troubleshooting](#13-troubleshooting)
+2. [Review in five minutes](#2-review-in-five-minutes)
+3. [Roles](#3-roles)
+4. [Dashboard](#4-dashboard)
+5. [People and skills](#5-people-and-skills)
+6. [Programs and projects](#6-programs-and-projects)
+7. [Staffing drafts](#7-staffing-drafts)
+8. [What-if scenarios](#8-what-if-scenarios)
+9. [Leave and absences](#9-leave-and-absences)
+10. [Events and re-plan](#10-events-and-re-plan)
+11. [Ask AI](#11-ask-ai)
+12. [Guided tour](#12-guided-tour)
+13. [Glossary](#13-glossary)
+14. [Troubleshooting](#14-troubleshooting)
+- [Appendix](#appendix): [Import holidays](#import-holidays), [Calendar sync](#calendar-sync), [Import timesheets](#import-timesheets)
 
 ## 1. Sign in
 
-Open the app's address. You are sent to the sign-in page; enter your account there and you return to the page you asked for. If you have no account yet, choose "Don't have an account?" under the sign-in button; it points you to the accounts below.
+Open the app's address. You are sent to the sign-in page; enter your account there and you return to the page you asked for. If you have no account yet, choose "Don't have an account?" under the sign-in button; it points you to the [accounts for review](#accounts-for-review).
 
 1. Open the app.
 2. On the sign-in page, enter your account and sign in.
@@ -31,22 +43,33 @@ Open the app's address. You are sent to the sign-in page; enter your account the
 
 If you sign in but see "Your account is not linked to a person yet. Ask a planner to add you with the same email.", a Planner must add you to **People** with the same email address.
 
-**Accounts for review.** Three accounts are already created, one per role. Sign in with each to see what that role sees (see [Roles](#2-roles)):
+## 2. Review in five minutes
 
-| Username | Password | Name | Role | Start here |
-|---|---|---|---|---|
-| `planner` | `P@ssw0rd123` | Pat Planner | **Planner** | **Dashboard**: the whole team, every program, drafts, scenarios and events |
-| `manager` | `P@ssw0rd123` | Mia Manager | **Manager** | **Dashboard**: only the programs Mia manages (Acme Commerce Platform) |
-| `specialist` | `P@ssw0rd123` | Sam Specialist | **Specialist** | **My schedule**: Sam's own hours, leave and holidays |
+Start from the demo data. **Drafts** is empty at first, because the demo baseline is already accepted, so start with **Propose squad**. All reviewers share one dataset: accepting a draft or approving leave changes it for everyone.
 
-## 2. Roles
+**Planner (Pat Planner)**
+1. **Dashboard, Risks**: Bao Tran is listed under Sustained overload, over 100 % for 3 weeks from 2026-W45.
+2. **Dashboard, heatmap**: Dung Pham's cell for 2026-W45 is hatched. It is planned leave, 2 to 6 November, not approved yet.
+3. **People**, Dung Pham, **Absences**, **Approve** the leave. Then open **Events**: the change shows as Waiting, and then as No impact or Draft created. The list refreshes itself every 15 seconds.
+4. **Intake** holds three projects with no staffing: Loyalty Program, Clinic Dashboard and Records Integration. Click **Propose squad** on one, review the draft, then **Accept draft**.
+5. **Scenarios** holds two seeded what-ifs: "Checkout Revamp slips two weeks" and "Alex away 26 Oct – 6 Nov". Open one and read **Changes against the baseline**.
+
+**Manager (Mia Manager)**
+1. **Programs** opens Acme Commerce Platform directly, because it is the only program Mia manages.
+2. Open Beta Health Portal from a link a Planner gives you. The screen says "You can’t see this program".
+
+**Specialist (Sam Specialist)**
+1. **My schedule** shows your approved training on 26 and 27 October.
+2. Under **My absences**, report a day of leave. It stays planned until a Planner approves it.
+
+## 3. Roles
 
 Your role decides which screens appear in the sidebar and which actions you can take. The server checks every action again.
 
 | Role (as shown) | Sidebar screens | What you can see | What you can do |
 |---|---|---|---|
 | **Planner** | Dashboard, Programs, Intake, Drafts, Scenarios, People, Events | Everything: the whole team, all programs, all drafts, change history | Everything a Manager can, plus: program teams, approve leave, holidays, timesheet import, scenarios, and staffing drafts for any program. Uses Ask AI |
-| **Manager** (role `manager`) | Dashboard, Programs, Intake, Drafts, People (read only) | Only the programs they lead or lead a project in, and the people in those programs' teams (and themselves) | Create programs; edit their programs and projects (phases, demand, done points, confidence); reorder projects; propose, edit, accept and reject drafts for their projects. Uses Ask AI |
+| **Manager** | Dashboard, Programs, Intake, Drafts, People (read only) | Only the programs they lead or lead a project in, and the people in those programs' teams (and themselves) | Create programs; edit their programs and projects (phases, demand, done points); reorder projects; propose, edit, accept and reject drafts for the programs they manage. Uses Ask AI |
 | **Specialist** | My schedule | Their own schedule: hours per project, leave, holidays | Report their own leave; connect their own calendar |
 
 Notes:
@@ -54,12 +77,12 @@ Notes:
 - Only a Planner can change a program's team, approve leave, or add holidays.
 - Only a Planner sees **Scenarios** and **Events**.
 
-## 3. Dashboard
+## 4. Dashboard
 
 The Dashboard (Planner and Manager) shows the team heatmap, the capacity forecast, and the risks. A Manager sees only the people in their program teams.
 
 **Heatmap: switch the view.** The card header has two buttons:
-- **By person**: one row per person, one column per ISO week. This is the default.
+- **By person**: one row per person, one column per week. This is the default.
 - **By expertise**: the capacity forecast, one row per expertise, one column per week (see below).
 
 **Change the range and filter.**
@@ -77,7 +100,7 @@ The Dashboard (Planner and Manager) shows the team heatmap, the capacity forecas
 | Near full | 85 % to 100 % | Little room left |
 | Overloaded | over 100 % | More planned than capacity |
 
-A hatched cell is **tentative**: it contains leave that is planned but not approved yet. A past week with an imported timesheet shows the hours actually worked, and its tooltip shows the planned hours.
+A hatched cell is **tentative**: it contains leave that is planned but not approved yet. A past week with an imported timesheet shows the hours actually worked, and its tooltip shows the planned hours. A person over 100 % for several weeks in a row also gets an **Overloaded N weeks in a row** badge on their row.
 
 **Click a cell** to see the week's assignments for that person. The popover links to the project.
 
@@ -94,7 +117,7 @@ The tooltip gives capacity, load, unmet and pipeline hours. **Click a cell** to 
 
 Click a name to open the person or project. When nothing needs attention, the card says "No project needs attention."
 
-## 4. People and skills
+## 5. People and skills
 
 Open **People** from the sidebar. The screen has two tabs: **People** and **Holidays**. A Manager reads both tabs, without the buttons, and sees only the people in their program teams.
 
@@ -104,38 +127,37 @@ Open **People** from the sidebar. The screen has two tabs: **People** and **Holi
 3. Set the expertises: each person has one **Primary expertise** and any number of other expertises, each at a level from 1 to 5. Exactly one expertise must be primary.
 4. Save.
 
-Click a row to open the person's page (see [Leave and absences](#8-leave-and-absences)). Rows show each person's expertise and level matrix, start and end dates and location.
+Click a row to open the person's page (see [Leave and absences](#9-leave-and-absences)). Rows show each person's expertise and level matrix, start and end dates and location.
 
 **Hours rules.**
 - **Weekly hours** are the contracted hours per week.
 - **Non-project hours** are kept for meetings, support and management. They must not exceed weekly hours.
 - Capacity in a week is weekly hours, minus non-project hours, minus absence hours. A person has zero capacity before their start date and after their end date.
 
-**Import timesheets (Planner).** Click **Import timesheet** on the People tab.
-1. Click **Download template** for the past weeks you need. The file lists every person, project and week planned in the baseline.
-2. Fill in the actual hours only. Keep the other columns.
-3. Click **Import the filled-in file**.
+To load actual hours from a file, see [Import timesheets](#import-timesheets).
 
-One row with a problem saves nothing. The message gives the line and the problem (see [Troubleshooting](#13-troubleshooting)). Imported hours feed **Actual hours** and **Burn %** on programs and projects.
-
-## 5. Programs and projects
+## 6. Programs and projects
 
 **Programs** lists the programs you can see, with their status and timeline. The arrow on a row opens a preview with its figures, projects and members. A Manager with a single program opens it directly.
 
 To create a program, click **New program**.
 
 **Program page.** Click a program to open it. It has three tabs:
-- **Overview**: progress bars (**Time**, **Scope**, **Planned burn**, **Staffing**), the cost figures, staffing by expertise, and the program brief.
+- **Overview**: progress bars for **Time**, **Scope**, **Planned burn** (or **Burn**, see below) and **Staffing**; the hours figures **Budget**, **Planned**, **Planned to date**, **Actual**, **Forecast** and **Gap**; staffing by expertise; and the program brief.
 - **Projects**: the projects in priority order, with the hours planned next week and in the next 3 weeks. Drag a row, or focus its handle and press the arrow keys, to change the order. The top project has the highest priority.
 - **Team**: the people the program's projects are staffed from. Planners use **Add member** and **Remove**. Removing a member keeps their baseline hours.
 
-Use **Edit** to change the program. The **⋯** menu holds **Put on hold**, **Start closing** and **Cancel program**. Cancelling a program also cancels its open projects.
+> **Warning:** a Manager can create a program, but only a Planner can add members to its team. If the team is empty, **Propose squad** still makes a draft, but its demands end unmet, with the reason "No one in the program team".
 
-A warning sign (⚠) on a progress bar means the app flags it: over 100 % time, behind on delivery, over-planned, or understaffed.
+**Burn and actual hours.** The fourth bar reads **Planned burn** until a timesheet is imported. Then it reads **Burn**, and the **Actual** figure shows the imported hours. In the demo, Checkout Revamp and Data Migration already have actual hours.
+
+**Warning flags.** A red bar means a warning: **Time** when the program is past its end date, **Scope** when it is behind on delivery, and **Staffing** when it is understaffed. **Planned** turns red when it is over-planned. Warning badges (At risk, Understaffed, Behind on delivery, Over-planned, Past the end date) sit under the bars.
+
+Use **Edit** to change the program. The **⋯** menu holds **Put on hold**, **Start closing** and **Cancel program**. Cancelling a program also cancels its open projects.
 
 **Add a project.**
 1. Open the program's **Projects** tab and click **Add project**.
-2. Enter the name, earliest start, deadline and scope points. For an incoming project, set the **confidence** (0 to 100 %).
+2. Enter the name, earliest start, deadline and scope points.
 3. Save.
 
 Both dates must lie within 156 weeks before or after the current week.
@@ -155,11 +177,11 @@ Moving a phase's end later moves every later phase of the same project by the sa
 
 Budget hours must be whole hours. Otherwise the form shows "Use whole hours" and keeps **Save** off.
 
-**Project status.** A project is **Incoming** until a staffing draft covering it is accepted. Other statuses are **Planned**, **Active**, **On hold**, **Done** and **Cancelled**. The engine plans only projects in plannable statuses.
+**Project status.** A project is **Incoming** until a staffing draft covering it is accepted. Other statuses are **Planned**, **Active**, **On hold**, **Done** and **Cancelled**. The engine plans only projects that are **Incoming**, **Planned** or **Active**.
 
-## 6. Staffing drafts
+## 7. Staffing drafts
 
-A staffing draft is a plan the engine proposes for one or more projects. It is not the real plan until a Planner accepts it.
+A staffing draft is a plan the engine proposes for one or more projects. It becomes the real plan only when a Planner, or the Manager of the programs it covers, accepts it.
 
 **Generate a draft.**
 1. Open **Intake** (the incoming projects, highest priority first) or a project page.
@@ -172,7 +194,7 @@ On the draft review screen:
 - Each row is one person's assignment to one demand. Each week shows the person's weekly load, coloured with the same bands as the heatmap.
 - **Reason**: why the engine chose the person, and the kind of assignment (primary or cross-expertise).
 - **Changes against the baseline**: who gains or loses hours if the draft is accepted.
-- **Unmet demand**: hours the engine could not place, with a reason (see the table in [Troubleshooting](#13-troubleshooting)).
+- **Unmet demand**: hours the engine could not place, with a reason (see the table in [Troubleshooting](#14-troubleshooting)).
 
 **Edit a draft.**
 - Type hours into a week cell.
@@ -182,7 +204,7 @@ On the draft review screen:
 - **Allocate hours** sets the same hours every week, or a total spread evenly, over a range of weeks in the demand's window.
 - **Lock hours** keeps the hours as they are when the draft is generated again. **Unlock hours** releases them.
 
-A person below the demand's minimum level (or without the expertise) is a **stretch** assignment. Only a Planner can add one, by hand. It is always locked and flagged with ⚠, and accepting the draft needs an explicit confirmation.
+A person below the demand's minimum level (or without the expertise) is a **stretch** assignment. A Planner, or the Manager of the program, can add one by hand. It is always locked and shown with a red **Stretch** badge, and accepting the draft needs an explicit confirmation.
 
 **Accept or reject.**
 1. Click **Accept draft** (or **Reject**).
@@ -193,7 +215,7 @@ On reject, the draft closes and nothing changes: "Draft rejected."
 
 **Stale draft.** If the baseline changed while you were reviewing, the draft can no longer be accepted. The message says "The baseline changed to version N since this draft was made, so it can no longer be accepted." Click **Generate a new draft** and review the new one.
 
-## 7. What-if scenarios
+## 8. What-if scenarios
 
 Scenarios (Planner only) test a change without touching the baseline. Nothing real changes.
 
@@ -203,7 +225,7 @@ Scenarios (Planner only) test a change without touching the baseline. Nothing re
 3. **Create scenario**.
 
 **Read a scenario.** The scenario page shows its assumptions and figures, then:
-- **Changes**, week by week: Moved, Added, Removed or Changed, with the person and project in each line.
+- **Changes against the baseline**: each person and demand whose hours or weeks differ, with Before and After columns.
 - **Unmet demand**: hours the engine could not place in the scenario.
 - Links to the projects planned again.
 
@@ -211,9 +233,9 @@ Scenarios (Planner only) test a change without touching the baseline. Nothing re
 
 A scenario that was built on an older baseline is marked **Stale**.
 
-**Make it real.** A scenario does not change anything itself. To make a change real, move the phases on the project page or add the leave on the People page. A re-plan draft then follows (see [Events and re-plan](#9-events-and-re-plan)).
+**Make it real.** A scenario does not change anything itself. To make a change real, move the phases on the project page or add the leave on the People page. A re-plan draft then follows (see [Events and re-plan](#10-events-and-re-plan)).
 
-## 8. Leave and absences
+## 9. Leave and absences
 
 Absences are leave, holidays and training. They lower capacity on the days they cover.
 
@@ -226,7 +248,7 @@ Absences are leave, holidays and training. They lower capacity on the days they 
 
 **Holidays (Planner).** Open **People**, then the **Holidays** tab.
 - **Add holiday** adds one holiday with its name and date.
-- **Import holidays** loads a public holiday calendar as an iCalendar file, or from a link (for example a Google public holiday calendar). Holidays imported before are skipped. A link is not saved.
+- **Import holidays** loads many at once; see [Import holidays](#import-holidays).
 
 Holidays lower everyone's capacity on those days, or only the people at the holiday's location.
 
@@ -235,25 +257,21 @@ Holidays lower everyone's capacity on those days, or only the people at the holi
 - Planned absence lowers capacity too, when the organization's setting is on (it is on by default). The schedule marks it as tentative.
 - A person's absences cannot overlap. The app answers "The person already has an absence on some of these dates."
 
-**Calendar sync.** A Specialist or Planner can connect a person's calendar on the **Calendar sync** tab (or on **My schedule**):
-1. Export the secret iCal address from Google Calendar or Outlook (the link starts with `https://`).
-2. Paste it in **Connect calendar** and save.
-3. Out-of-office events in the calendar become **planned** leave. A Planner approves them like any other leave.
+To connect a calendar that reports out-of-office events, see [Calendar sync](#calendar-sync).
 
-Use **Sync now** to check the calendar at once, or **Disconnect** to stop. The link is a secret and is never shown again.
-
-## 9. Events and re-plan
+## 10. Events and re-plan
 
 **Events** (Planner only) lists the change history: leave, holidays, and phases or deadlines that slipped. Each event shows its status:
 - **Waiting**: the change has not been checked yet.
 - **No impact**: the baseline still fits.
 - **Draft created**: the change produced a re-plan draft.
+- **Failed**: the check could not run.
 
 A change that creates a conflict produces one re-plan draft. Several changes close together are merged into one open draft. The draft keeps the Planner's edits and locks, and an older version is marked superseded.
 
-When a program has a re-plan draft, its page shows a **Re-plan** banner. Click it to open the draft, review it, and accept or reject it as in [Staffing drafts](#6-staffing-drafts).
+When a program has a re-plan draft, its page shows a **Re-plan** banner. Click it to open the draft, review it, and accept or reject it as in [Staffing drafts](#7-staffing-drafts).
 
-## 10. Ask AI
+## 11. Ask AI
 
 **Ask AI** is a question panel for Planners and Managers. The round button sits at the bottom right of every screen.
 
@@ -263,9 +281,9 @@ When a program has a re-plan draft, its page shows a **Re-plan** banner. Click i
 
 Ask AI answers from the data you are allowed to see, and it only reads. It cannot change a plan, accept a draft or create anything. It also knows the page you are on, so "this project" works on a project page. Messages stay on screen until you reload the page; there is no history.
 
-If the answer fails, the panel shows an error reply. Click **Try again** to send the question again. At the usage limit it tells you how many seconds to wait.
+If the answer fails, the panel shows an error reply. Click **Try again** to send the question again. At the usage limit it tells you how many seconds to wait. If Ask AI always fails, it is not set up on this server.
 
-## 11. Guided tour
+## 12. Guided tour
 
 The guided tour explains the sidebar. It starts once on your first visit, on a wide screen, with one step per screen you can open and one on the Ask AI button (Planner and Manager).
 
@@ -273,20 +291,20 @@ The guided tour explains the sidebar. It starts once on your first visit, on a w
 - Press **Esc** or the close button to end the tour.
 - To start it again, open the account menu and choose **Take the tour**.
 
-## 12. Glossary
+## 13. Glossary
 
 | Term | Meaning |
 |---|---|
 | **Baseline** | The plan in force: the staffing everyone works to until a newer draft is accepted. |
 | **Draft** (staffing draft) | A plan the engine proposes for some projects. Nothing changes until it is accepted. A **re-plan draft** comes from a change such as leave or a slipped phase. |
-| **Allocation** | The hours one person spends on one demand in one ISO week, within a plan. |
+| **Allocation** | The hours one person spends on one demand in one week, within a plan. |
 | **Utilization** | Planned hours divided by a person's capacity in a week. Over 100 % is overloaded. |
 | **Free hours** | Capacity minus load, per person and never below 0. The capacity forecast adds them up per expertise. |
 | **Shortfall** | Demand that free hours cannot cover. Shown as `Short N hrs` in the capacity forecast. |
 | **Sustained overload** | A person over 100 % for several weeks in a row. It is a burnout risk and is listed before single overloaded weeks. |
 | **Expertise** | A kind of work: PM, Analyst, Engineer or QA. Each person has one primary expertise and may hold others at a level from 1 to 5. |
 | **Cross-expertise** | An assignment in an expertise other than the person's primary one, at or above the level the demand needs. |
-| **Stretch** | An assignment below the demand's minimum level, or without the expertise. Added by a Planner by hand, locked, and confirmed on accept. |
+| **Stretch** | An assignment below the demand's minimum level, or without the expertise. Added by hand by a Planner or the program's Manager, locked, and confirmed on accept. |
 | **Phase** | An ordered stage of a project with its own week range, such as Discovery, Build or Test. |
 | **Demand** | The budget hours one expertise needs at a minimum level, inside one phase or across the whole project. |
 | **Budget hours** | The hours a demand is planned to use. |
@@ -294,12 +312,14 @@ The guided tour explains the sidebar. It starts once on your first visit, on a w
 | **Stale** | A draft or scenario built on a baseline that has since changed. |
 | **Unmet demand** | Hours the engine could not place, with the reason. |
 | **Tentative** | Planned leave that is not approved yet. It is shown hatched. |
-| **ISO week** | A week numbered like `2026-W42`, Monday to Sunday. |
+| **Week** | Monday to Sunday, written like `2026-W42`. |
 
-## 13. Troubleshooting
+## 14. Troubleshooting
 
 | Message | What it means | What to do |
 |---|---|---|
+| "Wrong username or password." | The username or password does not match the account. | Check both against the [accounts for review](#accounts-for-review), then try again. |
+| "This sign-in page has expired" | You took too long, or the sign-in page was opened twice. | Click **Start again**, or **Continue** to pick up where you left off. |
 | "Your session has ended. Sign in again." | Your sign-in expired. | Sign in again. |
 | "Your role cannot open this page." / "No access" | Your role has no access to the screen. | Ask a Planner if you need access. |
 | "You can’t see this program / project / person" | A Manager opened something outside their programs or teams. | Ask a Planner to check the team. |
@@ -307,7 +327,7 @@ The guided tour explains the sidebar. It starts once on your first visit, on a w
 | "Too many requests. Try again in N seconds." | You sent too many requests in a short time. | Wait, then try again. |
 | "The assistant is at its usage limit. Try again in N seconds." | Ask AI reached its limit. | Wait, then ask again. |
 | "The baseline changed to version N since this draft was made, so it can no longer be accepted." | Another change replaced the baseline while you were reviewing. | Click **Generate a new draft** and review it. |
-| "A change produced a newer version of this draft; open the latest one." | The draft was superseded by a re-plan. Your save did not go through. | Open the latest version and check your edits. |
+| "A change produced a newer version of this draft." | The draft was superseded by a re-plan. Your save did not go through. | Click **Open the latest version** and check your edits. |
 | "The person already has an absence on some of these dates." | The new leave overlaps another absence of the same person. | Change the dates, or remove the older absence. |
 | "non_project_hours must not exceed weekly_hours" | Non-project hours are larger than the weekly hours. | Lower non-project hours, or raise weekly hours. |
 | "Use whole hours" | Budget hours must be whole numbers. | Enter whole hours. |
@@ -318,10 +338,39 @@ The guided tour explains the sidebar. It starts once on your first visit, on a w
 | "Weeks before the current week cannot be changed." | Past weeks are fixed. | Change only the current and future weeks. |
 | "The week is outside the demand's window." | The hours are outside the demand's phase or project weeks. | Use a week inside the window. |
 | "The draft has stretch assignments; confirm them to accept." | Accepting needs the stretch assignments confirmed. | Confirm in the dialog, or remove the stretch assignments. |
-| "Nobody has this expertise" / "Nobody has the minimum level" / "No one in the program team" | Unmet demand: nobody fits this demand. | Add a person to the program team, or change the demand. |
-| "Free hours exist, but only in weeks under the minimum" / "…the weekly expertise limit blocks them" | Unmet demand: free hours exist, but the rules block them. | Adjust the hours or the people in the draft by hand. |
+| "Nobody has this expertise" / "Nobody has the minimum level" | Unmet demand: nobody on the team fits this demand. | Add a person to the program team, or change the demand. |
+| "No one in the program team" | Unmet demand: the program team is empty. | Ask a Planner to add members to the team. |
+| "No free capacity in the window" | Unmet demand: nobody has free hours in the demand's weeks. | Change the demand's weeks, or free up hours in the team. |
+| "Free hours exist, but only in weeks under the minimum" / "Free hours exist, but the weekly expertise limit blocks them" | Unmet demand: free hours exist, but the rules block them. | Adjust the hours or the people in the draft by hand. |
 | "The free hours are held by locked allocations" | Unmet demand: the free hours are locked to other work. | Unlock hours, if that is right. |
-| "The file is not valid CSV from this line." / "The header lacks this column." / "The same person, project and week appear more than once." | The timesheet file has a problem. Nothing was saved. | Fix the rows named in the message and import again. |
+| "The file is not valid CSV from this line." / "The header lacks this column." / "The same person, project and week appear more than once." | The timesheet file has a problem. Nothing was saved. | Fix the rows named in the message and import again (see [Import timesheets](#import-timesheets)). |
 | "The calendar could not be fetched. Your organization may block secret calendar links." | The calendar link failed. | Check the link is the secret iCal address, or ask an administrator. |
 | "Calendar sync is turned off on this server." | The administrator has not enabled calendar sync. | Ask an administrator. |
-| "This screen hit an unexpected error." | Something went wrong in the app. | Reload the page. If it happens again, tell an administrator. |
+| "This screen hit an unexpected error. Reload the page; if it happens again, tell an admin." | Something went wrong in the app. | Reload the page. If it happens again, tell an administrator. |
+
+## Appendix
+
+### Import holidays
+
+Planner. Open **People**, then the **Holidays** tab, and click **Import holidays**. It loads a public holiday calendar as an iCalendar (.ics) file, or from a link (for example a Google public holiday calendar). Holidays imported before are skipped. A link is not saved.
+
+### Calendar sync
+
+Each person connects their own calendar, on **My schedule**. A Planner can also connect anyone's, on the person's **Calendar sync** tab.
+
+1. Copy the secret iCal address from Google Calendar (Settings and sharing, Integrate calendar, Secret address in iCal format) or from Outlook (Settings, Calendar, Shared calendars, Publish a calendar, ICS link).
+2. Click **Connect calendar**, paste the address into **Secret iCal address**, and save.
+3. Out-of-office events in the calendar become **planned** leave. A Planner approves them like any other leave.
+
+Use **Sync now** to check the calendar at once, or **Disconnect** to stop; leave that was already added stays. The page shows only the calendar's host name, not the address.
+
+### Import timesheets
+
+Planner. Click **Import timesheet** on the People tab.
+1. Click **Download template** for the past weeks you need. The file lists every person, project and week planned in the baseline.
+2. Fill in the actual hours only. Keep the other columns.
+3. Click **Import the filled-in file**.
+
+One row with a problem saves nothing. The message gives the line and the problem (see [Troubleshooting](#14-troubleshooting)). Imported hours feed the **Actual** figure and the **Burn** bar on programs and projects.
+
+[^1]: For developers: setup and technical detail are in the [root README](../README.md), [`server/README.md`](../server/README.md) and [`client/README.md`](../client/README.md).
