@@ -7,6 +7,7 @@ import type { ApiError } from '@/shared/api/types'
 import { useCurrentUser } from '@/shared/auth'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
+import { ASK_AI_TOUR_ANCHOR } from '@/utils/constants'
 import { cn } from '@/utils/functions'
 import { MessageList } from './components/message-list'
 import { QuestionForm } from './components/question-form'
@@ -103,6 +104,7 @@ export function AskAi() {
           className="pointer-events-auto size-12 cursor-pointer rounded-full shadow-lg"
           aria-label={isOpen ? t('Close Ask AI') : t('Open Ask AI')}
           aria-expanded={isOpen}
+          data-tour={ASK_AI_TOUR_ANCHOR}
           onClick={handleToggle}
         >
           {isOpen ? <X /> : <MessageCircle />}
