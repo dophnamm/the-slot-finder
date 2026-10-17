@@ -39,12 +39,12 @@ afterEach(() => {
 
 describe('useOnlyProgramRedirect', () => {
   it('opens the program of a manager who has exactly one', () => {
-    renderList('lead', [program('g1')])
+    renderList('manager', [program('g1')])
     expect(screen.getByText(PROGRAM_PAGE)).toBeTruthy()
   })
 
   it('shows the list to a manager with two programs', () => {
-    renderList('lead', [program('g1'), program('g2')])
+    renderList('manager', [program('g1'), program('g2')])
     expect(screen.getByText(LIST_PAGE)).toBeTruthy()
   })
 
@@ -54,7 +54,7 @@ describe('useOnlyProgramRedirect', () => {
   })
 
   it('shows the list while it loads or when it is empty', () => {
-    renderList('lead', [])
+    renderList('manager', [])
     expect(screen.getByText(LIST_PAGE)).toBeTruthy()
   })
 })

@@ -8,7 +8,7 @@ import { ProgramDetailPage } from './component'
 
 const { useProgram } = vi.hoisted(() => ({ useProgram: vi.fn() }))
 vi.mock('@/shared/programs', () => ({ useProgram }))
-vi.mock('@/shared/auth', () => ({ useCurrentUser: () => ({ data: { role: 'lead' } }) }))
+vi.mock('@/shared/auth', () => ({ useCurrentUser: () => ({ data: { role: 'manager' } }) }))
 vi.mock('@/features/program-overview', () => ({ ProgramOverview: () => 'program overview' }))
 vi.mock('@/features/program-projects', () => ({ ProgramProjects: () => null }))
 vi.mock('@/features/program-team', () => ({ ProgramTeam: () => null }))

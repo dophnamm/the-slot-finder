@@ -6,7 +6,7 @@ import { ROUTES } from '@/resources/routes'
 import { useCurrentUser } from '@/shared/auth'
 import { PageSkeleton } from '@/shared/components/page-skeleton'
 
-/** Home depends on the role: planners and leads get the dashboard, specialists their schedule. */
+/** Home depends on the role: planners and managers get the dashboard, specialists their schedule. */
 export function HomeRoute() {
   const { data: user, isPending } = useCurrentUser()
 

@@ -42,7 +42,7 @@ describe('PeopleTable', () => {
     expect(screen.getByRole('button', { name: translate('Edit') })).toBeTruthy()
   })
 
-  it('shows a lead the people read-only', () => {
+  it('shows a manager the people read-only', () => {
     renderTable(false)
     expect(screen.getByText('Alex Nguyen')).toBeTruthy()
     expect(screen.queryByRole('button', { name: translate('Add person') })).toBeNull()

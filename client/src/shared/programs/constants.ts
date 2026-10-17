@@ -25,7 +25,7 @@ export const PROGRAM_OPTIONS_PAGE_SIZE = MAX_PAGE_SIZE
 export const LEAD_OPTIONS_PAGE_SIZE = MAX_PAGE_SIZE
 
 /** Roles that can lead a program or project. */
-export const LEAD_ROLES = ['planner', 'lead'] as const
+export const LEAD_ROLES = ['planner', 'manager'] as const
 
 export const PROGRAM_STATUS_LABELS: Record<ProgramStatus, PlainKey> = {
   open: 'Open',

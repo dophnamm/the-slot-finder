@@ -9,7 +9,7 @@ import { useTranslation } from '@/shared/i18n'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
 import { PersonAbsencesDialog } from './components/person-absences-dialog'
 
-/** People and company holidays, one tab each; planners manage them, leads read them. */
+/** People and company holidays, one tab each; planners manage them, managers read them. */
 export function PeoplePage() {
   const { t } = useTranslation()
   const { data: user } = useCurrentUser()
