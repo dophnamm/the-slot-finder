@@ -4562,7 +4562,13 @@ const docTemplate = `{
                         "AbsenceAdded",
                         "AbsenceRemoved",
                         "PhaseSlipped",
-                        "ProjectSlipped"
+                        "ProjectSlipped",
+                        "ProjectStatusChanged",
+                        "DemandChanged",
+                        "PersonCapacityChanged",
+                        "TeamChanged",
+                        "SkillChanged",
+                        "ProgramSlipped"
                     ]
                 }
             }

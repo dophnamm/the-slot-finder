@@ -28,7 +28,7 @@ type EventDraftResponse struct {
 // ChangeEventResponse is one change in the history with its processing status.
 type ChangeEventResponse struct {
 	ID   string `json:"id"`
-	Type string `json:"type" enums:"AbsenceAdded,AbsenceRemoved,PhaseSlipped,ProjectSlipped"`
+	Type string `json:"type" enums:"AbsenceAdded,AbsenceRemoved,PhaseSlipped,ProjectSlipped,ProjectStatusChanged,DemandChanged,PersonCapacityChanged,TeamChanged,SkillChanged,ProgramSlipped"`
 	// Payload depends on the type, e.g. person_name, from_date and to_date for absence.
 	Payload    map[string]any      `json:"payload"`
 	OccurredAt time.Time           `json:"occurred_at"`
