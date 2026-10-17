@@ -43,7 +43,7 @@
 - Chat history kept on the server or in the browser after a reload.
 - Model providers beyond Gemini, Groq and OpenRouter. The interface is there → [Later](README.md#later).
 - Per-user daily quotas. The heavy rate limit is the only cap for now.
-- Tools for people, absences, scenarios, change events and the expertise forecast → [server README section 9](../../server/README.md#9-ai-assistant-later).
+- Tools for people, absences, scenarios, change events and the expertise forecast → [server README section 9](../../server/README.md#9-ai-assistant).
 
 ## Rules
 

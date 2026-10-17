@@ -204,6 +204,8 @@ On the draft review screen:
 - **Changes against the baseline**: who gains or loses hours if the draft is accepted.
 - **Unmet demand**: hours the engine could not place, with a reason (see the table in [Troubleshooting](#14-troubleshooting)).
 
+**Summarize a draft.** Click **Summarize this draft** in the **Summary** card for a short text on the draft as it is now. The label shows who wrote it: **Written by AI**, or **Template summary** when the AI assistant is not available, built from the same numbers. The text is not saved, and it disappears after you edit the draft.
+
 **Edit a draft.**
 - Type hours into a week cell.
 - Drag a cell's hours to another week of the same row, or to the same week of another person on the same demand. Each drop saves once.
