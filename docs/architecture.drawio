@@ -231,7 +231,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e-20" value="import" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.071;exitY=1;exitDx=0;exitDy=0;entryX=0.327;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="v-3" target="v-5">
+        <mxCell id="e-20" value="calendar sync, holiday import" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.071;exitY=1;exitDx=0;exitDy=0;entryX=0.327;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="v-3" target="v-5">
           <mxGeometry as="geometry" relative="1" />
         </mxCell>
         <mxCell id="e-21" value="calendar sync:&lt;br&gt;out-of-office → planned leave" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.857;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="v-3" target="v-7">
