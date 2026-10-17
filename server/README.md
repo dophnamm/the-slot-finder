@@ -86,9 +86,9 @@ Files per module follow the pattern `handlers/<module>.go`, `services/<module>.g
 | Module | Responsibility | Owns data | Publishes events |
 |---|---|---|---|
 | **identity** | Local Keycloak token verification (cached JWKS), roles, mapping the token to a PERSON (`keycloak_id`; by email only when `email_verified` is true and the person is not linked to another account yet), the `authz` service with named permission checks | none (accounts live in Keycloak) | |
-| **people** | People, expertise, levels, non-project hours, start and end dates. Location: later | PERSON, EXPERTISE, PERSON_SKILL | `PersonCapacityChanged` (`PersonJoined`, `PersonLeft`, `SkillChanged`: later) |
+| **people** | People, expertise, levels, non-project hours, start and end dates. Location: later | PERSON, EXPERTISE, PERSON_SKILL | `PersonCapacityChanged`, `SkillChanged` |
 | **availability** | Leave (entered by hand or read from a calendar feed), company-wide holidays; computes `capacity(person, week)`. Holidays per location: later | ABSENCE | `AbsenceAdded`, `AbsenceRemoved` |
-| **programs** | Programs, projects, phases (and their slip propagation), staffing demand (budget hours, headcount, `flat` profile), scope points, done points, program teams, program and project lifecycles (including `staffed_at`). Forecast overrides, confidence: later | PROGRAM, PROGRAM_TEAM_MEMBER, PROJECT, PROJECT_PHASE, DEMAND | `ProjectStatusChanged`, `ProjectSlipped`, `PhaseSlipped`, `DemandChanged`, `TeamChanged` (`ProgramSlipped`: later) |
+| **programs** | Programs, projects, phases (and their slip propagation), staffing demand (budget hours, headcount, `flat` profile), scope points, done points, program teams, program and project lifecycles (including `staffed_at`). Forecast overrides, confidence: later | PROGRAM, PROGRAM_TEAM_MEMBER, PROJECT, PROJECT_PHASE, DEMAND | `ProjectStatusChanged`, `ProjectSlipped`, `PhaseSlipped`, `DemandChanged`, `TeamChanged`, `ProgramSlipped` |
 | **planning** | Baseline, staffing drafts, scenarios; assignments and their kind (primary / cross-expertise / stretch) and alternatives; calls the engine; accept and publish | PLAN, ASSIGNMENT, ALLOCATION | none yet (`PlanPublished`: later) |
 | **insights** | Heatmap, utilization, program and project metrics, at-risk lists, capacity forecast, sustained overload (read-only). Bench list, plan churn, hours per point: later | none (read-only) | |
 | **events** | Records ChangeEvents, debounces them, assesses impact, creates re-plan jobs (one open auto draft per baseline) | CHANGE_EVENT | |
@@ -111,7 +111,7 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 | POST | `/people` | Create a person (start and end dates, non-project hours, which must not exceed weekly hours: `400 PERSON_NON_PROJECT_HOURS_INVALID`) | planner |
 | GET | `/people/{id}` | One person with their expertise, for the person page | planner, manager (team; else `403`) |
 | PATCH | `/people/{id}` | Edit a person: only the sent fields; `start_date` and `end_date` accept null to clear them | planner |
-| PUT | `/people/{id}/skills` | Replace expertise and levels (exactly one primary) | planner |
+| PUT | `/people/{id}/skills` | Replace expertise and levels (exactly one primary); records `SkillChanged` when they change | planner |
 | GET, POST | `/people/{id}/absences` | Leave calendar. A person's own absence is always `planned`; planners choose the status. Dates that overlap another of the person's absences get `409 ABSENCE_OVERLAPS`. Leave read from a calendar feed has `source = calendar` | planner, the person themselves |
 | DELETE | `/absences/{id}` | Remove an absence, or a holiday (planner) | planner, the person themselves |
 | POST | `/absences/{id}/approve` | Approve a planned absence; records a change event | planner |
@@ -131,7 +131,7 @@ A manager reads only the programs they lead or lead a project in, and the people
 |---|---|---|---|
 | GET, POST | `/programs` | List or create programs | planner, manager |
 | GET | `/programs/{id}` | Program record: brief, timeline, status | planner, manager |
-| PATCH | `/programs/{id}` | Edit a program. Moving the end date emits `ProgramSlipped` (later) | planner, manager (own) |
+| PATCH | `/programs/{id}` | Edit a program. Records `ProgramSlipped` when the end date changes | planner, manager (own) |
 | POST | `/programs/{id}/actions/{hold\|resume\|start-closing\|close\|cancel}` | Change program state through an action. `cancel` also cancels the program's open projects | planner, manager (own) |
 | GET | `/programs/{id}/overview` | Header metrics (Time, Scope, Planned burn, Burn from actual hours, Staffing with warnings), cost figures (budget, planned, planned to date, actual, forecast, gap; EAC hours later), staffing by expertise | planner, manager |
 | GET | `/programs/{id}/projects` | Projects tab: rows in priority order with a `metrics` object (Time / Scope / Planned burn / Burn / Staffing and warnings, and the baseline hours planned next week and in the next three weeks: `next_week_hours`, `next_three_weeks_hours`) | planner, manager |
@@ -305,7 +305,7 @@ The **insights** module computes these for `/programs/{id}/overview`, `/programs
 
 Jobs are rows in Postgres, run by a runner inside the server process, started and stopped by an FX lifecycle hook (replan-on-change):
 - **`CHANGE_EVENT` is a transactional outbox.** The service that saves a change inserts its event in the same `TxManager.Do`, so there is never a change without its event, or an event without its change.
-  - **Event types** (`internal/constants/events.go`): `AbsenceAdded`, `AbsenceRemoved`, `PhaseSlipped` (one per phase whose end moved later), `ProjectSlipped`, `ProjectStatusChanged` (a project hold, resume, complete or cancel; cancelling a program records one for all projects it cancelled), `DemandChanged` (only when the demand differs), `PersonCapacityChanged` (weekly hours, non-project hours, dates or active; not name or role) and `TeamChanged` (a person added to or removed from a program's team; the project ids are the program's plannable projects).
+  - **Event types** (`internal/constants/events.go`): `AbsenceAdded`, `AbsenceRemoved`, `PhaseSlipped` (one per phase whose end moved later), `ProjectSlipped`, `ProjectStatusChanged` (a project hold, resume, complete or cancel; cancelling a program records one for all projects it cancelled), `DemandChanged` (only when the demand differs), `PersonCapacityChanged` (weekly hours, non-project hours, dates or active; not name or role), `TeamChanged` (a person added to or removed from a program's team; the project ids are the program's plannable projects), `SkillChanged` (a person's expertise, level or primary changed; re-plans from the event week on, and reconsiders every understaffed project) and `ProgramSlipped` (the program end date changed; history only, opens no project).
 - **The runner claims rows with `FOR UPDATE SKIP LOCKED`**, every `REPLAN_POLL_INTERVAL`, up to `REPLAN_BATCH_SIZE` at a time. Two server instances never claim the same row.
 - **Retries:** runner columns `attempts`, `available_at` and `last_error`. A failure moves `available_at` by `REPLAN_RETRY_BACKOFF × attempts`. After `REPLAN_MAX_ATTEMPTS` the status becomes `failed`. A batch of several events that fails counts no attempt: the runner then claims one event at a time, so only the event that keeps failing gains attempts and ends `failed` (logged at Error).
 - **Panics:** each tick of the re-plan and calendar runners recovers a panic and logs it at Error, so the loop keeps running.

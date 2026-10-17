@@ -261,11 +261,13 @@ To connect a calendar that reports out-of-office events, see [Calendar sync](#ca
 
 ## 10. Events and re-plan
 
-**Events** (Planner only) lists the change history: leave, holidays, and phases or deadlines that slipped. Each event shows its status:
+**Events** (Planner only) lists the change history: leave, holidays, skill changes, and phases, deadlines or program end dates that slipped. Each event shows its status:
 - **Waiting**: the change has not been checked yet.
 - **No impact**: the baseline still fits.
 - **Draft created**: the change produced a re-plan draft.
 - **Failed**: the check could not run.
+
+A skill change re-plans the person's projects from that week on. A program end-date move is only recorded in the history; it opens no draft by itself.
 
 A change that creates a conflict produces one re-plan draft. Several changes close together are merged into one open draft. The draft keeps the Planner's edits and locks, and an older version is marked superseded.
 

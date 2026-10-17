@@ -1,6 +1,6 @@
 # The Slot Finder: System Architecture
 
-> **Status:** design v0.4. Seventeen features are built ([`docs/features/README.md`](docs/features/README.md)). Parts marked **(later)** are design only and not built.
+> **Status:** design v0.4. Eighteen features are built ([`docs/features/README.md`](docs/features/README.md)). Parts marked **(later)** are design only and not built.
 > **Technology:** Go server (Echo, Uber FX, GORM, PostgreSQL, Redis, Keycloak) and React client (Vite, Tailwind, shadcn/ui, TanStack Query, Zustand, Axios). See [section 12](#12-tech-stack). Sections 1–11 and 15 describe the design independently of the stack.
 > **Diagrams:** rendered inline below (Mermaid). The same set is in [`docs/architecture.drawio`](docs/architecture.drawio) for draw.io (9 pages).
 
@@ -153,7 +153,7 @@ flowchart TB
 
   integ -->|"import"| data
   integ -->|"calendar sync: out-of-office → planned leave"| avail
-  data -.->|"domain events: AbsenceAdded, AbsenceRemoved, PhaseSlipped, ProjectSlipped,<br/>DemandChanged, ProjectStatusChanged, PersonCapacityChanged, TeamChanged<br/>(later: PersonLeft, SkillChanged, ProgramSlipped)"| events
+  data -.->|"domain events: AbsenceAdded, AbsenceRemoved, PhaseSlipped, ProjectSlipped,<br/>DemandChanged, ProjectStatusChanged, PersonCapacityChanged, TeamChanged,<br/>SkillChanged, ProgramSlipped"| events
   events -->|"triggers re-plan"| planning
   planning -->|"reads snapshot"| data
   insights -->|"reads plan + capacity + programs"| planning
@@ -410,7 +410,7 @@ erDiagram
 
   CHANGE_EVENT {
     uuid id PK
-    string type "PhaseSlipped / ProjectSlipped / AbsenceAdded / AbsenceRemoved / DemandChanged / ProjectStatusChanged / PersonCapacityChanged / TeamChanged (later: ProgramSlipped, PersonLeft, SkillChanged)"
+    string type "PhaseSlipped / ProjectSlipped / AbsenceAdded / AbsenceRemoved / DemandChanged / ProjectStatusChanged / PersonCapacityChanged / TeamChanged / SkillChanged / ProgramSlipped"
     json payload
     datetime occurred_at
     string status "pending / no_impact / draft_created / failed"

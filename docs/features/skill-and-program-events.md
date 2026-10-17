@@ -3,7 +3,7 @@
 **Goal:** two more change events. A change to a person's skills triggers an automatic re-plan. A move of a program's end date is recorded in the change history. Both use the outbox from [replan-on-change](replan-on-change.md). The change history also gets a readable line for every event type.
 
 **Roles:** planner (skills); planner and manager of the program (end date).
-**Target:** 17–18 Oct · **Depends on:** [people-and-skills](people-and-skills.md), [replan-on-change](replan-on-change.md) · **Branch:** `feat/skill-and-program-events` · **Status:** Planned
+**Target:** 17–18 Oct · **Depends on:** [people-and-skills](people-and-skills.md), [replan-on-change](replan-on-change.md) · **Branch:** `feat/skill-and-program-events` · **Status:** Done
 
 ## In scope
 
@@ -63,28 +63,28 @@
 ## Tasks
 
 **Server**
-- [ ] Event constants and payload types for `SkillChanged` and `ProgramSlipped`
-- [ ] `ReplaceSkills` diffs the skill set and records `SkillChanged` in `TxManager.Do`
-- [ ] Program update wraps the save in `TxManager.Do` and records `ProgramSlipped` on an end-date change
-- [ ] `touchedProjects` and `eventScope` handle `SkillChanged`
-- [ ] One skill-set comparison function, shared with people-import
-- [ ] Event type enum in `dtos/event.go` lists every type; regenerate Swagger
-- [ ] TeamChange payload carries the program and person names
+- [x] Event constants and payload types for `SkillChanged` and `ProgramSlipped`
+- [x] `ReplaceSkills` diffs the skill set and records `SkillChanged` in `TxManager.Do`
+- [x] Program update wraps the save in `TxManager.Do` and records `ProgramSlipped` on an end-date change
+- [x] `touchedProjects` and `eventScope` handle `SkillChanged`
+- [x] One skill-set comparison function, shared with people-import
+- [x] Event type enum in `dtos/event.go` lists every type; regenerate Swagger
+- [x] TeamChange payload carries the program and person names
 
 **Client**
-- [ ] A history line for every event type, with i18n keys in `LanguageKey`
+- [x] A history line for every event type, with i18n keys in `LanguageKey`
 
 **Tests**
-- [ ] Service: `SkillChanged` recorded on a real change, nothing on an identical save
-- [ ] Service: `ProgramSlipped` recorded on an end-date change, nothing on an identical save
-- [ ] Service: `TeamChanged` payload names the program and the person
-- [ ] `eventScope` test for `SkillChanged`
-- [ ] Re-plan test: a lost expertise moves the unlocked hours
-- [ ] Client: one line per event type, the missing-payload case and the old TeamChanged fallback
+- [x] Service: `SkillChanged` recorded on a real change, nothing on an identical save
+- [x] Service: `ProgramSlipped` recorded on an end-date change, nothing on an identical save
+- [x] Service: `TeamChanged` payload names the program and the person
+- [x] `eventScope` test for `SkillChanged`
+- [x] Re-plan test: a lost expertise moves the unlocked hours
+- [x] Client: one line per event type, the missing-payload case and the old TeamChanged fallback
 
 **Docs** (same PR)
-- [ ] [README.md](../../README.md): the event list in the module diagram edge label and the CHANGE_EVENT `type` column. Move `SkillChanged` and `ProgramSlipped` to built; remove `PersonLeft`
-- [ ] [server/README.md](../../server/README.md): the people row (`PersonJoined`, `PersonLeft`, `SkillChanged` later) and `PATCH /programs/{id}` (`ProgramSlipped` later)
-- [ ] [replan-on-change](replan-on-change.md): the `PersonLeft` bullet under Not now
-- [ ] `docs/architecture.drawio`: the event labels
-- [ ] [user-manual](../user-manual.md): only if it lists what triggers a re-plan
+- [x] [README.md](../../README.md): the event list in the module diagram edge label and the CHANGE_EVENT `type` column. Move `SkillChanged` and `ProgramSlipped` to built; remove `PersonLeft`
+- [x] [server/README.md](../../server/README.md): the people row (`PersonJoined`, `PersonLeft`, `SkillChanged` later) and `PATCH /programs/{id}` (`ProgramSlipped` later)
+- [x] [replan-on-change](replan-on-change.md): the `PersonLeft` bullet under Not now
+- [x] `docs/architecture.drawio`: the event labels
+- [x] [user-manual](../user-manual.md): only if it lists what triggers a re-plan
