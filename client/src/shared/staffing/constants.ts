@@ -75,6 +75,8 @@ export const UNMET_REASON_LABELS: Record<UnmetReason, PlainKey> = {
   LEVEL_TOO_LOW: 'Nobody has the minimum level',
   NO_CAPACITY_BEFORE_DEADLINE: 'No free capacity in the window',
   BLOCKED_BY_LOCKED: 'The free hours are held by locked allocations',
+  BLOCKED_BY_EXPERTISE_LIMIT: 'Free hours exist, but the weekly expertise limit blocks them',
+  BELOW_MIN_HOURS: 'Free hours exist, but only in weeks under the minimum',
   NO_ONE_IN_TEAM: 'No one in the program team',
 }
 

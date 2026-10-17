@@ -49,6 +49,7 @@ export type LanguageKey = {
   'Add holiday': string
   'Add leave': string
   'Add member': string
+  'Add people with a primary expertise to see their capacity.': string
   'Add person': string
   'Add phase': string
   'Add project': string
@@ -87,6 +88,8 @@ export type LanguageKey = {
   'Built on baseline version {base}; version {current} is in force now. Run it again to see today’s effect.': string
   'Built on baseline version {version}.': string
   Burn: string
+  'By expertise': string
+  'By person': string
   Calendar: string
   'Calendar connected.': string
   'Calendar link': string
@@ -97,6 +100,8 @@ export type LanguageKey = {
   'Cancel project': string
   Cancelled: string
   Capacity: string
+  'Capacity forecast': string
+  'Capacity {capacity} · Load {load} · Unmet {unmet} · Pipeline {pipeline} hrs': string
   Change: string
   'Change history': string
   Changed: string
@@ -127,6 +132,7 @@ export type LanguageKey = {
   'Current phase': string
   'Customer engagements and their projects.': string
   Dashboard: string
+  'Dashboard view': string
   Dates: string
   Deadline: string
   'Deadline week': string
@@ -188,6 +194,7 @@ export type LanguageKey = {
   Email: string
   'End date': string
   'End week': string
+  'Enough free hours': string
   'Estimate at completion: the hours used so far divided by Scope %.': string
   Events: string
   'Every demand is covered.': string
@@ -200,7 +207,11 @@ export type LanguageKey = {
   File: string
   'Find people, their expertises, levels, capacity and absences.': string
   Forecast: string
+  Free: string
+  'Free hours per expertise and ISO week, against the demand the baseline does not cover yet, including incoming projects at their expected share.': string
   From: string
+  'Free hours exist, but only in weeks under the minimum': string
+  'Free hours exist, but the weekly expertise limit blocks them': string
   'From calendar': string
   'From week': string
   'From {date}': string
@@ -297,6 +308,7 @@ export type LanguageKey = {
   'No changes against the baseline.': string
   'No changes yet.': string
   'No demand yet.': string
+  'No expertise to forecast.': string
   'No free capacity in the window': string
   'No goal yet.': string
   'No holidays yet.': string
@@ -304,6 +316,7 @@ export type LanguageKey = {
   'No incoming projects.': string
   'No lead': string
   'No manager': string
+  'No one has capacity or load in this group this week.': string
   'No one in the program team': string
   'No open staffing drafts.': string
   'No open week in this range.': string
@@ -379,6 +392,8 @@ export type LanguageKey = {
   Planned: string
   'Planned again:': string
   'Planned burn': string
+  'Short of free hours': string
+  '{hours} hrs free': string
   "Planned hours as a share of a person's capacity in a week; over 100% is overloaded.": string
   'Planned hours as a share of budget hours.': string
   'Planned hours in the weeks up to now as a share of budget hours.': string
@@ -590,6 +605,7 @@ export type LanguageKey = {
   '{done} of {scope} points done': string
   '{expertise} (level {level}+)': string
   '{expertise} ({count})': string
+  '{expertise} in {week}': string
   '{expertise} · level {level}': string
   '{expertise} · {hours} hrs': string
   '{expertise} · {program}': string
