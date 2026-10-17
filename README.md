@@ -23,19 +23,6 @@ Details per part:
 | G2 | Show ahead of time who will be overloaded or underused and which weeks will crunch | Person × week heatmap, warnings N weeks ahead |
 | G3 | When plans change (a project slips, someone goes on leave), propose a re-plan automatically | A re-plan draft with a diff, no manual recalculation |
 
-**Out of scope for the MVP:**
-- Task and sprint management inside a project
-- Work logging inside the app. Actual hours come in through a CSV timesheet import, per person, project and week.
-- Billing, money and financial scores. Cost is measured **in hours only**.
-
-**Later (not in the MVP):** a level-based productivity factor (a senior's hour counting for more than a junior's), person-level soft booking of pipeline projects, and the **AI assistant's** write actions, intake extraction, what-if chat and draft summaries ([section 15](#15-ai-assistant-later)). Read-only Ask AI is built.
-
-**Assumptions (confirmed):**
-- **A1.** The planning unit is **hours per week**. Weeks run Monday to Sunday and are written like `2026-W42`.
-- **A2.** Scale is one organization with up to about 200 people and 100 concurrent projects, so a **modular monolith** is enough.
-- **A3.** Initial data comes from seed files or CSV imports.
-- **A4.** The engine only **proposes**. The **Resource Planner** makes the final decision.
-
 **Glossary:**
 
 | Term | Meaning |
@@ -54,8 +41,7 @@ Details per part:
 | **Cross-expertise** | An assignment whose expertise is not the person's primary one, e.g. an Engineer covering QA. Allowed when the person has that skill at the demand's minimum level |
 | **Stretch** | An assignment below the demand's minimum level (or without the skill), for cover or cross-training. Only a Planner can create one, by hand, and it is always flagged |
 | **Member** | A person with at least one assignment in a program's projects |
-| **AI assistant** | Translates between natural language and the system's structured data. Ask AI (read-only Q&A) is built; the rest is later. Not related to a program **Assistant** |
-| **Assistant** (later) | A person attached to a program for visibility only. **Internal**: has an account and read-only access to the program. **External**: a contact without an account who only receives notifications. Never allocated hours |
+| **AI assistant** | Translates between natural language and the system's structured data. Ask AI (read-only Q&A) is built; the rest is later |
 
 ---
 
@@ -66,7 +52,6 @@ flowchart LR
   planner["Resource Planner<br/>coordinates capacity"]
   lead["Manager<br/>manages programs"]
   spec["Specialist<br/>PM · Analyst · Engineer · QA"]
-  assistant["Assistant<br/>internal or external"]
   sf(["<b>The Slot Finder</b><br/>assigns projects to cross-functional squads"])
   intake["Incoming projects<br/>Sales/CRM, CSV"]
   hr["HR / Leave system"]
@@ -78,7 +63,6 @@ flowchart LR
   planner -->|"reviews drafts, runs what-ifs, imports timesheets"| sf
   lead -->|"manages programs, demand, deadlines; staffs from the program team"| sf
   spec -->|"views schedule, reports leave, connects calendar"| sf
-  assistant -.->|"views program (internal only, later)"| sf
   intake -->|"new projects"| sf
   hr -->|"leave calendar"| sf
   cal -->|"out-of-office events"| sf
@@ -90,9 +74,8 @@ flowchart LR
 | Actor | What they do |
 |---|---|
 | **Resource Planner** | Sees team-wide load and each person's schedule, gives each program its team, generates staffing drafts, edits by hand, approves, builds what-if scenarios, imports timesheets |
-| **Manager** (role `manager`) | Manages the programs they lead: creates projects, declares demand (budget hours per expertise) and scope points; milestones and assistants (later). Sees only the people in the teams of those programs, and proposes, edits and accepts staffing drafts for their projects from those teams |
+| **Manager** (role `manager`) | Manages the programs they lead: creates projects, declares demand (budget hours per expertise) and scope points. Sees only the people in the teams of those programs, and proposes, edits and accepts staffing drafts for their projects from those teams |
 | **Specialist** | Sees which projects they work on, which weeks and for how many hours; reports leave; connects their calendar so out-of-office time becomes leave |
-| **Assistant** (later) | Internal: read-only view of one program. External: no login, receives notifications only |
 
 ---
 
@@ -135,9 +118,9 @@ flowchart TB
 | **Client** | Shows heatmaps, program pages, forms, drafts and diffs; calls the API | Computing plans or metrics, deciding permissions |
 | **Server API** | Source of truth: data, permissions, state transitions, transactions, metrics | The scheduling algorithm (that lives in the Engine) |
 | **Planning Engine** | The pure function `propose(snapshot, policy) → result` | Database or network access |
-| **Background Worker** | Heavy or asynchronous jobs: re-planning after changes, calendar sync, imports, notifications. In the MVP these run inside the server process; a separate worker process comes later | Serving user requests |
+| **Background Worker** | Heavy or asynchronous jobs: re-planning after changes, calendar sync, imports, notifications. These run inside the server process; a separate worker process comes later | Serving user requests |
 | **Job queue** | Passes jobs from the API to the Worker: rows in Postgres (change events as a transactional outbox), claimed with `FOR UPDATE SKIP LOCKED`. No separate queue service | |
-| **Database** | Stores people, skills, absences and holidays, calendar feeds, programs and their teams, projects, demand, plans, allocations, actual hours, events and audit records. Tags, capacity changes and milestones are later | |
+| **Database** | Stores people, skills, absences and holidays, calendar feeds, programs and their teams, projects, demand, plans, allocations, actual hours, events and audit records. | |
 
 The `server/` folder holds the Server API, the Background Worker and the Planning Engine in one Go codebase. The `client/` folder holds the web SPA.
 
@@ -152,9 +135,9 @@ flowchart TB
 
   subgraph data["Data modules"]
     direction LR
-    people["<b>People & Skills</b><br/>people, expertise, level<br/>tags: later"]
-    avail["<b>Availability</b><br/>leave, holidays<br/>capacity changes: later"]
-    programs["<b>Programs & Projects</b><br/>programs, teams, projects, demand<br/>milestones, assistants: later"]
+    people["<b>People & Skills</b><br/>people, expertise, level"]
+    avail["<b>Availability</b><br/>leave, holidays"]
+    programs["<b>Programs & Projects</b><br/>programs, teams, projects, demand"]
     timesheets["<b>Timesheets</b><br/>actual hours per person,<br/>project and week"]
   end
 
@@ -170,13 +153,13 @@ flowchart TB
 
   integ -->|"import"| data
   integ -->|"calendar sync: out-of-office → planned leave"| avail
-  data -.->|"domain events: AbsenceAdded, AbsenceRemoved, PhaseSlipped, ProjectSlipped,<br/>DemandChanged, ProjectStatusChanged, PersonCapacityChanged, TeamChanged<br/>(later: PersonLeft, SkillChanged, CapacityChanged, ProgramSlipped)"| events
+  data -.->|"domain events: AbsenceAdded, AbsenceRemoved, PhaseSlipped, ProjectSlipped,<br/>DemandChanged, ProjectStatusChanged, PersonCapacityChanged, TeamChanged<br/>(later: PersonLeft, SkillChanged, ProgramSlipped)"| events
   events -->|"triggers re-plan"| planning
   planning -->|"reads snapshot"| data
   insights -->|"reads plan + capacity + programs"| planning
   insights -->|"reads actual hours"| timesheets
   planning -->|"propose / replan"| engine
-  planning -.->|"PlanPublished → notify members + assistants (later)"| integ
+  planning -.->|"PlanPublished → notify members (later)"| integ
   ai -->|"LLM API"| integ
   ai -->|"tools, with the caller's role"| data
   ai -->|"tools, with the caller's role"| core
@@ -194,13 +177,13 @@ See [`server/README.md`](server/README.md) for details.
 
 ## 5. Planning engine (the core)
 
-**Contract:** `propose(snapshot, policy) → { assignments, unmet, conflicts, score }`. The engine is a pure function: the same input always gives the same output. It knows nothing about phases, assistants or scope points; programs and clients reach it only as opaque ids for continuity. It only sees people (skills, capacity; tags later) and demand. Before calling it, the server turns each demand's phase into the demand's week window.
+**Contract:** `propose(snapshot, policy) → { assignments, unmet, conflicts, score }`. The engine is a pure function: the same input always gives the same output. It knows nothing about phases or scope points; programs and clients reach it only as opaque ids for continuity. It only sees people (skills, capacity) and demand. Before calling it, the server turns each demand's phase into the demand's week window.
 
 | Kind | Rules |
 |---|---|
-| **Hard constraints** (never violated) | The person has the demand's expertise (primary **or secondary**) at level ≥ `min_level` · the person has **every required tag** of the demand (later) · total weekly hours across **all** their assignments ≤ capacity × `max_utilization` · at most `max_expertises_per_person_week` different expertises per person per week · no allocation below `min_hours_per_week`, except the last remainder of a demand · only inside the demand's week window (its phase, or the whole project) · never changes a **locked** allocation · never proposes a stretch assignment · only **members** get hours (assistants are never in the snapshot) · only people in the **team of the demand's program** (else `unmet` with `NO_ONE_IN_TEAM`) |
-| **Soft objectives** (weighted) | Meet deadlines by priority · **prefer people whose primary expertise matches**, and use cross-expertise people only when that helps a deadline or the load balance · match the demand's **preferred tags** (`tag_fit`, later) · honour the **preferred person** (`preference`, later) · balance load near `target_utilization` · **change as little as possible** versus the baseline · **continuity**: keep people on the same project, then the same program, then the same client · limit how many projects one person holds per week (later) |
-| **Required output** | Every assignment carries a **reason** and its kind (`primary` or `cross_expertise`), e.g. "QA cover: Engineer (primary) with QA level 3 ≥ 2". The reason says whether a preferred person was honoured, and why not (later). Each assignment also lists up to `DRAFT_ALTERNATIVES_LIMIT` runner-up people with their free hours and the reason they lost. Demand that cannot be placed goes to `unmet` with a reason code. The engine never throws on an infeasible problem |
+| **Hard constraints** (never violated) | The person has the demand's expertise (primary **or secondary**) at level ≥ `min_level` · total weekly hours across **all** their assignments ≤ capacity × `max_utilization` · at most `max_expertises_per_person_week` different expertises per person per week · no allocation below `min_hours_per_week`, except the last remainder of a demand · only inside the demand's week window (its phase, or the whole project) · never changes a **locked** allocation · never proposes a stretch assignment · only **members** get hours · only people in the **team of the demand's program** (else `unmet` with `NO_ONE_IN_TEAM`) |
+| **Soft objectives** (weighted) | Meet deadlines by priority · **prefer people whose primary expertise matches**, and use cross-expertise people only when that helps a deadline or the load balance · balance load near `target_utilization` · **change as little as possible** versus the baseline · **continuity**: keep people on the same project, then the same program, then the same client · limit how many projects one person holds per week (later) |
+| **Required output** | Every assignment carries a **reason** and its kind (`primary` or `cross_expertise`), e.g. "QA cover: Engineer (primary) with QA level 3 ≥ 2". Each assignment also lists up to `DRAFT_ALTERNATIVES_LIMIT` runner-up people with their free hours and the reason they lost. Demand that cannot be placed goes to `unmet` with a reason code. The engine never throws on an infeasible problem |
 
 **How hours are laid out:**
 - **Profile:** each demand has a `profile`. Only `flat` is built: the engine spreads the demand's hours evenly across its window. `front` (more hours early, for analysis) and `back` (more hours late, for testing) are later.
@@ -209,7 +192,7 @@ See [`server/README.md`](server/README.md) for details.
 **Policy defaults** come from server config, e.g. `max_utilization` 1.0, `target_utilization` 0.8, `min_hours_per_week` 8, `max_expertises_per_person_week` 2, `DRAFT_ALTERNATIVES_LIMIT` 5 (full list in [`server/README.md`](server/README.md#8-settings)).
 
 **Strategies** (same interface, swappable):
-1. **Greedy** (built): sort demand by priority, then deadline, then scarcity of the expertise (and its required tags, later). Pick the best-scoring person (primary-expertise match first) and spread the hours flat.
+1. **Greedy** (built): sort demand by priority, then deadline, then scarcity of the expertise. Pick the best-scoring person (primary-expertise match first) and spread the hours flat.
 2. **Greedy + repair pass** (after the MVP): local swaps that free scarce cross-expertise people for demand nobody else can cover.
 3. **Solver** (after the MVP): constraint programming or MILP for a global optimum.
 
@@ -223,14 +206,14 @@ The model has four layers on top of shared reference data. People and the work t
 
 ```mermaid
 flowchart TB
-  ref["<b>Reference data</b><br/>EXPERTISE · TAG (later)<br/><i>drawn in 6.1</i>"]
-  people["<b>6.1 People and capacity</b><br/>PERSON · PERSON_SKILL · ABSENCE · CALENDAR_FEED<br/>PERSON_TAG · CAPACITY_CHANGE (later)"]
-  work["<b>6.2 Programs and demand</b><br/>PROGRAM · PROGRAM_TEAM_MEMBER · PROJECT · PROJECT_PHASE · DEMAND<br/>PROGRAM_ASSISTANT · MILESTONE · DEMAND_TAG (later)"]
+  ref["<b>Reference data</b><br/>EXPERTISE<br/><i>drawn in 6.1</i>"]
+  people["<b>6.1 People and capacity</b><br/>PERSON · PERSON_SKILL · ABSENCE · CALENDAR_FEED"]
+  work["<b>6.2 Programs and demand</b><br/>PROGRAM · PROGRAM_TEAM_MEMBER · PROJECT · PROJECT_PHASE · DEMAND"]
   planning["<b>6.3 Planning</b><br/>PLAN · ASSIGNMENT · ALLOCATION"]
   feedback["<b>6.4 Changes and actuals</b><br/>CHANGE_EVENT · ACTUAL_HOURS"]
 
-  ref -->|"expertise, tags (later)"| people
-  ref -->|"expertise, tags (later)"| work
+  ref -->|"expertise"| people
+  ref -->|"expertise"| work
   people -->|"who: skills, capacity"| planning
   work -->|"what: demand and its weeks"| planning
   planning ~~~ feedback
@@ -243,15 +226,12 @@ Each layer below has its own diagram. An entity from another layer is drawn ther
 
 ### 6.1 People and capacity
 
-Who can work, with which expertise, level and tags, and how many hours each week. `EXPERTISE` is reference data that demand uses too. Tags and capacity changes are later.
+Who can work, with which expertise and level, and how many hours each week. `EXPERTISE` is reference data that demand uses too.
 
 ```mermaid
 erDiagram
   PERSON ||--o{ PERSON_SKILL : has
   EXPERTISE ||--o{ PERSON_SKILL : defines
-  PERSON ||--o{ PERSON_TAG : "has (later)"
-  TAG ||--o{ PERSON_TAG : "labels (later)"
-  PERSON ||--o{ CAPACITY_CHANGE : "weekly hours over time (later)"
   PERSON |o--o{ ABSENCE : takes
   PERSON ||--o| CALENDAR_FEED : "leave from"
 
@@ -261,7 +241,7 @@ erDiagram
     string email
     string keycloak_id "links the Keycloak account"
     string role "planner / manager / specialist"
-    decimal weekly_hours "contracted hours per week (CAPACITY_CHANGE later)"
+    decimal weekly_hours "contracted hours per week"
     decimal non_project_hours "kept for meetings, support, management; default from config"
     date start_date "null = already working"
     date end_date "null = open-ended"
@@ -278,21 +258,6 @@ erDiagram
   EXPERTISE {
     uuid id PK
     string name "PM / Analyst / Engineer / QA"
-  }
-  PERSON_TAG {
-    uuid person_id FK
-    uuid tag_id FK
-  }
-  TAG {
-    uuid id PK
-    string name "e.g. Go / Banking / Japanese / Acme"
-    string category "technology / domain / language / client"
-  }
-  CAPACITY_CHANGE {
-    uuid id PK
-    uuid person_id FK
-    string from_week "week the new hours start"
-    decimal weekly_hours
   }
   ABSENCE {
     uuid id PK
@@ -319,28 +284,21 @@ erDiagram
   }
 ```
 
-Not built yet: `PERSON_TAG`, `TAG`, `CAPACITY_CHANGE`, and the columns `PERSON.location`, `PERSON.timezone`, `ABSENCE.location`.
+Not built yet: the columns `PERSON.location`, `PERSON.timezone`, `ABSENCE.location`.
 
 ### 6.2 Programs and demand
 
-What has to be done: programs with their team, projects split into phases, and the demand per expertise. Assistants and milestones are later.
+What has to be done: programs with their team, projects split into phases, and the demand per expertise.
 
 ```mermaid
 erDiagram
   PROGRAM ||--o{ PROJECT : contains
-  PROGRAM ||--o{ MILESTONE : "has (later)"
-  PROJECT |o--o{ MILESTONE : "scoped to (later)"
   PROGRAM ||--o{ PROGRAM_TEAM_MEMBER : "staffed from"
   PERSON ||--o{ PROGRAM_TEAM_MEMBER : "member of"
-  PROGRAM ||--o{ PROGRAM_ASSISTANT : "has (later)"
-  PERSON |o--o{ PROGRAM_ASSISTANT : "acts as (later)"
   PROJECT ||--o{ PROJECT_PHASE : "split into"
   PROJECT ||--|{ DEMAND : requires
   PROJECT_PHASE |o--o{ DEMAND : "scheduled in"
   EXPERTISE ||--o{ DEMAND : "needed in"
-  PERSON |o--o{ DEMAND : "preferred for (later)"
-  DEMAND ||--o{ DEMAND_TAG : "asks for (later)"
-  TAG ||--o{ DEMAND_TAG : "required or preferred (later)"
 
   PROGRAM {
     uuid id PK
@@ -358,23 +316,6 @@ erDiagram
     uuid program_id PK, FK
     uuid person_id PK, FK "a person may be in several teams, with one shared capacity"
     timestamptz created_at
-  }
-  PROGRAM_ASSISTANT {
-    uuid id PK
-    uuid program_id FK
-    string kind "internal / external"
-    uuid person_id FK "internal only"
-    string name "external only"
-    string email
-    string description
-  }
-  MILESTONE {
-    uuid id PK
-    uuid program_id FK
-    uuid project_id FK "null = program-wide"
-    string name
-    date due_date
-    date delivered_on "null = not delivered"
   }
   PROJECT {
     uuid id PK
@@ -409,16 +350,10 @@ erDiagram
     decimal forecast_override_hours "later: null = use planned hours"
     uuid phase_id FK "null = whole project (start to deadline)"
     string profile "flat only, default flat; front / back later"
-    uuid preferred_person_id FK "later: soft wish, null = none"
-  }
-  DEMAND_TAG {
-    uuid demand_id FK
-    uuid tag_id FK
-    string kind "required / preferred"
   }
 ```
 
-Not built yet: `PROGRAM_ASSISTANT`, `MILESTONE`, `DEMAND_TAG`, and the columns `PROJECT.confidence`, `DEMAND.forecast_override_hours`, `DEMAND.preferred_person_id`.
+Not built yet: the columns `PROJECT.confidence`, `DEMAND.forecast_override_hours`.
 
 ### 6.3 Planning
 
@@ -475,7 +410,7 @@ erDiagram
 
   CHANGE_EVENT {
     uuid id PK
-    string type "PhaseSlipped / ProjectSlipped / AbsenceAdded / AbsenceRemoved / DemandChanged / ProjectStatusChanged / PersonCapacityChanged / TeamChanged (later: ProgramSlipped, CapacityChanged, PersonLeft, SkillChanged)"
+    string type "PhaseSlipped / ProjectSlipped / AbsenceAdded / AbsenceRemoved / DemandChanged / ProjectStatusChanged / PersonCapacityChanged / TeamChanged (later: ProgramSlipped, PersonLeft, SkillChanged)"
     json payload
     datetime occurred_at
     string status "pending / no_impact / draft_created / failed"
@@ -495,7 +430,7 @@ erDiagram
 
 **Derived values for people (computed, not stored):**
 - `capacity(person, week) = weekly_hours(week) − non_project_hours − absence hours in that week`, and 0 before `start_date` or after `end_date`
-  - `weekly_hours(week)` is `PERSON.weekly_hours` (a later `CAPACITY_CHANGE` history: later)
+  - `weekly_hours(week)` is `PERSON.weekly_hours`
   - Absence hours count company-wide holidays (holidays per location: later). `approved` absence always counts. `planned` absence counts when policy `count_planned_absence` is on (default on), and is always reported as tentative
   - A future `start_date` lets a scenario include a **planned hire**
 - `load(person, week) = Σ allocation.hours` over **all** their assignments in the **baseline**, whatever the expertise
@@ -510,9 +445,7 @@ erDiagram
 
 **Actual hours** are recorded per person × project × week from a timesheet CSV. They feed Actual hours and Burn % (section 7). Planning and capacity never read them.
 
-**Skill tags (later):** tags would narrow who fits beyond expertise and level: a technology, a domain, a language or a client. A demand's `required` tags would be a hard constraint; its `preferred` tags would only raise the score. With no person carrying the required tags, the demand would go to `unmet` with `NO_TAG_MATCH`.
-
-**Pipeline:** an `incoming` project with no accepted assignments does not book anyone. Its demand only shows in the **capacity forecast** (section 7), spread flat over its window and weighted by the global `PIPELINE_CONFIDENCE_PERCENT` (per-project `confidence`: later). There is no person-level soft booking in the MVP.
+**Pipeline:** an `incoming` project with no accepted assignments does not book anyone. Its demand only shows in the **capacity forecast** (section 7), spread flat over its window and weighted by the global `PIPELINE_CONFIDENCE_PERCENT` (per-project `confidence`: later). There is no person-level soft booking.
 
 **Members working across expertises:**
 - `kind` is set by the server, never by the client:
@@ -569,7 +502,6 @@ flowchart LR
 | **Burn %** | actual hours ÷ budget. `null` until the project has actual hours | None. The progress warning is on Scope % |
 | **EAC hours** (estimate at completion, later) | hours used to date ÷ Scope %. Hours used = actual hours when the project has them, else planned hours up to the current week | Shown only when Scope % ≥ `eac_min_scope_percent` (config, e.g. 10 %). EAC > budget = **likely over budget** |
 | **Contribution %** (later) | budget hours of one expertise ÷ program budget hours | |
-| **Next milestone** (later) | earliest milestone not yet delivered | Due date passed = **overdue** |
 | **Cross-expertise share** (later) | hours in `cross_expertise` + `stretch` assignments ÷ planned hours | High share = the team leans on people outside their primary expertise; any stretch is listed |
 
 Gap hours and Staffing % show the same shortfall, once in hours and once as a percentage. The Server returns them side by side. (A forecast override changes this: later.)
@@ -617,7 +549,7 @@ sequenceDiagram
   API->>DB: Transaction: publish new baseline, old one becomes superseded
   API-->>C: 200 OK, or 409 if the baseline changed
   API-)W: enqueue notify (later)
-  W->>W: Notify assigned members and the program's assistants (later)
+  W->>W: Notify assigned members (later)
 ```
 
 ### 8.2 A change happens → re-plan
@@ -744,12 +676,12 @@ sequenceDiagram
 
 | Topic | Decision |
 |---|---|
-| **Authentication** | Keycloak (OIDC) issues the JWT; the Client sends it as `Authorization: Bearer`. Unsafe requests also carry `X-CSRF-Token`. `/me` returns the user's role and person record (programs they assist: later) |
-| **Authorization** | Keycloak roles: `planner` (everything), `manager` (shown as **Manager**: own programs and projects, the people of their program teams, drafts that cover only their programs), `specialist` (own schedule and leave), checked per route. Per-program rules (manager of this program, the people they may see, **internal assistant** read-only access: later) are checked in services against the database. **Everything is checked on the Server.** The Client uses roles only to show or hide controls |
+| **Authentication** | Keycloak (OIDC) issues the JWT; the Client sends it as `Authorization: Bearer`. Unsafe requests also carry `X-CSRF-Token`. `/me` returns the user's role and person record  |
+| **Authorization** | Keycloak roles: `planner` (everything), `manager` (shown as **Manager**: own programs and projects, the people of their program teams, drafts that cover only their programs), `specialist` (own schedule and leave), checked per route. Per-program rules (manager of this program, the people they may see) are checked in services against the database. **Everything is checked on the Server.** The Client uses roles only to show or hide controls |
 | **Concurrency** | `PLAN.version`. Accepting a draft requires `baseVersion`. If the baseline has changed, the Server returns `409` and the Client regenerates the draft |
 | **Transactions** | One business action is one transaction (accept = write all allocations + update plan states) |
 | **Errors** | Every response, success or error, uses one envelope: `{ meta: { error_code, message, code, page, page_size, total }, data }`, with a meaningful HTTP status. Field errors go in `data` |
-| **Audit** | Accepting a plan is recorded: who, when, which version. Later: edit and lock of allocations, budget and forecast changes and assistant changes, each with the value before and after. An action taken through the AI assistant (later) records the user as the actor and `via = ai_assistant` |
+| **Audit** | Accepting a plan is recorded: who, when, which version. Later: edit and lock of allocations, budget and forecast changes, each with the value before and after. An action taken through the AI assistant (later) records the user as the actor and `via = ai_assistant` |
 | **Time** | Stored in UTC. Weeks follow ISO-8601. The organization's timezone is configuration |
 | **Rate limits** | Every request counts against an allowance per client IP. Routes that run the planning engine, read an uploaded file or fetch a URL also count against a tighter allowance per signed-in user and route. Over a limit the Server answers `429` with `Retry-After`, and the Client says how long to wait instead of retrying |
 | **Links from users** | A calendar link is a secret and a fetch target. It is stored encrypted and never logged or returned. The Server fetches it over https from allowed hosts only, never to a private IP, with a timeout and a size cap |
@@ -774,11 +706,11 @@ sequenceDiagram
 
 | Layer | Approach |
 |---|---|
-| **Engine** | Golden tests on fixed snapshots. Property tests that check it never exceeds capacity, always respects expertise and level, never schedules outside a demand's week window, never changes a locked allocation, never proposes a stretch assignment, never exceeds the expertises-per-week limit, never allocates below `min_hours_per_week` except a demand's last remainder, lays hours out flat (`profile` shapes: later), never allocates to an assistant or without the demand's required tags (both later), never allocates outside a person's start and end dates, and picks a primary-expertise person over a cross-expertise one when both fit |
-| **Server** | API + DB integration tests, contract tests against OpenAPI, permission tests for each role (internal assistants: later), metric tests for every formula in section 7 that is built (including Planned burn %; EAC hours later), phase slip propagation (later phases move, last phase past the deadline flags at risk), re-plan merge (a second event during an open auto draft gives one new draft version that keeps the Planner's edits and locks, and supersedes the old one) |
+| **Engine** | Golden tests on fixed snapshots. Property tests that check it never exceeds capacity, always respects expertise and level, never schedules outside a demand's week window, never changes a locked allocation, never proposes a stretch assignment, never exceeds the expertises-per-week limit, never allocates below `min_hours_per_week` except a demand's last remainder, lays hours out flat (`profile` shapes: later), never allocates to an assistant (later), never allocates outside a person's start and end dates, and picks a primary-expertise person over a cross-expertise one when both fit |
+| **Server** | API + DB integration tests, contract tests against OpenAPI, permission tests for each role, metric tests for every formula in section 7 that is built (including Planned burn %; EAC hours later), phase slip propagation (later phases move, last phase past the deadline flags at risk), re-plan merge (a second event during an open auto draft gives one new draft version that keeps the Planner's edits and locks, and supersedes the old one) |
 | **Client** | Component tests (heatmap, program header, staffing table, demand form, diff). One end-to-end test: add project to program → propose squad → accept → program staffing and heatmap update |
-| **AI assistant** (later) | Unit tests use a fake LLM provider. An evaluation set of sample briefs with their expected demand runs against the configured provider on demand, not in CI: expertise, level, hours and tags must match, and every source quote must appear in the brief. Permission tests through the AI tools: each tool gives the same result as its route for every role, and a specialist cannot read another person's schedule. Draft summaries may only contain numbers present in the engine output |
-| **Sample data** | One shared seed for demos and tests (`make seed`): 2 programs, 6 projects (3 of them staffed in a baseline), 12 people with expertise and levels, one of them a planned hire with a future start date, company-wide holidays, leave periods, actual hours, 2 what-if scenarios. Tags, locations and assistants: later |
+| **AI assistant** (later) | Unit tests use a fake LLM provider. An evaluation set of sample briefs with their expected demand runs against the configured provider on demand, not in CI: expertise, level and hours must match, and every source quote must appear in the brief. Permission tests through the AI tools: each tool gives the same result as its route for every role, and a specialist cannot read another person's schedule. Draft summaries may only contain numbers present in the engine output |
+| **Sample data** | One shared seed for demos and tests (`make seed`): 2 programs, 6 projects (3 of them staffed in a baseline), 12 people with expertise and levels, one of them a planned hire with a future start date, company-wide holidays, leave periods, actual hours, 2 what-if scenarios. Locations: later |
 
 ---
 
@@ -842,7 +774,6 @@ the-slot-finder/
 | ADR-8 | **Cost is hours only**; no money, no billing, no score | Hours are what staffing decisions need | Financial reporting stays in other tools |
 | ADR-9 | **Scope points are entered by hand** at project level | Gives a delivery signal without task tracking | Depends on leads keeping them up to date |
 | ADR-10 | **Forecast = planned hours**, with an optional override (override: later) | Stays in sync with the plan automatically | Overrides can go stale; they are audited |
-| ADR-11 | **Assistants never receive hours** (assistants: later) | Visibility for support people without distorting capacity | Anyone who does real work must be a member |
 | ADR-12 | Engine plans are called **staffing drafts** | Avoids confusion with business proposals | |
 | ADR-13 | Server built on a **production-ready Go template** (Echo, FX, GORM, Keycloak, OTel) | Auth, errors, logging, tracing and migrations come ready-made | Layer-based layout (`handlers/services/repositories`) instead of per-module folders; Swagger is generated from code |
 | ADR-14 | Client uses **React + TanStack Query + Zustand + Axios + shadcn/ui** | Clear split between server state and UI state; accessible components out of the box | Typed API hooks are written by hand until a generator is added |
@@ -850,8 +781,7 @@ the-slot-finder/
 | ADR-16 | Ownership is an explicit **ASSIGNMENT** (person × demand) with weekly **ALLOCATION**s; people may hold several expertises at once | "Who owns what", cross-expertise cover and stretch can be tracked and locked per assignment | One more table; weekly hours always hang off an assignment |
 | ADR-17 | **Hours stay the planning unit**; scope points measure delivery (hours-per-point estimates: later) | Capacity, load and budget all add up in one unit; points give a starting estimate from past projects | The suggestion is only as good as the history; the lead confirms the hours |
 | ADR-18 | **One open auto re-plan draft** per baseline; new events are merged into it | The Planner reviews one consistent draft instead of several that conflict | A draft can change while it is being reviewed; each version is kept and the old one is superseded |
-| ADR-19 | Pipeline demand shows in a **capacity forecast by expertise**, weighted by the global pipeline confidence; **no person-level soft booking** in the MVP | Hiring signals without reserving people for work that may never come | Nobody is held for a likely win; the Planner acts on the forecast |
-| ADR-20 | **Skill tags** are hard (required) or soft (preferred) constraints on a demand (later) | Finer matching (technology, domain, language, client) without more expertise types | Tags must be kept current on people; a wrong required tag leaves demand unmet |
+| ADR-19 | Pipeline demand shows in a **capacity forecast by expertise**, weighted by the global pipeline confidence; **no person-level soft booking** | Hiring signals without reserving people for work that may never come | Nobody is held for a likely win; the Planner acts on the forecast |
 | ADR-21 | The **AI assistant** translates language ↔ structured data; the deterministic engine decides; its tools run **with the caller's permissions** | Faster intake and easier questions without giving up explainable, repeatable plans or the permission model | Depends on an external LLM provider and data-policy approval; extraction can be wrong, so the lead always reviews before saving |
 | ADR-22 | Calendars come in through each person's **secret ICS link**, not OAuth | Works for Google and Outlook with one code path, without app registration or admin consent | The link is a secret to protect; out-of-office is found from Outlook's `OOF` flag or title keywords; recurring events are skipped |
 | ADR-23 | Calendar out-of-office becomes **planned** leave that a Planner approves | A mislabelled event never becomes approved leave on its own (ADR-5) | One more approval for the Planner |
@@ -867,18 +797,18 @@ the-slot-finder/
 
 | # | Capability (build order) | Input → output | Writes |
 |---|---|---|---|
-| 1 | **Intake extraction** (first; demo candidate) | A customer brief, SOW or email, pasted or uploaded → a suggested project: phases, demand (expertise, minimum level, hours, profile), required and preferred tags, each field with the source quote it came from | Nothing. The lead edits and confirms through the normal project, phase and demand endpoints |
+| 1 | **Intake extraction** (first; demo candidate) | A customer brief, SOW or email, pasted or uploaded → a suggested project: phases, demand (expertise, minimum level, hours, profile), each field with the source quote it came from | Nothing. The lead edits and confirms through the normal project, phase and demand endpoints |
 | 2 | **What-if chat** | "What if project X slips 2 weeks and Alex is on leave all of December?" → scenario `assumptions`, a scenario through the scenario API, and a summary of its diff | A scenario |
 | 3 | **Draft explanation** | A staffing draft or re-plan diff → a plain-language summary, also used as notification text. It states only facts and numbers present in the engine's output (reasons, diff, unmet) | Nothing |
 | 4 | **Q&A over plan data** (built as Ask AI) | "Which QA level ≥ 3 is free in W48?", "Which program will go over budget?" → an answer built from the insights tools | Nothing |
-| 5 | **Skill suggestions** (after 1–4) | A CV or past projects → suggested tags and levels | Nothing until the Planner approves; never applied automatically |
+| 5 | **Skill suggestions** (after 1–4) | A CV or past projects → suggested levels | Nothing until the Planner approves; never applied automatically |
 
 **Hours in an intake extraction:** hours stated in the text are used as written. When the text gives only scope points, the Server, not the LLM, fills in the hours from the hours-per-point suggestion (section 7) and marks them as suggested.
 
 **Not for:** allocation decisions, metric calculations, accepting or publishing plans, evaluating or ranking people.
 
 **How it plugs in:**
-- A server module `ai`, named so to avoid confusion with program assistants. It calls an LLM API with function calling through a provider interface: Gemini, Groq or OpenRouter, chosen by config.
+- A server module `ai`. It calls an LLM API with function calling through a provider interface: Gemini, Groq or OpenRouter, chosen by config.
 - Each tool wraps an existing service method and runs **with the caller's identity and role**. The tool checks the same role list as the matching route, and the service applies the per-program rules, so a specialist sees only their own schedule here too. The model is offered only the tools the caller's role allows. The AI assistant never touches the database.
 - Writes are limited to creating scenarios and staffing drafts. Intake suggestions are returned, not stored. It never changes the baseline and never accepts a draft.
 - A customer document is data, never instructions: intake extraction has no tools that read other data or write anything.

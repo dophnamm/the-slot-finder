@@ -21,7 +21,7 @@
 
 ## Not now
 
-- `CapacityChanged` and `PersonLeft` → [Later](README.md#later), with capacity changes.
+- `PersonLeft` → [Later](README.md#later).
 - Email and Slack alerts → [Later](README.md#later). The alert is the banner and the change history.
 
 ## Server

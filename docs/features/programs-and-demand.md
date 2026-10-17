@@ -25,7 +25,6 @@
 - Profiles `front` and `back` → [Later](README.md#later), design in [root README §5](../../README.md#5-planning-engine-the-core).
 - `confidence` and the pipeline forecast → [Later](README.md#later).
 - Forecast override → [program-metrics](program-metrics.md) keeps forecast = planned.
-- Milestones and program assistants → [Later](README.md#later).
 - Recording `PhaseSlipped` as a change event → [replan-on-change](replan-on-change.md). It adds the outbox insert to the same transaction.
 
 ## Server

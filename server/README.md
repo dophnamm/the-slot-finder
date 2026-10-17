@@ -85,14 +85,14 @@ Files per module follow the pattern `handlers/<module>.go`, `services/<module>.g
 
 | Module | Responsibility | Owns data | Publishes events |
 |---|---|---|---|
-| **identity** | Local Keycloak token verification (cached JWKS), roles, mapping the token to a PERSON (`keycloak_id`; by email only when `email_verified` is true and the person is not linked to another account yet), the `authz` service with named permission checks (assistant read access: later) | none (accounts live in Keycloak) | |
-| **people** | People, expertise, levels, non-project hours, start and end dates. Skill tags and location: later | PERSON, EXPERTISE, PERSON_SKILL (TAG, PERSON_TAG: later) | `PersonCapacityChanged` (`PersonJoined`, `PersonLeft`, `SkillChanged`: later) |
-| **availability** | Leave (entered by hand or read from a calendar feed), company-wide holidays; computes `capacity(person, week)`. Holidays per location and effective-dated weekly hours: later | ABSENCE (CAPACITY_CHANGE: later) | `AbsenceAdded`, `AbsenceRemoved` (`CapacityChanged`: later) |
-| **programs** | Programs, projects, phases (and their slip propagation), staffing demand (budget hours, headcount, `flat` profile), scope points, done points, program teams, program and project lifecycles (including `staffed_at`). Tags, preferred person, forecast overrides, confidence, milestones and assistants: later | PROGRAM, PROGRAM_TEAM_MEMBER, PROJECT, PROJECT_PHASE, DEMAND (DEMAND_TAG, MILESTONE, PROGRAM_ASSISTANT: later) | `ProjectStatusChanged`, `ProjectSlipped`, `PhaseSlipped`, `DemandChanged`, `TeamChanged` (`ProgramSlipped`: later) |
+| **identity** | Local Keycloak token verification (cached JWKS), roles, mapping the token to a PERSON (`keycloak_id`; by email only when `email_verified` is true and the person is not linked to another account yet), the `authz` service with named permission checks | none (accounts live in Keycloak) | |
+| **people** | People, expertise, levels, non-project hours, start and end dates. Location: later | PERSON, EXPERTISE, PERSON_SKILL | `PersonCapacityChanged` (`PersonJoined`, `PersonLeft`, `SkillChanged`: later) |
+| **availability** | Leave (entered by hand or read from a calendar feed), company-wide holidays; computes `capacity(person, week)`. Holidays per location: later | ABSENCE | `AbsenceAdded`, `AbsenceRemoved` |
+| **programs** | Programs, projects, phases (and their slip propagation), staffing demand (budget hours, headcount, `flat` profile), scope points, done points, program teams, program and project lifecycles (including `staffed_at`). Forecast overrides, confidence: later | PROGRAM, PROGRAM_TEAM_MEMBER, PROJECT, PROJECT_PHASE, DEMAND | `ProjectStatusChanged`, `ProjectSlipped`, `PhaseSlipped`, `DemandChanged`, `TeamChanged` (`ProgramSlipped`: later) |
 | **planning** | Baseline, staffing drafts, scenarios; assignments and their kind (primary / cross-expertise / stretch) and alternatives; calls the engine; accept and publish | PLAN, ASSIGNMENT, ALLOCATION | none yet (`PlanPublished`: later) |
 | **insights** | Heatmap, utilization, program and project metrics, at-risk lists, capacity forecast, sustained overload (read-only). Bench list, plan churn, hours per point: later | none (read-only) | |
 | **events** | Records ChangeEvents, debounces them, assesses impact, creates re-plan jobs (one open auto draft per baseline) | CHANGE_EVENT | |
-| **integrations** | Calendar feeds (secret ICS links and the sync runner, which writes leave through **availability**), the LLM provider client (used by Ask AI), email sender. HR import and notifications (Email/Slack) to members and assistants: later | CALENDAR_FEED (import_job: later) | |
+| **integrations** | Calendar feeds (secret ICS links and the sync runner, which writes leave through **availability**), the LLM provider client (used by Ask AI), email sender. HR import and notifications (Email/Slack) to members: later | CALENDAR_FEED (import_job: later) | |
 | **timesheets** | The timesheet template and import; actual hours per person, project and week | ACTUAL_HOURS | |
 | **ai** | Ask AI (built): read-only Q&A over the insights and planning data. Later: intake extraction, what-if chat, draft summaries. Runs the function-calling loop with the LLM; each tool wraps another module's service and runs with the caller's identity (section 9) | none | |
 
@@ -106,7 +106,7 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
-| GET | `/me` | Current user, role and person id (programs they assist, enabled features: later) | everyone |
+| GET | `/me` | Current user, role and person id (enabled features: later) | everyone |
 | GET | `/people` | List people with their skills | planner, manager (team) |
 | POST | `/people` | Create a person (start and end dates, non-project hours, which must not exceed weekly hours: `400 PERSON_NON_PROJECT_HOURS_INVALID`) | planner |
 | GET | `/people/{id}` | One person with their expertise, for the person page | planner, manager (team; else `403`) |
@@ -134,7 +134,7 @@ A manager reads only the programs they lead or lead a project in, and the people
 | PATCH | `/programs/{id}` | Edit a program. Moving the end date emits `ProgramSlipped` (later) | planner, manager (own) |
 | POST | `/programs/{id}/actions/{hold\|resume\|start-closing\|close\|cancel}` | Change program state through an action. `cancel` also cancels the program's open projects | planner, manager (own) |
 | GET | `/programs/{id}/overview` | Header metrics (Time, Scope, Planned burn, Burn from actual hours, Staffing with warnings), cost figures (budget, planned, planned to date, actual, forecast, gap; EAC hours later), staffing by expertise | planner, manager |
-| GET | `/programs/{id}/projects` | Projects tab: rows in priority order with a `metrics` object (Time / Scope / Planned burn / Burn / Staffing and warnings, and the baseline hours planned next week and in the next three weeks: `next_week_hours`, `next_three_weeks_hours`); next milestone later | planner, manager |
+| GET | `/programs/{id}/projects` | Projects tab: rows in priority order with a `metrics` object (Time / Scope / Planned burn / Burn / Staffing and warnings, and the baseline hours planned next week and in the next three weeks: `next_week_hours`, `next_three_weeks_hours`) | planner, manager |
 | POST | `/programs/{id}/projects` | Add a project to the program; it goes last in the priority order unless `priority` is sent. Its start and deadline must lie within `PROJECT_WINDOW_WEEKS` of the current week, else `400 WEEK_OUT_OF_WINDOW` | planner, manager (own) |
 | PUT | `/programs/{id}/project-order` | Set the priority order: `{ project_ids }` lists every project of the program, highest priority first, and they get priority 1..N. `422 PROJECT_ORDER_MISMATCH` when the list is not exactly the program's projects | planner, manager (own) |
 | GET | `/programs/{id}/members` | The Programs list preview: everyone with baseline hours on the program's projects, most hours first, with hours per expertise and kind, first and last week, and projects (overall utilization later) | planner, manager |
@@ -147,7 +147,7 @@ A manager reads only the programs they lead or lead a project in, and the people
 | POST | `/projects/{id}/actions/{hold\|resume\|complete\|cancel}` | Change project state through an action | planner, manager (own) |
 | GET, PUT | `/projects/{id}/phases` | Ordered phases of a project (PUT replaces the whole list; removing a phase that still has demand gets `409 PHASE_IN_USE`; a changed week outside `PROJECT_WINDOW_WEEKS` gets `400 WEEK_OUT_OF_WINDOW`, and a new or moved phase outside the project's start and deadline weeks gets `400 PHASE_OUTSIDE_PROJECT`, but a rename of an old phase still works) | planner, manager (own) |
 | PATCH | `/phases/{id}` | Edit a phase. Moving its end week later shifts every later phase by the same weeks and emits `PhaseSlipped`. Returns every phase it changed. A changed week outside `PROJECT_WINDOW_WEEKS` gets `400 WEEK_OUT_OF_WINDOW`; the edited phase must lie within the project's start and deadline weeks (`400 PHASE_OUTSIDE_PROJECT`), but phases shifted by the slip may pass the deadline | planner, manager (own) |
-| PUT | `/projects/{id}/demands` | Staffing demand: budget hours per expertise and level, each with an optional `phase_id`, `headcount` and `profile` (`flat` only). Required and preferred tags and a preferred person: later. `400 DEMAND_HOURS_STEP` when a total is not a multiple of `PLANNING_HOUR_STEP`; `409 DEMAND_IN_USE` when a removed demand holds staffed hours in past weeks of the baseline | planner, manager (own) |
+| PUT | `/projects/{id}/demands` | Staffing demand: budget hours per expertise and level, each with an optional `phase_id`, `headcount` and `profile` (`flat` only). `400 DEMAND_HOURS_STEP` when a total is not a multiple of `PLANNING_HOUR_STEP`; `409 DEMAND_IN_USE` when a removed demand holds staffed hours in past weeks of the baseline | planner, manager (own) |
 
 **Planning and insights**
 
@@ -166,7 +166,7 @@ A manager reads only the programs they lead or lead a project in, and the people
 | POST | `/scenarios/{id}/rerun` | Compute a scenario again, with the same assumptions, against the baseline in force | planner |
 | GET | `/insights/heatmap?from=&to=&expertise=&program_id=` | Person × week matrix. Each cell holds total hours plus hours per expertise; `expertise=` (an expertise id) keeps people who hold that expertise or work on it in the range; `program_id=` keeps the program's team (`403` for a manager who may not read the program, `404` for an unknown one). Each cell also has capacity, utilization, its band, a tentative flag for planned leave and `actual_hours`: the hours worked that week from imported timesheets, `null` when none were imported. Load counts plannable projects only, from the current week on (section 5) | planner, manager (team) |
 | GET | `/insights/capacity-forecast?from=&to=` | Per expertise (the primary skill of the people) × week: `capacity`, `load`, `free_hours` (capacity − load per person, never below 0), `unmet_hours` (confirmed demand of planned and active projects the baseline does not cover, spread flat over the rest of its window), `pipeline_hours` (the same for `incoming` projects × `PIPELINE_CONFIDENCE_PERCENT`), `shortfall_hours` (unmet + pipeline − free, at least 0) and `overloaded` (load above capacity) and `people`: the expertise's people in that week, highest load first, each `person_id`, `name`, `capacity`, `load`, `free_hours`, `utilization` (as in the heatmap, `null` without capacity), `band` and `overloaded`; people with no capacity and no load are left out. `sustained_overload` is the first run of `SUSTAINED_OVERLOAD_WEEKS` or more overloaded weeks, else `null`. Weeks default and are capped like the heatmap's. A manager gets their teams' capacity and the demand of the programs they may read | planner, manager (team) |
-| GET | `/insights/risks` | Understaffed and at-risk projects, delivery behind time, overloaded people in the next `HEATMAP_DEFAULT_WEEKS` weeks (a manager sees only their team's), and before them `sustained_overload`: each person over 100 % for `SUSTAINED_OVERLOAD_WEEKS` or more weeks in a row (`person`, `from_week`, `weeks`, the first such run); likely over budget and overdue milestones later. Load counts plannable projects only, from the current week on (section 5) | planner, manager |
+| GET | `/insights/risks` | Understaffed and at-risk projects, delivery behind time, overloaded people in the next `HEATMAP_DEFAULT_WEEKS` weeks (a manager sees only their team's), and before them `sustained_overload`: each person over 100 % for `SUSTAINED_OVERLOAD_WEEKS` or more weeks in a row (`person`, `from_week`, `weeks`, the first such run); likely over budget later. Load counts plannable projects only, from the current week on (section 5) | planner, manager |
 | POST | `/ai/ask` | Ask AI. Body `{ question }` (1–500 characters) and optional `page_context` (up to 200). Returns `{ answer }`. The model reads data only through read-only tools that run with the caller's permissions (section 9). `503 AI_NOT_CONFIGURED` when the chosen provider's key is empty; `429 AI_RATE_LIMITED` when the model service is rate limited, with `data.retry_after` (seconds) when it sends one; `502 AI_UPSTREAM_FAILED` for other model failures. Heavy rate limit | planner, manager (own programs, through the tools) |
 | GET | `/events?program_id=` | Change history and processing status; the program page uses it for the re-plan banner. A manager sees only events on the projects of their programs and events about themselves or the people in their teams (`person_id` in the payload); a manager without a person record gets an empty page. A planner sees all | planner, manager |
 | GET | `/timesheets/template?from=&to=` | CSV template: person × project × week with baseline hours in a range of past weeks, with planned hours and any actual hours already recorded | planner |
@@ -174,18 +174,7 @@ A manager reads only the programs they lead or lead a project in, and the people
 
 **Later** (designed, not registered in the Server yet; the routes below return `404` today):
 
-- `PUT /people/{id}/tags`: replace a person's skill tags
-- `GET /people/{id}/capacity-changes`: list effective-dated weekly hours
-- `POST /people/{id}/capacity-changes`: add effective-dated weekly hours (`from_week`, `weekly_hours`)
-- `GET /tags`: tag catalogue (`name`, `category`: technology / domain / language / client)
-- `POST /tags`: add a tag to the catalogue
 - `PATCH /programs/{id}/forecast`: set or clear `forecast_override_hours` per demand
-- `GET /programs/{id}/assistants`: list assistants (`kind`: internal or external)
-- `POST /programs/{id}/assistants`: add an assistant
-- `DELETE /programs/{id}/assistants/{assistantId}`: remove an assistant
-- `GET /programs/{id}/milestones`: list milestones
-- `POST /programs/{id}/milestones`: add a milestone
-- `PATCH /milestones/{id}`: edit a milestone or mark it delivered
 - `GET /projects/{id}/hours-suggestion`: suggested budget hours per expertise (`scope_points × hours_per_point`)
 - `GET /insights/bench`: people below the underused band, with suggested actions
 - `GET /insights/churn?from=&to=`: plan churn per accepted draft
@@ -215,7 +204,7 @@ Error example (HTTP 409):
 
 ## 4. Planning engine
 
-`engine/` is a pure library: no database, no network, no reading the system clock. Everything it needs (capacity, demand weeks, the team as `candidates`) arrives in the request. It knows nothing about programs, scope points or assistants.
+`engine/` is a pure library: no database, no network, no reading the system clock. Everything it needs (capacity, demand weeks, the team as `candidates`) arrives in the request. It knows nothing about programs or scope points.
 
 **Input: `engine.Request`** (JSON shape shown; the Go struct has no JSON tags)
 
@@ -229,7 +218,7 @@ Error example (HTTP 409):
     "hourStep": 1,
     "weights": { "deadline": 1.0, "primaryFit": 0.8, "balance": 0.6, "stability": 0.5,
                  "continuity": 0.3, "levelFit": 0.4 }
-    // later: "maxProjectsPerPersonWeek", weights "tagFit" and "preference"
+    // later: "maxProjectsPerPersonWeek"
   },
   "people": [
     { "id": "p1",
@@ -240,7 +229,7 @@ Error example (HTTP 409):
     { "id": "d1", "projectId": "pr1", "programId": "pg1", "priority": 2, "expertise": "QA", "minLevel": 2,
       "headcount": 1, "hours": 120, "weeks": ["2026-W42", "…", "2026-W48"], "deadlineWeek": "2026-W48",
       "candidates": { "p1": true } }  // the program's team; null means anyone
-    // later: "profile" other than flat, "requiredTags", "preferredTags", "preferredPersonId"
+    // later: "profile" other than flat
   ],
   "existing": [
     { "personId": "p1", "demandId": "d0", "kind": "primary",
@@ -268,7 +257,6 @@ Error example (HTTP 409):
 **`unmet` reason codes:**
 - `NO_SKILL`: nobody has this expertise
 - `LEVEL_TOO_LOW`
-- `NO_TAG_MATCH` (later): nobody with the expertise and level has every required tag
 - `NO_CAPACITY_BEFORE_DEADLINE`
 - `BLOCKED_BY_LOCKED`
 - `BLOCKED_BY_EXPERTISE_LIMIT`: people had free hours, but a new expertise would pass `maxExpertisesPerPersonWeek`
@@ -276,16 +264,16 @@ Error example (HTTP 409):
 - `NO_ONE_IN_TEAM`: nobody in the program's team can take it (the server fills `candidates` with the team)
 
 **Greedy strategy (built):**
-1. Sort demand by priority (high first), then deadline (earliest first), then scarcity of the expertise (and its required tags, later).
-2. For each demand, keep candidates who are in the demand's `candidates` set (its program team; no set means anyone) and have the demand's expertise, primary or secondary, at level ≥ `minLevel` (every tag in `requiredTags`: later). They also need free capacity inside the demand's window and must stay within `maxExpertisesPerPersonWeek`.
-3. Score candidates using `weights`: primary-expertise match (`primaryFit`), free capacity, continuity (same project, then program, then client), load kept near `targetUtilization`, level fit (`levelFit` = 1 / (1 + levels above the minimum)). Preferred tags (`tagFit`) and the preferred person (`preference`) are later. A cross-expertise person wins only when no primary person can cover the hours in time, or when using them clearly balances load. The reason says which. Runner-up people are not the engine's: the staffing service lists up to `DRAFT_ALTERNATIVES_LIMIT` of them (section 3).
+1. Sort demand by priority (high first), then deadline (earliest first), then scarcity of the expertise.
+2. For each demand, keep candidates who are in the demand's `candidates` set (its program team; no set means anyone) and have the demand's expertise, primary or secondary, at level ≥ `minLevel`. They also need free capacity inside the demand's window and must stay within `maxExpertisesPerPersonWeek`.
+3. Score candidates using `weights`: primary-expertise match (`primaryFit`), free capacity, continuity (same project, then program, then client), load kept near `targetUtilization`, level fit (`levelFit` = 1 / (1 + levels above the minimum)). A cross-expertise person wins only when no primary person can cover the hours in time, or when using them clearly balances load. The reason says which. Runner-up people are not the engine's: the staffing service lists up to `DRAFT_ALTERNATIVES_LIMIT` of them (section 3).
 4. Split `hours` into `headcount` seats of about `hours ÷ headcount`. Spread each seat's hours across the window by `profile` (only `flat` is built). Keep one person per seat; split a seat between two people only when nobody has the capacity, and say so in the reason.
 5. Never allocate less than `minHoursPerWeek` in a week, except a demand's last remainder.
 6. Record any shortfall in `unmet` with a reason code. Never throw.
 
 **Demand windows:** the engine never sees phases. When building the snapshot, the planning service sets each demand's `fromWeek`–`toWeek` to its phase's weeks, or to the project's start week through its deadline week when the demand has no phase.
 
-**As built:** the Go request takes each demand's window as its list of weeks (the planning service expands `fromWeek`–`toWeek`), and `hourStep` rounds allocations. Later: tags, the preferred person, `maxProjectsPerPersonWeek`, the `tagFit` and `preference` weights, and the `conflicts` and `score` output.
+**As built:** the Go request takes each demand's window as its list of weeks (the planning service expands `fromWeek`–`toWeek`), and `hourStep` rounds allocations. Later: `maxProjectsPerPersonWeek`, and the `conflicts` and `score` output.
 
 **Kinds:** the engine returns `primary` or `cross_expertise` and never `stretch`. Stretch assignments only come in through `existing`: they are locked by a Planner and are left untouched.
 
@@ -328,7 +316,7 @@ Jobs are rows in Postgres, run by a runner inside the server process, started an
 | `replan` | ChangeEvents, batched over `REPLAN_DEBOUNCE` | Assesses impact. If there is a conflict, calls the engine, saves a staffing draft and alerts the Planner. If an auto draft is already open for the baseline, it regenerates that draft instead (see below) |
 | **Later** · `import` | `POST /imports/*` | Reads the source, validates it, writes through each module's public interface |
 | `calendar-sync` | Every `CALENDAR_SYNC_INTERVAL`, or `POST /people/{id}/calendar-feed/sync` | Fetches each due calendar feed, keeps its out-of-office events, and creates, moves or deletes the matching planned leave through **availability**, which records the change events. Claims feeds with `FOR UPDATE SKIP LOCKED`. The fetch runs before the database transaction. Each sync takes a Postgres advisory lock per feed until its transaction ends, and the lock covers only writing the leave: the runner skips a locked feed, and "Sync now" answers `409 CALENDAR_SYNC_RUNNING`. Leave that a person deletes by hand is kept as `source = calendar_dismissed` with its event UID, so the sync does not create it again. A failed fetch changes nothing and stores an error code |
-| **Later** · `notify` | `PlanPublished`, alerts | Sends Email/Slack messages to the affected members and to the program's assistants (internal and external) |
+| **Later** · `notify` | `PlanPublished`, alerts | Sends Email/Slack messages to the affected members |
 
 **One open auto draft per baseline.** A draft is "auto" when change events link to it. When a new event arrives while one is open, `replan` regenerates it from the current baseline plus every linked event. Assignments the Planner added by hand and locked allocations are carried over. The old draft version becomes `superseded` and all events point to the new one. The worker saves the new version only if the old one has not changed since it read it; otherwise it regenerates again, so a Planner's edit is never dropped silently. An edit, accept or reject that reaches the old version afterwards gets `409 DRAFT_SUPERSEDED`.
 
@@ -373,7 +361,7 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `PLANNING_MAX_EXPERTISES_PER_PERSON_WEEK` | `maxExpertisesPerPersonWeek` | 2 |
 | `PLANNING_MIN_HOURS_PER_WEEK` | `minHoursPerWeek`: smallest weekly allocation, except a demand's last remainder | 8 |
 | `PLANNING_HOUR_STEP` | `hourStep`: rounds weekly allocations (1 = whole hours, 0 = exact). Demand `total_hours` must be a multiple of the step, otherwise `400 DEMAND_HOURS_STEP` | 1 |
-| `PLANNING_WEIGHT_<NAME>` | One per weight: `DEADLINE`, `PRIMARY_FIT`, `BALANCE`, `STABILITY`, `CONTINUITY`, `LEVEL_FIT`. **Later:** `TAG_FIT`, `PREFERENCE` | `LEVEL_FIT` 0.4 |
+| `PLANNING_WEIGHT_<NAME>` | One per weight: `DEADLINE`, `PRIMARY_FIT`, `BALANCE`, `STABILITY`, `CONTINUITY`, `LEVEL_FIT` | `LEVEL_FIT` 0.4 |
 | `PLANNING_REPLAN_STABILITY_WEIGHT` | The raised `stability` weight used for re-plans | 2.0 |
 | `DEFAULT_NON_PROJECT_HOURS` | `PERSON.non_project_hours` when a person is created without one | 4 |
 | `COUNT_PLANNED_ABSENCE` | Whether `planned` absence reduces capacity (`approved` always does) | true |
@@ -478,9 +466,9 @@ Each question is sent alone, with the page path as context, so there is no chat 
 | `create_staffing_draft` | planning: generate a draft for projects | chat | a draft |
 
 - **Permissions:** before calling the service, a tool checks the same role list constant as the matching route (e.g. `constants.ScenarioCreateRoles`). The service then applies the per-program rules using the caller from `ctx`. The model is offered only the tools the caller's role allows. A refused tool gives the same `403` the route would, and the reply says so.
-- **Intake extraction** (later) uses no data tools. The expertise and tag catalogues go into the prompt, and the model answers through one output function whose schema is the suggested project. The Server then:
+- **Intake extraction** (later) uses no data tools. The expertise catalogue goes into the prompt, and the model answers through one output function whose schema is the suggested project. The Server then:
   - drops any field whose quote does not appear in the source text
-  - flags an expertise or tag that is not in the catalogue (it never creates one)
+  - flags an expertise that is not in the catalogue (it never creates one)
   - fills in hours from hours per point when the text has only scope points
 - **Draft summaries** (later) use no tools. The input is the draft's structured output. The Server checks that every number in the summary appears in that input. If one does not, it retries once and then falls back to a summary built from a template.
 - **Limits:** `AI_MAX_TOOL_CALLS`, `AI_TIMEOUT`, `AI_MAX_OUTPUT_TOKENS`, `AI_UPLOAD_MAX_BYTES`. A provider error or timeout returns the normal error envelope. A scenario or draft already created stays as it is, since it changes nothing in force.

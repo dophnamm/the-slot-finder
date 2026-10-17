@@ -19,7 +19,6 @@
 
 ## Not now
 
-- Skill tags and the preferred person → [Later](README.md#later), design in [root README §5](../../README.md#5-planning-engine-the-core).
 - Profiles `front` and `back`, and the repair pass → [Later](README.md#later).
 - Plan churn for drafts → [Later](README.md#later).
 - Re-plan drafts from change events → [replan-on-change](replan-on-change.md).

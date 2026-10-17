@@ -17,7 +17,7 @@
 
 ## Not now
 
-- Each member's overall utilization across programs, and assistants → [Later](README.md#later).
+- Each member's overall utilization across programs → [Later](README.md#later).
 - Editing members here; that stays in staffing drafts.
 
 ## Server

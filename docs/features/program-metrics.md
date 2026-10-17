@@ -22,7 +22,6 @@
 ## Not now
 
 - EAC hours, forecast override, contribution %, cross-expertise share → [Later](README.md#later), design in [root README §7](../../README.md#7-metrics).
-- Next milestone → [Later](README.md#later) (milestones).
 
 ## Server
 
