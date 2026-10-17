@@ -1172,6 +1172,18 @@ definitions:
         example: 2026-W44
         type: string
     type: object
+  dtos.PeopleImportResultResponse:
+    properties:
+      created:
+        example: 12
+        type: integer
+      unchanged:
+        example: 5
+        type: integer
+      updated:
+        example: 3
+        type: integer
+    type: object
   dtos.PersonRef:
     properties:
       id:
@@ -3369,6 +3381,99 @@ paths:
       security:
       - BearerAuth: []
       summary: Replace a person's skills
+      tags:
+      - People
+  /people/import:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 'Upload a filled-in template as the multipart field "file". Every
+        row is checked first: any problem saves nothing and returns 400 PEOPLE_IMPORT_INVALID
+        with data.problems [{line, column, code}]. A person is matched by email: a
+        new one is created, an existing one is updated, and a row that changes nothing
+        is counted as unchanged. A file over PEOPLE_IMPORT_MAX_BYTES or PEOPLE_IMPORT_MAX_ROWS
+        gets 413 PEOPLE_IMPORT_TOO_LARGE.'
+      parameters:
+      - description: Filled-in people template (CSV)
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.PeopleImportResultResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              data:
+                properties:
+                  problems:
+                    items:
+                      $ref: '#/definitions/services.RowProblem'
+                    type: array
+                type: object
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "413":
+          description: Request Entity Too Large
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.RateLimitResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Import people
+      tags:
+      - People
+  /people/import-template:
+    get:
+      description: A CSV with the header of the people file and one example row whose
+        primary expertise is the first expertise in the catalogue.
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: People import template
       tags:
       - People
   /phases/{id}:

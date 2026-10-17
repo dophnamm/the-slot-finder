@@ -36,6 +36,7 @@ func Router(
 	calendarFeedHandler *handlers.CalendarFeedHandler,
 	teamHandler *handlers.ProgramTeamHandler,
 	holidayImportHandler *handlers.HolidayImportHandler,
+	peopleImportHandler *handlers.PeopleImportHandler,
 	aiHandler *handlers.AIHandler,
 	verifier auth.TokenVerifier,
 	cfg *config.Config,
@@ -146,7 +147,7 @@ func Router(
 	heavy := middlewares.HeavyRateLimit(cfg)
 	v1.GET(constants.PathMe, identityHandler.Me, authenticated, middlewares.RequireRole(constants.CurrentUserViewRoles...))
 
-	registerPeopleRoutes(v1, authenticated, personHandler, absenceHandler)
+	registerPeopleRoutes(v1, authenticated, personHandler, absenceHandler, peopleImportHandler, heavy)
 	registerCalendarFeedRoutes(v1, authenticated, heavy, calendarFeedHandler)
 	registerTeamRoutes(v1, authenticated, teamHandler)
 	v1.POST(constants.PathHolidayImport, holidayImportHandler.Import, authenticated,
@@ -211,8 +212,11 @@ func registerPlanRoutes(v1 *echo.Group, authenticated, heavy echo.MiddlewareFunc
 // registerPeopleRoutes adds people, skills, absences and holidays.
 func registerPeopleRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc,
 	personHandler *handlers.PersonHandler, absenceHandler *handlers.AbsenceHandler,
+	peopleImportHandler *handlers.PeopleImportHandler, heavy echo.MiddlewareFunc,
 ) {
 	// People and skills
+	v1.GET(constants.PathPeopleImportTemplate, peopleImportHandler.Template, authenticated, middlewares.RequireRole(constants.PeopleManageRoles...))
+	v1.POST(constants.PathPeopleImport, peopleImportHandler.Import, authenticated, middlewares.RequireRole(constants.PeopleManageRoles...), heavy)
 	v1.GET(constants.PathPeople, personHandler.List, authenticated, middlewares.RequireRole(constants.PeopleViewRoles...))
 	v1.GET(constants.PathPerson, personHandler.Get, authenticated, middlewares.RequireRole(constants.PeopleViewRoles...))
 	v1.POST(constants.PathPeople, personHandler.Create, authenticated, middlewares.RequireRole(constants.PeopleManageRoles...))
