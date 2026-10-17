@@ -219,6 +219,7 @@ const (
 // Ask AI messages.
 const (
 	MsgAIAnswered        = "Question answered"
+	MsgIntakeSuggested   = "Intake suggested"
 	MsgDraftSummarized   = "Draft summarized"
 	MsgAINotConfigured   = "Ask AI is not set up on this server"
 	MsgAIUpstreamFailed  = "The AI service could not answer; try again later"

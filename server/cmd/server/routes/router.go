@@ -185,6 +185,9 @@ func registerInsightRoutes(v1 *echo.Group, authenticated, heavy echo.MiddlewareF
 	v1.GET(constants.PathCapacityForecast, insightsHandler.CapacityForecast, authenticated, roles)
 	v1.GET(constants.PathBench, insightsHandler.Bench, authenticated, roles)
 	v1.POST(constants.PathAIAsk, aiHandler.Ask, authenticated, roles, heavy)
+	// The service re-checks the project-create permission; the roles here are the ones that may create projects.
+	v1.POST(constants.PathAIIntakeExtractions, aiHandler.ExtractIntake, authenticated,
+		middlewares.RequireRole(constants.ProgramRoles...), heavy)
 	v1.POST(constants.PathStaffingDraftSummary, aiHandler.SummarizeDraft, authenticated, roles, heavy)
 }
 
