@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { PersonRef } from '@/shared/programs'
 import type { UtilizationBand } from '@/shared/utilization'
 
@@ -60,16 +61,17 @@ export interface ExpertiseGroup {
   rows: HeatmapRow[]
 }
 
+export interface HeatmapProps {
+  /** Shown on the right of the card heading, e.g. a view switch. */
+  action?: ReactNode
+}
+
 /** Heatmap filters: UI state kept while moving between pages. */
 export interface HeatmapFiltersState {
-  from: string
-  weeks: number
   expertiseId: string
   programId: string
   /** Name or expertise text; rows are filtered in the browser. */
   search: string
-  setFrom: (from: string) => void
-  setWeeks: (weeks: number) => void
   setExpertiseId: (expertiseId: string) => void
   setProgramId: (programId: string) => void
   setSearch: (search: string) => void

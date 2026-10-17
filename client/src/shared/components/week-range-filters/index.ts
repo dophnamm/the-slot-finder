@@ -1,0 +1,1 @@
+export { WeekRangeFilters } from './component'

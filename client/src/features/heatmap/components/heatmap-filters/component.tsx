@@ -1,28 +1,21 @@
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 import type { ChangeEvent } from 'react'
-import { WeekPicker } from '@/shared/components/week-picker'
+import { WeekRangeFilters } from '@/shared/components/week-range-filters'
 import { useExpertises } from '@/shared/expertises'
 import { useTranslation } from '@/shared/i18n'
 import { useProgramOptions } from '@/shared/programs'
-import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
-import { addIsoWeeks } from '@/utils/functions'
-import { WEEK_COUNT_OPTIONS } from '../../constants'
 import { useHeatmapFilters } from '../../use-heatmap-filters'
 
-/** First week, number of weeks, expertise and program of the heatmap. */
+/** Week range, expertise and program of the heatmap. */
 export function HeatmapFilters() {
   const { t } = useTranslation()
   const { data: expertises = [], isPending: expertisesLoading } = useExpertises()
   const { data: programs = [], isPending: programsLoading } = useProgramOptions()
-  const { from, weeks, expertiseId, programId, search, setFrom, setWeeks, setExpertiseId, setProgramId, setSearch } =
-    useHeatmapFilters()
+  const { expertiseId, programId, search, setExpertiseId, setProgramId, setSearch } = useHeatmapFilters()
 
-  const handlePrevious = () => setFrom(addIsoWeeks(from, -weeks))
-  const handleNext = () => setFrom(addIsoWeeks(from, weeks))
-  const handleWeeksChange = (event: ChangeEvent<HTMLSelectElement>) => setWeeks(Number(event.target.value))
   const handleExpertiseChange = (event: ChangeEvent<HTMLSelectElement>) => setExpertiseId(event.target.value)
   const handleProgramChange = (event: ChangeEvent<HTMLSelectElement>) => setProgramId(event.target.value)
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)
@@ -43,28 +36,7 @@ export function HeatmapFilters() {
           />
         </div>
       </div>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="heatmap-from">{t('From week')}</Label>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" aria-label={t('Previous weeks')} onClick={handlePrevious}>
-            <ChevronLeft />
-          </Button>
-          <WeekPicker id="heatmap-from" name="from" value={from} onChange={setFrom} />
-          <Button variant="outline" size="icon" aria-label={t('Next weeks')} onClick={handleNext}>
-            <ChevronRight />
-          </Button>
-        </div>
-      </div>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="heatmap-weeks">{t('Weeks')}</Label>
-        <NativeSelect id="heatmap-weeks" value={String(weeks)} onChange={handleWeeksChange}>
-          {WEEK_COUNT_OPTIONS.map((count) => (
-            <NativeSelectOption key={count} value={String(count)}>
-              {t('{count} weeks', { count })}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
-      </div>
+      <WeekRangeFilters />
       <div className="flex flex-col gap-2">
         <Label htmlFor="heatmap-expertise">{t('Expertise')}</Label>
         <NativeSelect

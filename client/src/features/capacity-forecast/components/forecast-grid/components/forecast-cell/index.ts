@@ -1,0 +1,1 @@
+export { ForecastCell } from './component'
