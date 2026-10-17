@@ -27,7 +27,7 @@ export const ROW_PROBLEM_LABELS: Record<RowProblemCode, PlainKey> = {
   CSV_MALFORMED: 'The file is not valid CSV from this line.',
   PERSON_UNKNOWN: 'No person has this email.',
   PROJECT_UNKNOWN: 'No project has this id.',
-  WEEK_INVALID: 'Not an ISO week such as 2026-W41.',
+  WEEK_INVALID: 'Not a week such as 2026-W41.',
   WEEK_IN_FUTURE: 'The week is after the current week.',
   HOURS_INVALID: 'Hours must be a number from 0 to the weekly limit.',
   ROW_DUPLICATE: 'The same person, project and week appear more than once.',

@@ -65,7 +65,7 @@ export function previewPhases(phases: Phase[], draft: PhaseDraft | null): PhaseD
   })
 }
 
-/** ISO week labels have a fixed width, so text order is week order. */
+/** Week labels have a fixed width, so text order is week order. */
 function earliest(weeks: string[]): string {
   return [...weeks].sort()[0]
 }

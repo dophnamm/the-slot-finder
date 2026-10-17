@@ -28,7 +28,7 @@ export interface ImportResult {
   skipped: number
 }
 
-/** The ISO weeks a template covers. */
+/** The weeks a template covers. */
 export interface WeekRange {
   from: string
   to: string

@@ -5,7 +5,7 @@ import { ForecastRow } from './components/forecast-row'
 import { CORNER_CELL_CLASS, HEADER_CELL_CLASS, WEEK_COLUMN_CLASS } from './constants'
 import type { ForecastGridProps } from './types'
 
-/** One row per expertise, one column per ISO week. */
+/** One row per expertise, one column per week. */
 export function ForecastGrid({ data }: ForecastGridProps) {
   const { t } = useTranslation()
   const thisWeek = currentIsoWeek()

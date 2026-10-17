@@ -42,7 +42,7 @@ export function Heatmap({ action }: HeatmapProps) {
       action={action}
       refreshing={isPlaceholderData}
       title={t('Team heatmap')}
-      description={t('Baseline load against capacity per person and ISO week. Click a cell to see its assignments.')}
+      description={t('Baseline load against capacity per person and week. Click a cell to see its assignments.')}
       className="h-full min-h-0"
     >
       <HeatmapFilters />

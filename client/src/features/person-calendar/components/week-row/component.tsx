@@ -8,7 +8,7 @@ import { WorkedHours } from './components/worked-hours'
 import { LOAD_BUTTON_CLASS } from './constants'
 import type { WeekRowProps } from './types'
 
-/** One ISO week: its seven days (days off shaded), then its load against capacity, which selects the week. */
+/** One week: its seven days (days off shaded), then its load against capacity, which selects the week. */
 export function WeekRow({ week, days, month, selected, onSelect }: WeekRowProps) {
   const { t } = useTranslation()
 

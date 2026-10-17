@@ -39,7 +39,7 @@ export interface ScheduleProject {
   hours: number
 }
 
-/** A person's load against capacity in one ISO week, computed as on the heatmap. */
+/** A person's load against capacity in one week, computed as on the heatmap. */
 export interface ScheduleWeek {
   week: string
   capacity: number
