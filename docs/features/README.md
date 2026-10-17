@@ -23,6 +23,7 @@ One spec per feature, in build order. Each spec holds the goal, scope, server an
 | 15 | [Ask AI](ask-ai.md) | Floating assistant for planners and Managers: plain-language questions answered only from read-only tools that run with the caller's rights (Gemini, Groq or OpenRouter, key from env) | 16 Oct | staffing-draft, team-heatmap, program-metrics, program-teams | Done |
 | 16 | [Guided tour](guided-tour.md) | First-time tour of the sidebar, one step per link the role can open and one on the account menu; started again from the account menu | 17 Oct | sign-in | Done |
 | 17 | [Capacity forecast](capacity-forecast.md) | By-expertise view of the dashboard heatmap, per expertise × week: free capacity, unmet confirmed demand, pipeline demand × the global pipeline confidence, overload and sustained overload | 17 Oct | team-heatmap, program-metrics, program-teams | Done |
+| 18 | [Skill and program events](skill-and-program-events.md) | A skill change re-plans the person's projects; a program end-date move is recorded in the change history | 17–18 Oct | people-and-skills, replan-on-change | Planned |
 
 ## Schedule
 
