@@ -20,7 +20,7 @@ const daysPerWeek = 7
 var pattern = regexp.MustCompile(`^(\d{4})-W(\d{2})$`)
 
 // ErrInvalid is returned for text that is not an existing ISO week.
-var ErrInvalid = errors.New("invalid ISO week")
+var ErrInvalid = errors.New("invalid week")
 
 // Week is an ISO-8601 week. The zero value is not a valid week; use Parse or Of.
 type Week struct {

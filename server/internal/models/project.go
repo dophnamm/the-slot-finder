@@ -55,10 +55,10 @@ type Demand struct {
 	Project *Project `gorm:"foreignKey:ProjectID;-:migration"`
 }
 
-// StartWeek is the ISO week of the earliest start.
+// StartWeek is the week of the earliest start.
 func (p Project) StartWeek() isoweek.Week { return isoweek.Of(p.StartEarliest) }
 
-// DeadlineWeek is the ISO week of the deadline.
+// DeadlineWeek is the week of the deadline.
 func (p Project) DeadlineWeek() isoweek.Week { return isoweek.Of(p.Deadline) }
 
 // AtRisk reports whether the last phase ends after the deadline week.

@@ -30,11 +30,11 @@ const aiSystemPrompt = `You are the assistant of The Slot Finder, a tool that as
 
 Vocabulary:
 - A Program contains Projects. A Project is split into ordered Phases (week ranges) and has Demand: budget hours per expertise and minimum level, placed in one phase or across the whole project.
-- An Assignment is a person on a demand, with weekly Allocations (hours per ISO week). Kinds: primary, cross_expertise, stretch.
+- An Assignment is a person on a demand, with weekly Allocations (hours per week). Kinds: primary, cross_expertise, stretch.
 - A "draft" (staffing draft, a proposed plan) is a suggestion that is not in force yet. The "baseline" is the accepted plan; all load, utilization and risk figures come from the baseline.
 - Utilization is planned hours divided by capacity. Over 100 percent is overloaded; low values are underused. A gap is demand that nobody covers yet.
 - Roles: planner (sees and staffs everything), manager (shown as Manager: sees only the teams of the programs they manage), specialist (sees their own schedule only).
-- Weeks are ISO weeks written like 2026-W42, Monday to Sunday.
+- Weeks are weeks written like 2026-W42, Monday to Sunday.
 
 Rules:
 - Every number, name, date and status in your answer must come from a tool result. Call the tools you need before you answer.
@@ -248,7 +248,7 @@ func argString(args map[string]any, key string) string {
 	return strings.TrimSpace(value)
 }
 
-// argWeek reads an optional ISO week such as 2026-W42; a bad value is a validation error the model can read.
+// argWeek reads an optional week such as 2026-W42; a bad value is a validation error the model can read.
 func argWeek(args map[string]any, key string) (*isoweek.Week, error) {
 	text := argString(args, key)
 	if text == "" {
@@ -256,7 +256,7 @@ func argWeek(args map[string]any, key string) (*isoweek.Week, error) {
 	}
 	week, err := isoweek.Parse(text)
 	if err != nil {
-		return nil, errors.ValidationError(fmt.Sprintf("%s must be an ISO week like 2026-W42", key), err)
+		return nil, errors.ValidationError(fmt.Sprintf("%s must be a week like 2026-W42", key), err)
 	}
 	return &week, nil
 }
@@ -276,22 +276,22 @@ func aiToolDeclarations() []llm.FunctionDeclaration {
 	return []llm.FunctionDeclaration{
 		{
 			Name: constants.AIToolHeatmap,
-			Description: "Per person and ISO week: load, capacity, utilization band and hours per expertise from the baseline. " +
+			Description: "Per person and week: load, capacity, utilization band and hours per expertise from the baseline. " +
 				"Use it for who is overloaded, underused or free. Weeks default to the current week and the weeks after it.",
 			Parameters: object(nil, map[string]any{
-				"from":         str("First ISO week, like 2026-W42"),
-				"to":           str("Last ISO week, like 2026-W53"),
+				"from":         str("First week, like 2026-W42"),
+				"to":           str("Last week, like 2026-W53"),
 				"expertise_id": str("Only people who hold or work on this expertise"),
 				"program_id":   str("Only the people of this program's team"),
 			}),
 		},
 		{
 			Name: constants.AIToolCapacityForecast,
-			Description: "Per expertise and ISO week: capacity, load, free hours, unmet confirmed demand, pipeline demand weighted by " +
+			Description: "Per expertise and week: capacity, load, free hours, unmet confirmed demand, pipeline demand weighted by " +
 				"confidence, shortfall and overload. Use it for hiring signals, who is short or will crunch.",
 			Parameters: object(nil, map[string]any{
-				"from": str("First ISO week, like 2026-W42"),
-				"to":   str("Last ISO week, like 2026-W53"),
+				"from": str("First week, like 2026-W42"),
+				"to":   str("Last week, like 2026-W53"),
 			}),
 		},
 		{

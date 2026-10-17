@@ -99,7 +99,7 @@ type ReplaceDemandsRequest struct {
 	Demands []DemandRequest `json:"demands" validate:"max=50,dive"`
 }
 
-// PhaseResponse is one phase with its ISO weeks.
+// PhaseResponse is one phase with its weeks.
 type PhaseResponse struct {
 	ID        string `json:"id"`
 	Name      string `json:"name" example:"Build"`
@@ -122,7 +122,7 @@ type DemandResponse struct {
 	ToWeek      string  `json:"to_week" example:"2026-W51"`
 }
 
-// ProjectResponse is a project row: program, lead, ISO weeks, the current phase and at_risk
+// ProjectResponse is a project row: program, lead, weeks, the current phase and at_risk
 // (the last phase ends after the deadline week).
 type ProjectResponse struct {
 	ID          string `json:"id"`

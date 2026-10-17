@@ -40,7 +40,7 @@ func (h *PlanHandler) Current(c *echo.Context) error {
 
 // PersonAssignments godoc
 // @Summary A person's baseline assignments
-// @Description Assignments with hours from one ISO week through another. Specialists may read only their own.
+// @Description Assignments with hours from one week through another. Specialists may read only their own.
 // @Tags Planning
 // @Produce json
 // @Security BearerAuth

@@ -2,7 +2,7 @@ package main
 
 import "time"
 
-// Demo programs: two customer engagements with three projects each. Phase weeks are ISO weeks.
+// Demo programs: two customer engagements with three projects each. Phase weeks are weeks.
 // Records Integration is at risk on purpose: its Test phase ends after the deadline week.
 
 type seedPhase struct {

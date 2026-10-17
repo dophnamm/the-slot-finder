@@ -69,7 +69,7 @@ type ScheduleDayResponse struct {
 	Holidays []ScheduleHolidayResponse `json:"holidays"`
 }
 
-// ScheduleResponse is one person's calendar for a range of ISO weeks.
+// ScheduleResponse is one person's calendar for a range of weeks.
 type ScheduleResponse struct {
 	// WorkingWeekdays are ISO day numbers: 1 is Monday, 7 is Sunday.
 	WorkingWeekdays []int                  `json:"working_weekdays" example:"1,2,3,4,5"`

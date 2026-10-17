@@ -9,7 +9,7 @@ import (
 	"the-slot-finder/server/internal/models"
 )
 
-// Only weeks from the current ISO week on are planned: earlier weeks are history, and hours
+// Only weeks from the current week on are planned: earlier weeks are history, and hours
 // of a project that is no longer plannable stop being load from the current week on.
 
 // withoutFreedHours drops, from the given week on, the allocations of projects that are not

@@ -291,7 +291,7 @@ func (s *timesheetService) tooLarge(op string) error {
 		errors.ErrorTypeValidation, http.StatusRequestEntityTooLarge).WithOperation(op).WithResource(resourceTimesheet)
 }
 
-// currentWeek is the organization's current ISO week.
+// currentWeek is the organization's current week.
 func (s *timesheetService) currentWeek() isoweek.Week {
 	return isoweek.Of(s.clock.Now().In(s.clock.Location()))
 }

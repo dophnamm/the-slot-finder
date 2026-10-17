@@ -55,7 +55,7 @@ type Input struct {
 	Upcoming []WeekHours
 }
 
-// WeekHours is planned hours in one ISO week, placed by its distance from the current week:
+// WeekHours is planned hours in one week, placed by its distance from the current week:
 // 0 is the current week, 1 the next one, negative a past week.
 type WeekHours struct {
 	WeeksFromNow int
