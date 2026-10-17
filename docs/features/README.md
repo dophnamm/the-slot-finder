@@ -28,6 +28,7 @@ One spec per feature, in build order. Each spec holds the goal, scope, server an
 | 20 | [People import](people-import.md) | CSV import of many people at once: new emails are created, known ones updated, all or nothing | 17–18 Oct | people-and-skills, skill-and-program-events | Done |
 | 21 | [Draft summary](draft-summary.md) | A short AI-written summary of a staffing draft, checked against the draft's numbers, with a template fallback | 17–18 Oct | staffing-draft, ask-ai | Done |
 | 22 | [What-if chat](whatif-chat.md) | Ask AI can run a what-if for a planner: it saves a scenario from a plain-language question and reports the result | 17–18 Oct | scenarios, ask-ai | Done |
+| 23 | [Intake extraction](intake-extraction.md) | Paste a customer brief and get a suggested project (dates, scope, hours per expertise) to review and create, with customer names and emails hidden before the text goes to the AI | 17–18 Oct | programs-and-demand, ask-ai | Planned |
 
 ## Schedule
 
