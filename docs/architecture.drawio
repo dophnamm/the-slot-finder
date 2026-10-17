@@ -59,7 +59,7 @@
         <mxCell id="e-20" value="assignments, alerts" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.727;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="v-2" target="v-19">
           <mxGeometry as="geometry" relative="1" />
         </mxCell>
-        <mxCell id="v-21" value="&lt;b&gt;LLM API&lt;/b&gt; (later)&lt;br&gt;function calling · Gemini planned" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;dashed=1;" vertex="1" parent="1">
+        <mxCell id="v-21" value="&lt;b&gt;LLM API&lt;/b&gt;&lt;br&gt;function calling · Gemini, Groq or OpenRouter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;dashed=1;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="1040" y="635" width="230" height="70" />
         </mxCell>
         <mxCell id="e-22" value="AI assistant:&lt;br&gt;text ↔ structured data" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;dashed=1;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.891;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="v-2" target="v-21">
@@ -147,10 +147,10 @@
         <mxCell id="e-23" value="calendar sync ·&lt;br&gt;notify" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=block;startFill=1;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="v-10" target="v-12">
           <mxGeometry as="geometry" relative="1" />
         </mxCell>
-        <mxCell id="v-24" value="&lt;b&gt;LLM API&lt;/b&gt; (later)&lt;br&gt;function calling&lt;br&gt;&lt;i&gt;Gemini planned&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;dashed=1;" vertex="1" parent="1">
+        <mxCell id="v-24" value="&lt;b&gt;LLM API&lt;/b&gt;&lt;br&gt;function calling&lt;br&gt;&lt;i&gt;Gemini, Groq or OpenRouter&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;dashed=1;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="1200" y="370" width="230" height="90" />
         </mxCell>
-        <mxCell id="e-25" value="AI assistant (later)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;dashed=1;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.85;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="v-7" target="v-24">
+        <mxCell id="e-25" value="AI assistant" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;dashed=1;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.85;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="v-7" target="v-24">
           <mxGeometry as="geometry" relative="1">
             <Array as="points">
               <mxPoint x="718" y="330" />
@@ -178,7 +178,7 @@
         <mxCell id="v-3" value="&lt;b&gt;Integrations&lt;/b&gt;&lt;br&gt;&lt;i&gt;calendar feeds (ICS)&lt;br&gt;notifier · LLM client&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="400" y="80" width="280" height="80" />
         </mxCell>
-        <mxCell id="v-4" value="&lt;b&gt;AI assistant&lt;/b&gt; (later)&lt;br&gt;&lt;i&gt;intake extraction · what-if chat&lt;br&gt;draft summary · Q&amp;amp;A&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+        <mxCell id="v-4" value="&lt;b&gt;AI assistant&lt;/b&gt;&lt;br&gt;&lt;i&gt;Ask AI and draft summary (built)&lt;br&gt;later: intake extraction · what-if chat&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="90" y="82" width="220" height="90" />
         </mxCell>
         <mxCell id="v-5" value="Data modules" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8f9fb;strokeColor=#b0b8c4;verticalAlign=top;align=left;spacingLeft=12;spacingTop=6;fontStyle=1;" vertex="1" parent="1">

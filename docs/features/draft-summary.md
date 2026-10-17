@@ -1,9 +1,9 @@
 # Draft summary
 
-**Goal:** a planner or manager opens a staffing draft and asks for a short summary of it, e.g. "4 people assigned, 20 h of QA still uncovered in 2026-W45". The text is written by the LLM and checked against the draft's numbers, with a template fallback. The AI design is in the [root README §15](../../README.md#15-ai-assistant-later) and [server README §9](../../server/README.md#9-ai-assistant-later).
+**Goal:** a planner or manager opens a staffing draft and asks for a short summary of it, e.g. "4 people assigned, 20 h of QA still uncovered in 2026-W45". The text is written by the LLM and checked against the draft's numbers, with a template fallback. The AI design is in the [root README §15](../../README.md#15-ai-assistant) and [server README §9](../../server/README.md#9-ai-assistant).
 
 **Roles:** planner, manager (the draft view: whoever can open the draft).
-**Target:** 17–18 Oct · **Depends on:** [staffing-draft](staffing-draft.md), [ask-ai](ask-ai.md) · **Branch:** `feat/draft-summary` · **Status:** Planned
+**Target:** 17–18 Oct · **Depends on:** [staffing-draft](staffing-draft.md), [ask-ai](ask-ai.md) · **Branch:** `feat/draft-summary` · **Status:** Done
 
 ## In scope
 
@@ -75,7 +75,7 @@ No request body. The route has the heavy rate limit (`middlewares.HeavyRateLimit
 - The **Summary** card sits on the draft review page (`client/src/features/draft-review/component.tsx`), between `DraftHeader` and `DemandCoverage`. It is a child `components/draft-summary/` of the draft-review feature.
 - A **Summarize this draft** button. While the request is pending the button is disabled and shows busy state, so a second click does nothing.
 - After the result: the text, and the label from `source`.
-- The result stays until the draft changes; it is cleared when the draft's version changes.
+- The result stays until the draft changes; it is cleared when the draft changes (a new draft object).
 - Hook `useSummarizeDraft(draftId)` (`useMutation`) and `summarizeDraft(id)` in `features/draft-review/api.ts`. The endpoint is in `client/src/resources/endpoints` (the staffing endpoints).
 - No new permission: whoever can open the draft can summarize it.
 - i18n keys in `LanguageKey`: `Summarize this draft`, `Summary`, `Written by AI`, `Template summary`.
@@ -83,26 +83,26 @@ No request body. The route has the heavy rate limit (`middlewares.HeavyRateLimit
 ## Tasks
 
 **Server**
-- [ ] Facts builder, number check and template summary as pure functions
-- [ ] `AIService.SummarizeDraft`: prompt, number check with one retry, template fallback
-- [ ] Handler, DTO, route, constants, Swagger
+- [x] Facts builder, number check and template summary as pure functions
+- [x] `AIService.SummarizeDraft`: prompt, number check with one retry, template fallback
+- [x] Handler, DTO, route, constants, Swagger
 
 **Client**
-- [ ] Endpoint, `summarizeDraft` and `useSummarizeDraft` in the draft-review feature
-- [ ] Summary card with the button, busy state, text and label
+- [x] Endpoint, `summarizeDraft` and `useSummarizeDraft` in the draft-review feature
+- [x] Summary card with the button, busy state, text and label
 
 **Tests**
-- [ ] Facts: re-plan flag, unmet hours per demand, no names or emails in the marshalled facts
-- [ ] `templateSummary` and `numbersKnown`: the cases in acceptance criterion 6
-- [ ] `SummarizeDraft`: AI text with known numbers; invented number then template; no LLM key then template; provider error then template; no person name in the facts passed to the LLM
-- [ ] Handler and RBAC: specialist `403`
-- [ ] Client: button shows the text and the AI label; template label
+- [x] Facts: re-plan flag, unmet hours per demand, no names or emails in the marshalled facts
+- [x] `templateSummary` and `numbersKnown`: the cases in acceptance criterion 6
+- [x] `SummarizeDraft`: AI text with known numbers; invented number then template; no LLM key then template; provider error then template; no person name in the facts passed to the LLM
+- [x] Handler and RBAC: specialist `403`
+- [x] Client: button shows the text and the AI label; template label
 
 **Docs** (same PR)
-- [ ] [README.md](../../README.md): §15 and the AI node show draft summary as built
-- [ ] [server/README.md](../../server/README.md): §9 describes the route, no tools, the number check, the template fallback and the data sent; state that customer names and emails are never sent
-- [ ] [client/README.md](../../client/README.md): the draft review screen
-- [ ] [docs/features/README.md](README.md): row 21 → Done; remove "draft summaries" from the Later AI item
-- [ ] [user-manual](../user-manual.md): the draft review section describes Summarize
-- [ ] `README.md:3` and `CLAUDE.md:9`: twenty-one features built
-- [ ] Drawio: the "AI assistant (later)" and "LLM API (later)" labels drop "(later)"; list intake extraction and what-if chat as later only
+- [x] [README.md](../../README.md): §15 and the AI node show draft summary as built
+- [x] [server/README.md](../../server/README.md): §9 describes the route, no tools, the number check, the template fallback and the data sent; state that customer names and emails are never sent
+- [x] [client/README.md](../../client/README.md): the draft review screen
+- [x] [docs/features/README.md](README.md): row 21 → Done; remove "draft summaries" from the Later AI item
+- [x] [user-manual](../user-manual.md): the draft review section describes Summarize
+- [x] `README.md:3` and `CLAUDE.md:9`: twenty-one features built
+- [x] Drawio: the "AI assistant (later)" and "LLM API (later)" labels drop "(later)"; list intake extraction and what-if chat as later only
