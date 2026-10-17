@@ -16,6 +16,7 @@ import (
 	"the-slot-finder/server/internal/integration/llm"
 	"the-slot-finder/server/internal/isoweek"
 	"the-slot-finder/server/internal/logger"
+	"the-slot-finder/server/internal/models"
 
 	"go.uber.org/zap"
 )
@@ -63,6 +64,8 @@ type AskInput struct {
 type AIService interface {
 	// Ask lets the model read data through tools, as the caller, and returns its answer.
 	Ask(ctx context.Context, in AskInput) (string, error)
+	// SummarizeDraft summarizes a draft from its facts. It never fails because of the model: the template answers instead.
+	SummarizeDraft(ctx context.Context, draftID string) (*models.DraftSummary, error)
 }
 
 type aiService struct {
@@ -140,6 +143,52 @@ func (s *aiService) Ask(ctx context.Context, in AskInput) (string, error) {
 	}
 	return "", errors.NewAppError(constants.AIUpstreamFailed, constants.MsgAIEmptyAnswer, errors.ErrorTypeExternal,
 		http.StatusBadGateway).WithOperation(opAskAI).WithResource(resourceAI)
+}
+
+// summaryAttempts is how many times the model may write a summary whose numbers all come from the facts.
+const summaryAttempts = 2
+
+func (s *aiService) SummarizeDraft(ctx context.Context, draftID string) (*models.DraftSummary, error) {
+	if _, err := s.authz.Require(ctx, CanViewInsights); err != nil {
+		return nil, err
+	}
+	view, err := s.staffing.Get(ctx, draftID)
+	if err != nil {
+		return nil, err
+	}
+	facts := buildDraftFacts(view)
+	template := &models.DraftSummary{Summary: templateSummary(facts), Source: constants.SummarySourceTemplate}
+	if s.cfg.LLMAPIKey == "" {
+		return template, nil
+	}
+	factsJSON, err := json.Marshal(facts)
+	if err != nil {
+		return template, nil
+	}
+	req := llm.Request{
+		SystemInstruction: &llm.Content{Parts: []llm.Part{{Text: aiSummaryPrompt}}},
+		Contents:          []llm.Content{{Role: constants.LLMRoleUser, Parts: []llm.Part{{Text: string(factsJSON)}}}},
+	}
+	for attempt := 0; attempt < summaryAttempts; attempt++ {
+		resp, err := s.llm.Generate(ctx, req)
+		if err != nil {
+			logger.Log.Warn("Draft summary model call failed", zap.Error(err))
+			return template, nil
+		}
+		var text strings.Builder
+		for _, part := range resp.Content.Parts {
+			text.WriteString(part.Text)
+		}
+		answer := strings.TrimSpace(text.String())
+		if answer == "" {
+			return template, nil
+		}
+		if numbersKnown(answer, string(factsJSON)) {
+			return &models.DraftSummary{Summary: answer, Source: constants.SummarySourceAI}, nil
+		}
+		logger.Log.Warn("Draft summary had a number outside the facts", zap.Int("attempt", attempt+1))
+	}
+	return template, nil
 }
 
 // upstreamError maps a model call failure: 429 when the model service is rate limited, else 502.

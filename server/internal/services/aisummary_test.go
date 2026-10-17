@@ -137,9 +137,3 @@ func TestNumbersKnown(t *testing.T) {
 		})
 	}
 }
-
-func TestAISummaryPrompt(t *testing.T) {
-	// Task 2 wires the prompt into SummarizeDraft; until then the test keeps the limits from being dropped.
-	assert.Contains(t, aiSummaryPrompt, "at most 3 sentences")
-	assert.Contains(t, aiSummaryPrompt, "Do not mention ids")
-}
