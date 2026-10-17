@@ -342,6 +342,82 @@ func TestPeopleService_RecordsCapacityChange(t *testing.T) {
 	})
 }
 
+func TestPeopleService_RecordsSkillChange(t *testing.T) {
+	const eng, qa = "eng", "qa"
+	names := map[string]string{eng: "Engineer", qa: "QA"}
+	skill := func(id string, level int, primary bool) models.PersonSkill {
+		return models.PersonSkill{PersonID: personID, ExpertiseID: id, Level: level, IsPrimary: primary,
+			Expertise: models.Expertise{BaseModel: models.BaseModel{ID: id}, Name: names[id]}}
+	}
+	input := func(id string, level int, primary bool) SkillInput {
+		return SkillInput{ExpertiseID: id, Level: level, Primary: primary}
+	}
+	person := func(skills ...models.PersonSkill) *models.Person {
+		return &models.Person{BaseModel: models.BaseModel{ID: personID}, Name: "Alex", Skills: skills}
+	}
+	tests := []struct {
+		name   string
+		before []models.PersonSkill
+		input  []SkillInput
+		want   *SkillChange // nil means no event
+	}{
+		{name: "level changed", before: []models.PersonSkill{skill(eng, 3, true)}, input: []SkillInput{input(eng, 4, true)},
+			want: &SkillChange{PersonID: personID, PersonName: "Alex",
+				Before: []SkillState{{"Engineer", 3, true}}, After: []SkillState{{"Engineer", 4, true}}}},
+		{name: "expertise removed", before: []models.PersonSkill{skill(eng, 3, true), skill(qa, 2, false)},
+			input: []SkillInput{input(eng, 3, true)}, want: &SkillChange{}},
+		{name: "primary moved", before: []models.PersonSkill{skill(eng, 3, true), skill(qa, 2, false)},
+			input: []SkillInput{input(eng, 3, false), input(qa, 2, true)}, want: &SkillChange{}},
+		{name: "same skills, other order", before: []models.PersonSkill{skill(eng, 3, true), skill(qa, 2, false)},
+			input: []SkillInput{input(qa, 2, false), input(eng, 3, true)}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo, events := new(MockPersonRepository), &recordedEvents{}
+			after := person()
+			for _, in := range tt.input {
+				after.Skills = append(after.Skills, skill(in.ExpertiseID, in.Level, in.Primary))
+			}
+			repo.On("FindWithSkills", mock.Anything, personID).Return(person(tt.before...), nil).Once()
+			repo.On("FindWithSkills", mock.Anything, personID).Return(after, nil).Once()
+			repo.On("CountExpertises", mock.Anything, mock.Anything).Return(int64(len(tt.input)), nil)
+			repo.On("ReplaceSkills", mock.Anything, personID, mock.Anything).Return(nil)
+			_, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig(), events).ReplaceSkills(context.Background(), personID, tt.input)
+			require.NoError(t, err)
+			if tt.want == nil {
+				assert.Empty(t, events.events)
+				return
+			}
+			require.Len(t, events.events, 1)
+			assert.Equal(t, constants.EventSkillChanged, events.events[0].Type)
+			change := events.events[0].Payload.(SkillChange)
+			if tt.want.PersonID != "" {
+				assert.Equal(t, *tt.want, change)
+			}
+		})
+	}
+
+	t.Run("rejected skills record nothing", func(t *testing.T) {
+		repo, events := new(MockPersonRepository), &recordedEvents{}
+		repo.On("FindWithSkills", mock.Anything, personID).Return(person(skill(eng, 3, true)), nil)
+		_, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig(), events).ReplaceSkills(context.Background(), personID,
+			[]SkillInput{input(eng, 3, true), input(qa, 2, true)})
+		require.Error(t, err)
+		repo.AssertNotCalled(t, "ReplaceSkills", mock.Anything, mock.Anything, mock.Anything)
+		assert.Empty(t, events.events)
+	})
+
+	t.Run("a failed event fails the save", func(t *testing.T) {
+		repo, events := new(MockPersonRepository), &recordedEvents{fail: stderrors.New("boom")}
+		repo.On("FindWithSkills", mock.Anything, personID).Return(person(skill(eng, 3, true)), nil)
+		repo.On("CountExpertises", mock.Anything, mock.Anything).Return(int64(1), nil)
+		repo.On("ReplaceSkills", mock.Anything, personID, mock.Anything).Return(nil)
+		_, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig(), events).ReplaceSkills(context.Background(), personID,
+			[]SkillInput{input(eng, 4, true)})
+		require.Error(t, err)
+	})
+}
+
 func TestProjectService_ReplacePhasesAndDemandsRecordEvents(t *testing.T) {
 	planner := asRole("kc-planner", constants.RolePlanner)
 	people := knownExpertisePeople{}

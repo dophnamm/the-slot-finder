@@ -60,6 +60,21 @@ type PersonCapacityChange struct {
 	Fields     []string `json:"fields"`
 }
 
+// SkillState is one skill in a SkillChange payload.
+type SkillState struct {
+	Expertise string `json:"expertise"`
+	Level     int    `json:"level"`
+	Primary   bool   `json:"primary"`
+}
+
+// SkillChange is the payload of SkillChanged.
+type SkillChange struct {
+	PersonID   string       `json:"person_id"`
+	PersonName string       `json:"person_name"`
+	Before     []SkillState `json:"before"`
+	After      []SkillState `json:"after"`
+}
+
 // TeamChange is the payload of TeamChanged; Change is constants.TeamChangeAdded or Removed.
 type TeamChange struct {
 	ProgramID string `json:"program_id"`

@@ -14,6 +14,8 @@ const (
 	// EventPersonCapacityChanged: a person's weekly hours, non-project hours, dates or active
 	// flag changed, so their capacity moved.
 	EventPersonCapacityChanged = "PersonCapacityChanged"
+	// EventSkillChanged: a person's skills (expertise, level or primary) changed.
+	EventSkillChanged = "SkillChanged"
 	// EventTeamChanged: a person joined or left a program's team.
 	EventTeamChanged = "TeamChanged"
 )
