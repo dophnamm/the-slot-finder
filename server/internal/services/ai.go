@@ -330,9 +330,8 @@ type aiFoundPerson struct {
 }
 
 // findProjects returns up to AIFindMaxResults projects the caller may read whose name contains query.
-// shortcut: it scans the first MaxPageSize projects, move the name filter into the repository past that.
 func (s *aiService) findProjects(ctx context.Context, query string) ([]aiFoundProject, error) {
-	page, err := s.projects.ListByStatus(ctx, ListProjectsInput{Page: 1, PageSize: constants.MaxPageSize})
+	page, err := s.projects.ListByStatus(ctx, ListProjectsInput{Page: 1, PageSize: constants.NoLimit})
 	if err != nil {
 		return nil, err
 	}
@@ -354,7 +353,6 @@ func (s *aiService) findProjects(ctx context.Context, query string) ([]aiFoundPr
 }
 
 // findPeople returns up to AIFindMaxResults people the caller may see whose name contains query.
-// shortcut: it scans the first MaxPageSize people, move the name filter into the repository past that.
 func (s *aiService) findPeople(ctx context.Context, query string) ([]aiFoundPerson, error) {
 	if _, err := s.authz.Require(ctx, CanViewPeople); err != nil {
 		return nil, err
@@ -363,7 +361,7 @@ func (s *aiService) findPeople(ctx context.Context, query string) ([]aiFoundPers
 	if err != nil {
 		return nil, err
 	}
-	page, err := s.people.List(ctx, ListPeopleInput{Page: 1, PageSize: constants.MaxPageSize, Limited: !scope.All, Among: scope.IDs()})
+	page, err := s.people.List(ctx, ListPeopleInput{Page: 1, PageSize: constants.NoLimit, Limited: !scope.All, Among: scope.IDs()})
 	if err != nil {
 		return nil, err
 	}
@@ -457,13 +455,13 @@ func aiToolDeclarations() []llm.FunctionDeclaration {
 		},
 		{
 			Name: constants.AIToolFindProjects,
-			Description: "Find projects by part of their name, up to 5, with id, program and deadline. " +
+			Description: fmt.Sprintf("Find projects by part of their name, up to %d, with id, program and deadline. ", constants.AIFindMaxResults) +
 				"Use it to turn a project name the user said into an id.",
 			Parameters: object([]string{"query"}, map[string]any{"query": str("Part of the project name")}),
 		},
 		{
 			Name: constants.AIToolFindPeople,
-			Description: "Find people by part of their name, up to 5, with id and primary expertise. " +
+			Description: fmt.Sprintf("Find people by part of their name, up to %d, with id and primary expertise. ", constants.AIFindMaxResults) +
 				"Use it to turn a person name the user said into an id.",
 			Parameters: object([]string{"query"}, map[string]any{"query": str("Part of the person name")}),
 		},
