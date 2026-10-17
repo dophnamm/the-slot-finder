@@ -65,6 +65,10 @@ func (m *MockChangeEventRepository) Finish(ctx context.Context, id, status strin
 	return m.Called(ctx, id, status, draftID, projectIDs).Error(0)
 }
 
+func (m *MockChangeEventRepository) Annotate(ctx context.Context, ids []string, note string) error {
+	return m.Called(ctx, ids, note).Error(0)
+}
+
 func (m *MockChangeEventRepository) RelinkDraft(ctx context.Context, fromDraftID, toDraftID string) error {
 	return m.Called(ctx, fromDraftID, toDraftID).Error(0)
 }
@@ -170,6 +174,7 @@ func TestAvailabilityService_RecordsAbsenceEvents(t *testing.T) {
 
 	t.Run("adding leave records AbsenceAdded", func(t *testing.T) {
 		repo, events := new(MockAbsenceRepository), &recordedEvents{}
+		repo.On("HasOverlapForPerson", mock.Anything, in.PersonID, in.FromDate, in.ToDate).Return(false, nil)
 		repo.On("Create", mock.Anything, mock.Anything).Return(nil)
 		_, err := ProvideAvailabilityService(repo, people, ProvideAuthzService(people), passthroughTx{}, events).
 			Create(asRole("kc-planner", constants.RolePlanner), in)
@@ -183,6 +188,7 @@ func TestAvailabilityService_RecordsAbsenceEvents(t *testing.T) {
 
 	t.Run("a failed event fails the save", func(t *testing.T) {
 		repo, events := new(MockAbsenceRepository), &recordedEvents{fail: stderrors.New("outbox down")}
+		repo.On("HasOverlapForPerson", mock.Anything, in.PersonID, in.FromDate, in.ToDate).Return(false, nil)
 		repo.On("Create", mock.Anything, mock.Anything).Return(nil)
 		_, err := ProvideAvailabilityService(repo, people, ProvideAuthzService(people), passthroughTx{}, events).
 			Create(asRole("kc-planner", constants.RolePlanner), in)
@@ -358,6 +364,7 @@ func TestProjectService_ReplacePhasesAndDemandsRecordEvents(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			repo, events := new(MockProjectRepository), &recordedEvents{}
 			project := buildAndTest(t)
+			project.Deadline = time.Date(2026, time.December, 31, 0, 0, 0, 0, time.UTC) // room for the slipped ends
 			repo.On("FindDetail", mock.Anything, projectID).Return(project, nil)
 			repo.On("CountDemandsInPhases", mock.Anything, mock.Anything).Return(int64(0), nil)
 			repo.On("DeletePhases", mock.Anything, mock.Anything).Return(nil)

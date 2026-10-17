@@ -325,6 +325,9 @@ func (s *projectService) Update(ctx context.Context, id string, in UpdateProject
 	if err := checkProjectDates(project.StartEarliest, project.Deadline, opUpdateProject); err != nil {
 		return nil, err
 	}
+	if err := checkPhasesInDates(project, in, opUpdateProject); err != nil {
+		return nil, err
+	}
 	// Only a changed date is checked, so a project saved before the window can still be renamed.
 	for _, date := range []*time.Time{in.StartEarliest, in.Deadline} {
 		if date == nil {
@@ -408,6 +411,9 @@ func (s *projectService) ReplacePhases(ctx context.Context, projectID string, ph
 		}
 		if moved {
 			if err := s.requireInWindow(opReplacePhases, resourcePhase, in.StartWeek, in.EndWeek); err != nil {
+				return nil, err
+			}
+			if err := requireInProject(project, opReplacePhases, in.StartWeek, in.EndWeek); err != nil {
 				return nil, err
 			}
 		}
@@ -499,6 +505,12 @@ func (s *projectService) UpdatePhase(ctx context.Context, phaseID string, in Upd
 		}
 		if err := s.requireInWindow(opUpdatePhase, resourcePhase, row.StartWeek, row.EndWeek); err != nil {
 			return nil, err
+		}
+		// Phases shifted by a slip may pass the deadline: that is how a project becomes at risk.
+		if i == 0 {
+			if err := requireInProject(project, opUpdatePhase, row.StartWeek, row.EndWeek); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -667,6 +679,30 @@ func (s *projectService) requireInWindow(op, resource string, weeks ...isoweek.W
 		if distance := isoweek.WeeksBetween(current, week); max(distance, -distance) > s.cfg.ProjectWindowWeeks {
 			return errors.NewAppError(constants.WeekOutOfWindow, fmt.Sprintf(constants.MsgWeekOutOfWindowFormat, s.cfg.ProjectWindowWeeks),
 				errors.ErrorTypeValidation, http.StatusBadRequest).WithOperation(op).WithResource(resource)
+		}
+	}
+	return nil
+}
+
+// requireInProject refuses a phase week before the project's start week or after its deadline week.
+func requireInProject(project *models.Project, op string, weeks ...isoweek.Week) error {
+	for _, week := range weeks {
+		if week.Before(project.StartWeek()) || week.After(project.DeadlineWeek()) {
+			return errors.NewAppError(constants.PhaseOutsideProject, constants.MsgPhaseOutsideProject,
+				errors.ErrorTypeValidation, http.StatusBadRequest).WithOperation(op).WithResource(resourcePhase)
+		}
+	}
+	return nil
+}
+
+// checkPhasesInDates refuses a changed start or deadline that would leave a phase outside the
+// project. Only the side being changed is checked, so an at-risk project can still be edited.
+func checkPhasesInDates(project *models.Project, in UpdateProjectInput, op string) error {
+	for _, phase := range project.Phases {
+		if (in.StartEarliest != nil && phase.StartWeek.Before(project.StartWeek())) ||
+			(in.Deadline != nil && phase.EndWeek.After(project.DeadlineWeek())) {
+			return errors.NewAppError(constants.ProjectDatesExcludePhases, constants.MsgProjectDatesExcludePhases,
+				errors.ErrorTypeValidation, http.StatusBadRequest).WithOperation(op).WithResource(resourceProject)
 		}
 	}
 	return nil

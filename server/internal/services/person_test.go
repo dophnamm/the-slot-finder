@@ -200,6 +200,22 @@ func TestPeopleService_Create(t *testing.T) {
 			input:    func(in *CreatePersonInput) { in.StartDate = &start; in.EndDate = &before },
 			wantCode: constants.PersonDatesInvalid, wantStatus: http.StatusBadRequest,
 		},
+		{
+			name:  "non-project hours above weekly hours",
+			input: func(in *CreatePersonInput) { in.NonProjectHours = new(41.0) },
+			setup: func(repo *MockPersonRepository) {
+				repo.On("CountExpertises", mock.Anything, mock.Anything).Return(int64(2), nil)
+			},
+			wantCode: constants.PersonNonProjectHoursInvalid, wantStatus: http.StatusBadRequest,
+		},
+		{
+			name:  "default non-project hours above a short week",
+			input: func(in *CreatePersonInput) { in.WeeklyHours = 3 },
+			setup: func(repo *MockPersonRepository) {
+				repo.On("CountExpertises", mock.Anything, mock.Anything).Return(int64(2), nil)
+			},
+			wantCode: constants.PersonNonProjectHoursInvalid, wantStatus: http.StatusBadRequest,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -240,6 +256,16 @@ func TestPeopleService_Update(t *testing.T) {
 		})
 		require.NoError(t, err)
 		repo.AssertExpectations(t)
+	})
+
+	t.Run("weekly hours cut below the stored non-project hours", func(t *testing.T) {
+		repo := new(MockPersonRepository)
+		existing := &models.Person{BaseModel: models.BaseModel{ID: personID}, WeeklyHours: 40, NonProjectHours: 8}
+		repo.On("FindWithSkills", mock.Anything, personID).Return(existing, nil)
+		_, err := ProvidePeopleService(repo, passthroughTx{}, testPeopleConfig(), &recordedEvents{}).Update(context.Background(), personID,
+			UpdatePersonInput{WeeklyHours: new(6.0)})
+		requireAppError(t, err, constants.PersonNonProjectHoursInvalid, http.StatusBadRequest)
+		repo.AssertNotCalled(t, "Save", mock.Anything, mock.Anything)
 	})
 
 	t.Run("not found", func(t *testing.T) {

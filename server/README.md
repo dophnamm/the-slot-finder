@@ -106,11 +106,11 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 |---|---|---|---|
 | GET | `/me` | Current user, role, programs they assist, enabled features (e.g. the AI assistant) | everyone |
 | GET | `/people` | List people with their skills | planner, lead (team) |
-| POST | `/people` | Create a person (start and end dates, location, timezone, non-project hours) | planner |
+| POST | `/people` | Create a person (start and end dates, location, timezone, non-project hours, which must not exceed weekly hours: `400 PERSON_NON_PROJECT_HOURS_INVALID`) | planner |
 | GET | `/people/{id}` | One person with their expertise, for the person page | planner, lead (team; else `403`) |
 | PATCH | `/people/{id}` | Edit a person: only the sent fields; `start_date` and `end_date` accept null to clear them | planner |
 | PUT | `/people/{id}/skills` | Replace expertise and levels (exactly one primary) | planner |
-| GET, POST | `/people/{id}/absences` | Leave calendar. A person's own absence is always `planned`; planners choose the status. Leave read from a calendar feed has `source = calendar` | planner, the person themselves |
+| GET, POST | `/people/{id}/absences` | Leave calendar. A person's own absence is always `planned`; planners choose the status. Dates that overlap another of the person's absences get `409 ABSENCE_OVERLAPS`. Leave read from a calendar feed has `source = calendar` | planner, the person themselves |
 | DELETE | `/absences/{id}` | Remove an absence, or a holiday (planner) | planner, the person themselves |
 | POST | `/absences/{id}/approve` | Approve a planned absence; records a change event | planner |
 | GET | `/people/{id}/assignments?from=&to=` | Everything a person owns in the baseline: project, demand, **expertise**, kind, hours per week | planner, lead (team), the person themselves |
@@ -143,8 +143,8 @@ A manager (`lead`) reads only the programs they lead or lead a project in, and t
 | GET | `/projects/{id}` | Project record with its phases, its demand (each row with the weeks it may be staffed in) and the program's lead | planner, lead |
 | PATCH | `/projects/{id}` | Edit a project, including `scope_points`, `done_points` and `confidence`. Moving the deadline emits `ProjectSlipped`. A changed date outside `PROJECT_WINDOW_WEEKS` gets `400 WEEK_OUT_OF_WINDOW` | planner, lead (own) |
 | POST | `/projects/{id}/actions/{hold\|resume\|complete\|cancel}` | Change project state through an action | planner, lead (own) |
-| GET, PUT | `/projects/{id}/phases` | Ordered phases of a project (PUT replaces the whole list; removing a phase that still has demand gets `409 PHASE_IN_USE`; a changed week outside `PROJECT_WINDOW_WEEKS` gets `400 WEEK_OUT_OF_WINDOW`, but a rename of an old phase still works) | planner, lead (own) |
-| PATCH | `/phases/{id}` | Edit a phase. Moving its end week later shifts every later phase by the same weeks and emits `PhaseSlipped`. Returns every phase it changed. A changed week outside `PROJECT_WINDOW_WEEKS` gets `400 WEEK_OUT_OF_WINDOW` | planner, lead (own) |
+| GET, PUT | `/projects/{id}/phases` | Ordered phases of a project (PUT replaces the whole list; removing a phase that still has demand gets `409 PHASE_IN_USE`; a changed week outside `PROJECT_WINDOW_WEEKS` gets `400 WEEK_OUT_OF_WINDOW`, and a new or moved phase outside the project's start and deadline weeks gets `400 PHASE_OUTSIDE_PROJECT`, but a rename of an old phase still works) | planner, lead (own) |
+| PATCH | `/phases/{id}` | Edit a phase. Moving its end week later shifts every later phase by the same weeks and emits `PhaseSlipped`. Returns every phase it changed. A changed week outside `PROJECT_WINDOW_WEEKS` gets `400 WEEK_OUT_OF_WINDOW`; the edited phase must lie within the project's start and deadline weeks (`400 PHASE_OUTSIDE_PROJECT`), but phases shifted by the slip may pass the deadline | planner, lead (own) |
 | PUT | `/projects/{id}/demands` | Staffing demand: budget hours per expertise and level, each with an optional `phase_id`, a `profile`, required and preferred tags, and an optional preferred person. `400 DEMAND_HOURS_STEP` when a total is not a multiple of `PLANNING_HOUR_STEP`; `409 DEMAND_IN_USE` when a removed demand holds staffed hours in past weeks of the baseline | planner, lead (own) |
 
 **Planning and insights**
@@ -163,6 +163,7 @@ A manager (`lead`) reads only the programs they lead or lead a project in, and t
 | GET, DELETE | `/scenarios/{id}` | A scenario with its changes against the baseline it was built on (week by week), churn, unmet demand and the projects planned again; or delete it | planner |
 | POST | `/scenarios/{id}/rerun` | Compute a scenario again, with the same assumptions, against the baseline in force | planner |
 | GET | `/insights/heatmap?from=&to=&expertise=&program_id=` | Person × week matrix. Each cell holds total hours plus hours per expertise; `expertise=` (an expertise id) keeps people who hold that expertise or work on it in the range; `program_id=` keeps the program's team (`403` for a manager who may not read the program, `404` for an unknown one). Each cell also has capacity, utilization, its band, a tentative flag for planned leave and `actual_hours`: the hours worked that week from imported timesheets, `null` when none were imported. Load counts plannable projects only, from the current ISO week on (section 5) | planner, lead (team) |
+| GET | `/insights/capacity-forecast?from=&to=` | Per expertise (the primary skill of the people) × ISO week: `capacity`, `load`, `free_hours` (capacity − load per person, never below 0), `unmet_hours` (confirmed demand of planned and active projects the baseline does not cover, spread flat over the rest of its window), `pipeline_hours` (the same for `incoming` projects × `PIPELINE_CONFIDENCE_PERCENT`), `shortfall_hours` (unmet + pipeline − free, at least 0) and `overloaded` (load above capacity) and `people`: the expertise's people in that week, highest load first, each `person_id`, `name`, `capacity`, `load`, `free_hours`, `utilization` (as in the heatmap, `null` without capacity), `band` and `overloaded`; people with no capacity and no load are left out. `sustained_overload` is the first run of `SUSTAINED_OVERLOAD_WEEKS` or more overloaded weeks, else `null`. Weeks default and are capped like the heatmap's. A manager gets their teams' capacity and the demand of the programs they may read | planner, lead (team) |
 | GET | `/insights/risks` | Understaffed and at-risk projects, delivery behind time, overloaded people in the next `HEATMAP_DEFAULT_WEEKS` weeks (a manager sees only their team's), and before them `sustained_overload`: each person over 100 % for `SUSTAINED_OVERLOAD_WEEKS` or more weeks in a row (`person`, `from_week`, `weeks`, the first such run); likely over budget and overdue milestones later. Load counts plannable projects only, from the current ISO week on (section 5) | planner, lead |
 | POST | `/ai/ask` | Ask AI. Body `{ question }` (1–500 characters) and optional `page_context` (up to 200). Returns `{ answer }`. The model reads data only through read-only tools that run with the caller's permissions (section 9). `503 AI_NOT_CONFIGURED` when the chosen provider's key is empty; `429 AI_RATE_LIMITED` when the model service is rate limited, with `data.retry_after` (seconds) when it sends one; `502 AI_UPSTREAM_FAILED` for other model failures. Heavy rate limit | planner, lead (own programs, through the tools) |
 | GET | `/events?program_id=` | Change history and processing status; the program page uses it for the re-plan banner. A manager sees only events on the projects of their programs and events about themselves or the people in their teams (`person_id` in the payload); a manager without a person record gets an empty page. A planner sees all | planner, lead |
@@ -281,6 +282,8 @@ Error example (HTTP 409):
 - `NO_TAG_MATCH`: nobody with the expertise and level has every required tag
 - `NO_CAPACITY_BEFORE_DEADLINE`
 - `BLOCKED_BY_LOCKED`
+- `BLOCKED_BY_EXPERTISE_LIMIT`: people had free hours, but a new expertise would pass `maxExpertisesPerPersonWeek`
+- `BELOW_MIN_HOURS`: free hours exist only in weeks under `minHoursPerWeek`
 - `NO_ONE_IN_TEAM`: nobody in the program's team can take it (the server fills `candidates` with the team)
 
 **Greedy strategy (MVP):**
@@ -411,6 +414,7 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `UTILIZATION_UNDERUSED_BELOW` · `UTILIZATION_NEAR_FULL_FROM` | Utilization band limits (overloaded is always over 100 %) | 0.5 · 0.85 |
 | `SCOPE_LAG_THRESHOLD` | Percentage points by which Scope % may trail Time % before **behind on delivery** (not scope points) | 20 |
 | `SUSTAINED_OVERLOAD_WEEKS` | Consecutive weeks over 100 % for **sustained overload** | 3 |
+| `PIPELINE_CONFIDENCE_PERCENT` | Weight of an `incoming` project's demand in the capacity forecast, until projects carry their own `confidence` | 50 |
 | `DRAFT_ALTERNATIVES_LIMIT` | People a staffing draft offers to swap in for an assignment | 5 |
 | `APP_ENV` | Runtime environment; an unset value runs as `production` (`.env.example` sets `development`) | production |
 | `AWS_SES_FROM_EMAIL` | Sender address of every email (a verified SES address) | empty |
@@ -431,6 +435,7 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 |---|---|---|---|
 | `get_heatmap` | `from`, `to`, `expertise_id`, `program_id` | insights: heatmap | no |
 | `get_risks` | none | insights: risk lists | no |
+| `get_capacity_forecast` | `from`, `to` | insights: capacity forecast by expertise | no |
 | `list_open_drafts` | none | staffing: open drafts | no |
 | `get_project` | `project_id` | programs: one project | no |
 | `get_program_overview` | `program_id` | insights: a program's metrics | no |
@@ -481,7 +486,6 @@ Each question is sent alone, with the page path as context, so there is no chat 
 | `get_person_schedule` | planning: a person's assignments | chat, Q&A | no |
 | `get_program_overview` | insights: a program's metrics | chat, Q&A | no |
 | `get_risks` | insights: risk lists | chat, Q&A | no |
-| `get_capacity_forecast` | insights: capacity forecast by expertise | chat, Q&A | no |
 | `get_staffing_draft` | planning: a draft's diff, reasons and unmet | chat | no |
 | `create_scenario` | planning: create a scenario from `assumptions` | what-if chat | a scenario |
 | `get_scenario_diff` | planning: compare a scenario with the baseline | what-if chat | no |
