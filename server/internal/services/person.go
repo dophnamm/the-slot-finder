@@ -450,6 +450,7 @@ func samePersonDate(a, b *time.Time) bool {
 }
 
 // sameSkills is true when both have the same expertises, each with the same level and primary flag.
+// Callers validate with checkSkills first, so repeated expertises are not expected (the comparison is undefined for them).
 func sameSkills(a, b []models.PersonSkill) bool {
 	if len(a) != len(b) {
 		return false
