@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -26,6 +27,9 @@ func (f *fakeLLM) Generate(_ context.Context, req llm.Request) (*llm.Response, e
 	f.requests = append(f.requests, req)
 	if f.err != nil {
 		return nil, f.err
+	}
+	if len(f.replies) == 0 {
+		return nil, fmt.Errorf("fakeLLM has no reply for call %d", len(f.requests))
 	}
 	text := f.replies[min(len(f.requests), len(f.replies))-1]
 	return &llm.Response{Content: llm.Content{Parts: []llm.Part{{Text: text}}}}, nil
