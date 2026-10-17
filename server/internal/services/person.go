@@ -4,6 +4,7 @@ import (
 	"context"
 	stderrors "errors"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -234,18 +235,36 @@ func (s *peopleService) Update(ctx context.Context, id string, in UpdatePersonIn
 }
 
 func (s *peopleService) ReplaceSkills(ctx context.Context, id string, skills []SkillInput) (*models.Person, error) {
-	if _, err := s.Get(ctx, id); err != nil {
+	before, err := s.Get(ctx, id)
+	if err != nil {
 		return nil, err
 	}
 	if err := s.checkSkills(ctx, skills, opReplaceSkills); err != nil {
 		return nil, err
 	}
-	replace := func(ctx context.Context) error { return s.repo.ReplaceSkills(ctx, id, toSkillModels(id, skills)) }
-	if err := s.tx.Do(ctx, replace); err != nil {
+	result := before
+	// A skill change is an event in the same transaction, so a re-plan sees it.
+	err = s.tx.Do(ctx, func(ctx context.Context) error {
+		replacement := toSkillModels(id, skills)
+		if err := s.repo.ReplaceSkills(ctx, id, replacement); err != nil {
+			return err
+		}
+		if sameSkills(before.Skills, replacement) {
+			return nil
+		}
+		after, err := s.repo.FindWithSkills(ctx, id)
+		if err != nil {
+			return err
+		}
+		result = after
+		return s.events.Record(ctx, ChangeInput{Type: constants.EventSkillChanged, Payload: SkillChange{
+			PersonID: id, PersonName: before.Name, Before: skillStates(before.Skills), After: skillStates(after.Skills)}})
+	})
+	if err != nil {
 		return nil, errors.DatabaseError(constants.MsgPersonUpdateFailed, err).
 			WithOperation(opReplaceSkills).WithResource(resourcePerson)
 	}
-	return s.Get(ctx, id)
+	return result, nil
 }
 
 func (s *peopleService) ListExpertises(ctx context.Context) ([]models.Expertise, error) {
@@ -428,4 +447,32 @@ func samePersonDate(a, b *time.Time) bool {
 		return a == b
 	}
 	return sameDate(*a, *b)
+}
+
+// sameSkills is true when both have the same expertises, each with the same level and primary flag.
+func sameSkills(a, b []models.PersonSkill) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	byExpertise := make(map[string]models.PersonSkill, len(a))
+	for _, skill := range a {
+		byExpertise[skill.ExpertiseID] = skill
+	}
+	for _, skill := range b {
+		other, ok := byExpertise[skill.ExpertiseID]
+		if !ok || other.Level != skill.Level || other.IsPrimary != skill.IsPrimary {
+			return false
+		}
+	}
+	return true
+}
+
+// skillStates maps skills to their payload form, sorted by expertise name.
+func skillStates(skills []models.PersonSkill) []SkillState {
+	states := make([]SkillState, 0, len(skills))
+	for _, skill := range skills {
+		states = append(states, SkillState{Expertise: skill.Expertise.Name, Level: skill.Level, Primary: skill.IsPrimary})
+	}
+	sort.Slice(states, func(i, j int) bool { return states[i].Expertise < states[j].Expertise })
+	return states
 }

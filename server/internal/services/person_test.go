@@ -357,3 +357,30 @@ func (m *MockPersonRepository) ListByEmails(ctx context.Context, emails []string
 	args := m.Called(ctx, emails)
 	return args.Get(0).([]models.Person), args.Error(1)
 }
+
+func TestSameSkills(t *testing.T) {
+	skill := func(id string, level int, primary bool) models.PersonSkill {
+		return models.PersonSkill{ExpertiseID: id, Level: level, IsPrimary: primary}
+	}
+	tests := []struct {
+		name string
+		a, b []models.PersonSkill
+		want bool
+	}{
+		{name: "both empty", want: true},
+		{name: "same order", a: []models.PersonSkill{skill("a", 1, true), skill("b", 2, false)},
+			b: []models.PersonSkill{skill("a", 1, true), skill("b", 2, false)}, want: true},
+		{name: "other order", a: []models.PersonSkill{skill("a", 1, true), skill("b", 2, false)},
+			b: []models.PersonSkill{skill("b", 2, false), skill("a", 1, true)}, want: true},
+		{name: "level differs", a: []models.PersonSkill{skill("a", 1, true)}, b: []models.PersonSkill{skill("a", 2, true)}},
+		{name: "primary moved", a: []models.PersonSkill{skill("a", 1, true), skill("b", 2, false)},
+			b: []models.PersonSkill{skill("a", 1, false), skill("b", 2, true)}},
+		{name: "extra expertise", a: []models.PersonSkill{skill("a", 1, true)},
+			b: []models.PersonSkill{skill("a", 1, true), skill("b", 2, false)}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, sameSkills(tt.a, tt.b))
+		})
+	}
+}
