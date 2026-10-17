@@ -198,7 +198,7 @@ func Bench(weeks []BenchWeek, underusedBelow float64) (freeHours float64, onBenc
 		return 0, false
 	}
 	for _, w := range weeks {
-		if w.Capacity <= epsilon || w.Load/w.Capacity >= underusedBelow-epsilon {
+		if w.Capacity <= epsilon || w.Load/w.Capacity >= underusedBelow {
 			return 0, false
 		}
 		freeHours += w.Capacity - w.Load
