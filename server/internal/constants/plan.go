@@ -17,6 +17,9 @@ const (
 // AssumptionTypes lists the assumption types a scenario accepts.
 var AssumptionTypes = []string{AssumptionShiftProject, AssumptionAddAbsence}
 
+// MaxAbsenceHoursPerDay is the most hours of capacity a day of leave can take.
+const MaxAbsenceHoursPerDay = 24
+
 // Plan statuses. A draft is published (it becomes the baseline) or rejected; a published
 // baseline is superseded by the next one.
 const (

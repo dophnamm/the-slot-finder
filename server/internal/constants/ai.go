@@ -63,8 +63,6 @@ const (
 	AIScenarioMaxChanges = 5
 	// AIScenarioDemandSeparator joins the project and expertise names of a change.
 	AIScenarioDemandSeparator = " - "
-	// MaxAbsenceHoursPerDay is the most hours of capacity a day of leave can take.
-	MaxAbsenceHoursPerDay = 24
 	// AIScenarioNameMaxRunes is how much of the question goes into the scenario name.
 	AIScenarioNameMaxRunes = 60
 )

@@ -11,12 +11,13 @@ import (
 // AssumptionRequest is one hypothetical change of a scenario: shift_project needs project_id
 // and weeks; add_absence needs person_id, from_date, to_date and hours_per_day.
 type AssumptionRequest struct {
-	Type        string  `json:"type" validate:"required,assumption_type" enums:"shift_project,add_absence"`
-	ProjectID   string  `json:"project_id" validate:"omitempty,uuid"`
-	Weeks       int     `json:"weeks" example:"2"`
-	PersonID    string  `json:"person_id" validate:"omitempty,uuid"`
-	FromDate    string  `json:"from_date" validate:"omitempty,isodate" example:"2026-10-26"`
-	ToDate      string  `json:"to_date" validate:"omitempty,isodate" example:"2026-11-06"`
+	Type      string `json:"type" validate:"required,assumption_type" enums:"shift_project,add_absence"`
+	ProjectID string `json:"project_id" validate:"omitempty,uuid"`
+	Weeks     int    `json:"weeks" example:"2"`
+	PersonID  string `json:"person_id" validate:"omitempty,uuid"`
+	FromDate  string `json:"from_date" validate:"omitempty,isodate" example:"2026-10-26"`
+	ToDate    string `json:"to_date" validate:"omitempty,isodate" example:"2026-11-06"`
+	// shortcut: DTO tags use lte=24, change both with constants.MaxAbsenceHoursPerDay
 	HoursPerDay float64 `json:"hours_per_day" validate:"omitempty,gt=0,lte=24" example:"8"`
 }
 
