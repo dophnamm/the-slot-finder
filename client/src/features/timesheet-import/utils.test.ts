@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '@/shared/api/types'
-import { defaultRange, problemLabel, rowProblems, templateFileName } from './utils'
+import { defaultRange, rowProblems, templateFileName } from './utils'
 
 const PROBLEM = { line: 5, column: 'person_email', code: 'PERSON_UNKNOWN' }
 
@@ -30,10 +30,5 @@ describe('timesheet import utils', () => {
     expect(rowProblems(invalid)).toEqual([PROBLEM])
     expect(rowProblems(other)).toEqual([])
     expect(rowProblems(null)).toEqual([])
-  })
-
-  it('labels known codes and leaves unknown ones', () => {
-    expect(problemLabel('PERSON_UNKNOWN')).toBe('No person has this email.')
-    expect(problemLabel('SOMETHING_NEW')).toBeNull()
   })
 })

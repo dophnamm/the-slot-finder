@@ -1,10 +1,9 @@
 import { useTranslation } from '@/shared/i18n'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
-import { problemLabel } from '../../utils'
 import type { ProblemTableProps } from './types'
 
 /** The problems of a failed import: line, column and what is wrong. */
-export function ProblemTable({ problems }: ProblemTableProps) {
+export function ProblemTable({ problems, labels }: ProblemTableProps) {
   const { t } = useTranslation()
 
   return (
@@ -18,7 +17,7 @@ export function ProblemTable({ problems }: ProblemTableProps) {
       </TableHeader>
       <TableBody>
         {problems.map((problem) => {
-          const label = problemLabel(problem.code)
+          const label = labels[problem.code]
           return (
             <TableRow key={`${problem.line}-${problem.column}-${problem.code}`}>
               <TableCell className="tabular-nums">{problem.line}</TableCell>
