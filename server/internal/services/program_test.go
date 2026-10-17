@@ -73,13 +73,13 @@ const (
 	otherPersonID2 = "0192f3a4-0000-7000-8000-0000000000d3"
 )
 
-// leadPeople links the subject kc-lead to leadPersonID and knows every person id.
+// leadPeople links the subject kc-manager to leadPersonID and knows every person id.
 type leadPeople struct {
 	PeopleService
 }
 
 func (leadPeople) FindForPrincipal(_ context.Context, principal request.Principal) (*models.Person, error) {
-	if principal.Subject == "kc-lead" {
+	if principal.Subject == "kc-manager" {
 		return &models.Person{BaseModel: models.BaseModel{ID: leadPersonID}}, nil
 	}
 	return nil, nil
@@ -115,9 +115,9 @@ func TestProgramService_ApplyAction(t *testing.T) {
 	}{
 		{name: "planner holds an open program", ctx: asRole("kc-planner", constants.RolePlanner), program: program(constants.ProgramStatusOpen, nil),
 			action: constants.ProgramActionHold, wantStatus: constants.ProgramStatusPending},
-		{name: "lead resumes own program", ctx: asRole("kc-lead", constants.RoleLead), program: program(constants.ProgramStatusPending, &ownLead),
+		{name: "manager resumes own program", ctx: asRole("kc-manager", constants.RoleManager), program: program(constants.ProgramStatusPending, &ownLead),
 			action: constants.ProgramActionResume, wantStatus: constants.ProgramStatusOpen},
-		{name: "lead cannot touch another lead's program", ctx: asRole("kc-lead", constants.RoleLead), program: program(constants.ProgramStatusOpen, &otherLead),
+		{name: "manager cannot touch another manager's program", ctx: asRole("kc-manager", constants.RoleManager), program: program(constants.ProgramStatusOpen, &otherLead),
 			action: constants.ProgramActionHold, wantErr: http.StatusForbidden},
 		{name: "close needs closing first", ctx: asRole("kc-planner", constants.RolePlanner), program: program(constants.ProgramStatusOpen, nil),
 			action: constants.ProgramActionClose, wantErr: http.StatusConflict},
@@ -151,13 +151,13 @@ func TestProgramService_Create(t *testing.T) {
 	someone := otherPersonID2
 	unknown := "0192f3a4-0000-7000-8000-0000000000ff"
 
-	t.Run("a lead becomes the lead of the program they create", func(t *testing.T) {
+	t.Run("a manager becomes the lead of the program they create", func(t *testing.T) {
 		repo := new(MockProgramRepository)
 		repo.On("Create", mock.Anything, mock.MatchedBy(func(p *models.Program) bool {
 			return p.LeadID != nil && *p.LeadID == leadPersonID && p.Status == constants.ProgramStatusOpen && p.Objectives != nil
 		})).Return(nil)
 		repo.On("FindWithLead", mock.Anything, mock.Anything).Return(program(constants.ProgramStatusOpen, nil), nil)
-		_, err := newProgramService(repo).Create(asRole("kc-lead", constants.RoleLead),
+		_, err := newProgramService(repo).Create(asRole("kc-manager", constants.RoleManager),
 			CreateProgramInput{Name: "P", Client: "C", StartDate: start, EndDate: end, LeadID: &someone})
 		require.NoError(t, err)
 		repo.AssertExpectations(t)
@@ -189,10 +189,10 @@ func TestProgramService_Update_LeadChange(t *testing.T) {
 	ownLead := leadPersonID
 	someone := otherPersonID2
 
-	t.Run("a lead edits own program but cannot hand it over", func(t *testing.T) {
+	t.Run("a manager edits own program but cannot hand it over", func(t *testing.T) {
 		repo := new(MockProgramRepository)
 		repo.On("FindWithLead", mock.Anything, programID).Return(program(constants.ProgramStatusOpen, &ownLead), nil)
-		_, err := newProgramService(repo).Update(asRole("kc-lead", constants.RoleLead), programID,
+		_, err := newProgramService(repo).Update(asRole("kc-manager", constants.RoleManager), programID,
 			UpdateProgramInput{LeadID: OptionalString{Set: true, Value: &someone}})
 		requireStatus(t, err, http.StatusForbidden)
 	})

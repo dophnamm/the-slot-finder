@@ -98,7 +98,7 @@ func TestEventService_ListScopesManager_Postgres(t *testing.T) {
 	people := managerPeople{self: &manager}
 	service := ProvideEventService(repositories.ProvideChangeEventRepository(pdb), repositories.ProvideProjectRepository(pdb),
 		ProvideAuthzService(people), clock.NewFixed(eventTime))
-	lead := asRole("kc-lead", constants.RoleLead)
+	lead := asRole("kc-manager", constants.RoleManager)
 
 	page, err := service.List(lead, ListEventsInput{Page: 1, PageSize: 20})
 	require.NoError(t, err)

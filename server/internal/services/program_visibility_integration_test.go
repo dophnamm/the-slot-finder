@@ -25,7 +25,7 @@ func TestProgramVisibility_Postgres(t *testing.T) {
 	dbtest.ApplyMigrations(t, pdb)
 
 	person := func(name string) models.Person {
-		p := models.Person{BaseModel: models.NewBaseModel(), Name: name, Email: name + "@example.test", Role: constants.RoleLead,
+		p := models.Person{BaseModel: models.NewBaseModel(), Name: name, Email: name + "@example.test", Role: constants.RoleManager,
 			WeeklyHours: 40, Active: true}
 		require.NoError(t, pdb.Create(&p).Error)
 		return p
@@ -54,7 +54,7 @@ func TestProgramVisibility_Postgres(t *testing.T) {
 	projects, programRepo := repositories.ProvideProjectRepository(pdb), repositories.ProvideProgramRepository(pdb)
 	programs := ProvideProgramService(programRepo, projects, leadPeople{}, authz, db.ProvideTxManager(pdb), &recordedEvents{})
 	projectService := ProvideProjectService(projects, programRepo, knownExpertisePeople{}, authz, db.ProvideTxManager(pdb), &recordedEvents{}, projectConfig(), clock.NewFixed(acceptedAt))
-	manager, planner := asRole("kc-lee", constants.RoleLead), asRole("kc-planner", constants.RolePlanner)
+	manager, planner := asRole("kc-lee", constants.RoleManager), asRole("kc-planner", constants.RolePlanner)
 	page := ListProgramsInput{Page: 1, PageSize: 20}
 
 	listed, err := programs.List(manager, page)

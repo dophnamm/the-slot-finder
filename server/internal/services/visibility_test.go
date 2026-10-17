@@ -38,7 +38,7 @@ func (t ledTeams) PersonIDsLedBy(_ context.Context, leadID string) ([]string, er
 
 func newVisibilityAuthz() AuthzService {
 	return ProvideTeamAuthzService(
-		selfFinder{"kc-lead": managerPersonID, "kc-specialist": selfPersonID},
+		selfFinder{"kc-manager": managerPersonID, "kc-specialist": selfPersonID},
 		ledTeams{managerPersonID: {teamMemberID}},
 	)
 }
@@ -51,7 +51,7 @@ func TestAuthzService_VisiblePeople(t *testing.T) {
 	assert.True(t, planner.All)
 	assert.True(t, planner.Allows(outsiderPersonID))
 
-	lead, err := authz.VisiblePeople(asRole("kc-lead", constants.RoleLead))
+	lead, err := authz.VisiblePeople(asRole("kc-manager", constants.RoleManager))
 	require.NoError(t, err)
 	assert.False(t, lead.All)
 	assert.True(t, lead.Allows(teamMemberID), "someone in a team of a program they lead")
@@ -66,7 +66,7 @@ func TestAuthzService_VisiblePeople(t *testing.T) {
 
 func TestAuthzService_RequireVisiblePerson(t *testing.T) {
 	authz := newVisibilityAuthz()
-	lead := asRole("kc-lead", constants.RoleLead)
+	lead := asRole("kc-manager", constants.RoleManager)
 
 	_, err := authz.RequireVisiblePerson(lead, teamMemberID)
 	require.NoError(t, err)

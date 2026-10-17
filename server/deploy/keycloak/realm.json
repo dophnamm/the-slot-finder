@@ -12,7 +12,7 @@
   "roles": {
     "realm": [
       { "name": "planner", "description": "Coordinates capacity; can do everything" },
-      { "name": "lead", "description": "Manages own programs and projects" },
+      { "name": "manager", "description": "Manages own programs and projects" },
       { "name": "specialist", "description": "Views own schedule and reports leave" }
     ]
   },
@@ -77,14 +77,14 @@
       "realmRoles": ["planner"]
     },
     {
-      "username": "lead",
-      "email": "lead@slot-finder.local",
-      "firstName": "Lee",
-      "lastName": "Lead",
+      "username": "manager",
+      "email": "manager@slot-finder.local",
+      "firstName": "Mia",
+      "lastName": "Manager",
       "enabled": true,
       "emailVerified": true,
       "credentials": [{ "type": "password", "value": "${KEYCLOAK_DEMO_PASSWORD}", "temporary": false }],
-      "realmRoles": ["lead"]
+      "realmRoles": ["manager"]
     },
     {
       "username": "specialist",

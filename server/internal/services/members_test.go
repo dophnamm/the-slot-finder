@@ -60,7 +60,7 @@ func TestProgramMembers(t *testing.T) {
 }
 
 func TestInsightsService_ProgramMembers(t *testing.T) {
-	lead := asRole("kc-lead", constants.RoleLead)
+	lead := asRole("kc-manager", constants.RoleManager)
 
 	t.Run("members of the program from the baseline", func(t *testing.T) {
 		checkout := &models.Project{BaseModel: models.BaseModel{ID: checkoutID}, ProgramID: metricsProgramID, Name: "Checkout"}

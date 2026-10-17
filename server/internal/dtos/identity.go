@@ -11,7 +11,7 @@ type CurrentUserResponse struct {
 	Username string `json:"username" example:"planner"`
 	Name     string `json:"name" example:"Pat Planner"`
 	Email    string `json:"email" example:"planner@slot-finder.local"`
-	Role     string `json:"role" example:"planner" enums:"planner,lead,specialist"`
+	Role     string `json:"role" example:"planner" enums:"planner,manager,specialist"`
 	// PersonID is the user's person record, or null when the account has none.
 	PersonID *string `json:"person_id" example:"0192f3a4-0000-7000-8000-0000000000aa"`
 }

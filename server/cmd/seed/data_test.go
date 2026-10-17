@@ -34,7 +34,7 @@ func TestSeedData(t *testing.T) {
 		assert.Equal(t, 1, primaries, "%s must have exactly one primary skill", p.email)
 	}
 	assert.Len(t, people, 12)
-	for _, demo := range []string{"planner@slot-finder.local", "lead@slot-finder.local", "specialist@slot-finder.local"} {
+	for _, demo := range []string{"planner@slot-finder.local", "manager@slot-finder.local", "specialist@slot-finder.local"} {
 		assert.True(t, emails[demo], "demo user %s missing", demo)
 	}
 	for _, a := range absences {

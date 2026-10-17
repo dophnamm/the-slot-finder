@@ -1985,7 +1985,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Every staffing draft that is still open, newest first, manual and auto re-plan. A manager (lead) sees only drafts whose projects all belong to programs they manage.",
+                "description": "Every staffing draft that is still open, newest first, manual and auto re-plan. A manager sees only drafts whose projects all belong to programs they manage.",
                 "produces": [
                     "application/json"
                 ],
@@ -4814,7 +4814,7 @@
                     "type": "string",
                     "enum": [
                         "planner",
-                        "lead",
+                        "manager",
                         "specialist"
                     ],
                     "example": "planner"

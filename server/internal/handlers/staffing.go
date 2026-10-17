@@ -56,7 +56,7 @@ func (h *StaffingHandler) Generate(c *echo.Context) error {
 
 // ListOpen godoc
 // @Summary Open staffing drafts
-// @Description Every staffing draft that is still open, newest first, manual and auto re-plan. A manager (lead) sees only drafts whose projects all belong to programs they manage.
+// @Description Every staffing draft that is still open, newest first, manual and auto re-plan. A manager sees only drafts whose projects all belong to programs they manage.
 // @Tags Staffing drafts
 // @Produce json
 // @Security BearerAuth

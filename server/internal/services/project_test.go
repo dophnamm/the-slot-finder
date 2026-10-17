@@ -248,7 +248,7 @@ func TestProjectService_UpdatePhase_SlipPropagation(t *testing.T) {
 		build := project.Phases[0]
 		repo.On("FindPhase", mock.Anything, buildID).Return(&build, nil)
 		repo.On("FindDetail", mock.Anything, projectID).Return(project, nil)
-		_, err := newProjectService(repo, nil).UpdatePhase(asRole("kc-lead", constants.RoleLead), buildID,
+		_, err := newProjectService(repo, nil).UpdatePhase(asRole("kc-manager", constants.RoleManager), buildID,
 			UpdatePhaseInput{EndWeek: new(mustWeek(t, "2026-W49"))})
 		requireStatus(t, err, http.StatusForbidden)
 	})
@@ -376,7 +376,7 @@ func TestProjectService_Create(t *testing.T) {
 			return p.Status == constants.ProjectStatusIncoming && *p.LeadID == leadPersonID && p.ProgramID == programID
 		})).Return(nil)
 		projects.On("FindDetail", mock.Anything, mock.Anything).Return(buildAndTest(t), nil)
-		_, err := newProjectService(projects, programs).Create(asRole("kc-lead", constants.RoleLead),
+		_, err := newProjectService(projects, programs).Create(asRole("kc-manager", constants.RoleManager),
 			CreateProjectInput{ProgramID: programID, Name: "App", Priority: new(2), StartEarliest: start, Deadline: deadline})
 		require.NoError(t, err)
 		projects.AssertExpectations(t)
@@ -633,7 +633,7 @@ func TestProjectService_Reorder(t *testing.T) {
 	t.Run("the program's manager sets the order; priorities follow it from 1", func(t *testing.T) {
 		projects, programs := setup(&ownLead)
 		projects.On("SetPriorities", mock.Anything, map[string]int{third: 1, first: 2, second: 3}).Return(nil)
-		_, err := newProjectService(projects, programs).Reorder(asRole("kc-lead", constants.RoleLead), programID, []string{third, first, second})
+		_, err := newProjectService(projects, programs).Reorder(asRole("kc-manager", constants.RoleManager), programID, []string{third, first, second})
 		require.NoError(t, err)
 		projects.AssertExpectations(t)
 	})
@@ -655,7 +655,7 @@ func TestProjectService_Reorder(t *testing.T) {
 
 	t.Run("another program's manager may not", func(t *testing.T) {
 		projects, programs := setup(&otherLead)
-		_, err := newProjectService(projects, programs).Reorder(asRole("kc-lead", constants.RoleLead), programID, []string{first, second, third})
+		_, err := newProjectService(projects, programs).Reorder(asRole("kc-manager", constants.RoleManager), programID, []string{first, second, third})
 		requireStatus(t, err, http.StatusForbidden)
 	})
 }

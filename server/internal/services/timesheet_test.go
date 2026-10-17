@@ -299,7 +299,7 @@ func TestTimesheetService_Import(t *testing.T) {
 	})
 
 	t.Run("only planners import", func(t *testing.T) {
-		_, err := newTimesheetService(nil, nil, nil).Import(asRole("kc-lead", constants.RoleLead), importFile(tsHeader))
+		_, err := newTimesheetService(nil, nil, nil).Import(asRole("kc-manager", constants.RoleManager), importFile(tsHeader))
 		requireStatus(t, err, http.StatusForbidden)
 	})
 }
@@ -375,7 +375,7 @@ func TestTimesheetService_Template(t *testing.T) {
 	}
 
 	t.Run("only planners", func(t *testing.T) {
-		_, err := newTemplateService(nil, nil).Template(asRole("kc-lead", constants.RoleLead), TemplateInput{})
+		_, err := newTemplateService(nil, nil).Template(asRole("kc-manager", constants.RoleManager), TemplateInput{})
 		requireStatus(t, err, http.StatusForbidden)
 	})
 }

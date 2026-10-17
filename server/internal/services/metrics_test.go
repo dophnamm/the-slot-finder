@@ -91,7 +91,7 @@ func newMetricsServiceWithConfig(t *testing.T, actual map[string]float64, authz 
 }
 
 func TestInsightsService_ProgramOverview(t *testing.T) {
-	overview, err := newMetricsService(t).ProgramOverview(asRole("kc-lead", constants.RoleLead), metricsProgramID)
+	overview, err := newMetricsService(t).ProgramOverview(asRole("kc-manager", constants.RoleManager), metricsProgramID)
 	require.NoError(t, err)
 	m := overview.Metrics
 	assert.Equal(t, 2, overview.Projects)
@@ -114,7 +114,7 @@ func TestInsightsService_ProgramOverview(t *testing.T) {
 }
 
 func TestInsightsService_ProjectMetrics(t *testing.T) {
-	byID, err := newMetricsService(t).ProjectMetrics(asRole("kc-lead", constants.RoleLead), metricsProgramID)
+	byID, err := newMetricsService(t).ProjectMetrics(asRole("kc-manager", constants.RoleManager), metricsProgramID)
 	require.NoError(t, err)
 	assert.InDelta(t, 80, *byID[checkoutID].StaffingPercent, 1e-9)
 	assert.Nil(t, byID[loyaltyID].StaffingPercent, "a project without budget has no Staffing %")
@@ -153,10 +153,10 @@ func TestInsightsService_Risks_SustainedOverload(t *testing.T) {
 }
 
 func TestInsightsService_ActualHours(t *testing.T) {
-	lead := asRole("kc-lead", constants.RoleLead)
+	manager := asRole("kc-manager", constants.RoleManager)
 
 	t.Run("without actual hours, actual and burn stay unknown", func(t *testing.T) {
-		overview, err := newMetricsService(t).ProgramOverview(lead, metricsProgramID)
+		overview, err := newMetricsService(t).ProgramOverview(manager, metricsProgramID)
 		require.NoError(t, err)
 		assert.Nil(t, overview.Metrics.ActualHours)
 		assert.Nil(t, overview.Metrics.BurnPercent)
@@ -164,13 +164,13 @@ func TestInsightsService_ActualHours(t *testing.T) {
 
 	t.Run("a project's actual hours give its burn and the program's", func(t *testing.T) {
 		svc := newMetricsServiceWithActuals(t, map[string]float64{checkoutID: 100})
-		byID, err := svc.ProjectMetrics(lead, metricsProgramID)
+		byID, err := svc.ProjectMetrics(manager, metricsProgramID)
 		require.NoError(t, err)
 		require.NotNil(t, byID[checkoutID].BurnPercent)
 		assert.InDelta(t, 25, *byID[checkoutID].BurnPercent, 1e-9, "100 of Checkout's 400 h")
 		assert.Nil(t, byID[loyaltyID].ActualHours, "Loyalty has no actual hours")
 
-		overview, err := svc.ProgramOverview(lead, metricsProgramID)
+		overview, err := svc.ProgramOverview(manager, metricsProgramID)
 		require.NoError(t, err)
 		require.NotNil(t, overview.Metrics.ActualHours)
 		assert.InDelta(t, 100, *overview.Metrics.ActualHours, 1e-9)

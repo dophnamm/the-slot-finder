@@ -194,7 +194,7 @@ func TestInsightsService_Heatmap_ManagerSeesTheirTeams(t *testing.T) {
 		clock.NewFixed(time.Date(2026, time.October, 14, 9, 0, 0, 0, time.UTC)), heatmapConfig())
 	from, to := mustWeek(t, "2026-W42"), mustWeek(t, "2026-W43")
 
-	heatmap, err := service.Heatmap(asRole("kc-lead", constants.RoleLead), HeatmapInput{From: &from, To: &to})
+	heatmap, err := service.Heatmap(asRole("kc-manager", constants.RoleManager), HeatmapInput{From: &from, To: &to})
 
 	require.NoError(t, err)
 	require.Len(t, heatmap.Rows, 1, "only the team of the programs the manager leads")
@@ -266,14 +266,14 @@ func TestInsightsService_Heatmap_ProgramTeam(t *testing.T) {
 	t.Run("a manager keeps to the intersection with the teams they lead", func(t *testing.T) {
 		authz := ProvideTeamAuthzService(leadPeople{}, ledTeams{leadPersonID: {engPersonID}})
 		svc := build(t, authz, leadPersonID, false)
-		heatmap, err := svc.Heatmap(asRole("kc-lead", constants.RoleLead), HeatmapInput{From: &from, To: &to, ProgramID: metricsProgramID})
+		heatmap, err := svc.Heatmap(asRole("kc-manager", constants.RoleManager), HeatmapInput{From: &from, To: &to, ProgramID: metricsProgramID})
 		require.NoError(t, err)
 		assert.Equal(t, []string{"Erin"}, names(heatmap))
 	})
 
 	t.Run("a manager outside the program is refused", func(t *testing.T) {
 		svc := build(t, ProvideAuthzService(leadPeople{}), otherPersonID2, false)
-		_, err := svc.Heatmap(asRole("kc-lead", constants.RoleLead), HeatmapInput{From: &from, To: &to, ProgramID: metricsProgramID})
+		_, err := svc.Heatmap(asRole("kc-manager", constants.RoleManager), HeatmapInput{From: &from, To: &to, ProgramID: metricsProgramID})
 		requireStatus(t, err, http.StatusForbidden)
 	})
 

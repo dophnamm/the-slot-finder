@@ -149,7 +149,7 @@ func TestStaffingService_Generate(t *testing.T) {
 		m := newStaffingMocks()
 		project := qaProject(t)
 		m.projects.On("FindDetail", mock.Anything, projectID).Return(project, nil)
-		_, err := m.service().Generate(asRole("kc-lead", constants.RoleLead), GenerateDraftInput{ProjectIDs: []string{projectID}})
+		_, err := m.service().Generate(asRole("kc-manager", constants.RoleManager), GenerateDraftInput{ProjectIDs: []string{projectID}})
 		requireStatus(t, err, http.StatusForbidden)
 	})
 
@@ -184,7 +184,7 @@ func TestStaffingService_Get(t *testing.T) {
 		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(draft, nil)
 		m.projects.On("FindDetail", mock.Anything, projectID).Return(project, nil)
 		m.plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(0), nil)
-		view, err := m.service().Get(asRole("kc-lead", constants.RoleLead), staffingDraftID)
+		view, err := m.service().Get(asRole("kc-manager", constants.RoleManager), staffingDraftID)
 		require.NoError(t, err)
 		assert.Equal(t, staffingDraftID, view.Plan.ID)
 		assert.NotEmpty(t, view.Load.Weeks)
@@ -202,18 +202,18 @@ func TestStaffingService_Get(t *testing.T) {
 		m.projects.On("FindDetail", mock.Anything, projectID).Return(own, nil)
 		m.projects.On("FindDetail", mock.Anything, buildID).Return(other, nil)
 		m.plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(0), nil)
-		_, err := m.service().Get(asRole("kc-lead", constants.RoleLead), staffingDraftID)
+		_, err := m.service().Get(asRole("kc-manager", constants.RoleManager), staffingDraftID)
 		requireStatus(t, err, http.StatusForbidden)
 	})
 
-	t.Run("a lead of other projects is refused", func(t *testing.T) {
+	t.Run("a manager who only leads other projects is refused", func(t *testing.T) {
 		m := newStaffingMocks()
 		project := qaProject(t)
 		project.LeadID = new(otherPersonID2)
 		m.plans.On("FindWithAssignments", mock.Anything, staffingDraftID).Return(draft, nil)
 		m.projects.On("FindDetail", mock.Anything, projectID).Return(project, nil)
 		m.plans.On("FindBaseline", mock.Anything).Return(publishedBaseline(0), nil)
-		_, err := m.service().Get(asRole("kc-lead", constants.RoleLead), staffingDraftID)
+		_, err := m.service().Get(asRole("kc-manager", constants.RoleManager), staffingDraftID)
 		requireStatus(t, err, http.StatusForbidden)
 	})
 }
@@ -554,7 +554,7 @@ func TestStaffingService_ListOpen(t *testing.T) {
 	})
 
 	t.Run("a manager sees only drafts whose projects are all in programs they lead", func(t *testing.T) {
-		drafts, err := setup().service().ListOpen(asRole("kc-lead", constants.RoleLead))
+		drafts, err := setup().service().ListOpen(asRole("kc-manager", constants.RoleManager))
 		require.NoError(t, err)
 		require.Len(t, drafts, 1)
 		assert.Equal(t, ownDraftID, drafts[0].Plan.ID)
@@ -695,14 +695,14 @@ func TestStaffingService_Alternatives(t *testing.T) {
 		requireAppError(t, err, constants.AssignmentNotFound, http.StatusNotFound)
 	})
 
-	t.Run("a lead of other projects is refused", func(t *testing.T) {
+	t.Run("a manager who only leads other projects is refused", func(t *testing.T) {
 		m := build()
 		project := qaProject(t)
 		project.LeadID = new(otherPersonID2)
 		m.projects.ExpectedCalls = nil
 		m.projects.On("FindDetail", mock.Anything, projectID).Return(project, nil)
 
-		_, err := m.service().Alternatives(asRole("kc-lead", constants.RoleLead), staffingDraftID, draftAssignmentID)
+		_, err := m.service().Alternatives(asRole("kc-manager", constants.RoleManager), staffingDraftID, draftAssignmentID)
 
 		requireStatus(t, err, http.StatusForbidden)
 	})

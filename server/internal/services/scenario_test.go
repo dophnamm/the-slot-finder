@@ -221,8 +221,8 @@ func TestScenarioService_Create(t *testing.T) {
 		}
 	})
 
-	t.Run("a lead cannot", func(t *testing.T) {
-		_, err := newScenarioMocks().service().Create(asRole("kc-lead", constants.RoleLead), CreateScenarioInput{Name: "x"})
+	t.Run("a manager cannot", func(t *testing.T) {
+		_, err := newScenarioMocks().service().Create(asRole("kc-manager", constants.RoleManager), CreateScenarioInput{Name: "x"})
 		requireStatus(t, err, http.StatusForbidden)
 	})
 }

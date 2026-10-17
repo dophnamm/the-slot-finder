@@ -109,7 +109,7 @@ type StaffingService interface {
 	// Get returns a draft for planners and for leads of a project it covers.
 	Get(ctx context.Context, id string) (*DraftView, error)
 	// ListOpen returns the open drafts newest first: every one for a planner, and for a manager
-	// (lead) those whose projects all belong to programs they lead, as for the draft actions.
+	// those whose projects all belong to programs they lead, as for the draft actions.
 	ListOpen(ctx context.Context) ([]OpenDraft, error)
 	// Alternatives lists who could take over an assignment: people of the program team who hold
 	// the demand's expertise at its level and do not cover the demand yet, most free hours over
@@ -1017,7 +1017,7 @@ func (s *staffingService) Reject(ctx context.Context, id string) (*DraftView, er
 	return s.view(ctx, id, opRejectDraft)
 }
 
-// requireDraftRights lets a planner act on any draft, and a manager (lead) on a draft whose
+// requireDraftRights lets a planner act on any draft, and a manager on a draft whose
 // projects all belong to programs they lead.
 func (s *staffingService) requireDraftRights(ctx context.Context, projects []models.Project) (request.Principal, error) {
 	principal, err := s.authz.Principal(ctx)
@@ -1028,7 +1028,7 @@ func (s *staffingService) requireDraftRights(ctx context.Context, projects []mod
 		return principal, nil
 	}
 	forbidden := errors.ForbiddenError(constants.MsgInsufficientPermissions, nil).WithOperation(opAuthorize).WithResource(resourceDraft)
-	if !principal.HasAnyRole(constants.RoleLead) || len(projects) == 0 {
+	if !principal.HasAnyRole(constants.RoleManager) || len(projects) == 0 {
 		return request.Principal{}, forbidden
 	}
 	self, err := s.finder.FindForPrincipal(ctx, principal)

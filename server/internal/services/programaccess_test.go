@@ -43,11 +43,11 @@ func TestAuthzService_ProgramReader(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, planner.All)
 
-	lead, err := authz.ProgramReader(asRole("kc-lead", constants.RoleLead))
+	lead, err := authz.ProgramReader(asRole("kc-manager", constants.RoleManager))
 	require.NoError(t, err)
 	assert.Equal(t, ProgramReader{LeadID: managerPersonID}, lead)
 
-	unknown, err := authz.ProgramReader(asRole("kc-unknown-lead", constants.RoleLead))
+	unknown, err := authz.ProgramReader(asRole("kc-unknown-manager", constants.RoleManager))
 	require.NoError(t, err)
 	assert.Equal(t, ProgramReader{}, unknown, "a manager without a person record reads no program")
 
@@ -65,15 +65,15 @@ func TestRequireProgramReader(t *testing.T) {
 	}{
 		{name: "a planner reads any program", ctx: asRole("kc-planner", constants.RolePlanner),
 			program: ledProgram(foreignProgramID, outsiderPersonID), allowed: true},
-		{name: "a manager reads a program they lead", ctx: asRole("kc-lead", constants.RoleLead),
+		{name: "a manager reads a program they lead", ctx: asRole("kc-manager", constants.RoleManager),
 			program: ledProgram(ownProgramID, managerPersonID), allowed: true},
-		{name: "a manager reads a program where they lead a project", ctx: asRole("kc-lead", constants.RoleLead),
+		{name: "a manager reads a program where they lead a project", ctx: asRole("kc-manager", constants.RoleManager),
 			program: ledProgram(projectProgramID, outsiderPersonID), allowed: true},
-		{name: "a manager cannot read another manager's program", ctx: asRole("kc-lead", constants.RoleLead),
+		{name: "a manager cannot read another manager's program", ctx: asRole("kc-manager", constants.RoleManager),
 			program: ledProgram(foreignProgramID, outsiderPersonID)},
-		{name: "a manager without a person record reads none", ctx: asRole("kc-unknown-lead", constants.RoleLead),
+		{name: "a manager without a person record reads none", ctx: asRole("kc-unknown-manager", constants.RoleManager),
 			program: ledProgram(ownProgramID, managerPersonID)},
-		{name: "a program without a lead is the planner's", ctx: asRole("kc-lead", constants.RoleLead),
+		{name: "a program without a lead is the planner's", ctx: asRole("kc-manager", constants.RoleManager),
 			program: &models.Program{BaseModel: models.BaseModel{ID: foreignProgramID}}},
 	}
 	for _, tt := range tests {
@@ -115,8 +115,8 @@ func TestProgramService_List_ByReader(t *testing.T) {
 		listed   bool
 	}{
 		{name: "a planner lists every program", ctx: asRole("kc-planner", constants.RolePlanner), listed: true},
-		{name: "a manager lists the programs they lead", ctx: asRole("kc-lead", constants.RoleLead), readerID: &lead, listed: true},
-		{name: "a manager without a person record lists none", ctx: asRole("kc-unknown-lead", constants.RoleLead)},
+		{name: "a manager lists the programs they lead", ctx: asRole("kc-manager", constants.RoleManager), readerID: &lead, listed: true},
+		{name: "a manager without a person record lists none", ctx: asRole("kc-unknown-manager", constants.RoleManager)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -134,7 +134,7 @@ func TestProgramService_List_ByReader(t *testing.T) {
 }
 
 func TestProgramService_Get_ByReader(t *testing.T) {
-	lead := asRole("kc-lead", constants.RoleLead)
+	lead := asRole("kc-manager", constants.RoleManager)
 	own, other := leadPersonID, otherPersonID2
 
 	repo, projects := new(MockProgramRepository), new(MockProjectRepository)
@@ -158,7 +158,7 @@ func TestProjectService_ListByStatus_ByReader(t *testing.T) {
 		readerID *string
 	}{
 		{name: "a planner sees every program's projects", ctx: asRole("kc-planner", constants.RolePlanner)},
-		{name: "a manager sees the projects of their programs", ctx: asRole("kc-lead", constants.RoleLead), readerID: &lead},
+		{name: "a manager sees the projects of their programs", ctx: asRole("kc-manager", constants.RoleManager), readerID: &lead},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			projects := new(MockProjectRepository)
@@ -173,7 +173,7 @@ func TestProjectService_ListByStatus_ByReader(t *testing.T) {
 }
 
 func TestProjectService_Get_ByReader(t *testing.T) {
-	lead := asRole("kc-lead", constants.RoleLead)
+	lead := asRole("kc-manager", constants.RoleManager)
 	other := otherPersonID2
 	detail := &models.Project{BaseModel: models.BaseModel{ID: projectID}, ProgramID: programID,
 		Program: &models.Program{BaseModel: models.BaseModel{ID: programID}, LeadID: &other}}
@@ -205,18 +205,18 @@ func TestProjectService_ListByProgram_ByReader(t *testing.T) {
 	projects, programs := new(MockProjectRepository), new(MockProgramRepository)
 	programs.On("FindWithLead", mock.Anything, programID).Return(program(constants.ProgramStatusOpen, &other), nil)
 	projects.On("LeadsProjectIn", mock.Anything, programID, leadPersonID).Return(false, nil)
-	_, err := newProjectService(projects, programs).ListByProgram(asRole("kc-lead", constants.RoleLead), programID)
+	_, err := newProjectService(projects, programs).ListByProgram(asRole("kc-manager", constants.RoleManager), programID)
 	requireStatus(t, err, http.StatusForbidden)
 	projects.AssertNotCalled(t, "ListByProgram", mock.Anything, mock.Anything)
 }
 
 func TestInsightsService_ByReader(t *testing.T) {
-	authz := ProvideAuthzService(selfFinder{"kc-lead": leadPersonID, "kc-other-lead": otherPersonID2})
+	authz := ProvideAuthzService(selfFinder{"kc-manager": leadPersonID, "kc-other-manager": otherPersonID2})
 	service, projects := newMetricsServiceWith(t, map[string]float64{}, authz)
 	projects.On("LeadsProjectIn", mock.Anything, metricsProgramID, otherPersonID2).Return(false, nil)
-	other := asRole("kc-other-lead", constants.RoleLead)
+	other := asRole("kc-other-manager", constants.RoleManager)
 
-	own, err := service.Risks(asRole("kc-lead", constants.RoleLead))
+	own, err := service.Risks(asRole("kc-manager", constants.RoleManager))
 	require.NoError(t, err)
 	assert.NotEmpty(t, own.Projects, "the manager of Acme sees its project risks")
 

@@ -320,7 +320,7 @@ func TestCalendarFeedService_GetAndDisconnect(t *testing.T) {
 
 	_, err = service.Connect(specialist, ConnectFeedInput{PersonID: selfPersonID, URL: googleLink})
 	require.NoError(t, err)
-	_, err = service.Get(asRole("kc-lead", constants.RoleLead), selfPersonID)
+	_, err = service.Get(asRole("kc-manager", constants.RoleManager), selfPersonID)
 	requireStatus(t, err, http.StatusForbidden)
 
 	require.NoError(t, service.Disconnect(specialist, selfPersonID))

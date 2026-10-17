@@ -33,7 +33,7 @@ Vocabulary:
 - An Assignment is a person on a demand, with weekly Allocations (hours per ISO week). Kinds: primary, cross_expertise, stretch.
 - A "draft" (staffing draft, a proposed plan) is a suggestion that is not in force yet. The "baseline" is the accepted plan; all load, utilization and risk figures come from the baseline.
 - Utilization is planned hours divided by capacity. Over 100 percent is overloaded; low values are underused. A gap is demand that nobody covers yet.
-- Roles: planner (sees and staffs everything), lead (shown as Manager: sees only the teams of the programs they manage), specialist (sees their own schedule only).
+- Roles: planner (sees and staffs everything), manager (shown as Manager: sees only the teams of the programs they manage), specialist (sees their own schedule only).
 - Weeks are ISO weeks written like 2026-W42, Monday to Sunday.
 
 Rules:

@@ -196,7 +196,7 @@ func registerPlanRoutes(v1 *echo.Group, authenticated, heavy echo.MiddlewareFunc
 	v1.GET(constants.PathPersonAssignments, planHandler.PersonAssignments, authenticated,
 		middlewares.RequireRole(constants.PersonAssignmentRoles...))
 
-	// Staffing drafts: planners generate and change any; a manager (lead) those whose projects
+	// Staffing drafts: planners generate and change any; a manager those whose projects
 	// all belong to programs they lead (checked in the service).
 	v1.POST(constants.PathStaffingDrafts, staffingHandler.Generate, authenticated, draftRoles, heavy)
 	v1.GET(constants.PathPlanDrafts, staffingHandler.ListOpen, authenticated, viewRoles)
@@ -241,7 +241,7 @@ func registerCalendarFeedRoutes(v1 *echo.Group, authenticated, heavy echo.Middle
 func registerProgramRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc,
 	programHandler *handlers.ProgramHandler, projectHandler *handlers.ProjectHandler,
 ) {
-	// Programs (leads edit only their own; checked in the service)
+	// Programs (managers edit only their own; checked in the service)
 	programRoles := middlewares.RequireRole(constants.ProgramRoles...)
 	v1.GET(constants.PathPrograms, programHandler.List, authenticated, programRoles)
 	v1.POST(constants.PathPrograms, programHandler.Create, authenticated, programRoles)
@@ -249,7 +249,7 @@ func registerProgramRoutes(v1 *echo.Group, authenticated echo.MiddlewareFunc,
 	v1.PATCH(constants.PathProgram, programHandler.Update, authenticated, programRoles)
 	v1.POST(constants.PathProgramAction, programHandler.Action, authenticated, programRoles)
 
-	// Projects, phases and demand (leads edit only projects they or their program lead)
+	// Projects, phases and demand (managers edit only projects they or their program lead)
 	v1.GET(constants.PathProgramProjects, projectHandler.ListByProgram, authenticated, programRoles)
 	v1.POST(constants.PathProgramProjects, projectHandler.Create, authenticated, programRoles)
 	v1.PUT(constants.PathProgramProjectOrder, projectHandler.Reorder, authenticated, programRoles)

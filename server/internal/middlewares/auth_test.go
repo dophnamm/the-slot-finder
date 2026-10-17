@@ -124,7 +124,7 @@ func claimsWithRealmRoles(subject string, roles ...string) *auth.TokenClaims {
 func TestAuthMiddleware(t *testing.T) {
 	cfg := &config.Config{AppEnv: config.EnvironmentTest, KeycloakClientID: "app-client"}
 	verifier := fakeVerifier{tokens: map[string]*auth.TokenClaims{
-		"good": claimsWithRealmRoles("user-1", constants.RoleLead, "offline_access"),
+		"good": claimsWithRealmRoles("user-1", constants.RoleManager, "offline_access"),
 	}}
 
 	tests := []struct {
@@ -146,8 +146,8 @@ func TestAuthMiddleware(t *testing.T) {
 			headers:    map[string]string{"Authorization": "Bearer good"},
 			wantStatus: http.StatusOK,
 			wantPrincipal: &request.Principal{
-				Subject: "user-1", Username: "user-1", Role: constants.RoleLead,
-				Roles: []string{constants.RoleLead, "offline_access"},
+				Subject: "user-1", Username: "user-1", Role: constants.RoleManager,
+				Roles: []string{constants.RoleManager, "offline_access"},
 			},
 		},
 	}
@@ -185,8 +185,8 @@ func TestRequireRole(t *testing.T) {
 		{name: "not signed in", roles: []string{constants.RolePlanner}, wantStatus: http.StatusUnauthorized},
 		{name: "insufficient permissions", principal: &request.Principal{Roles: []string{constants.RoleSpecialist}},
 			roles: []string{constants.RolePlanner}, wantStatus: http.StatusForbidden},
-		{name: "role match", principal: &request.Principal{Roles: []string{constants.RoleLead}},
-			roles: []string{constants.RolePlanner, constants.RoleLead}, wantStatus: http.StatusNoContent},
+		{name: "role match", principal: &request.Principal{Roles: []string{constants.RoleManager}},
+			roles: []string{constants.RolePlanner, constants.RoleManager}, wantStatus: http.StatusNoContent},
 	}
 
 	for _, tt := range tests {

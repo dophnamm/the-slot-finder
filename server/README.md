@@ -33,16 +33,18 @@ make migrate-generate name=<change>          # Atlas diff from GORM models (need
 
 Swagger UI: `http://localhost:3000/swagger/index.html` (basic auth from `BASIC_AUTH_USER` / `BASIC_AUTH_SECRET`, non-production only). `/api/v1/health/metrics` uses the same basic auth. Keycloak: `http://localhost:8080/auth`.
 
-**Sign-in.** On a fresh start, Keycloak imports [`deploy/keycloak/realm.json`](deploy/keycloak/realm.json): the realm, the roles `planner` / `lead` / `specialist`, the web app client (Authorization Code + PKCE) and the API client. Its `${...}` placeholders come from `cmd/server/.env` (`KEYCLOAK_REALM`, `KEYCLOAK_SPA_CLIENT_ID`, `KEYCLOAK_CLIENT_ID`, `CLIENT_APP_URL`, ...). `make reset-data` deletes the Keycloak data, so the next start imports the realm again.
+**Sign-in.** On a fresh start, Keycloak imports [`deploy/keycloak/realm.json`](deploy/keycloak/realm.json): the realm, the roles `planner` / `manager` / `specialist`, the web app client (Authorization Code + PKCE) and the API client. Its `${...}` placeholders come from `cmd/server/.env` (`KEYCLOAK_REALM`, `KEYCLOAK_SPA_CLIENT_ID`, `KEYCLOAK_CLIENT_ID`, `CLIENT_APP_URL`, ...). `make reset-data` deletes the Keycloak data, so the next start imports the realm again.
 
-The sign-in pages use the `slot-finder` login theme in [`deploy/keycloak/themes/`](deploy/keycloak/themes/slot-finder/login), named by `KEYCLOAK_LOGIN_THEME`. A fresh import picks it up; on existing data, run `make keycloak-theme` at the repo root. `start-dev` does not cache themes, so edits show on reload.
+**Renaming the role `lead` to `manager`.** Keycloak imports `realm.json` only on a fresh volume, so existing Keycloak data still has the realm role and demo user `lead`. Fix local data with `make reset-data`, or in the Keycloak admin console rename the realm role `lead` to `manager` (Realm roles) and the demo user. Rows in `people` keep their old `role` text: run `UPDATE people SET role = 'manager' WHERE role = 'lead'` (no Atlas migration, because it is data only). A deployed instance needs the same rename before this version is deployed, or every user with the old role gets `403`.
+
+The sign-in pages use the `slot-finder` login theme in [`deploy/keycloak/themes/`](deploy/keycloak/themes/slot-finder/login), named by `KEYCLOAK_LOGIN_THEME`. A fresh import picks it up; on existing data, run `make keycloak-theme` at the repo root. `start-dev` does not cache themes, so edits show on reload. The theme folder is a read-only volume of the `keycloak` service, so template, CSS, script and text edits need no restart or `make keycloak-theme`; that command is only for changing which theme a realm uses. The "Don't have an account?" dialog on the sign-in page takes its texts and manual URL from `messages/messages_en.properties`.
 
 Demo users, **for development only**. Their password is `KEYCLOAK_DEMO_PASSWORD` (`P@ssw0rd123` in `.env.example`); never reuse it outside a local machine.
 
 | User | Role | Lands on |
 |---|---|---|
 | `planner` | planner | Dashboard |
-| `lead` | lead (shown as **Manager**; manages Acme Commerce Platform) | Dashboard |
+| `manager` | manager (shown as **Manager**; manages Acme Commerce Platform) | Dashboard |
 | `specialist` | specialist | My schedule |
 
 The server verifies access tokens locally against the realm's JWKS, cached and refreshed every `AUTH_JWKS_REFRESH_INTERVAL` (and on an unknown key id). It calls Keycloak only to fetch those keys, never per request. `KEYCLOAK_URL` is how the server reaches Keycloak; `KEYCLOAK_PUBLIC_URL` is the issuer in the tokens, as the browser sees it.
@@ -96,7 +98,7 @@ Files per module follow the pattern `handlers/<module>.go`, `services/<module>.g
 
 ## 3. API (REST/JSON)
 
-All paths below are under **`/api/v1`**. Every endpoint except health checks requires a Keycloak JWT (`Authorization: Bearer`); unsafe methods also need `X-CSRF-Token`. The Server checks permissions on every call: the role through `RequireRole` in the router, and per-program rules ("lead (own)") in the service. The `lead` role is shown as **Manager**: "lead (own)" means the manager of that program. A manager sees only the people in the teams of the programs they manage, plus themselves ("lead (team)" below); `AuthzService.VisiblePeople` answers that for the people list and detail, schedules, the heatmap and the risks.
+All paths below are under **`/api/v1`**. Every endpoint except health checks requires a Keycloak JWT (`Authorization: Bearer`); unsafe methods also need `X-CSRF-Token`. The Server checks permissions on every call: the role through `RequireRole` in the router, and per-program rules ("manager (own)") in the service. "manager (own)" means the manager of that program. A manager sees only the people in the teams of the programs they manage, plus themselves ("lead (team)" below); `AuthzService.VisiblePeople` answers that for the people list and detail, schedules, the heatmap and the risks.
 
 **Rate limits.** Every request counts against `RATE_LIMIT` per `RATE_LIMIT_DURATION` for its client IP. The routes that run the planning engine, read an uploaded file, fetch a URL or call the AI model also count against `RATE_LIMIT_HEAVY` per `RATE_LIMIT_HEAVY_DURATION` for each signed-in user on each route: `POST /staffing-drafts`, `POST /scenarios`, `POST /scenarios/{id}/rerun`, `POST /timesheets/import`, `POST /holidays/import`, `POST /ai/ask`, `PUT /people/{id}/calendar-feed` and `POST /people/{id}/calendar-feed/sync`. Over either limit the Server answers `429 RATE_LIMIT_EXCEEDED`, with a `Retry-After` header and `{ limit, window, retry_after }` in `data` (`retry_after` in seconds). The counters live in memory, one set per Server instance.
 
@@ -123,7 +125,7 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 
 **Programs and projects**
 
-A manager (`lead`) reads only the programs they lead or lead a project in, and the people of those programs' teams: `GET /programs`, `GET /projects` and the risks leave the others out, and the routes of another program or its projects answer `403`.
+A manager reads only the programs they lead or lead a project in, and the people of those programs' teams: `GET /programs`, `GET /projects` and the risks leave the others out, and the routes of another program or its projects answer `403`.
 
 | Method | Path | Purpose | Roles |
 |---|---|---|---|

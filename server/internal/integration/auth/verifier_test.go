@@ -208,8 +208,8 @@ func TestTokenClaims_Roles(t *testing.T) {
 	assert.Nil(t, nilClaims.Roles(testAPIClient))
 
 	claims := &TokenClaims{
-		RealmAccess:    RoleClaim{Roles: []string{"lead"}},
+		RealmAccess:    RoleClaim{Roles: []string{"manager"}},
 		ResourceAccess: map[string]RoleClaim{testAPIClient: {Roles: []string{"planner"}}, "other": {Roles: []string{"x"}}},
 	}
-	assert.Equal(t, []string{"lead", "planner"}, claims.Roles(testAPIClient))
+	assert.Equal(t, []string{"manager", "planner"}, claims.Roles(testAPIClient))
 }

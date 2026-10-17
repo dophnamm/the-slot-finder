@@ -199,7 +199,7 @@ func TestContextHelpers_Compose(t *testing.T) {
 
 func TestPrincipalContext(t *testing.T) {
 	t.Run("present", func(t *testing.T) {
-		want := Principal{Subject: "u1", Role: "lead", Roles: []string{"lead", "offline_access"}}
+		want := Principal{Subject: "u1", Role: "manager", Roles: []string{"manager", "offline_access"}}
 		got, ok := PrincipalFromContext(NewPrincipalContext(context.Background(), want))
 		require.True(t, ok)
 		assert.Equal(t, want, got)
@@ -220,8 +220,8 @@ func TestPrincipalContext(t *testing.T) {
 }
 
 func TestPrincipal_HasAnyRole(t *testing.T) {
-	p := Principal{Roles: []string{"lead"}}
-	assert.True(t, p.HasAnyRole("planner", "lead"))
+	p := Principal{Roles: []string{"manager"}}
+	assert.True(t, p.HasAnyRole("planner", "manager"))
 	assert.False(t, p.HasAnyRole("planner"))
-	assert.False(t, Principal{}.HasAnyRole("lead"))
+	assert.False(t, Principal{}.HasAnyRole("manager"))
 }
