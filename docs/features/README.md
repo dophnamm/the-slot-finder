@@ -26,6 +26,7 @@ One spec per feature, in build order. Each spec holds the goal, scope, server an
 | 18 | [Skill and program events](skill-and-program-events.md) | A skill change re-plans the person's projects; a program end-date move is recorded in the change history | 17–18 Oct | people-and-skills, replan-on-change | Done |
 | 19 | [Bench list](bench-list.md) | People idle for the next weeks, shown on the Risks card | 17–18 Oct | team-heatmap | Done |
 | 20 | [People import](people-import.md) | CSV import of many people at once: new emails are created, known ones updated, all or nothing | 17–18 Oct | people-and-skills, skill-and-program-events | Done |
+| 21 | [Draft summary](draft-summary.md) | A short AI-written summary of a staffing draft, checked against the draft's numbers, with a template fallback | 17–18 Oct | staffing-draft, ask-ai | Planned |
 
 ## Schedule
 
