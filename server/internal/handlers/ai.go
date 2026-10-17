@@ -77,3 +77,52 @@ func (h *AIHandler) SummarizeDraft(c *echo.Context) error {
 	}
 	return h.SuccessResponse(c, constants.MsgDraftSummarized, dtos.NewDraftSummaryResponse(*summary), nil)
 }
+
+// ExtractIntake godoc
+// @Summary Suggest a project from a brief
+// @Description Reads a customer brief and suggests a project to review: name, dates, scope points and demands per expertise. Emails, customer names and phone numbers are masked before the text goes to the model, and nothing is created. 503 AI_NOT_CONFIGURED when the server has no API key; 502 AI_UPSTREAM_FAILED or an unusable answer from the model.
+// @Tags AI
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param body body dtos.IntakeRequest true "Brief"
+// @Success 200 {object} object{meta=dtos.Meta,data=dtos.IntakeResponse}
+// @Failure 400 {object} object{meta=dtos.Meta}
+// @Failure 403 {object} object{meta=dtos.Meta}
+// @Failure 429 {object} object{meta=dtos.Meta}
+// @Failure 502 {object} object{meta=dtos.Meta}
+// @Failure 503 {object} object{meta=dtos.Meta}
+// @Router /ai/intake-extractions [post]
+func (h *AIHandler) ExtractIntake(c *echo.Context) error {
+	var req dtos.IntakeRequest
+	if err := echo.BindBody(c, &req); err != nil {
+		return h.ValidationErrorResponse(c, constants.MsgInvalidRequest, errors.ParseValidationErrors(err))
+	}
+	req.Normalize()
+	if err := h.validate.Struct(req); err != nil {
+		return h.ValidationErrorResponse(c, constants.MsgInvalidRequest, errors.ParseValidationErrors(err))
+	}
+	res, err := h.ai.ExtractIntake(c.Request().Context(), services.IntakeInput{Text: req.Text, MaskTerms: req.MaskTerms})
+	if err != nil {
+		return h.HandleError(c, err)
+	}
+	return h.SuccessResponse(c, constants.MsgIntakeSuggested, newIntakeResponse(res), nil)
+}
+
+// newIntakeResponse maps a result to its response. It lives here because services imports dtos.
+func newIntakeResponse(r *services.IntakeResult) dtos.IntakeResponse {
+	demands := make([]dtos.IntakeDemandResponse, 0, len(r.Suggestion.Demands))
+	for _, d := range r.Suggestion.Demands {
+		demands = append(demands, dtos.IntakeDemandResponse{ExpertiseID: d.ExpertiseID, ExpertiseName: d.ExpertiseName,
+			TotalHours: d.TotalHours, MinLevel: d.MinLevel, Quote: d.Quote})
+	}
+	warnings := r.Warnings
+	if warnings == nil {
+		warnings = []string{}
+	}
+	return dtos.IntakeResponse{
+		Name: r.Suggestion.Name, StartEarliest: r.Suggestion.StartEarliest, Deadline: r.Suggestion.Deadline,
+		ScopePoints: r.Suggestion.ScopePoints, Demands: demands, Warnings: warnings,
+		Masked: dtos.IntakeMaskedResponse{Emails: r.Masked.Emails, Customers: r.Masked.Customers, Phones: r.Masked.Phones},
+	}
+}

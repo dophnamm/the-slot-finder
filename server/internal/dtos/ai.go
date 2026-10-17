@@ -33,3 +33,44 @@ type DraftSummaryResponse struct {
 func NewDraftSummaryResponse(s models.DraftSummary) DraftSummaryResponse {
 	return DraftSummaryResponse{Summary: s.Summary, Source: s.Source}
 }
+
+// IntakeRequest is a customer brief and the extra names to hide before the model reads it.
+type IntakeRequest struct {
+	Text      string   `json:"text" validate:"required,max=8000"`
+	MaskTerms []string `json:"mask_terms,omitempty" validate:"max=10,dive,max=100"`
+}
+
+// Normalize trims the text and the terms.
+func (r *IntakeRequest) Normalize() {
+	r.Text = strings.TrimSpace(r.Text)
+	for i, t := range r.MaskTerms {
+		r.MaskTerms[i] = strings.TrimSpace(t)
+	}
+}
+
+// IntakeDemandResponse is one suggested demand with the brief text that supports it.
+type IntakeDemandResponse struct {
+	ExpertiseID   string  `json:"expertise_id"`
+	ExpertiseName string  `json:"expertise_name"`
+	TotalHours    float64 `json:"total_hours"`
+	MinLevel      *int    `json:"min_level"`
+	Quote         string  `json:"quote"`
+}
+
+// IntakeMaskedResponse counts what masking hid.
+type IntakeMaskedResponse struct {
+	Emails    int `json:"emails"`
+	Customers int `json:"customers"`
+	Phones    int `json:"phones"`
+}
+
+// IntakeResponse is a suggested project. Unknown fields are null.
+type IntakeResponse struct {
+	Name          string                 `json:"name"`
+	StartEarliest *string                `json:"start_earliest"`
+	Deadline      *string                `json:"deadline"`
+	ScopePoints   *float64               `json:"scope_points"`
+	Demands       []IntakeDemandResponse `json:"demands"`
+	Warnings      []string               `json:"warnings"`
+	Masked        IntakeMaskedResponse   `json:"masked"`
+}

@@ -281,6 +281,108 @@
                 }
             }
         },
+        "/ai/intake-extractions": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Reads a customer brief and suggests a project to review: name, dates, scope points and demands per expertise. Emails, customer names and phone numbers are masked before the text goes to the model, and nothing is created. 503 AI_NOT_CONFIGURED when the server has no API key; 502 AI_UPSTREAM_FAILED or an unusable answer from the model.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AI"
+                ],
+                "summary": "Suggest a project from a brief",
+                "parameters": [
+                    {
+                        "description": "Brief",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.IntakeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/definitions/dtos.IntakeResponse"
+                                },
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "meta": {
+                                    "$ref": "#/definitions/dtos.Meta"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/events": {
             "get": {
                 "security": [
@@ -4674,6 +4776,7 @@
                     "example": "2026-10-26"
                 },
                 "hours_per_day": {
+                    "description": "shortcut: DTO tags use lte=24, change both with constants.MaxAbsenceHoursPerDay",
                     "type": "number",
                     "maximum": 24,
                     "example": 8
@@ -5878,6 +5981,91 @@
                 "updated": {
                     "type": "integer",
                     "example": 3
+                }
+            }
+        },
+        "dtos.IntakeDemandResponse": {
+            "type": "object",
+            "properties": {
+                "expertise_id": {
+                    "type": "string"
+                },
+                "expertise_name": {
+                    "type": "string"
+                },
+                "min_level": {
+                    "type": "integer"
+                },
+                "quote": {
+                    "type": "string"
+                },
+                "total_hours": {
+                    "type": "number"
+                }
+            }
+        },
+        "dtos.IntakeMaskedResponse": {
+            "type": "object",
+            "properties": {
+                "customers": {
+                    "type": "integer"
+                },
+                "emails": {
+                    "type": "integer"
+                },
+                "phones": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dtos.IntakeRequest": {
+            "type": "object",
+            "required": [
+                "text"
+            ],
+            "properties": {
+                "mask_terms": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "text": {
+                    "type": "string",
+                    "maxLength": 8000
+                }
+            }
+        },
+        "dtos.IntakeResponse": {
+            "type": "object",
+            "properties": {
+                "deadline": {
+                    "type": "string"
+                },
+                "demands": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.IntakeDemandResponse"
+                    }
+                },
+                "masked": {
+                    "$ref": "#/definitions/dtos.IntakeMaskedResponse"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "scope_points": {
+                    "type": "number"
+                },
+                "start_earliest": {
+                    "type": "string"
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

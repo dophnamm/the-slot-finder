@@ -194,6 +194,7 @@ definitions:
         example: "2026-10-26"
         type: string
       hours_per_day:
+        description: 'shortcut: DTO tags use lte=24, change both with constants.MaxAbsenceHoursPerDay'
         example: 8
         maximum: 24
         type: number
@@ -1079,6 +1080,62 @@ definitions:
       updated:
         example: 3
         type: integer
+    type: object
+  dtos.IntakeDemandResponse:
+    properties:
+      expertise_id:
+        type: string
+      expertise_name:
+        type: string
+      min_level:
+        type: integer
+      quote:
+        type: string
+      total_hours:
+        type: number
+    type: object
+  dtos.IntakeMaskedResponse:
+    properties:
+      customers:
+        type: integer
+      emails:
+        type: integer
+      phones:
+        type: integer
+    type: object
+  dtos.IntakeRequest:
+    properties:
+      mask_terms:
+        items:
+          type: string
+        maxItems: 10
+        type: array
+      text:
+        maxLength: 8000
+        type: string
+    required:
+    - text
+    type: object
+  dtos.IntakeResponse:
+    properties:
+      deadline:
+        type: string
+      demands:
+        items:
+          $ref: '#/definitions/dtos.IntakeDemandResponse'
+        type: array
+      masked:
+        $ref: '#/definitions/dtos.IntakeMaskedResponse'
+      name:
+        type: string
+      scope_points:
+        type: number
+      start_earliest:
+        type: string
+      warnings:
+        items:
+          type: string
+        type: array
     type: object
   dtos.MemberExpertiseResponse:
     properties:
@@ -2325,6 +2382,74 @@ paths:
       security:
       - BearerAuth: []
       summary: Ask AI
+      tags:
+      - AI
+  /ai/intake-extractions:
+    post:
+      consumes:
+      - application/json
+      description: 'Reads a customer brief and suggests a project to review: name,
+        dates, scope points and demands per expertise. Emails, customer names and
+        phone numbers are masked before the text goes to the model, and nothing is
+        created. 503 AI_NOT_CONFIGURED when the server has no API key; 502 AI_UPSTREAM_FAILED
+        or an unusable answer from the model.'
+      parameters:
+      - description: Brief
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.IntakeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/dtos.IntakeResponse'
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "502":
+          description: Bad Gateway
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            properties:
+              meta:
+                $ref: '#/definitions/dtos.Meta'
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Suggest a project from a brief
       tags:
       - AI
   /events:

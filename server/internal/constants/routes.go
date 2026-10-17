@@ -79,5 +79,6 @@ var SecretBodyPaths = []string{PathAPIBase + PathPersonCalendarFeed, PathAPIBase
 // Ask AI.
 const (
 	PathAIAsk                = "/ai/ask"
+	PathAIIntakeExtractions  = "/ai/intake-extractions"
 	PathStaffingDraftSummary = "/staffing-drafts/:id/summary"
 )
