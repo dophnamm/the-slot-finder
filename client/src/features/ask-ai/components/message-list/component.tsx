@@ -4,7 +4,7 @@ import { MessageBubble } from '../message-bubble'
 import { TypingIndicator } from '../typing-indicator'
 import type { MessageListProps } from './types'
 
-export function MessageList({ messages, isPending }: MessageListProps) {
+export function MessageList({ messages, isPending, onRetry }: MessageListProps) {
   const { t } = useTranslation()
   const endRef = useRef<HTMLDivElement>(null)
 
@@ -20,7 +20,11 @@ export function MessageList({ messages, isPending }: MessageListProps) {
         </p>
       )}
       {messages.map((message, index) => (
-        <MessageBubble key={index} message={message} />
+        <MessageBubble
+          key={index}
+          message={message}
+          onRetry={index === messages.length - 1 && !isPending ? onRetry : undefined}
+        />
       ))}
       {isPending && <TypingIndicator />}
       <div ref={endRef} />
