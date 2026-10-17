@@ -17,7 +17,6 @@
 
 ## Not now
 
-- Bench list → [Later](README.md#later), design in [root README §7](../../README.md#7-metrics).
 - Comparing a draft or scenario on the heatmap → [Later](README.md#later).
 
 ## Server

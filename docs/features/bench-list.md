@@ -3,7 +3,7 @@
 **Goal:** show who is idle for the coming weeks, so a Planner or Manager can find work for them. This covers the bench list in the [root README §7](../../README.md#7-metrics).
 
 **Roles:** planner, manager (Manager: the people of their teams).
-**Target:** 17–18 Oct · **Depends on:** [team-heatmap](team-heatmap.md) · **Branch:** `feat/bench-list` · **Status:** Planned
+**Target:** 17–18 Oct · **Depends on:** [team-heatmap](team-heatmap.md) · **Branch:** `feat/bench-list` · **Status:** Done
 
 ## In scope
 
@@ -60,11 +60,11 @@
 4. Utilization exactly at `UTILIZATION_UNDERUSED_BELOW` is not on the bench.
 5. The list is sorted by free hours, most first, then by name.
 6. A manager sees only the people of their teams; a specialist gets `403`.
-7. The Risks card shows "Bench" with each person's name, primary expertise and free hours. A name opens that person's page. With nobody on the bench, the card shows an empty state.
+7. At the end of the Risks card, "Bench" shows each person's name, primary expertise and free hours. A name opens that person's page. With nobody on the bench, the card shows an empty state.
 
 ## Client
 
-- The **Bench** list sits in the Risks card (`client/src/features/risks/component.tsx`), next to **Sustained overload** (`:69-80`).
+- The **Bench** list sits at the end of the Risks card (`client/src/features/risks/component.tsx`), after the risk groups.
 - Each row: name (a link to the person's page), primary expertise, and "{hours} h free in {weeks} weeks".
 - Empty state when nobody is on the bench.
 - Endpoint in `src/resources/endpoints/insights.ts`. TanStack Query hook inside the risks feature. i18n keys in `LanguageKey`.
@@ -72,22 +72,22 @@
 ## Tasks
 
 **Server**
-- [ ] `metrics.Bench` with table tests
-- [ ] `InsightsService.Bench`, handler, DTO, route, constants, Swagger
-- [ ] Setting `BENCH_WEEKS`
+- [x] `metrics.Bench` with table tests
+- [x] `InsightsService.Bench`, handler, DTO, route, constants, Swagger
+- [x] Setting `BENCH_WEEKS`
 
 **Client**
-- [ ] Endpoint, hook and types in the risks feature
-- [ ] Bench list and empty state in the Risks card
+- [x] Endpoint, hook and types in the risks feature
+- [x] Bench list and empty state in the Risks card
 
 **Tests**
-- [ ] Metrics: on the bench; one week at or above the threshold makes it off; a 0-capacity week makes it off; the threshold boundary
-- [ ] Handler and RBAC: specialist `403`; manager sees only their teams' people
-- [ ] Client: the list, the name link and the empty state
+- [x] Metrics: on the bench; one week at or above the threshold makes it off; a 0-capacity week makes it off; the threshold boundary
+- [x] Handler and RBAC: specialist `403`; manager sees only their teams' people
+- [x] Client: the list, the name link and the empty state
 
 **Docs** (same PR)
-- [ ] [README.md](../../README.md): the Bench list row in §7 is built, with no suggested actions
-- [ ] [server/README.md](../../server/README.md): move `GET /insights/bench` out of the Later routes; update the "Team signals" row; add `BENCH_WEEKS` to the config table and remove it from the "Later settings" list
-- [ ] [client/README.md](../../client/README.md): the Risks card text; remove "`/insights`: bench list" from Later
-- [ ] [team-heatmap](team-heatmap.md): the bench bullet under Not now
-- [ ] [user-manual](../user-manual.md): the dashboard section
+- [x] [README.md](../../README.md): the Bench list row in §7 is built, with no suggested actions
+- [x] [server/README.md](../../server/README.md): move `GET /insights/bench` out of the Later routes; update the "Team signals" row; add `BENCH_WEEKS` to the config table and remove it from the "Later settings" list
+- [x] [client/README.md](../../client/README.md): the Risks card text; remove "`/insights`: bench list" from Later
+- [x] [team-heatmap](team-heatmap.md): the bench bullet under Not now
+- [x] [user-manual](../user-manual.md): the dashboard section
