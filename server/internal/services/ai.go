@@ -158,24 +158,22 @@ func upstreamError(err error) *errors.AppError {
 func (s *aiService) runTool(ctx context.Context, call llm.FunctionCall) llm.Part {
 	result := map[string]any{}
 	data, err := s.dispatch(ctx, call)
+	var sent string
 	if err != nil {
 		if appErr, ok := stderrors.AsType[*errors.AppError](err); ok {
-			result["error"] = appErr.Message
+			sent = appErr.Message
 		} else {
-			result["error"] = constants.MsgAIToolFailed
+			sent = constants.MsgAIToolFailed
 		}
+		result["error"] = sent
 	} else {
-		result["result"] = s.cut(data)
+		sent = compactJSON(data, s.cfg.LLMMaxToolResultBytes)
+		result["result"] = sent
 	}
+	// Names and sizes only: never the arguments, the result or the question.
+	logger.Log.Info("Ask AI tool call", zap.String("tool", call.Name), zap.Int("result_bytes", len(sent)),
+		zap.Bool("truncated", err == nil && len(data) > s.cfg.LLMMaxToolResultBytes), zap.Bool("failed", err != nil))
 	return llm.Part{FunctionResponse: &llm.FunctionResponse{Name: call.Name, Response: result}}
-}
-
-// cut keeps the first LLM_MAX_TOOL_RESULT_BYTES of a result and marks the cut.
-func (s *aiService) cut(data []byte) string {
-	if len(data) <= s.cfg.LLMMaxToolResultBytes {
-		return string(data)
-	}
-	return string(data[:s.cfg.LLMMaxToolResultBytes]) + constants.LLMToolCutMarker
 }
 
 // dispatch calls the service behind a tool with the caller's ctx, so their checks apply, and
