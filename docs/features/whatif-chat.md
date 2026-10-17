@@ -3,7 +3,7 @@
 **Goal:** a planner asks Ask AI a what-if in plain language, e.g. "what if Checkout Revamp slips 3 weeks?" or "what if Quinn is away from 2026-11-02 to 2026-11-13?". Ask AI saves a scenario (a what-if on a copy of the baseline, never on the baseline) and answers with the result: people changed, hours moved, unmet hours and the biggest changes. The AI design is in the [root README §15](../../README.md#15-ai-assistant) and [server README §9](../../server/README.md#9-ai-assistant).
 
 **Roles:** planner (scenarios are planner-only). Ask AI itself stays planner and manager.
-**Target:** 17–18 Oct · **Depends on:** [scenarios](scenarios.md), [ask-ai](ask-ai.md) · **Branch:** `feat/whatif-chat` · **Status:** Planned
+**Target:** 17–18 Oct · **Depends on:** [scenarios](scenarios.md), [ask-ai](ask-ai.md) · **Branch:** `feat/whatif-chat` · **Status:** Done
 
 ## In scope
 
@@ -68,26 +68,26 @@
 ## Tasks
 
 **Server**
-- [ ] `find_projects` and `find_people` tools
-- [ ] Role-filtered `aiToolDeclarations(role)` and the `create_scenario` tool with the once-per-question guard
-- [ ] System prompt and the `Ask` loop with the what-if tools
+- [x] `find_projects` and `find_people` tools
+- [x] Role-filtered `aiToolDeclarations(role)` and the `create_scenario` tool with the once-per-question guard
+- [x] System prompt and the `Ask` loop with the what-if tools
 
 **Client**
-- [ ] None (the answer is plain markdown, no UI change)
+- [x] None (the answer is plain markdown, no UI change)
 
 **Tests**
-- [ ] `find_projects` and `find_people`: match, no match, max 5, rights
-- [ ] `create_scenario`: valid shift, valid absence, bad project id gives `{error}`, manager refused, second call refused, result fields
-- [ ] `aiToolDeclarations`: planner has all three, manager has no `create_scenario`
-- [ ] `Ask` loop with the fake `llm.Client`: `find_projects`, then `create_scenario`, then final text; tool result cut still applies
-- [ ] Handler and RBAC unchanged
+- [x] `find_projects` and `find_people`: match, no match, max 5, rights
+- [x] `create_scenario`: valid shift, valid absence, bad project id gives `{error}`, manager refused, second call refused, result fields
+- [x] `aiToolDeclarations`: planner has all three, manager has no `create_scenario`
+- [x] `Ask` loop with the fake `llm.Client`: `find_projects`, then `create_scenario`, then final text; tool result cut still applies
+- [x] Handler and RBAC unchanged
 
 **Docs** (same PR)
-- [ ] [README.md](../../README.md): §15 says what-if chat is built via Ask AI tools
-- [ ] [server/README.md](../../server/README.md): §9 tools table; the three tools move from Later to built, with the role filter and the one-scenario-per-question rule; `get_scenario_diff` stays folded into `create_scenario`'s result; "what-if chat" leaves the Later list
-- [ ] [client/README.md](../../client/README.md): the AI chat panel row
-- [ ] [docs/features/README.md](README.md): row 22 → Done; remove "what-if chat" from the Later AI item
-- [ ] [docs/features/scenarios.md](scenarios.md): the "AI what-if chat → Later" bullet
-- [ ] [user-manual](../user-manual.md): Ask AI section gets example what-if questions, planner only
-- [ ] Drawio and README AI node: "what-if chat" removed from the later list
-- [ ] `README.md:3` and `CLAUDE.md:9`: twenty-two features built
+- [x] [README.md](../../README.md): §15 says what-if chat is built via Ask AI tools
+- [x] [server/README.md](../../server/README.md): §9 tools table; the three tools move from Later to built, with the role filter and the one-scenario-per-question rule; `get_scenario_diff` stays folded into `create_scenario`'s result; "what-if chat" leaves the Later list
+- [x] [client/README.md](../../client/README.md): the AI chat panel row
+- [x] [docs/features/README.md](README.md): row 22 → Done; remove "what-if chat" from the Later AI item
+- [x] [docs/features/scenarios.md](scenarios.md): the "AI what-if chat → Later" bullet
+- [x] [user-manual](../user-manual.md): Ask AI section gets example what-if questions, planner only
+- [x] Drawio and README AI node: "what-if chat" removed from the later list
+- [x] `README.md:3` and `CLAUDE.md:9`: twenty-two features built

@@ -27,7 +27,7 @@ One spec per feature, in build order. Each spec holds the goal, scope, server an
 | 19 | [Bench list](bench-list.md) | People idle for the next weeks, shown on the Risks card | 17–18 Oct | team-heatmap | Done |
 | 20 | [People import](people-import.md) | CSV import of many people at once: new emails are created, known ones updated, all or nothing | 17–18 Oct | people-and-skills, skill-and-program-events | Done |
 | 21 | [Draft summary](draft-summary.md) | A short AI-written summary of a staffing draft, checked against the draft's numbers, with a template fallback | 17–18 Oct | staffing-draft, ask-ai | Done |
-| 22 | [What-if chat](whatif-chat.md) | Ask AI can run a what-if for a planner: it saves a scenario from a plain-language question and reports the result | 17–18 Oct | scenarios, ask-ai | Planned |
+| 22 | [What-if chat](whatif-chat.md) | Ask AI can run a what-if for a planner: it saves a scenario from a plain-language question and reports the result | 17–18 Oct | scenarios, ask-ai | Done |
 
 ## Schedule
 
@@ -48,7 +48,7 @@ Designed in the root README, not built for the demo:
 - Plan churn
 - EAC hours, hours per point, contribution %, cross-expertise share
 - Forecast overrides, per-project confidence and the `front` and `back` profiles
-- AI assistant beyond Ask AI and draft summary: write actions, intake extraction, what-if chat and more tools (server README section 9)
+- AI assistant beyond Ask AI and draft summary: write actions, intake extraction and more tools (server README section 9)
 
 ## Conventions for these specs
 
