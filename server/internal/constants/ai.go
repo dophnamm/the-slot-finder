@@ -66,3 +66,17 @@ const (
 	// AIScenarioNameMaxRunes is how much of the question goes into the scenario name.
 	AIScenarioNameMaxRunes = 60
 )
+
+// Intake extraction: placeholders written over hidden text, and the limits of a request.
+const (
+	MaskEmail    = "[email]"
+	MaskCustomer = "[customer]"
+	MaskPhone    = "[phone]"
+
+	// IntakeMaxTextChars is the longest brief, in characters.
+	IntakeMaxTextChars = 8000
+	// IntakeMaxMaskTerms is how many extra names the user may ask to hide.
+	IntakeMaxMaskTerms = 10
+	// IntakeMaxMaskTermChars is the longest extra name, in characters.
+	IntakeMaxMaskTermChars = 100
+)
