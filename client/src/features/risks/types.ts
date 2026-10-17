@@ -34,3 +34,16 @@ export interface RisksData {
   sustained_overload: SustainedOverload[]
   people: OverloadedPerson[]
 }
+
+export interface BenchPerson {
+  person_id: string
+  name: string
+  primary_expertise: string
+  free_hours: number
+}
+
+/** People with spare hours across the next `weeks` weeks. */
+export interface BenchData {
+  weeks: number
+  people: BenchPerson[]
+}

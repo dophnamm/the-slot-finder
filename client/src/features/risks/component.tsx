@@ -8,6 +8,7 @@ import { useTranslation } from '@/shared/i18n'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { LOADING_REVEAL_CLASS } from '@/utils/constants'
 import { cn, range } from '@/utils/functions'
+import { BenchList } from './components/bench-list'
 import { OverloadedPerson } from './components/overloaded-person'
 import { RiskProject } from './components/risk-project'
 import { RISK_LOADING_ITEMS } from './constants'
@@ -110,6 +111,7 @@ export function Risks() {
               ))}
             </ul>
           </section>
+          <BenchList />
         </>
       )}
     </Section>

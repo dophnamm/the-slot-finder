@@ -1,6 +1,7 @@
 export const INSIGHTS_ENDPOINTS = {
   heatmap: '/insights/heatmap',
   risks: '/insights/risks',
+  bench: '/insights/bench',
   capacityForecast: '/insights/capacity-forecast',
 } as const
 
