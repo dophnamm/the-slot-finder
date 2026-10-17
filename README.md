@@ -1,6 +1,6 @@
 # The Slot Finder: System Architecture
 
-> **Status:** design v0.4. Eighteen features are built ([`docs/features/README.md`](docs/features/README.md)). Parts marked **(later)** are design only and not built.
+> **Status:** design v0.4. Nineteen features are built ([`docs/features/README.md`](docs/features/README.md)). Parts marked **(later)** are design only and not built.
 > **Technology:** Go server (Echo, Uber FX, GORM, PostgreSQL, Redis, Keycloak) and React client (Vite, Tailwind, shadcn/ui, TanStack Query, Zustand, Axios). See [section 12](#12-tech-stack). Sections 1–11 and 15 describe the design independently of the stack.
 > **Diagrams:** rendered inline below (Mermaid). The same set is in [`docs/architecture.drawio`](docs/architecture.drawio) for draw.io (9 pages).
 
@@ -145,7 +145,7 @@ flowchart TB
     direction LR
     events["<b>Change Events</b><br/>records changes"]
     planning["<b>Planning</b><br/>baseline · staffing draft · scenario"]
-    insights["<b>Insights</b><br/>heatmap · program metrics · risks<br/>capacity forecast · bench: later"]
+    insights["<b>Insights</b><br/>heatmap · program metrics · risks<br/>capacity forecast · bench list"]
   end
 
   engine["<b>Planning Engine</b><br/>pure library"]
@@ -515,7 +515,7 @@ Gap hours and Staffing % show the same shortfall, once in hours and once as a pe
 | **Capacity forecast by expertise** | Per expertise × week: free capacity, unmet confirmed demand, and expected pipeline demand (incoming projects' hours spread flat × the global `PIPELINE_CONFIDENCE_PERCENT`) | A sustained shortfall shows as a run of weeks in the forecast, for hiring or contractors |
 | **Sustained overload** | A person over 100 % for at least `sustained_overload_weeks` consecutive weeks (config, e.g. 3) | A burnout risk, listed before single overloaded weeks |
 | **Plan churn** (later) | Per accepted draft: how many people's allocations changed and how many hours moved | Reported with each draft's diff and tracked over time. High churn = an unstable plan |
-| **Bench list** (later) | People below the underused band for each of the next `bench_weeks` (config, e.g. 4) | Suggested actions: a stretch assignment, training, internal work. A Planner action, not the engine |
+| **Bench list** | People with capacity above 0 and utilization below the underused band in each of the next `bench_weeks` (config, e.g. 4) weeks, from this week. Free hours = Σ (capacity − load), most first | Find people with spare hours. The list suggests no actions; a Planner decides |
 
 ---
 

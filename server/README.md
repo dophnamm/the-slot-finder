@@ -90,7 +90,7 @@ Files per module follow the pattern `handlers/<module>.go`, `services/<module>.g
 | **availability** | Leave (entered by hand or read from a calendar feed), company-wide holidays; computes `capacity(person, week)`. Holidays per location: later | ABSENCE | `AbsenceAdded`, `AbsenceRemoved` |
 | **programs** | Programs, projects, phases (and their slip propagation), staffing demand (budget hours, headcount, `flat` profile), scope points, done points, program teams, program and project lifecycles (including `staffed_at`). Forecast overrides, confidence: later | PROGRAM, PROGRAM_TEAM_MEMBER, PROJECT, PROJECT_PHASE, DEMAND | `ProjectStatusChanged`, `ProjectSlipped`, `PhaseSlipped`, `DemandChanged`, `TeamChanged`, `ProgramSlipped` |
 | **planning** | Baseline, staffing drafts, scenarios; assignments and their kind (primary / cross-expertise / stretch) and alternatives; calls the engine; accept and publish | PLAN, ASSIGNMENT, ALLOCATION | none yet (`PlanPublished`: later) |
-| **insights** | Heatmap, utilization, program and project metrics, at-risk lists, capacity forecast, sustained overload (read-only). Bench list, plan churn, hours per point: later | none (read-only) | |
+| **insights** | Heatmap, utilization, program and project metrics, at-risk lists, capacity forecast, sustained overload, bench list (read-only). Plan churn, hours per point: later | none (read-only) | |
 | **events** | Records ChangeEvents, debounces them, assesses impact, creates re-plan jobs (one open auto draft per baseline) | CHANGE_EVENT | |
 | **integrations** | Calendar feeds (secret ICS links and the sync runner, which writes leave through **availability**), the LLM provider client (used by Ask AI), email sender. HR import and notifications (Email/Slack) to members: later | CALENDAR_FEED (import_job: later) | |
 | **timesheets** | The timesheet template and import; actual hours per person, project and week | ACTUAL_HOURS | |
@@ -167,6 +167,7 @@ A manager reads only the programs they lead or lead a project in, and the people
 | GET | `/insights/heatmap?from=&to=&expertise=&program_id=` | Person × week matrix. Each cell holds total hours plus hours per expertise; `expertise=` (an expertise id) keeps people who hold that expertise or work on it in the range; `program_id=` keeps the program's team (`403` for a manager who may not read the program, `404` for an unknown one). Each cell also has capacity, utilization, its band, a tentative flag for planned leave and `actual_hours`: the hours worked that week from imported timesheets, `null` when none were imported. Load counts plannable projects only, from the current week on (section 5) | planner, manager (team) |
 | GET | `/insights/capacity-forecast?from=&to=` | Per expertise (the primary skill of the people) × week: `capacity`, `load`, `free_hours` (capacity − load per person, never below 0), `unmet_hours` (confirmed demand of planned and active projects the baseline does not cover, spread flat over the rest of its window), `pipeline_hours` (the same for `incoming` projects × `PIPELINE_CONFIDENCE_PERCENT`), `shortfall_hours` (unmet + pipeline − free, at least 0) and `overloaded` (load above capacity) and `people`: the expertise's people in that week, highest load first, each `person_id`, `name`, `capacity`, `load`, `free_hours`, `utilization` (as in the heatmap, `null` without capacity), `band` and `overloaded`; people with no capacity and no load are left out. `sustained_overload` is the first run of `SUSTAINED_OVERLOAD_WEEKS` or more overloaded weeks, else `null`. Weeks default and are capped like the heatmap's. A manager gets their teams' capacity and the demand of the programs they may read | planner, manager (team) |
 | GET | `/insights/risks` | Understaffed and at-risk projects, delivery behind time, overloaded people in the next `HEATMAP_DEFAULT_WEEKS` weeks (a manager sees only their team's), and before them `sustained_overload`: each person over 100 % for `SUSTAINED_OVERLOAD_WEEKS` or more weeks in a row (`person`, `from_week`, `weeks`, the first such run); likely over budget later. Load counts plannable projects only, from the current week on (section 5) | planner, manager |
+| GET | `/insights/bench` | People on the bench: capacity above 0 and utilization below `UTILIZATION_UNDERUSED_BELOW` in each of the next `BENCH_WEEKS` weeks, from the current week. Each person has `person_id`, `name`, `primary_expertise` and `free_hours` (Σ capacity − load, same numbers as the heatmap); most free hours first, then by name. `weeks` is `BENCH_WEEKS`. A manager sees their teams' people | planner, manager |
 | POST | `/ai/ask` | Ask AI. Body `{ question }` (1–500 characters) and optional `page_context` (up to 200). Returns `{ answer }`. The model reads data only through read-only tools that run with the caller's permissions (section 9). `503 AI_NOT_CONFIGURED` when the chosen provider's key is empty; `429 AI_RATE_LIMITED` when the model service is rate limited, with `data.retry_after` (seconds) when it sends one; `502 AI_UPSTREAM_FAILED` for other model failures. Heavy rate limit | planner, manager (own programs, through the tools) |
 | GET | `/events?program_id=` | Change history and processing status; the program page uses it for the re-plan banner. A manager sees only events on the projects of their programs and events about themselves or the people in their teams (`person_id` in the payload); a manager without a person record gets an empty page. A planner sees all | planner, manager |
 | GET | `/timesheets/template?from=&to=` | CSV template: person × project × week with baseline hours in a range of past weeks, with planned hours and any actual hours already recorded | planner |
@@ -176,7 +177,6 @@ A manager reads only the programs they lead or lead a project in, and the people
 
 - `PATCH /programs/{id}/forecast`: set or clear `forecast_override_hours` per demand
 - `GET /projects/{id}/hours-suggestion`: suggested budget hours per expertise (`scope_points × hours_per_point`)
-- `GET /insights/bench`: people below the underused band, with suggested actions
 - `GET /insights/churn?from=&to=`: plan churn per accepted draft
 - `POST /imports/{csv|hr}`: import data in the background
 - `GET /staffing-drafts/{id}/summary`: plain-language summary of a draft's diff, reasons and unmet demand
@@ -298,7 +298,7 @@ The **insights** module computes these for `/programs/{id}/overview`, `/programs
 | **Later** · Hours per point | Per expertise: Σ allocated hours on `done` projects ÷ Σ their `scope_points`. `null` with no done projects, and the form then offers no suggestion |
 | **Later** · Time-to-staff (goal G1) | `staffed_at − created_at` per project. `staffed_at` is set when the first draft covering the project is accepted |
 | Capacity forecast | Free capacity = capacity − baseline load. Pipeline demand = hours of `incoming` projects without accepted assignments, spread flat over their window × `PIPELINE_CONFIDENCE_PERCENT` |
-| Team signals | Sustained overload: over 100 % for `SUSTAINED_OVERLOAD_WEEKS` weeks in a row. **Later** · Bench: under the underused band for each of the next `BENCH_WEEKS`. **Later** · Plan churn: per accepted draft, people whose allocations changed and Σ \|hours moved\| |
+| Team signals | Sustained overload: over 100 % for `SUSTAINED_OVERLOAD_WEEKS` weeks in a row. Bench: under the underused band for each of the next `BENCH_WEEKS`. **Later** · Plan churn: per accepted draft, people whose allocations changed and Σ \|hours moved\| |
 | Members tab | Members come from the baseline (anyone with allocations in the program) plus the program and project leads. **Later** · overall utilization across **all** projects, next 4 weeks |
 
 ## 6. Background jobs
@@ -389,6 +389,7 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `UTILIZATION_UNDERUSED_BELOW` · `UTILIZATION_NEAR_FULL_FROM` | Utilization band limits (overloaded is always over 100 %) | 0.5 · 0.85 |
 | `SCOPE_LAG_THRESHOLD` | Percentage points by which Scope % may trail Time % before **behind on delivery** (not scope points) | 20 |
 | `SUSTAINED_OVERLOAD_WEEKS` | Consecutive weeks over 100 % for **sustained overload** | 3 |
+| `BENCH_WEEKS` | Weeks ahead a person must stay underused to be on the bench list | 4 |
 | `PIPELINE_CONFIDENCE_PERCENT` | Weight of every `incoming` project's demand in the capacity forecast (one global value; per-project `confidence` is later) | 50 |
 | `DRAFT_ALTERNATIVES_LIMIT` | People a staffing draft offers to swap in for an assignment | 5 |
 | `APP_ENV` | Runtime environment; an unset value runs as `production` (`.env.example` sets `development`) | production |
@@ -439,12 +440,11 @@ Each question is sent alone, with the page path as context, so there is no chat 
 | `AI_UPLOAD_MAX_BYTES` | Largest document accepted by intake extraction | 5MB |
 | `AI_CHAT_MAX_TURNS` | Conversation turns sent with a chat message; older ones are dropped | 20 |
 
-**Later** settings for EAC and the bench list (no config field yet):
+**Later** settings for EAC (no config field yet):
 
 | Setting | Purpose | Default |
 |---|---|---|
 | `EAC_MIN_SCOPE_PERCENT` | Scope % needed before EAC hours is shown | 10 |
-| `BENCH_WEEKS` | Weeks ahead a person must stay underused to be on the bench list | 4 |
 
 **Later**, not built yet: the settings above are a draft, since Ask AI already uses the `LLM_*` settings. Intake, chat and summaries wait for the data policy question below. The principle, capabilities and boundaries are in the [root README, section 15](../README.md#15-ai-assistant-later).
 
