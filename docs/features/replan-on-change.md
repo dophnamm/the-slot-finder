@@ -21,7 +21,7 @@
 
 ## Not now
 
-- `PersonLeft` → [Later](README.md#later).
+- A person leaving is an `end_date` or `active` change, which records `PersonCapacityChanged`.
 - Email and Slack alerts → [Later](README.md#later). The alert is the banner and the change history.
 
 ## Server

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The Slot Finder assigns incoming customer projects to cross-functional squads (PM, Analyst, Engineer, QA), forecasts who is overloaded or idle per week, and re-plans when projects slip or people take leave. `README.md` is the architecture source of truth: goals, data model, metrics formulas, flows and ADRs. `docs/architecture.drawio` mirrors its diagrams. `server/README.md` and `client/README.md` hold the per-side details, API table and screens. `docs/features/` holds one spec per feature in build order (scope, acceptance criteria, tasks); read the feature's spec before building it. `docs/plans/` holds the step-by-step implementation plan of a feature, named like its spec. `docs/user-manual.md` is the manual for people who use the app.
 
-Status: the first seventeen features in `docs/features/README.md` are built (sign-in through capacity forecast). A program has a team, and the `manager` role, shown as **Manager**, sees and staffs only the teams of the programs they manage.
+Status: the first eighteen features in `docs/features/README.md` are built (sign-in through skill and program events). A program has a team, and the `manager` role, shown as **Manager**, sees and staffs only the teams of the programs they manage.
 
 ## Repo-wide rules
 

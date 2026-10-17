@@ -237,7 +237,7 @@
         <mxCell id="e-21" value="calendar sync:&lt;br&gt;out-of-office → planned leave" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.857;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="v-3" target="v-7">
           <mxGeometry as="geometry" relative="1" x="-0.45" />
         </mxCell>
-        <mxCell id="e-22" value="domain events:&lt;br&gt;PersonLeft, SkillChanged, AbsenceAdded,&lt;br&gt;ProgramSlipped, ProjectSlipped, PhaseSlipped, DemandChanged" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;dashed=1;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.15;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="v-5" target="v-11">
+        <mxCell id="e-22" value="domain events:&lt;br&gt;AbsenceAdded, AbsenceRemoved, PhaseSlipped,&lt;br&gt;ProjectSlipped, DemandChanged, ProjectStatusChanged,&lt;br&gt;PersonCapacityChanged, TeamChanged, SkillChanged, ProgramSlipped" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;dashed=1;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.15;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="v-5" target="v-11">
           <mxGeometry as="geometry" relative="1" />
         </mxCell>
         <mxCell id="e-23" value="triggers re-plan" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="v-11" target="v-12">
