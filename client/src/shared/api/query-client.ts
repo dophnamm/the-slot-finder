@@ -13,7 +13,8 @@ declare module '@tanstack/react-query' {
     defaultError: ApiError
     // A query or mutation lists the error codes it shows itself, so the shared toast skips them.
     queryMeta: { quietErrorCodes?: readonly string[] }
-    mutationMeta: { quietErrorCodes?: readonly string[] }
+    // quietErrors: the mutation shows every failure itself, except an ended session (401).
+    mutationMeta: { quietErrorCodes?: readonly string[]; quietErrors?: boolean }
   }
 }
 
@@ -53,6 +54,7 @@ function notifyMutationError(
   mutation: Mutation<unknown, unknown, unknown>,
 ) {
   if (mutation.meta?.quietErrorCodes?.includes(error.code)) return
+  if (mutation.meta?.quietErrors && error.status !== UNAUTHORIZED_STATUS) return
   notifyError(error)
 }
 

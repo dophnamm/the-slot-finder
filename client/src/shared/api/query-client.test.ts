@@ -38,6 +38,15 @@ describe('queryClient', () => {
     expect(toastError).not.toHaveBeenCalled()
   })
 
+  it('stays quiet for a mutation that shows every failure itself', async () => {
+    await queryClient
+      .getMutationCache()
+      .build(queryClient, { mutationFn: forbidden, meta: { quietErrors: true } })
+      .execute(undefined)
+      .catch(() => undefined)
+    expect(toastError).not.toHaveBeenCalled()
+  })
+
   it.each([
     [6, 'Too many requests. Try again in 6 seconds.'],
     [1, 'Too many requests. Try again in 1 second.'],
