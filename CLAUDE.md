@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The Slot Finder assigns incoming customer projects to cross-functional squads (PM, Analyst, Engineer, QA), forecasts who is overloaded or idle per week, and re-plans when projects slip or people take leave. `README.md` is the architecture source of truth: goals, data model, metrics formulas, flows and ADRs. `docs/architecture.drawio` mirrors its diagrams. `server/README.md` and `client/README.md` hold the per-side details, API table and screens. `docs/features/` holds one spec per feature in build order (scope, acceptance criteria, tasks); read the feature's spec before building it. `docs/plans/` holds the step-by-step implementation plan of a feature, named like its spec. `docs/user-manual.md` is the manual for people who use the app.
 
-Status: the first nineteen features in `docs/features/README.md` are built (sign-in through bench list). A program has a team, and the `manager` role, shown as **Manager**, sees and staffs only the teams of the programs they manage.
+Status: the first twenty features in `docs/features/README.md` are built (sign-in through people import). A program has a team, and the `manager` role, shown as **Manager**, sees and staffs only the teams of the programs they manage.
 
 ## Repo-wide rules
 
@@ -89,7 +89,7 @@ A Program contains Projects. A Project is split into ordered **Phases** (week ra
 - Migrations are Atlas files in `cmd/migrations/sql`, generated from GORM models.
 - `internal/engine` imports the stdlib only: `engine.Propose(request)` with the greedy strategy. The staffing service builds the snapshot (capacity, demand windows, the baseline) and saves the result as a draft.
 - Change events are an outbox: services that save leave or a slipped phase or deadline call `events.Record` inside the same `TxManager.Do`. The re-plan runner (started and stopped by an FX hook) claims them with `FOR UPDATE SKIP LOCKED` after `REPLAN_DEBOUNCE` and builds or merges one open auto draft per baseline.
-- Planned, not built yet: background jobs for import and notify.
+- Planned, not built yet: a background notify job.
 - `cmd/server/.env` is read by the app, the Makefile and docker compose. `deploy/postgres/init` creates the `keycloak` database only when the volume is first created.
 
 ### Client (React + TS, Vite, Tailwind v4, shadcn/ui on Base UI)
