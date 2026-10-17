@@ -205,7 +205,7 @@
         <mxCell id="v-12" value="&lt;b&gt;Planning&lt;/b&gt;&lt;br&gt;&lt;i&gt;baseline · staffing draft · scenario&lt;br&gt;accept / publish&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="470" y="480" width="260" height="90" />
         </mxCell>
-        <mxCell id="v-13" value="&lt;b&gt;Insights&lt;/b&gt;&lt;br&gt;&lt;i&gt;heatmap · program metrics · risks&lt;br&gt;capacity forecast · bench&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+        <mxCell id="v-13" value="&lt;b&gt;Insights&lt;/b&gt;&lt;br&gt;&lt;i&gt;heatmap · program metrics · risks&lt;br&gt;capacity forecast · bench list&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="830" y="480" width="260" height="90" />
         </mxCell>
         <mxCell id="v-14" value="&lt;b&gt;Planning Engine&lt;/b&gt;&lt;br&gt;&lt;i&gt;pure library, imports no module&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
