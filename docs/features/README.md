@@ -21,6 +21,7 @@ One spec per feature, in build order. Each spec holds the goal, scope, server an
 | 13 | [Calendar sync](calendar-sync.md) | Secret ICS link from Google or Outlook; out-of-office events become planned leave and feed the re-plan flow | 15–16 Oct | member-calendar, replan-on-change | Done |
 | 14 | [Program teams](program-teams.md) | A planner gives each program its team; the program's manager sees and staffs only that team, and the engine staffs a program from its team | 14–15 Oct | programs-and-demand, staffing-draft, member-calendar | Done |
 | 15 | [Ask AI](ask-ai.md) | Floating assistant for planners and Managers: plain-language questions answered only from read-only tools that run with the caller's rights (Gemini, Groq or OpenRouter, key from env) | 16 Oct | staffing-draft, team-heatmap, program-metrics, program-teams | Done |
+| 16 | [Guided tour](guided-tour.md) | First-time tour of the sidebar, one step per link the role can open and one on the account menu; started again from the account menu | 17 Oct | sign-in | Done |
 
 ## Schedule
 
