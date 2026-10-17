@@ -228,7 +228,7 @@ type Config struct {
 	// DraftAlternativesLimit is how many people a staffing draft offers to swap in for an assignment.
 	DraftAlternativesLimit int
 
-	// Gemini AI (Ask AI): the API key (empty turns the feature off), the model, the timeout of one
+	// Ask AI (Gemini, Groq or OpenRouter): the API key (empty turns the feature off), the model, the timeout of one
 	// model call, how many model calls one question may take, and the longest tool result sent back.
 	LLMAPIKey             string
 	LLMProvider           string
@@ -236,6 +236,7 @@ type Config struct {
 	LLMTimeout            time.Duration
 	LLMMaxToolRounds      int
 	LLMMaxToolResultBytes int
+	LLMTemperature        float64
 }
 
 // Load loads configuration from environment variables
@@ -383,8 +384,9 @@ func Load() (*Config, error) {
 		LLMProvider:           llmProvider,
 		LLMModel:              llmModel,
 		LLMTimeout:            getEnvAsDuration("LLM_TIMEOUT", 30*time.Second),
-		LLMMaxToolRounds:      getEnvAsInt("LLM_MAX_TOOL_ROUNDS", 4),
-		LLMMaxToolResultBytes: getEnvAsInt("LLM_MAX_TOOL_RESULT_BYTES", 12000),
+		LLMMaxToolRounds:      getEnvAsInt("LLM_MAX_TOOL_ROUNDS", 5),
+		LLMMaxToolResultBytes: getEnvAsInt("LLM_MAX_TOOL_RESULT_BYTES", 8000),
+		LLMTemperature:        getEnvAsFloat("LLM_TEMPERATURE", constants.DefaultLLMTemperature),
 	}
 
 	weekdays, err := parseWeekdays(getEnv("WORKING_WEEKDAYS", defaultWorkingWeekdays))
@@ -442,8 +444,11 @@ func envValue(key string) string {
 // variables, so switching provider means changing LLM_PROVIDER only. An unknown provider is
 // rejected by llm.ProvideClient at startup, so what it gets here does not matter.
 func llmSettings(provider string) (apiKey, model string) {
-	if provider == constants.LLMProviderGroq {
+	switch provider {
+	case constants.LLMProviderGroq:
 		return getEnv("GROQ_API_KEY", ""), getEnv("GROQ_MODEL", constants.DefaultGroqModel)
+	case constants.LLMProviderOpenRouter:
+		return getEnv("OPENROUTER_API_KEY", ""), getEnv("OPENROUTER_MODEL", constants.DefaultOpenRouterModel)
 	}
 	return getEnv("GEMINI_API_KEY", ""), getEnv("GEMINI_MODEL", constants.DefaultGeminiModel)
 }
