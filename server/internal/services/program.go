@@ -177,6 +177,7 @@ func (s *programService) Update(ctx context.Context, id string, in UpdateProgram
 		return nil, err
 	}
 
+	oldEnd := program.EndDate
 	applyProgramChanges(program, in)
 	if in.LeadID.Set {
 		if !CanManageAllPrograms(principal) {
@@ -192,8 +193,19 @@ func (s *programService) Update(ctx context.Context, id string, in UpdateProgram
 	}
 
 	program.Lead = nil
-	if err := s.programs.Save(ctx, program); err != nil {
-		return nil, errors.DatabaseError(constants.MsgProgramSaveFailed, err).WithOperation(opUpdateProgram).WithResource(resourceProgram)
+	err = s.tx.Do(ctx, func(ctx context.Context) error {
+		if err := s.programs.Save(ctx, program); err != nil {
+			return err
+		}
+		if program.EndDate.Equal(oldEnd) {
+			return nil
+		}
+		return s.events.Record(ctx, ChangeInput{Type: constants.EventProgramSlipped,
+			Payload: ProgramEndChange{ProgramID: program.ID, Program: program.Name, OldEndDate: oldEnd.Format(constants.DateLayout),
+				NewEndDate: program.EndDate.Format(constants.DateLayout)}})
+	})
+	if err != nil {
+		return nil, asAppError(err, constants.MsgProgramSaveFailed, opUpdateProgram, resourceProgram)
 	}
 	return s.find(ctx, id, opUpdateProgram)
 }

@@ -82,6 +82,14 @@ type TeamChange struct {
 	Change    string `json:"change"`
 }
 
+// ProgramEndChange is the payload of ProgramSlipped.
+type ProgramEndChange struct {
+	ProgramID  string `json:"program_id"`
+	Program    string `json:"program"`
+	OldEndDate string `json:"old_end_date"`
+	NewEndDate string `json:"new_end_date"`
+}
+
 // PhaseChange is the payload of PhaseSlipped.
 type PhaseChange struct {
 	ProjectID   string `json:"project_id"`

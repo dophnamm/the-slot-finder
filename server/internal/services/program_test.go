@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	stderrors "errors"
 	"net/http"
 	"testing"
 	"time"
@@ -206,4 +207,52 @@ func TestProgramService_Update_LeadChange(t *testing.T) {
 		require.NoError(t, err)
 		repo.AssertExpectations(t)
 	})
+}
+
+func TestProgramService_RecordsEndDateChange(t *testing.T) {
+	day := func(m time.Month, d int) *time.Time { v := time.Date(2026, m, d, 0, 0, 0, 0, time.UTC); return &v }
+	tests := []struct {
+		name      string
+		in        UpdateProgramInput
+		failEvent bool
+		want      *ProgramEndChange
+		wantErr   bool
+	}{
+		{name: "end moved later", in: UpdateProgramInput{EndDate: day(time.November, 13)},
+			want: &ProgramEndChange{ProgramID: programID, Program: "Checkout Revamp", OldEndDate: "2026-10-30", NewEndDate: "2026-11-13"}},
+		{name: "end moved earlier", in: UpdateProgramInput{EndDate: day(time.October, 23)},
+			want: &ProgramEndChange{ProgramID: programID, Program: "Checkout Revamp", OldEndDate: "2026-10-30", NewEndDate: "2026-10-23"}},
+		{name: "same end date", in: UpdateProgramInput{EndDate: day(time.October, 30)}},
+		{name: "only the name changes", in: UpdateProgramInput{Name: new("Renamed")}},
+		{name: "only the start date changes", in: UpdateProgramInput{StartDate: day(time.October, 5)}},
+		{name: "a failed event fails the update", in: UpdateProgramInput{EndDate: day(time.November, 13)}, failEvent: true, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo, events := new(MockProgramRepository), &recordedEvents{}
+			if tt.failEvent {
+				events.fail = stderrors.New("outbox down")
+			}
+			p := program(constants.ProgramStatusOpen, nil)
+			p.Name, p.EndDate = "Checkout Revamp", *day(time.October, 30)
+			repo.On("FindWithLead", mock.Anything, programID).Return(p, nil)
+			repo.On("Save", mock.Anything, mock.Anything).Return(nil)
+			people := leadPeople{}
+			service := ProvideProgramService(repo, nil, people, ProvideAuthzService(people), passthroughTx{}, events)
+			_, err := service.Update(asRole("kc-planner", constants.RolePlanner), programID, tt.in)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			if tt.want == nil {
+				require.Empty(t, events.events)
+				return
+			}
+			require.Len(t, events.events, 1)
+			require.Equal(t, constants.EventProgramSlipped, events.events[0].Type)
+			require.Equal(t, *tt.want, events.events[0].Payload)
+			require.Empty(t, events.events[0].ProjectIDs)
+		})
+	}
 }
