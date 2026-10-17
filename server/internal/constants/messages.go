@@ -194,6 +194,16 @@ const (
 	MsgTimesheetTemplateFailed = "Could not build the timesheet template"
 )
 
+// People import messages.
+const (
+	MsgPeopleImported             = "People imported"
+	MsgPeopleImportInvalid        = "Some rows of the file have problems; nothing was saved"
+	MsgPeopleImportTooLargeFormat = "A people file may hold at most %d bytes and %d rows"
+	MsgPeopleImportTemplate       = "People import template"
+	MsgPeopleImportFileMissing    = "Choose a CSV file to import"
+	MsgPeopleImportUnreadable     = "Could not read the people file"
+)
+
 // Program team messages.
 const (
 	MsgTeamListed         = "Program team retrieved"

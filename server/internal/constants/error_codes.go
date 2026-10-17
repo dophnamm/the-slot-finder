@@ -88,6 +88,10 @@ const (
 	TimesheetWeekInFuture = "TIMESHEET_WEEK_IN_FUTURE"
 	TimesheetFileMissing  = "TIMESHEET_FILE_MISSING"
 
+	// People import errors
+	PeopleImportInvalid  = "PEOPLE_IMPORT_INVALID"
+	PeopleImportTooLarge = "PEOPLE_IMPORT_TOO_LARGE"
+
 	// Ask AI errors
 	AINotConfigured  = "AI_NOT_CONFIGURED"
 	AIUpstreamFailed = "AI_UPSTREAM_FAILED"

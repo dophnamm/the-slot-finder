@@ -67,6 +67,9 @@ const (
 
 	PathTimesheetTemplate = "/timesheets/template"
 	PathTimesheetImport   = "/timesheets/import"
+
+	PathPeopleImport         = "/people/import"
+	PathPeopleImportTemplate = "/people/import-template"
 )
 
 // SecretBodyPaths are routes whose request body holds a secret (a calendar link). The request
