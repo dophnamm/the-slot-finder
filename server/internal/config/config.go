@@ -225,6 +225,8 @@ type Config struct {
 	AlertHorizonWeeks int
 	// SustainedOverloadWeeks is how many weeks in a row over 100 % make a sustained overload.
 	SustainedOverloadWeeks int
+	// BenchWeeks is how many weeks ahead a person must stay underused to be on the bench list.
+	BenchWeeks int
 	// PipelineConfidencePercent weights the demand of incoming projects in the capacity forecast, until a project has its own confidence.
 	PipelineConfidencePercent float64
 	// DraftAlternativesLimit is how many people a staffing draft offers to swap in for an assignment.
@@ -380,6 +382,7 @@ func Load() (*Config, error) {
 		AlertHorizonWeeks: getEnvAsInt("ALERT_HORIZON_WEEKS", 4),
 
 		SustainedOverloadWeeks:    getEnvAsInt("SUSTAINED_OVERLOAD_WEEKS", 3),
+		BenchWeeks:                getEnvAsInt("BENCH_WEEKS", 4),
 		PipelineConfidencePercent: getEnvAsFloat("PIPELINE_CONFIDENCE_PERCENT", 50),
 		DraftAlternativesLimit:    getEnvAsInt("DRAFT_ALTERNATIVES_LIMIT", 5),
 

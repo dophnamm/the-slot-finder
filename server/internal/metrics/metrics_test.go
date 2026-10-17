@@ -243,6 +243,34 @@ func TestSustainedOverload(t *testing.T) {
 	}
 }
 
+func TestBench(t *testing.T) {
+	const underusedBelow = 0.5
+	weeks := func(w ...BenchWeek) []BenchWeek { return w }
+	same := func(w BenchWeek) []BenchWeek { return weeks(w, w, w, w) }
+	tests := []struct {
+		name     string
+		weeks    []BenchWeek
+		wantFree float64
+		wantOn   bool
+	}{
+		{name: "on the bench", weeks: same(BenchWeek{36, 10}), wantFree: 104, wantOn: true},
+		{name: "no load at all", weeks: same(BenchWeek{36, 0}), wantFree: 144, wantOn: true},
+		{name: "one week at or above the band", weeks: weeks(BenchWeek{36, 10}, BenchWeek{36, 10}, BenchWeek{36, 20}, BenchWeek{36, 10})},
+		{name: "exactly at the threshold", weeks: weeks(BenchWeek{36, 10}, BenchWeek{36, 18}, BenchWeek{36, 10}, BenchWeek{36, 10})},
+		{name: "a week with no capacity", weeks: weeks(BenchWeek{36, 10}, BenchWeek{0, 0}, BenchWeek{36, 10}, BenchWeek{36, 10})},
+		{name: "no weeks"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			free, on := Bench(tt.weeks, underusedBelow)
+			assert.Equal(t, tt.wantOn, on)
+			if tt.wantOn {
+				assert.InDelta(t, tt.wantFree, free, 1e-9)
+			}
+		})
+	}
+}
+
 func TestCapacityForecast(t *testing.T) {
 	weeks := []ForecastInput{
 		{Capacity: 36, Load: 40, FreeHours: 0, UnmetHours: 10},
