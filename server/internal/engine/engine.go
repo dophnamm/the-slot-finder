@@ -28,6 +28,11 @@ const (
 	UnmetNoCapacity UnmetReason = "NO_CAPACITY_BEFORE_DEADLINE"
 	// UnmetBlockedByLocked: the free hours are held by allocations a Planner locked.
 	UnmetBlockedByLocked UnmetReason = "BLOCKED_BY_LOCKED"
+	// UnmetBlockedByExpertiseLimit: people had free hours, but taking this expertise would pass
+	// MaxExpertisesPerPersonWeek.
+	UnmetBlockedByExpertiseLimit UnmetReason = "BLOCKED_BY_EXPERTISE_LIMIT"
+	// UnmetBelowMinHours: people had free hours, but only in weeks under MinHoursPerWeek.
+	UnmetBelowMinHours UnmetReason = "BELOW_MIN_HOURS"
 	// UnmetNotInTeam: nobody in the program's team can take the demand.
 	UnmetNotInTeam UnmetReason = "NO_ONE_IN_TEAM"
 )

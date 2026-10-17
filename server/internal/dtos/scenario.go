@@ -98,7 +98,7 @@ type ScenarioUnmetResponse struct {
 	Project   string  `json:"project" example:"Checkout Revamp"`
 	Expertise string  `json:"expertise" example:"QA"`
 	Hours     float64 `json:"hours" example:"40"`
-	Reason    string  `json:"reason" enums:"NO_SKILL,LEVEL_TOO_LOW,NO_CAPACITY_BEFORE_DEADLINE,BLOCKED_BY_LOCKED,NO_ONE_IN_TEAM"`
+	Reason    string  `json:"reason" enums:"NO_SKILL,LEVEL_TOO_LOW,NO_CAPACITY_BEFORE_DEADLINE,BLOCKED_BY_LOCKED,BLOCKED_BY_EXPERTISE_LIMIT,BELOW_MIN_HOURS,NO_ONE_IN_TEAM"`
 }
 
 // ScenarioProjectResponse is a project a scenario planned again.

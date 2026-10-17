@@ -193,6 +193,8 @@ func TestPropose_Unmet(t *testing.T) {
 			existing: []ExistingAssignment{{PersonID: "q", DemandID: "other", ProjectID: "x", ProgramID: "x", Expertise: qa,
 				Kind: KindPrimary, Allocations: lockedWeeks(36, window)}},
 			want: UnmetBlockedByLocked},
+		{name: "free hours only in weeks under the minimum", demand: demand("d1", qa, 2, 40, weekRange(42, 10)),
+			people: []Person{person("q", 5, weekRange(42, 10), Skill{Expertise: qa, Level: 3, Primary: true})}, want: UnmetBelowMinHours},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -261,7 +263,7 @@ func TestPropose_ReplanKeepsWhatStillFits(t *testing.T) {
 	assert.Equal(t, map[string]float64{"2026-W44": 12, "2026-W45": 32, "2026-W46": 32, "2026-W47": 32, "2026-W48": 32}, hoursByWeek(alex),
 		"Alex keeps every hour that still fits")
 	assert.InDelta(t, 160, totalHours(result.Assignments[1]), epsilon, "Bao keeps his seat")
-	assert.Equal(t, []Unmet{{DemandID: "d1", Hours: 20, Reason: UnmetNoCapacity}}, result.Unmet,
+	assert.Equal(t, []Unmet{{DemandID: "d1", Hours: 20, Reason: UnmetBelowMinHours}}, result.Unmet,
 		"Bao has 4 h a week left, under the minimum, so the 20 h lost to leave stay unmet")
 }
 
@@ -296,7 +298,7 @@ func TestPropose_LimitsExpertisesPerWeek(t *testing.T) {
 
 	result := Propose(req)
 	assert.Empty(t, result.Assignments)
-	assert.Equal(t, []Unmet{{DemandID: "d1", Hours: 8, Reason: UnmetNoCapacity}}, result.Unmet)
+	assert.Equal(t, []Unmet{{DemandID: "d1", Hours: 8, Reason: UnmetBlockedByExpertiseLimit}}, result.Unmet)
 }
 
 func TestPropose_NeverBelowMinimumHours(t *testing.T) {

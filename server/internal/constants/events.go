@@ -26,3 +26,7 @@ const (
 	EventStatusDraftCreated = "draft_created"
 	EventStatusFailed       = "failed"
 )
+
+// EventNoteUnderstaffed is stored on a no_impact event (in last_error) when projects stay
+// understaffed that the event did not open; the argument is how many.
+const EventNoteUnderstaffed = "No re-plan: %d project(s) stay understaffed, and this change does not free capacity for them"

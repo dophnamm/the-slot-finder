@@ -30,6 +30,8 @@ type ChangeEventRepository interface {
 	ClaimPending(ctx context.Context, now, cutoff time.Time, limit int) ([]models.ChangeEvent, error)
 	// Finish sets an event's status, its draft and the projects it touches.
 	Finish(ctx context.Context, id, status string, draftID *string, projectIDs []string) error
+	// Annotate stores a note on events, in last_error, e.g. why a no_impact event did not re-plan.
+	Annotate(ctx context.Context, ids []string, note string) error
 	// RelinkDraft points every event of one draft at another, e.g. a draft's newer version.
 	RelinkDraft(ctx context.Context, fromDraftID, toDraftID string) error
 	// ListByDraft returns the events linked to a draft, oldest first.
@@ -85,6 +87,10 @@ func (r *changeEventRepository) Finish(ctx context.Context, id, status string, d
 	return r.db.From(ctx).Model(&models.ChangeEvent{}).Where("id = ?", id).Updates(map[string]any{
 		"status": status, "draft_id": draftID, "project_ids": gorm.Expr("?::jsonb", jsonArray(projectIDs)), "last_error": nil,
 	}).Error
+}
+
+func (r *changeEventRepository) Annotate(ctx context.Context, ids []string, note string) error {
+	return r.db.From(ctx).Model(&models.ChangeEvent{}).Where("id IN ?", ids).Update("last_error", note).Error
 }
 
 func (r *changeEventRepository) RelinkDraft(ctx context.Context, fromDraftID, toDraftID string) error {

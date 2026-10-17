@@ -93,7 +93,7 @@ type DraftDemandResponse struct {
 	FromWeek      string  `json:"from_week" example:"2026-W48"`
 	ToWeek        string  `json:"to_week" example:"2026-W50"`
 	// UnmetReason is the engine's code for hours it could not place when it made the draft.
-	UnmetReason *string `json:"unmet_reason" enums:"NO_SKILL,LEVEL_TOO_LOW,NO_CAPACITY_BEFORE_DEADLINE,BLOCKED_BY_LOCKED,NO_ONE_IN_TEAM"`
+	UnmetReason *string `json:"unmet_reason" enums:"NO_SKILL,LEVEL_TOO_LOW,NO_CAPACITY_BEFORE_DEADLINE,BLOCKED_BY_LOCKED,BLOCKED_BY_EXPERTISE_LIMIT,BELOW_MIN_HOURS,NO_ONE_IN_TEAM"`
 	// TeamIDs are the people of the program team who may staff the demand; null puts no limit.
 	TeamIDs []string `json:"team_ids"`
 }

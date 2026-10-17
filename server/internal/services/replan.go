@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	stderrors "errors"
+	"fmt"
 	"runtime/debug"
 	"slices"
 	"sort"
@@ -168,9 +169,20 @@ func (s *replanService) process(ctx context.Context, events []models.ChangeEvent
 		return err
 	}
 	if len(scope) == 0 || len(projects) == 0 {
+		// The baseline is left alone, but say so when some project stays understaffed.
+		all, err := s.projects.ListForMetrics(ctx, "")
+		if err != nil {
+			return err
+		}
+		short := len(understaffedProjects(all, baseline.Assignments))
 		for _, e := range events {
 			if err := s.events.Finish(ctx, e.ID, constants.EventStatusNoImpact, nil, touched[e.ID]); err != nil {
 				return err
+			}
+			if short > 0 {
+				if err := s.events.Annotate(ctx, []string{e.ID}, fmt.Sprintf(constants.EventNoteUnderstaffed, short)); err != nil {
+					return err
+				}
 			}
 		}
 		return nil
