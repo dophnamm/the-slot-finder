@@ -258,6 +258,9 @@ func (s *scenarioService) validate(ctx context.Context, in []AssumptionInput) ([
 	if len(in) > s.cfg.ScenarioMaxAssumptions {
 		return nil, assumptionInvalid(constants.MsgTooManyAssumptions)
 	}
+	if len(in) == 0 {
+		return nil, assumptionInvalid(constants.MsgAssumptionsRequired)
+	}
 	out := make([]models.ScenarioAssumption, 0, len(in))
 	for _, a := range in {
 		switch a.Type {
@@ -277,7 +280,7 @@ func (s *scenarioService) validate(ctx context.Context, in []AssumptionInput) ([
 			}
 			out = append(out, models.ScenarioAssumption{Type: a.Type, ProjectID: a.ProjectID, Weeks: a.Weeks})
 		case constants.AssumptionAddAbsence:
-			if a.PersonID == "" || a.FromDate.IsZero() || a.ToDate.Before(a.FromDate) || a.HoursPerDay <= 0 {
+			if a.PersonID == "" || a.FromDate.IsZero() || a.ToDate.Before(a.FromDate) || a.HoursPerDay <= 0 || a.HoursPerDay > constants.MaxAbsenceHoursPerDay {
 				return nil, assumptionInvalid(constants.MsgAbsenceNeedsPerson)
 			}
 			if _, err := s.people.FindOneByID(ctx, a.PersonID); err != nil {
@@ -285,6 +288,8 @@ func (s *scenarioService) validate(ctx context.Context, in []AssumptionInput) ([
 			}
 			out = append(out, models.ScenarioAssumption{Type: a.Type, PersonID: a.PersonID, FromDate: a.FromDate, ToDate: a.ToDate,
 				HoursPerDay: a.HoursPerDay})
+		default:
+			return nil, assumptionInvalid(constants.MsgAssumptionTypeUnknown)
 		}
 	}
 	return out, nil

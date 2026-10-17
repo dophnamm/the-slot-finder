@@ -352,7 +352,7 @@ func (s *aiService) createScenario(ctx context.Context, call llm.FunctionCall, n
 	if *saved > 0 {
 		return nil, errors.ValidationError(constants.MsgOneScenarioPerQuestion, fmt.Errorf("second %s call", call.Name))
 	}
-	assumptions, err := argAssumptions(call.Args)
+	assumptions, err := argAssumptions(call.Args, s.cfg.ScenarioMaxShiftWeeks)
 	if err != nil {
 		return nil, err
 	}
@@ -377,7 +377,7 @@ func (s *aiService) createScenario(ctx context.Context, call llm.FunctionCall, n
 		if c.Demand != nil {
 			item.Demand = c.Demand.Expertise.Name
 			if c.Demand.Project != nil {
-				item.Demand = c.Demand.Project.Name + " - " + item.Demand
+				item.Demand = c.Demand.Project.Name + constants.AIScenarioDemandSeparator + item.Demand
 			}
 		}
 		out.TopChanges = append(out.TopChanges, item)
@@ -386,16 +386,19 @@ func (s *aiService) createScenario(ctx context.Context, call llm.FunctionCall, n
 }
 
 // argAssumptions reads the assumptions list; a malformed entry is a validation error the model can read.
-func argAssumptions(args map[string]any) ([]AssumptionInput, error) {
+func argAssumptions(args map[string]any, maxWeeks int) ([]AssumptionInput, error) {
 	list, _ := args["assumptions"].([]any)
 	out := make([]AssumptionInput, 0, len(list))
 	for _, item := range list {
 		m, ok := item.(map[string]any)
 		if !ok {
-			return nil, errors.ValidationError("each assumption must be an object", fmt.Errorf("assumption is %T", item))
+			return nil, errors.ValidationError(constants.MsgAssumptionNotObject, fmt.Errorf("assumption is %T", item))
 		}
 		a := AssumptionInput{Type: argString(m, "type"), ProjectID: argString(m, "project_id"), PersonID: argString(m, "person_id")}
 		weeks, _ := m["weeks"].(float64)
+		if math.IsNaN(weeks) || weeks != math.Trunc(weeks) || math.Abs(weeks) > float64(maxWeeks) {
+			return nil, errors.ValidationError(constants.MsgAssumptionWeeksInvalid, fmt.Errorf("weeks %v", weeks))
+		}
 		a.Weeks = int(weeks)
 		a.HoursPerDay, _ = m["hours_per_day"].(float64)
 		var err error
@@ -418,7 +421,7 @@ func argDate(args map[string]any, key string) (time.Time, error) {
 	}
 	day, err := time.Parse(constants.DateLayout, text)
 	if err != nil {
-		return time.Time{}, errors.ValidationError(fmt.Sprintf("%s must be a date like 2026-10-19", key), err)
+		return time.Time{}, errors.ValidationError(fmt.Sprintf(constants.MsgDateFormat, key), err)
 	}
 	return day, nil
 }
@@ -593,8 +596,11 @@ func aiToolDeclarations(role string) []llm.FunctionDeclaration {
 	if !slices.Contains(constants.ScenarioRoles, role) {
 		return decls
 	}
+	enumStr := func(description string, values ...string) map[string]any {
+		return map[string]any{"type": "STRING", "description": description, "enum": values}
+	}
 	assumption := object([]string{"type"}, map[string]any{
-		"type":          str(fmt.Sprintf("%s (move a project, needs project_id and weeks) or %s (needs person_id, from_date, to_date, hours_per_day)", constants.AssumptionShiftProject, constants.AssumptionAddAbsence)),
+		"type":          enumStr(fmt.Sprintf("%s (move a project, needs project_id and weeks) or %s (needs person_id, from_date, to_date, hours_per_day)", constants.AssumptionShiftProject, constants.AssumptionAddAbsence), constants.AssumptionTypes...),
 		"project_id":    str("Project id, for a shift"),
 		"weeks":         num("Weeks to shift the project, negative for earlier"),
 		"person_id":     str("Person id, for an absence"),
