@@ -97,6 +97,7 @@ func heatmapConfig() *config.Config {
 	cfg := testPlanningConfig()
 	cfg.HeatmapDefaultWeeks, cfg.HeatmapMaxWeeks = 12, 52
 	cfg.UtilizationUnderusedBelow, cfg.UtilizationNearFullFrom = 0.5, 0.85
+	cfg.BenchWeeks = 4
 	return cfg
 }
 
@@ -199,6 +200,75 @@ func TestInsightsService_Heatmap_ManagerSeesTheirTeams(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, heatmap.Rows, 1, "only the team of the programs the manager leads")
 	assert.Equal(t, engPersonID, heatmap.Rows[0].Person.ID)
+}
+
+func TestInsightsService_Bench(t *testing.T) {
+	planner := asRole("kc-planner", constants.RolePlanner)
+	// benchService has everyone at 36 h capacity and these hours of baseline load in each of W42 to W45.
+	benchService := func(t *testing.T, authz AuthzService, loads map[string]float64, ids ...string) InsightsService {
+		var people []models.Person
+		baseline := publishedBaseline(1)
+		for _, id := range ids {
+			people = append(people, heatmapPerson(id, id, skill(pmExp, 3, true)))
+			var allocs []models.Allocation
+			for _, w := range []string{"2026-W42", "2026-W43", "2026-W44", "2026-W45"} {
+				allocs = append(allocs, models.Allocation{Week: mustWeek(t, w), Hours: loads[id]})
+			}
+			baseline.Assignments = append(baseline.Assignments, models.Assignment{PersonID: id,
+				Demand: &models.Demand{ExpertiseID: expPMID, Expertise: pmExp}, Allocations: allocs})
+		}
+		plans, peopleRepo, absences := new(MockPlanRepository), new(MockPersonRepository), new(MockAbsenceRepository)
+		plans.On("FindBaseline", mock.Anything).Return(baseline, nil)
+		peopleRepo.On("ListActive", mock.Anything).Return(people, nil)
+		absences.On("ListOverlapping", mock.Anything, mock.Anything, mock.Anything).Return([]models.Absence{}, nil)
+		return ProvideInsightsService(plans, peopleRepo, absences, nil, nil, nil, actualHoursRows(), authz,
+			clock.NewFixed(time.Date(2026, time.October, 14, 9, 0, 0, 0, time.UTC)), heatmapConfig())
+	}
+	names := func(b *models.Bench) []string {
+		out := []string{}
+		for _, p := range b.People {
+			out = append(out, p.Person.Name)
+		}
+		return out
+	}
+
+	t.Run("lists the underused people with their free hours", func(t *testing.T) {
+		bench, err := benchService(t, ProvideAuthzService(leadPeople{}), map[string]float64{"Ann": 10, "Bob": 30}, "Ann", "Bob").Bench(planner)
+		require.NoError(t, err)
+		assert.Equal(t, 4, bench.Weeks)
+		require.Len(t, bench.People, 1)
+		assert.Equal(t, "Ann", bench.People[0].Person.Name)
+		assert.Equal(t, "PM", bench.People[0].PrimaryExpertise.Name)
+		assert.InDelta(t, 104, bench.People[0].FreeHours, hoursEpsilon)
+	})
+
+	t.Run("sorted by free hours, then name", func(t *testing.T) {
+		loads := map[string]float64{"Bea": 10, "Abe": 10, "Cy": 0}
+		bench, err := benchService(t, ProvideAuthzService(leadPeople{}), loads, "Bea", "Abe", "Cy").Bench(planner)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"Cy", "Abe", "Bea"}, names(bench))
+	})
+
+	t.Run("nobody on the bench is an empty list", func(t *testing.T) {
+		bench, err := benchService(t, ProvideAuthzService(leadPeople{}), map[string]float64{"Bob": 30}, "Bob").Bench(planner)
+		require.NoError(t, err)
+		assert.NotNil(t, bench.People)
+		assert.Empty(t, bench.People)
+	})
+
+	t.Run("manager sees only their teams", func(t *testing.T) {
+		authz := ProvideTeamAuthzService(leadPeople{}, ledTeams{leadPersonID: {engPersonID}})
+		service := benchService(t, authz, map[string]float64{engPersonID: 10, pmPersonID: 10}, engPersonID, pmPersonID)
+		bench, err := service.Bench(asRole("kc-manager", constants.RoleManager))
+		require.NoError(t, err)
+		require.Len(t, bench.People, 1)
+		assert.Equal(t, engPersonID, bench.People[0].Person.ID)
+	})
+
+	t.Run("specialist is refused", func(t *testing.T) {
+		_, err := benchService(t, ProvideAuthzService(leadPeople{}), nil).Bench(asRole("kc-specialist", constants.RoleSpecialist))
+		requireStatus(t, err, http.StatusForbidden)
+	})
 }
 
 func TestInsightsService_Heatmap_ActualHours(t *testing.T) {

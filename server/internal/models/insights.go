@@ -12,6 +12,19 @@ type Heatmap struct {
 	Rows  []HeatmapRow
 }
 
+// Bench is the people idle for the next Weeks weeks. It is computed, not stored.
+type Bench struct {
+	Weeks  int
+	People []BenchPerson
+}
+
+// BenchPerson is one person on the bench and their free hours over the window.
+type BenchPerson struct {
+	Person           Person
+	PrimaryExpertise Expertise
+	FreeHours        float64
+}
+
 // HeatmapRow is one person's weeks.
 type HeatmapRow struct {
 	// Person has their skills and expertise loaded.
