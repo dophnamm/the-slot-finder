@@ -10,15 +10,14 @@
 - PERSON: name, email, `keycloak_id`, role, `weekly_hours`, `non_project_hours`, `start_date`, `end_date`, `active`.
 - EXPERTISE catalogue (PM, Analyst, Engineer, QA) and PERSON_SKILL (level 1–5, exactly one primary).
 - ABSENCE: personal leave, and **company-wide holidays only** (`person_id` null).
-- `capacity(person, week)` as in the [root README §6](../../README.md#6-data-model), without capacity changes or location holidays.
+- `capacity(person, week)` as in the [root README §6](../../README.md#6-data-model), without location holidays.
 - `isoweek.Week`: the Go type for weeks (`2026-W42`). Capacity is the first code that needs it.
 - `/me` gains `person_id`, linked by `keycloak_id`, falling back to email on the first sign-in.
 - Seed data: 12 people, 4 expertises, 3 leave periods, company-wide holidays, and the three demo users as people.
 
 ## Not now
 
-- Skill tags → [Later](README.md#later), design in [root README §6](../../README.md#6-data-model) ("Skill tags").
-- Capacity changes and holidays per location → [Later](README.md#later).
+- Holidays per location → [Later](README.md#later).
 - `location` and `timezone` on PERSON: columns can wait until holidays per location.
 - CSV and HR import → [Later](README.md#later).
 

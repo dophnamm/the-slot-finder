@@ -37,16 +37,14 @@ One spec per feature, in build order. Each spec holds the goal, scope, server an
 
 Designed in the root README, not built for the demo:
 
-- Skill tags (required and preferred) and the preferred person
-- Capacity changes (effective-dated weekly hours) and holidays per location
-- More scenario assumptions (new project, planned hire, capacity or demand change) and turning a scenario into a draft
+- Holidays per location
+- More scenario assumptions (new project, planned hire, demand change) and turning a scenario into a draft
 - CSV import
 - Email and Slack notifications
 - Bench list
 - Plan churn
-- EAC hours, hours per point, contribution %, next milestone and cross-expertise share
+- EAC hours, hours per point, contribution %, cross-expertise share
 - Forecast overrides, per-project confidence and the `front` and `back` profiles
-- Program assistants and milestones
 - AI assistant beyond Ask AI: write actions, intake extraction, what-if chat, draft summaries and more tools (server README section 9)
 
 ## Conventions for these specs

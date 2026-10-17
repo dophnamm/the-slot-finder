@@ -44,7 +44,7 @@
 ## Not now
 
 - Turning a scenario straight into a staffing draft. That draft would plan for changes that did not happen. → [Later](README.md#later)
-- More assumption types: a new project, a planned hire (a future `start_date`), a capacity change, a demand change → [Later](README.md#later).
+- More assumption types: a new project, a planned hire (a future `start_date`), a demand change → [Later](README.md#later).
 - The AI what-if chat → [Later](README.md#later).
 - Scenarios for managers.
 
