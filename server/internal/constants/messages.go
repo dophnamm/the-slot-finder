@@ -202,6 +202,8 @@ const (
 	MsgPeopleImportTemplate       = "People import template"
 	MsgPeopleImportFileMissing    = "Choose a CSV file to import"
 	MsgPeopleImportUnreadable     = "Could not read the people file"
+	MsgPeopleImportSaveFailed     = "Could not save the people"
+	MsgPeopleImportTemplateFailed = "Could not build the people import template"
 )
 
 // Program team messages.

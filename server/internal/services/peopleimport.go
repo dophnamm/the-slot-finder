@@ -2,10 +2,15 @@ package services
 
 import (
 	"bytes"
+	"cmp"
+	"context"
 	"encoding/csv"
 	stderrors "errors"
+	"fmt"
 	"io"
+	"maps"
 	"math"
+	"net/http"
 	"net/mail"
 	"slices"
 	"strconv"
@@ -13,8 +18,260 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"the-slot-finder/server/internal/config"
 	"the-slot-finder/server/internal/constants"
+	"the-slot-finder/server/internal/db"
+	"the-slot-finder/server/internal/errors"
+	"the-slot-finder/server/internal/models"
+	"the-slot-finder/server/internal/repositories"
 )
+
+const (
+	opImportPeople       = "import_people"
+	opPeopleImportTpl    = "people_import_template"
+	resourcePeopleImport = "people_import"
+)
+
+// PeopleImportService imports people from a CSV and builds the CSV template.
+type PeopleImportService interface {
+	// Import checks every row of a people file and saves it in one transaction: a new email
+	// creates a person, a known one is updated. Any problem saves nothing and returns
+	// PEOPLE_IMPORT_INVALID with the problems; a file over PEOPLE_IMPORT_MAX_BYTES or
+	// PEOPLE_IMPORT_MAX_ROWS returns PEOPLE_IMPORT_TOO_LARGE.
+	Import(ctx context.Context, in ImportInput) (*models.PeopleImportResult, error)
+	// Template is a CSV with the header and one example row.
+	Template(ctx context.Context) ([]byte, error)
+}
+
+type peopleImportService struct {
+	people PeopleService
+	repo   repositories.PersonRepository
+	authz  AuthzService
+	tx     db.TxManager
+	cfg    *config.Config
+}
+
+// ProvidePeopleImportService creates the people import service.
+func ProvidePeopleImportService(people PeopleService, repo repositories.PersonRepository, authz AuthzService,
+	tx db.TxManager, cfg *config.Config,
+) PeopleImportService {
+	return &peopleImportService{people: people, repo: repo, authz: authz, tx: tx, cfg: cfg}
+}
+
+func (s *peopleImportService) Template(ctx context.Context) ([]byte, error) {
+	if _, err := s.authz.Require(ctx, CanManagePeople); err != nil {
+		return nil, err
+	}
+	expertises, err := s.people.ListExpertises(ctx)
+	if err != nil {
+		return nil, err
+	}
+	primary := ""
+	if len(expertises) > 0 {
+		primary = expertises[0].Name
+	}
+	example := map[string]string{
+		constants.PeopleImportColumnName:             constants.PeopleImportExampleName,
+		constants.PeopleImportColumnEmail:            constants.PeopleImportExampleEmail,
+		constants.PeopleImportColumnRole:             constants.RoleSpecialist,
+		constants.PeopleImportColumnWeeklyHours:      constants.PeopleImportExampleWeeklyHours,
+		constants.PeopleImportColumnNonProjectHours:  constants.PeopleImportExampleNonProjectHours,
+		constants.PeopleImportColumnPrimaryExpertise: primary,
+		constants.PeopleImportColumnPrimaryLevel:     constants.PeopleImportExamplePrimaryLevel,
+	}
+	record := make([]string, len(constants.PeopleImportColumns))
+	for i, column := range constants.PeopleImportColumns {
+		record[i] = example[column]
+	}
+	var buf bytes.Buffer
+	w := csv.NewWriter(&buf)
+	_ = w.WriteAll([][]string{constants.PeopleImportColumns, record})
+	if err := w.Error(); err != nil {
+		return nil, errors.InternalError(constants.MsgPeopleImportTemplateFailed, err).
+			WithOperation(opPeopleImportTpl).WithResource(resourcePeopleImport)
+	}
+	return buf.Bytes(), nil
+}
+
+func (s *peopleImportService) Import(ctx context.Context, in ImportInput) (*models.PeopleImportResult, error) {
+	if _, err := s.authz.Require(ctx, CanManagePeople); err != nil {
+		return nil, err
+	}
+	data, err := s.readFile(in)
+	if err != nil {
+		return nil, err
+	}
+	expertises, err := s.people.ListExpertises(ctx)
+	if err != nil {
+		return nil, err
+	}
+	byName := make(map[string]string, len(expertises))
+	for _, e := range expertises {
+		byName[strings.ToLower(e.Name)] = e.ID
+	}
+	rows, problems, err := parsePeopleCSV(data, peopleImportLimits{MaxRows: s.cfg.PeopleImportMaxRows}, byName)
+	if err != nil {
+		return nil, s.tooLarge()
+	}
+	stored, err := s.stored(ctx, rows)
+	if err != nil {
+		return nil, err
+	}
+	// A row with a cell problem is not checked further: its merged values mean nothing.
+	bad := map[int]bool{}
+	for _, p := range problems {
+		bad[p.Line] = true
+	}
+	for _, row := range rows {
+		if !bad[row.Line] {
+			problems = append(problems, s.checkRow(row, stored[row.Email])...)
+		}
+	}
+	if len(problems) > 0 {
+		slices.SortStableFunc(problems, func(a, b RowProblem) int { return cmp.Compare(a.Line, b.Line) })
+		return nil, errors.NewAppError(constants.PeopleImportInvalid, constants.MsgPeopleImportInvalid, errors.ErrorTypeValidation,
+			http.StatusBadRequest).WithContext(constants.PeopleImportProblemsKey, problems).
+			WithOperation(opImportPeople).WithResource(resourcePeopleImport)
+	}
+	result := &models.PeopleImportResult{}
+	err = s.tx.Do(ctx, func(ctx context.Context) error {
+		for _, row := range rows {
+			if err := s.save(ctx, row, stored[row.Email], result); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		var appErr *errors.AppError
+		if stderrors.As(err, &appErr) {
+			return nil, err
+		}
+		return nil, errors.DatabaseError(constants.MsgPeopleImportSaveFailed, err).
+			WithOperation(opImportPeople).WithResource(resourcePeopleImport)
+	}
+	return result, nil
+}
+
+// stored loads the people the rows name by email, with their skills, keyed by lower-case email.
+func (s *peopleImportService) stored(ctx context.Context, rows []peopleRow) (map[string]*models.Person, error) {
+	emails := map[string]bool{}
+	for _, row := range rows {
+		if row.Email != "" {
+			emails[row.Email] = true
+		}
+	}
+	found, err := s.repo.ListByEmails(ctx, slices.Sorted(maps.Keys(emails)))
+	if err != nil {
+		return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opImportPeople).WithResource(resourcePeopleImport)
+	}
+	out := make(map[string]*models.Person, len(found))
+	for _, p := range found {
+		person, err := s.repo.FindWithSkills(ctx, p.ID)
+		if err != nil {
+			return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opImportPeople).WithResource(resourcePeopleImport)
+		}
+		out[strings.ToLower(p.Email)] = person
+	}
+	return out, nil
+}
+
+// checkRow applies the rules of Create and Update to the values the save would store, so a
+// failing rule is a row problem and not a save error.
+func (s *peopleImportService) checkRow(row peopleRow, person *models.Person) []RowProblem {
+	start, end, nonProject := row.StartDate, row.EndDate, s.cfg.DefaultNonProjectHours
+	if person != nil {
+		nonProject = person.NonProjectHours
+		start, end = cmp.Or(start, person.StartDate), cmp.Or(end, person.EndDate)
+	}
+	if row.NonProjectHours != nil {
+		nonProject = *row.NonProjectHours
+	}
+	var problems []RowProblem
+	if checkDates(start, end, opImportPeople) != nil {
+		problems = append(problems, RowProblem{Line: row.Line, Column: constants.PeopleImportColumnEndDate, Code: constants.PeopleImportDateInvalid})
+	}
+	if checkNonProjectHours(nonProject, row.WeeklyHours, opImportPeople) != nil {
+		problems = append(problems, RowProblem{Line: row.Line, Column: constants.PeopleImportColumnNonProjectHours, Code: constants.PeopleImportHoursInvalid})
+	}
+	return problems
+}
+
+// save creates the person or applies only the cells that differ from the stored one.
+func (s *peopleImportService) save(ctx context.Context, row peopleRow, person *models.Person, result *models.PeopleImportResult) error {
+	if person == nil {
+		_, err := s.people.Create(ctx, CreatePersonInput{Name: row.Name, Email: row.Email, Role: cmp.Or(deref(row.Role), constants.RoleSpecialist),
+			WeeklyHours: row.WeeklyHours, NonProjectHours: row.NonProjectHours, StartDate: row.StartDate, EndDate: row.EndDate, Skills: row.Skills})
+		result.Created++
+		return err
+	}
+	var in UpdatePersonInput
+	changed := false
+	if row.Name != person.Name {
+		in.Name, changed = &row.Name, true
+	}
+	if row.Role != nil && *row.Role != person.Role {
+		in.Role, changed = row.Role, true
+	}
+	if row.WeeklyHours != person.WeeklyHours {
+		in.WeeklyHours, changed = &row.WeeklyHours, true
+	}
+	if row.NonProjectHours != nil && *row.NonProjectHours != person.NonProjectHours {
+		in.NonProjectHours, changed = row.NonProjectHours, true
+	}
+	if row.StartDate != nil && !samePersonDate(row.StartDate, person.StartDate) {
+		in.StartDate, changed = DateChange{Set: true, Value: row.StartDate}, true
+	}
+	if row.EndDate != nil && !samePersonDate(row.EndDate, person.EndDate) {
+		in.EndDate, changed = DateChange{Set: true, Value: row.EndDate}, true
+	}
+	if changed {
+		if _, err := s.people.Update(ctx, person.ID, in); err != nil {
+			return err
+		}
+	}
+	skills := !sameSkills(person.Skills, toSkillModels(person.ID, row.Skills))
+	if skills {
+		if _, err := s.people.ReplaceSkills(ctx, person.ID, row.Skills); err != nil {
+			return err
+		}
+	}
+	if changed || skills {
+		result.Updated++
+	} else {
+		result.Unchanged++
+	}
+	return nil
+}
+
+func deref(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+// readFile reads the upload, refusing more than PEOPLE_IMPORT_MAX_BYTES whatever size the client declared.
+func (s *peopleImportService) readFile(in ImportInput) ([]byte, error) {
+	if in.Size > s.cfg.PeopleImportMaxBytes {
+		return nil, s.tooLarge()
+	}
+	data, err := io.ReadAll(io.LimitReader(in.File, s.cfg.PeopleImportMaxBytes+1))
+	if err != nil {
+		return nil, errors.ValidationError(constants.MsgPeopleImportUnreadable, err).WithOperation(opImportPeople).WithResource(resourcePeopleImport)
+	}
+	if int64(len(data)) > s.cfg.PeopleImportMaxBytes {
+		return nil, s.tooLarge()
+	}
+	return data, nil
+}
+
+// tooLarge is the 413 for a file over PEOPLE_IMPORT_MAX_BYTES or PEOPLE_IMPORT_MAX_ROWS.
+func (s *peopleImportService) tooLarge() error {
+	return errors.NewAppError(constants.PeopleImportTooLarge,
+		fmt.Sprintf(constants.MsgPeopleImportTooLargeFormat, s.cfg.PeopleImportMaxBytes, s.cfg.PeopleImportMaxRows),
+		errors.ErrorTypeValidation, http.StatusRequestEntityTooLarge).WithOperation(opImportPeople).WithResource(resourcePeopleImport)
+}
 
 // Limits of a person's cells, the same as the person DTO's validate tags.
 const (

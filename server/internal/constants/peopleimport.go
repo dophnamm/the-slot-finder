@@ -55,3 +55,12 @@ const (
 	PeopleImportFileName    = "people.csv"
 	CSVContentType          = "text/csv; charset=utf-8"
 )
+
+// The template's example row; its primary expertise is the first expertise in the catalogue.
+const (
+	PeopleImportExampleName            = "Example Person"
+	PeopleImportExampleEmail           = "example.person@example.com"
+	PeopleImportExampleWeeklyHours     = "40"
+	PeopleImportExampleNonProjectHours = "4"
+	PeopleImportExamplePrimaryLevel    = "3"
+)

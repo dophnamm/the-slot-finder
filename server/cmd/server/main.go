@@ -220,6 +220,7 @@ func appOptions(cfg *config.Config) []fx.Option {
 			services.ProvideReplanService,
 			services.ProvideScenarioService,
 			services.ProvideTimesheetService,
+			services.ProvidePeopleImportService,
 			services.ProvideCalendarFeedService,
 			services.ProvideScheduleService,
 			services.ProvideAIService,
