@@ -7,3 +7,6 @@ cmd/server/gcs-credential.json
 
 # Test coverage files
 bin/*
+
+# air build output
+/tmp/
