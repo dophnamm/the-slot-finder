@@ -62,6 +62,9 @@ type InsightsService interface {
 	// Risks lists open projects that are understaffed, at risk or behind on delivery, and
 	// people over 100 % in the next HEATMAP_DEFAULT_WEEKS weeks.
 	Risks(ctx context.Context) (*models.Risks, error)
+	// Bench is the people in scope who stay underused in each of the next BENCH_WEEKS weeks, most
+	// free hours first.
+	Bench(ctx context.Context) (*models.Bench, error)
 }
 
 type insightsService struct {
@@ -101,6 +104,45 @@ func (s *insightsService) Heatmap(ctx context.Context, in HeatmapInput) (*models
 		}
 	}
 	return s.heatmap(ctx, in, scope)
+}
+
+func (s *insightsService) Bench(ctx context.Context) (*models.Bench, error) {
+	if _, err := s.authz.Require(ctx, CanViewInsights); err != nil {
+		return nil, err
+	}
+	scope, err := s.authz.VisiblePeople(ctx)
+	if err != nil {
+		return nil, err
+	}
+	weeks := max(s.cfg.BenchWeeks, 1)
+	from := isoweek.Of(s.clock.Now())
+	to := from.AddWeeks(weeks - 1)
+	heatmap, err := s.heatmap(ctx, HeatmapInput{From: &from, To: &to}, scope)
+	if err != nil {
+		return nil, err
+	}
+	people := []models.BenchPerson{}
+	for _, row := range heatmap.Rows {
+		cells := make([]metrics.BenchWeek, len(row.Cells))
+		for i, c := range row.Cells {
+			cells[i] = metrics.BenchWeek{Capacity: c.Capacity, Load: c.Load}
+		}
+		if free, onBench := metrics.Bench(cells, s.cfg.UtilizationUnderusedBelow); onBench {
+			people = append(people, models.BenchPerson{Person: row.Person, PrimaryExpertise: row.PrimaryExpertise, FreeHours: free})
+		}
+	}
+	sort.Slice(people, func(i, j int) bool {
+		a, b := people[i], people[j]
+		switch {
+		case a.FreeHours != b.FreeHours:
+			return a.FreeHours > b.FreeHours
+		case a.Person.Name != b.Person.Name:
+			return a.Person.Name < b.Person.Name
+		default:
+			return a.Person.ID < b.Person.ID
+		}
+	})
+	return &models.Bench{Weeks: weeks, People: people}, nil
 }
 
 // programTeam is the people of a program's team, for a caller who may read the program.
