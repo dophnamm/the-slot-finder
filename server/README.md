@@ -414,16 +414,18 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `DRAFT_ALTERNATIVES_LIMIT` | People a staffing draft offers to swap in for an assignment | 5 |
 | `APP_ENV` | Runtime environment; an unset value runs as `production` (`.env.example` sets `development`) | production |
 | `AWS_SES_FROM_EMAIL` | Sender address of every email (a verified SES address) | empty |
-| `LLM_PROVIDER` | Model provider for Ask AI: `gemini` (Google AI Studio) or `groq` (Groq's OpenAI-compatible API). Picks which key and model are used; any other value fails at startup. Switching provider means changing this value only, with both keys set | gemini |
+| `LLM_PROVIDER` | Model provider for Ask AI: `gemini` (Google AI Studio), `groq` (Groq's OpenAI-compatible API) or `openrouter` (OpenRouter's OpenAI-compatible API). Picks which key and model are used; any other value fails at startup. Switching provider means changing this value only, with its key set | gemini |
 | `GEMINI_API_KEY` · `GEMINI_MODEL` | Google AI Studio key (a secret) and model name. An empty key turns Ask AI off: `503 AI_NOT_CONFIGURED`, and the server still starts. An empty model uses `gemini-3.5-flash`; production should set it explicitly, since model IDs change (`gemini-2.5-flash` is closed to new accounts and answers 404). Confirm IDs in AI Studio | empty · `gemini-3.5-flash` |
 | `GROQ_API_KEY` · `GROQ_MODEL` | Groq key (a secret) and model name, with the same rules. An empty model uses `openai/gpt-oss-120b`; production should set it explicitly and confirm the ID in the Groq console | empty · `openai/gpt-oss-120b` |
+| `OPENROUTER_API_KEY` · `OPENROUTER_MODEL` | OpenRouter key (a secret) and model name, with the same rules. An empty model uses `openrouter/free`, a router that picks a free model with the features the request needs, such as tool calling. Free accounts get small limits (per OpenRouter's docs checked 2026-10-17: 50 requests a day, or 1,000 with at least 10 credits bought; 20 a minute). Model IDs and free availability change; confirm on openrouter.ai/models | empty · `openrouter/free` |
 | `LLM_TIMEOUT` | Limit for one model call | 30s |
-| `LLM_MAX_TOOL_ROUNDS` | Most model calls one question may take. Each round may run tools | 4 |
-| `LLM_MAX_TOOL_RESULT_BYTES` | Longest tool result sent back to the model. A longer one is cut and marked as cut | 12000 |
+| `LLM_MAX_TOOL_ROUNDS` | Most model calls one question may take. Each round may run tools | 5 |
+| `LLM_MAX_TOOL_RESULT_BYTES` | Longest tool result sent back to the model. A longer one is compacted first, and cut with a marker only if that still does not fit (section 9) | 8000 |
+| `LLM_TEMPERATURE` | Sampling temperature sent to every provider; low keeps the same question's answer consistent | 0.2 |
 
 ## 9. AI assistant (later)
 
-**Built: Ask AI** (`POST /ai/ask`, section 3). The model is Gemini (Google AI Studio) or Groq, chosen with `LLM_PROVIDER`, and configured with the `LLM_*` settings (section 8). It answers with these read-only tools. Each one calls an existing service with the caller's identity, so the route's roles and the per-program rules apply:
+**Built: Ask AI** (`POST /ai/ask`, section 3). The model is Gemini (Google AI Studio), Groq or OpenRouter, chosen with `LLM_PROVIDER`, and configured with the `LLM_*` settings (section 8). It answers with these read-only tools. Each one calls an existing service with the caller's identity, so the route's roles and the per-program rules apply:
 
 | Tool | Arguments | Wraps | Writes |
 |---|---|---|---|
@@ -433,7 +435,15 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `get_project` | `project_id` | programs: one project | no |
 | `get_program_overview` | `program_id` | insights: a program's metrics | no |
 
-Each question is sent alone, with the page path as context, so there is no chat history on the server. Ask AI never writes. Tool results are cut at `LLM_MAX_TOOL_RESULT_BYTES`, and one question takes at most `LLM_MAX_TOOL_ROUNDS` model calls.
+Each question is sent alone, with the page path as context, so there is no chat history on the server. Ask AI never writes. One question takes at most `LLM_MAX_TOOL_ROUNDS` model calls.
+
+**Oversized tool results are compacted, not cut.** A result longer than `LLM_MAX_TOOL_RESULT_BYTES` (`services/ai_compact.go`) first loses its nulls and empty values. Then long lists keep fewer items, and a sibling `<key>_omitted_items` count says how many were left out; a top-level list becomes `{"items": [...], "_omitted_items": n}`. Only when that still does not fit is the text cut, with a marker that asks for a narrower range. The result stays valid JSON unless it is cut.
+
+**Logs.** Each tool call logs one Info line with `tool`, `result_bytes`, `truncated` and `failed`. Each model round logs `round`, `tool_calls` and `text_bytes`. No line holds the question, the arguments or the results. A failed model call logs one line with the error, which holds the status and up to 512 bytes of the model's reply.
+
+**Providers.** `gemini` uses Google's REST API. `groq` and `openrouter` share one OpenAI-compatible client (`integration/llm/openai.go`). A `402` (no credits) and any other non-200 reply from a provider becomes `502 AI_UPSTREAM_FAILED`; `429` stays `429 AI_RATE_LIMITED`. `LLM_TEMPERATURE` goes to every provider.
+
+**Checking a provider:** `make check-llm` (`scripts/check-llm.sh`) sends one tiny request to the provider chosen by `LLM_PROVIDER`, with its key and model from `server/cmd/server/.env`. It prints the HTTP status with its meaning, and the rate-limit headers when the provider sends them. It never prints a key, and it exits non-zero on a non-200. Run it before switching provider, to see whether the model is open to the key and what the free tier allows.
 
 **Later** settings (no config field yet):
 
@@ -459,7 +469,7 @@ Each question is sent alone, with the page path as context, so there is no chat 
 
 **Later**, not built yet: the settings above are a draft, since Ask AI already uses the `LLM_*` settings. Intake, chat and summaries wait for the data policy question below. The principle, capabilities and boundaries are in the [root README, section 15](../README.md#15-ai-assistant-later).
 
-**Code:** `handlers/ai.go` and `services/ai.go` (the function-calling loop and tool declarations), `constants/ai.go` (tool names and Gemini settings), and `internal/integration/llm` (a `Client` interface with a Gemini and a Groq implementation, chosen by `LLM_PROVIDER`. Groq has been run end to end with real questions; Gemini has had one direct live call, and the full tool-result loop is not yet verified). Nothing outside `integration/llm` knows which provider is used.
+**Code:** `handlers/ai.go` and `services/ai.go` (the function-calling loop, tool declarations and logs), `services/ai_compact.go` (tool result compaction), `constants/ai.go` (tool names and model settings), and `internal/integration/llm` (a `Client` interface with a Gemini implementation and an OpenAI-compatible one for Groq and OpenRouter, chosen by `LLM_PROVIDER`). Groq has been run end to end with real questions. Gemini has had one direct live call; the full tool-result loop and `generationConfig.temperature` are not yet run. OpenRouter has never been run. Nothing outside `integration/llm` knows which provider is used.
 
 **Later tools** (not built yet; each wraps an existing service method):
 
@@ -487,4 +497,4 @@ Each question is sent alone, with the page path as context, so there is no chat 
 - **Audit:** every write through a tool records the user as the actor, `via = ai_assistant` and the tool name.
 - **Observability:** per request: latency, input and output tokens, tool-call count, provider and model. There is one OTel span per LLM call and per tool call. Prompts, documents and replies are not logged. Logs carry the request id, user id and tool names.
 
-**Open question:** customer documents and personnel data would be sent to an external LLM provider. Ask AI already sends the question, the page path and tool results (people's hours, risks, drafts, project data) to the chosen provider's API (Gemini or Groq) whenever the chosen provider's key (`GEMINI_API_KEY` or `GROQ_API_KEY`) is set. On the Gemini free tier, Google may use these inputs and outputs to improve its products, and people may read them; paid-tier requests are excluded from that use. Google's free-tier limits are per project and shown in Google AI Studio, with per-minute and per-day request limits; the day resets at midnight Pacific time. Each model call, including each round after a tool call, counts as one request, so one question can use several. Google's pages (checked 2026-10-16) give no numbers, so read them in AI Studio. Groq's data-use terms and limits were not checked. The company data policy must approve the provider and the key type before real data is sent, and before intake, chat or summaries are built.
+**Open question:** customer documents and personnel data would be sent to an external LLM provider. Ask AI already sends the question, the page path and tool results (people's hours, risks, drafts, project data) to the chosen provider's API (Gemini or Groq) whenever the chosen provider's key (`GEMINI_API_KEY`, `GROQ_API_KEY` or `OPENROUTER_API_KEY`) is set. On the Gemini free tier, Google may use these inputs and outputs to improve its products, and people may read them; paid-tier requests are excluded from that use. Google's free-tier limits are per project and shown in Google AI Studio, with per-minute and per-day request limits; the day resets at midnight Pacific time. Each model call, including each round after a tool call, counts as one request, so one question can use several. Google's pages (checked 2026-10-16) give no numbers, so read them in AI Studio. Groq's data-use terms and limits were not checked. OpenRouter's data-use terms were not checked either, and its free router picks the model itself, so the host of a request is not fixed; its free limits are in section 8. The company data policy must approve the provider and the key type before real data is sent, and before intake, chat or summaries are built.

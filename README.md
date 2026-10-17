@@ -26,7 +26,7 @@ Details per part:
 - Work logging inside the app. Actual hours come in through a CSV timesheet import, per person, project and ISO week.
 - Billing, money and financial scores. Cost is measured **in hours only**.
 
-**Later (not in the MVP):** a level-based productivity factor (a senior's hour counting for more than a junior's), person-level soft booking of pipeline projects, and an **AI assistant** ([section 15](#15-ai-assistant-later)).
+**Later (not in the MVP):** a level-based productivity factor (a senior's hour counting for more than a junior's), person-level soft booking of pipeline projects, and the **AI assistant's** write actions, intake extraction, what-if chat and draft summaries ([section 15](#15-ai-assistant-later)). Read-only Ask AI is built.
 
 **Assumptions (confirmed):**
 - **A1.** The planning unit is **hours per week**, using ISO weeks (e.g. `2026-W42`).
@@ -52,7 +52,7 @@ Details per part:
 | **Cross-expertise** | An assignment whose expertise is not the person's primary one, e.g. an Engineer covering QA. Allowed when the person has that skill at the demand's minimum level |
 | **Stretch** | An assignment below the demand's minimum level (or without the skill), for cover or cross-training. Only a Planner can create one, by hand, and it is always flagged |
 | **Member** | A person with at least one assignment in a program's projects |
-| **AI assistant** | (Later) Translates between natural language and the system's structured data. Not related to a program **Assistant** |
+| **AI assistant** | Translates between natural language and the system's structured data. Ask AI (read-only Q&A) is built; the rest is later. Not related to a program **Assistant** |
 | **Assistant** | A person attached to a program for visibility only. **Internal**: has an account and read-only access to the program. **External**: a contact without an account who only receives notifications. Never allocated hours |
 
 ---
@@ -71,7 +71,7 @@ flowchart LR
   cal["Google / Outlook calendar<br/>secret ICS link"]
   timesheet["Timesheet CSV<br/>actual hours"]
   notify["Email / Slack / Teams"]
-  llm["LLM API (later)<br/>function calling · Gemini planned"]
+  llm["LLM API<br/>function calling · Gemini, Groq or OpenRouter"]
 
   planner -->|"reviews drafts, runs what-ifs, imports timesheets"| sf
   lead -->|"manages programs, demand, deadlines; staffs from the program team"| sf
@@ -114,7 +114,7 @@ flowchart TB
   end
 
   ext["External systems<br/>CSV · HR · calendars (ICS) · Email/Slack"]
-  llm["LLM API (later)<br/>function calling · Gemini planned"]
+  llm["LLM API<br/>function calling · Gemini, Groq or OpenRouter"]
 
   users --> client
   client -->|"HTTPS · JSON"| api
@@ -125,7 +125,7 @@ flowchart TB
   worker --> engine
   worker -->|"read / write"| db
   worker <-->|"import · calendar sync · notify"| ext
-  api -.->|"AI assistant (later)"| llm
+  api -.->|"AI assistant: Ask AI (built)"| llm
 ```
 
 | Container | Responsible for | Not responsible for |
@@ -146,7 +146,7 @@ The `server/` folder holds the Server API, the Background Worker and the Plannin
 ```mermaid
 flowchart TB
   integ["<b>Integrations</b><br/>importers (CSV, HR) · calendar feeds (ICS)<br/>notifier · LLM client"]
-  ai["<b>AI assistant</b> (later)<br/>intake extraction · what-if chat<br/>draft summary · Q&A"]
+  ai["<b>AI assistant</b><br/>Ask AI (built, read-only)<br/>later: intake extraction · what-if chat<br/>draft summary"]
 
   subgraph data["Data modules"]
     direction LR
@@ -184,7 +184,7 @@ flowchart TB
 - Dashed arrows are domain events.
 - No module reads another module's tables.
 - Inside the data modules, Availability reads People to compute capacity.
-- The AI assistant (later) owns no tables. It reaches other modules only through their services, with the caller's identity ([section 15](#15-ai-assistant-later)).
+- The AI assistant owns no tables. It reaches other modules only through their services, with the caller's identity ([section 15](#15-ai-assistant-later)).
 
 See [`server/README.md`](server/README.md) for details.
 
@@ -792,7 +792,7 @@ sequenceDiagram
 | **UI state** | Zustand | Filters, selections, session token. Never server data |
 | **HTTP client** | Axios | Interceptors: JWT, CSRF token, envelope unwrap, shared error handling |
 | **Routing** | React Router | |
-| **AI assistant** (later) | An LLM API with function calling (Gemini planned), behind a provider interface | Provider, API key and the model per task are server config; nothing provider-specific outside the provider package |
+| **AI assistant** | An LLM API with function calling (Gemini, Groq or OpenRouter), behind a provider interface | Ask AI is built; provider, API key and model are server config; nothing provider-specific outside the provider package |
 | **i18n** | Own typed helper, no library | Keys are the English text, declared in a `LanguageKey` type; `t()` type-checks keys and `{placeholders}`. English needs no locale file |
 
 ---
@@ -845,7 +845,7 @@ the-slot-finder/
 | ADR-18 | **One open auto re-plan draft** per baseline; new events are merged into it | The Planner reviews one consistent draft instead of several that conflict | A draft can change while it is being reviewed; each version is kept and the old one is superseded |
 | ADR-19 | Pipeline demand shows in a **capacity forecast by expertise**, weighted by confidence; **no person-level soft booking** in the MVP | Hiring signals without reserving people for work that may never come | Nobody is held for a likely win; the Planner acts on the forecast |
 | ADR-20 | **Skill tags** are hard (required) or soft (preferred) constraints on a demand | Finer matching (technology, domain, language, client) without more expertise types | Tags must be kept current on people; a wrong required tag leaves demand unmet |
-| ADR-21 | The **AI assistant** (later) translates language ↔ structured data; the deterministic engine decides; its tools run **with the caller's permissions** | Faster intake and easier questions without giving up explainable, repeatable plans or the permission model | Depends on an external LLM provider and data-policy approval; extraction can be wrong, so the lead always reviews before saving |
+| ADR-21 | The **AI assistant** translates language ↔ structured data; the deterministic engine decides; its tools run **with the caller's permissions** | Faster intake and easier questions without giving up explainable, repeatable plans or the permission model | Depends on an external LLM provider and data-policy approval; extraction can be wrong, so the lead always reviews before saving |
 | ADR-22 | Calendars come in through each person's **secret ICS link**, not OAuth | Works for Google and Outlook with one code path, without app registration or admin consent | The link is a secret to protect; out-of-office is found from Outlook's `OOF` flag or title keywords; recurring events are skipped |
 | ADR-23 | Calendar out-of-office becomes **planned** leave that a Planner approves | A mislabelled event never becomes approved leave on its own (ADR-5) | One more approval for the Planner |
 | ADR-24 | **Actual hours** are kept per person × project × ISO week and imported from a **template CSV** built from the baseline | Matches how timesheets are kept; matching by project id never picks the wrong project; burn shows real hours | No actual hours per demand or per day; the template is filled in by hand or by a script |
@@ -854,7 +854,7 @@ the-slot-finder/
 
 ## 15. AI assistant (later)
 
-> **Not in the MVP.** It stays off (`AI_ENABLED` false) until an LLM API key is configured and the company data policy approves sending customer documents and personnel data to an external LLM.
+> **Ask AI is built** (capability 4, read-only). It stays off until the chosen provider's key is configured, and the company data policy must approve sending data to that provider. The other capabilities are later.
 
 **Principle:** the AI assistant translates between natural language and structured data. The Planning Engine still makes every allocation decision, and a human still accepts every plan.
 
@@ -863,7 +863,7 @@ the-slot-finder/
 | 1 | **Intake extraction** (first; demo candidate) | A customer brief, SOW or email, pasted or uploaded → a suggested project: phases, demand (expertise, minimum level, hours, profile), required and preferred tags, each field with the source quote it came from | Nothing. The lead edits and confirms through the normal project, phase and demand endpoints |
 | 2 | **What-if chat** | "What if project X slips 2 weeks and Alex is on leave all of December?" → scenario `assumptions`, a scenario through the scenario API, and a summary of its diff | A scenario |
 | 3 | **Draft explanation** | A staffing draft or re-plan diff → a plain-language summary, also used as notification text. It states only facts and numbers present in the engine's output (reasons, diff, unmet) | Nothing |
-| 4 | **Q&A over plan data** | "Which QA level ≥ 3 is free in W48?", "Which program will go over budget?" → an answer built from the insights tools | Nothing |
+| 4 | **Q&A over plan data** (built as Ask AI) | "Which QA level ≥ 3 is free in W48?", "Which program will go over budget?" → an answer built from the insights tools | Nothing |
 | 5 | **Skill suggestions** (after 1–4) | A CV or past projects → suggested tags and levels | Nothing until the Planner approves; never applied automatically |
 
 **Hours in an intake extraction:** hours stated in the text are used as written. When the text gives only scope points, the Server, not the LLM, fills in the hours from the hours-per-point suggestion (section 7) and marks them as suggested.
@@ -871,7 +871,7 @@ the-slot-finder/
 **Not for:** allocation decisions, metric calculations, accepting or publishing plans, evaluating or ranking people.
 
 **How it plugs in:**
-- A server module `ai`, named so to avoid confusion with program assistants. It calls an LLM API with function calling through a provider interface; Gemini is the planned provider.
+- A server module `ai`, named so to avoid confusion with program assistants. It calls an LLM API with function calling through a provider interface: Gemini, Groq or OpenRouter, chosen by config.
 - Each tool wraps an existing service method and runs **with the caller's identity and role**. The tool checks the same role list as the matching route, and the service applies the per-program rules, so a specialist sees only their own schedule here too. The model is offered only the tools the caller's role allows. The AI assistant never touches the database.
 - Writes are limited to creating scenarios and staffing drafts. Intake suggestions are returned, not stored. It never changes the baseline and never accepts a draft.
 - A customer document is data, never instructions: intake extraction has no tools that read other data or write anything.
