@@ -1,14 +1,14 @@
 import { Upload } from 'lucide-react'
 import { type ChangeEvent, type FormEvent, useState } from 'react'
 import { toast } from 'sonner'
+import { ProblemTable } from '@/shared/components/problem-table'
 import { WeekPicker } from '@/shared/components/week-picker'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
-import { ProblemTable } from './components/problem-table'
-import { FIELD_IDS, RANGE_FIELDS, TIMESHEET_FILE_ACCEPT } from './constants'
+import { FIELD_IDS, RANGE_FIELDS, ROW_PROBLEM_LABELS, TIMESHEET_FILE_ACCEPT } from './constants'
 import type { ImportResult, WeekRange } from './types'
 import { useDownloadTemplate, useImportTimesheet } from './use-timesheet-import'
 import { defaultRange, rowProblems } from './utils'
@@ -102,7 +102,7 @@ export function TimesheetImport() {
             {problems.length > 0 && (
               <div className="flex max-h-64 min-h-0 flex-col gap-2">
                 <p className="text-sm text-destructive">{t('Nothing was saved. Fix these rows and import again.')}</p>
-                <ProblemTable problems={problems} />
+                <ProblemTable problems={problems} labels={ROW_PROBLEM_LABELS} />
               </div>
             )}
             <DialogFooter>
