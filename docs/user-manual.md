@@ -114,7 +114,7 @@ The tooltip gives capacity, load, unmet and pipeline hours. **Click a cell** to 
 **Risks card.** Lists, in this order:
 - **Sustained overload** (people over 100 % for several weeks in a row, such as "Bao Tran: over 100 % for 3 weeks from 2026-W45"). This group is listed first and hidden when nobody has one.
 - Projects that are understaffed, at risk or behind on delivery, and people over 100 % in the coming weeks.
-- **Bench**, at the end of the card: people with free hours in each of the coming weeks, most free hours first, with their primary expertise. Click a name to open that person's page.
+- **Bench**, at the end of the card: people who are Underused (under 50 %) in each of the coming weeks, most free hours first, with their primary expertise. Click a name to open that person's page.
 
 Click a name to open the person or project. When nothing needs attention, the card says "No project needs attention."
 
