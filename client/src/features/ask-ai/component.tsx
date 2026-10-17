@@ -3,11 +3,11 @@ import { useState } from 'react'
 import { useLocation } from 'react-router'
 import { can } from '@/resources/rbac'
 import { useAskAi, type AskAnswer } from '@/shared/ai'
+import type { ApiError } from '@/shared/api/types'
 import { useCurrentUser } from '@/shared/auth'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { cn } from '@/utils/functions'
-import { AskError } from './components/ask-error'
 import { MessageList } from './components/message-list'
 import { QuestionForm } from './components/question-form'
 import {
@@ -21,6 +21,7 @@ import {
   PANEL_SIZE_CLASS,
 } from './constants'
 import type { AskAiMessage } from './types'
+import { askErrorMessage } from './utils'
 
 /** Floating assistant at the bottom-right corner; messages live in this component only. */
 export function AskAi() {
@@ -38,9 +39,14 @@ export function AskAi() {
   const handleResize = () => setIsLarge((large) => !large)
   const handleAnswer = (result: AskAnswer) =>
     setMessages((current) => [...current, { role: 'assistant', text: result.answer }])
+  const handleError = (error: ApiError) =>
+    setMessages((current) => [...current, { role: 'error', text: askErrorMessage(error) }])
   const handleAsk = (question: string) => {
     setMessages((current) => [...current, { role: 'user', text: question }])
-    ask.mutate({ question, page_context: pathname.slice(0, MAX_PAGE_CONTEXT_LENGTH) }, { onSuccess: handleAnswer })
+    ask.mutate(
+      { question, page_context: pathname.slice(0, MAX_PAGE_CONTEXT_LENGTH) },
+      { onSuccess: handleAnswer, onError: handleError },
+    )
   }
 
   return (
@@ -73,7 +79,6 @@ export function AskAi() {
             </Button>
           </header>
           <MessageList messages={messages} isPending={ask.isPending} />
-          {ask.error && <AskError error={ask.error} />}
           <QuestionForm isPending={ask.isPending} onAsk={handleAsk} />
         </section>
         <Button

@@ -1,4 +1,4 @@
-export type AskAiMessageRole = 'user' | 'assistant'
+export type AskAiMessageRole = 'user' | 'assistant' | 'error'
 
 export interface AskAiMessage {
   role: AskAiMessageRole
