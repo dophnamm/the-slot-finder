@@ -1,6 +1,6 @@
 # The Slot Finder: System Architecture
 
-> **Status:** design v0.4. Twenty-one features are built ([`docs/features/README.md`](docs/features/README.md)). Parts marked **(later)** are design only and not built.
+> **Status:** design v0.4. Twenty-two features are built ([`docs/features/README.md`](docs/features/README.md)). Parts marked **(later)** are design only and not built.
 > **Technology:** Go server (Echo, Uber FX, GORM, PostgreSQL, Redis, Keycloak) and React client (Vite, Tailwind, shadcn/ui, TanStack Query, Zustand, Axios). See [section 12](#12-tech-stack). Sections 1–11 and 15 describe the design independently of the stack.
 > **Diagrams:** rendered inline below (Mermaid). The same set is in [`docs/architecture.drawio`](docs/architecture.drawio) for draw.io (9 pages).
 
@@ -41,7 +41,7 @@ Details per part:
 | **Cross-expertise** | An assignment whose expertise is not the person's primary one, e.g. an Engineer covering QA. Allowed when the person has that skill at the demand's minimum level |
 | **Stretch** | An assignment below the demand's minimum level (or without the skill), for cover or cross-training. Only a Planner can create one, by hand, and it is always flagged |
 | **Member** | A person with at least one assignment in a program's projects |
-| **AI assistant** | Translates between natural language and the system's structured data. Ask AI (read-only Q&A) and draft summary are built; the rest is later |
+| **AI assistant** | Translates between natural language and the system's structured data. Ask AI (Q&A and what-if chat) and draft summary are built; the rest is later |
 
 ---
 
@@ -131,7 +131,7 @@ The `server/` folder holds the Server API, the Background Worker and the Plannin
 ```mermaid
 flowchart TB
   integ["<b>Integrations</b><br/>calendar feeds (ICS) · LLM client · email sender<br/>notifier: later"]
-  ai["<b>AI assistant</b><br/>Ask AI and draft summary (built, read-only)<br/>later: intake extraction · what-if chat"]
+  ai["<b>AI assistant</b><br/>Ask AI, what-if chat and draft summary (built)<br/>later: intake extraction"]
 
   subgraph data["Data modules"]
     direction LR
@@ -791,14 +791,14 @@ the-slot-finder/
 
 ## 15. AI assistant
 
-> **Ask AI and the draft summary are built** (capabilities 3 and 4, read-only). It stays off until the chosen provider's key is configured, and the company data policy must approve sending data to that provider. The other capabilities are later.
+> **Ask AI, what-if chat and the draft summary are built** (capabilities 2, 3 and 4). What-if chat is the only write, and it saves a scenario. It stays off until the chosen provider's key is configured, and the company data policy must approve sending data to that provider. The other capabilities are later.
 
 **Principle:** the AI assistant translates between natural language and structured data. The Planning Engine still makes every allocation decision, and a human still accepts every plan.
 
 | # | Capability (build order) | Input → output | Writes |
 |---|---|---|---|
 | 1 | **Intake extraction** (first; demo candidate) | A customer brief, SOW or email, pasted or uploaded → a suggested project: phases, demand (expertise, minimum level, hours, profile), each field with the source quote it came from | Nothing. The lead edits and confirms through the normal project, phase and demand endpoints |
-| 2 | **What-if chat** | "What if project X slips 2 weeks and Alex is on leave all of December?" → scenario `assumptions`, a scenario through the scenario API, and a summary of its diff | A scenario |
+| 2 | **What-if chat** (built as Ask AI tools) | "What if project X slips 2 weeks and Alex is on leave all of December?" → scenario `assumptions`, a scenario through the scenario API, and a summary of its diff | A scenario |
 | 3 | **Draft explanation** (built for a staffing draft; diff and notification text later) | A staffing draft or re-plan diff → a plain-language summary, also used as notification text. It states only facts and numbers present in the engine's output (reasons, diff, unmet) | Nothing |
 | 4 | **Q&A over plan data** (built as Ask AI) | "Which QA level ≥ 3 is free in W48?", "Which program will go over budget?" → an answer built from the insights tools | Nothing |
 | 5 | **Skill suggestions** (after 1–4) | A CV or past projects → suggested levels | Nothing until the Planner approves; never applied automatically |

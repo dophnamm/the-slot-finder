@@ -94,7 +94,7 @@ Files per module follow the pattern `handlers/<module>.go`, `services/<module>.g
 | **events** | Records ChangeEvents, debounces them, assesses impact, creates re-plan jobs (one open auto draft per baseline) | CHANGE_EVENT | |
 | **integrations** | Calendar feeds (secret ICS links and the sync runner, which writes leave through **availability**), the LLM provider client (used by Ask AI), email sender. Notifications (Email/Slack) to members: later. No live HR connection: people come in by CSV upload (`POST /people/import`) | CALENDAR_FEED | |
 | **timesheets** | The timesheet template and import; actual hours per person, project and week | ACTUAL_HOURS | |
-| **ai** | Ask AI and draft summary (built): read-only Q&A over the insights and planning data, and a summary of a staffing draft. Later: intake extraction, what-if chat. Runs the function-calling loop with the LLM; each tool wraps another module's service and runs with the caller's identity (section 9) | none | |
+| **ai** | Ask AI, what-if chat and draft summary (built): Q&A over the insights and planning data, a what-if scenario saved for planners, and a summary of a staffing draft. Later: intake extraction. Runs the function-calling loop with the LLM; each tool wraps another module's service and runs with the caller's identity (section 9) | none | |
 
 ## 3. API (REST/JSON)
 
@@ -406,7 +406,7 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 
 ## 9. AI assistant
 
-**Built: Ask AI** (`POST /ai/ask`, section 3). The model is Gemini (Google AI Studio), Groq or OpenRouter, chosen with `LLM_PROVIDER`, and configured with the `LLM_*` settings (section 8). It answers with these read-only tools. Each one calls an existing service with the caller's identity, so the route's roles and the per-program rules apply:
+**Built: Ask AI** (`POST /ai/ask`, section 3). The model is Gemini (Google AI Studio), Groq or OpenRouter, chosen with `LLM_PROVIDER`, and configured with the `LLM_*` settings (section 8). It answers with these tools; only `create_scenario` writes, and only for planners. Each one calls an existing service with the caller's identity, so the route's roles and the per-program rules apply:
 
 | Tool | Arguments | Wraps | Writes |
 |---|---|---|---|
@@ -416,8 +416,11 @@ Planning policy and metric thresholds are server config: fields in `internal/con
 | `list_open_drafts` | none | staffing: open drafts | no |
 | `get_project` | `project_id` | programs: one project | no |
 | `get_program_overview` | `program_id` | insights: a program's metrics | no |
+| `find_projects` | `query` | programs: projects whose name contains the text, up to 5 | no |
+| `find_people` | `query` | people: names containing the text, up to 5 | no |
+| `create_scenario` | `assumptions` | planning: saves a what-if scenario and returns its effect and the 5 biggest changes (replaces `get_scenario_diff`) | a scenario (planner only) |
 
-Each question is sent alone, with the page path as context, so there is no chat history on the server. Ask AI never writes. One question takes at most `LLM_MAX_TOOL_ROUNDS` model calls.
+Each question is sent alone, with the page path as context, so there is no chat history on the server. `create_scenario` is the only write. A manager gets no such tool. One scenario per question, named `What-if (AI): <question>` (first 60 characters); it is a copy and never changes the baseline. One question takes at most `LLM_MAX_TOOL_ROUNDS` model calls.
 
 **Oversized tool results are compacted, not cut.** A result longer than `LLM_MAX_TOOL_RESULT_BYTES` (`services/ai_compact.go`) first loses its nulls and empty values. Then long lists keep fewer items, and a sibling `<key>_omitted_items` count says how many were left out; a top-level list becomes `{"items": [...], "_omitted_items": n}`. Only when that still does not fit is the text cut, with a marker that asks for a narrower range. The result stays valid JSON unless it is cut.
 
@@ -455,15 +458,9 @@ Each question is sent alone, with the page path as context, so there is no chat 
 
 | Tool | Wraps | Used by | Writes |
 |---|---|---|---|
-| `find_people` | people: search by name | chat, Q&A | no |
-| `find_projects` | programs: search projects and programs | chat, Q&A | no |
 | `find_free_people` | insights: heatmap filtered by expertise, minimum level and weeks | chat, Q&A | no |
 | `get_person_schedule` | planning: a person's assignments | chat, Q&A | no |
-| `get_program_overview` | insights: a program's metrics | chat, Q&A | no |
-| `get_risks` | insights: risk lists | chat, Q&A | no |
 | `get_staffing_draft` | planning: a draft's diff, reasons and unmet | chat | no |
-| `create_scenario` | planning: create a scenario from `assumptions` | what-if chat | a scenario |
-| `get_scenario_diff` | planning: compare a scenario with the baseline | what-if chat | no |
 | `create_staffing_draft` | planning: generate a draft for projects | chat | a draft |
 
 - **Permissions:** before calling the service, a tool checks the same role list constant as the matching route (e.g. `constants.ScenarioCreateRoles`). The service then applies the per-program rules using the caller from `ctx`. The model is offered only the tools the caller's role allows. A refused tool gives the same `403` the route would, and the reply says so.
@@ -476,4 +473,4 @@ Each question is sent alone, with the page path as context, so there is no chat 
 - **Audit** (later, no tool writes yet): every write through a tool records the user as the actor, `via = ai_assistant` and the tool name.
 - **Observability:** per request: latency, input and output tokens, tool-call count, provider and model. There is one OTel span per LLM call and per tool call. Prompts, documents and replies are not logged. Logs carry the request id, user id and tool names.
 
-**Open question:** intake extraction and what-if chat would send customer documents to an external LLM provider. The draft summary never sends person names, emails or customer names. Ask AI already sends the question, the page path and tool results (people's hours, risks, drafts, project data) to the chosen provider's API (Gemini or Groq) whenever the chosen provider's key (`GEMINI_API_KEY`, `GROQ_API_KEY` or `OPENROUTER_API_KEY`) is set. On the Gemini free tier, Google may use these inputs and outputs to improve its products, and people may read them; paid-tier requests are excluded from that use. Google's free-tier limits are per project and shown in Google AI Studio, with per-minute and per-day request limits; the day resets at midnight Pacific time. Each model call, including each round after a tool call, counts as one request, so one question can use several. Google's pages (checked 2026-10-16) give no numbers, so read them in AI Studio. Groq's data-use terms and limits were not checked. OpenRouter's data-use terms were not checked either, and its free router picks the model itself, so the host of a request is not fixed; its free limits are in section 8. The company data policy must approve the provider and the key type before real data is sent, and before intake or chat are built.
+**Open question:** intake extraction would send customer documents to an external LLM provider. The draft summary never sends person names, emails or customer names. Ask AI already sends the question, the page path and tool results (people's hours, risks, drafts, project data) to the chosen provider's API (Gemini or Groq) whenever the chosen provider's key (`GEMINI_API_KEY`, `GROQ_API_KEY` or `OPENROUTER_API_KEY`) is set. On the Gemini free tier, Google may use these inputs and outputs to improve its products, and people may read them; paid-tier requests are excluded from that use. Google's free-tier limits are per project and shown in Google AI Studio, with per-minute and per-day request limits; the day resets at midnight Pacific time. Each model call, including each round after a tool call, counts as one request, so one question can use several. Google's pages (checked 2026-10-16) give no numbers, so read them in AI Studio. Groq's data-use terms and limits were not checked. OpenRouter's data-use terms were not checked either, and its free router picks the model itself, so the host of a request is not fixed; its free limits are in section 8. The company data policy must approve the provider and the key type before real data is sent, and before intake is built.

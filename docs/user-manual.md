@@ -291,7 +291,9 @@ When a program has a re-plan draft, its page shows a **Re-plan** banner. Click i
 2. Type your question in **Your question** (up to 500 characters), for example "Who is overloaded next week?" and click **Send**.
 3. The answer appears in the panel. A typing indicator shows while it is pending.
 
-Ask AI answers from the data you are allowed to see, and it only reads. It cannot change a plan, accept a draft or create anything. It also knows the page you are on, so "this project" works on a project page. Messages stay on screen until you reload the page; there is no history.
+**What-if questions (Planner only).** Ask what would happen if something changed, for example "What if Checkout Revamp slips 3 weeks?" or "What if Quinn is away from 2026-11-02 to 2026-11-13?". Ask AI saves a scenario named `What-if (AI): <your question>` and answers with the people changed, the hours moved and the unmet hours. The scenario appears on the Scenarios page, where you can read or delete it. The baseline does not change. A Manager gets no what-if: Ask AI says it cannot run one.
+
+Ask AI answers from the data you are allowed to see. It cannot change a plan or accept a draft. The only thing it creates is a what-if scenario, for a Planner. It also knows the page you are on, so "this project" works on a project page. Messages stay on screen until you reload the page; there is no history.
 
 If the answer fails, the panel shows an error reply. Click **Try again** to send the question again. At the usage limit it tells you how many seconds to wait. If Ask AI always fails, it is not set up on this server.
 
