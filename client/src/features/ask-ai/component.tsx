@@ -1,5 +1,5 @@
 import { MessageCircle, Maximize2, Minimize2, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router'
 import { can } from '@/resources/rbac'
 import { useAskAi, type AskAnswer } from '@/shared/ai'
@@ -33,6 +33,15 @@ export function AskAi() {
   const [isLarge, setIsLarge] = useState(false)
   const [messages, setMessages] = useState<AskAiMessage[]>([])
 
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false)
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen])
+
   if (!can(user?.role, 'ai:ask')) return null
 
   const handleToggle = () => setIsOpen((open) => !open)
@@ -41,12 +50,20 @@ export function AskAi() {
     setMessages((current) => [...current, { role: 'assistant', text: result.answer }])
   const handleError = (error: ApiError) =>
     setMessages((current) => [...current, { role: 'error', text: askErrorMessage(error) }])
-  const handleAsk = (question: string) => {
-    setMessages((current) => [...current, { role: 'user', text: question }])
+  const send = (question: string) =>
     ask.mutate(
       { question, page_context: pathname.slice(0, MAX_PAGE_CONTEXT_LENGTH) },
       { onSuccess: handleAnswer, onError: handleError },
     )
+  const handleAsk = (question: string) => {
+    setMessages((current) => [...current, { role: 'user', text: question }])
+    send(question)
+  }
+  const handleRetry = () => {
+    const lastQuestion = messages.findLast((message) => message.role === 'user')
+    if (!lastQuestion) return
+    setMessages((current) => current.slice(0, -1))
+    send(lastQuestion.text)
   }
 
   return (
@@ -78,7 +95,7 @@ export function AskAi() {
               {isLarge ? <Minimize2 /> : <Maximize2 />}
             </Button>
           </header>
-          <MessageList messages={messages} isPending={ask.isPending} />
+          <MessageList messages={messages} isPending={ask.isPending} onRetry={handleRetry} />
           <QuestionForm isPending={ask.isPending} onAsk={handleAsk} />
         </section>
         <Button
