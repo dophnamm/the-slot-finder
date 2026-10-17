@@ -248,7 +248,6 @@ export type LanguageKey = {
   'Hours in {week}': string
   'Hours moved': string
   'Hours must be a number from 0 to the weekly limit.': string
-  'Hours must be a number within the allowed limit.': string
   'Hours per day': string
   'Hours per week. Locked hours stay as they are when a draft is generated again; stretch is always locked. A week is coloured by the whole load of the person, as on the heatmap.': string
   'Hours per week': string
@@ -407,13 +406,6 @@ export type LanguageKey = {
   Planned: string
   'Planned again:': string
   'Planned burn': string
-  'Short of free hours': string
-  'Skills must look like QA:2;Analyst:1.': string
-  'The level must be a whole number from 1 to 5.': string
-  'The name is empty or too long.': string
-  'The role must be planner, manager or specialist.': string
-  'The same email appears more than once.': string
-  '{hours} hrs free': string
   "Planned hours as a share of a person's capacity in a week; over 100% is overloaded.": string
   'Planned hours as a share of budget hours.': string
   'Planned hours in the weeks up to now as a share of budget hours.': string
@@ -490,12 +482,14 @@ export type LanguageKey = {
   'See who is overloaded or idle each week, and which deadlines are at risk.': string
   Send: string
   'Sets the hours of {name} for many weeks at once. Locked weeks keep their hours.': string
+  'Short of free hours': string
   'Short {hours} hrs': string
   'Show details': string
   'Sign in': string
   'Sign out': string
   'Signed in as {name}': string
   'Signing you in…': string
+  'Skills must look like QA:2;Analyst:1.': string
   Someone: string
   'Something went wrong.': string
   Specialist: string
@@ -538,11 +532,15 @@ export type LanguageKey = {
   'The header lacks this column.': string
   'The last phase ends after the deadline week. Move the deadline or shorten a phase.': string
   'The last phase would end after the deadline week.': string
+  'The level must be a whole number from 1 to 5.': string
   'The link does not return a calendar. Your organization may block secret calendar links.': string
+  'The name is empty or too long.': string
   'The people this program’s projects are staffed from. A draft proposes only them.': string
   'The plan in force: the staffing everyone works to until a newer draft is accepted.': string
   'The program team has nobody else with this expertise at this level.': string
   'The real plan is not affected.': string
+  'The role must be planner, manager or specialist.': string
+  'The same email appears more than once.': string
   'The same person, project and week appear more than once.': string
   'The server is unreachable.': string
   'The server keeps rejecting your sign-in. Try again, or ask an admin to check the sign-in settings.': string
@@ -597,6 +595,7 @@ export type LanguageKey = {
   Week: string
   'weekly hours': string
   'Weekly hours': string
+  'Weekly hours must be above 0 and at most 80, and non-project hours no more than weekly hours.': string
   Weeks: string
   'Weeks (minus is earlier)': string
   'What does this mean?': string
@@ -638,6 +637,7 @@ export type LanguageKey = {
   '{gap} hrs short of {budget} hrs': string
   '{hours} h free in {weeks} weeks': string
   '{hours} hrs': string
+  '{hours} hrs free': string
   '{hours} hrs non-project': string
   '{hours} hrs per day': string
   '{hours} hrs per week': string
