@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The Slot Finder assigns incoming customer projects to cross-functional squads (PM, Analyst, Engineer, QA), forecasts who is overloaded or idle per ISO week, and re-plans when projects slip or people take leave. `README.md` is the architecture source of truth: goals, data model, metrics formulas, flows and ADRs. `docs/architecture.drawio` mirrors its diagrams. `server/README.md` and `client/README.md` hold the per-side details, API table and screens. `docs/features/` holds one spec per feature in build order (scope, acceptance criteria, tasks); read the feature's spec before building it. `docs/plans/` holds the step-by-step implementation plan of a feature, named like its spec.
 
-Status: the first fourteen features in `docs/features/README.md` are built (sign-in through program teams). A program has a team, and the `lead` role, shown as **Manager**, sees and staffs only the teams of the programs they manage.
+Status: the first fifteen features in `docs/features/README.md` are built (sign-in through Ask AI). A program has a team, and the `lead` role, shown as **Manager**, sees and staffs only the teams of the programs they manage.
 
 ## Repo-wide rules
 
@@ -26,6 +26,7 @@ Run `make` at the repo root to list the shortcuts:
 | Lint, test and build both sides, or one side | `make check` · `make check-server` · `make check-client` |
 | Load demo data (expertises, 12 people with skills, leave, holidays, 2 programs with 6 projects, a baseline staffing 3 of them, 2 what-if scenarios; safe to run again) | `make seed` |
 | Wipe local data (DB and Keycloak volumes) | `make reset-data` |
+| Check the Ask AI provider in `server/cmd/server/.env`: one tiny request, status, meaning and rate limits (exits non-zero on a non-200) | `make check-llm` |
 | Apply the sign-in theme to existing Keycloak data (a fresh realm import already has it) | `make keycloak-theme` |
 
 CI (`.github/workflows/check.yml`) runs on every pull request and every push to `main`. The server and client jobs run in parallel, each only when its folder, the workflow or the root `Makefile` changed.
