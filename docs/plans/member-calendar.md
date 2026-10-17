@@ -368,7 +368,7 @@ func TestScheduleService_Get(t *testing.T) {
 			personID   string
 			wantStatus int // 0 means success
 		}{
-			{name: "a lead reads anyone", ctx: asRole("kc-lead", constants.RoleLead), personID: schedPersonID},
+			{name: "a lead reads anyone", ctx: asRole("kc-manager", constants.RoleManager), personID: schedPersonID},
 			{name: "a specialist reads their own", ctx: specialist, personID: schedPersonID},
 			{name: "a specialist cannot read someone else", ctx: specialist, personID: schedOtherID, wantStatus: http.StatusForbidden},
 			{name: "an unknown person", ctx: planner, personID: schedOtherID, wantStatus: http.StatusNotFound},
@@ -689,7 +689,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```go
 	// PersonScheduleRoles may reach a person's schedule; the service lets a specialist read
 	// only their own.
-	PersonScheduleRoles = []string{RolePlanner, RoleLead, RoleSpecialist}
+	PersonScheduleRoles = []string{RolePlanner, RoleManager, RoleSpecialist}
 ```
 
 `server/internal/constants/messages.go`, in the "People and skills messages" block after `MsgExpertisesListed`:
@@ -1287,7 +1287,7 @@ func TestAvailabilityService_Approve(t *testing.T) {
 		{name: "already approved", ctx: planner, absence: approved, wantStatus: http.StatusConflict, wantCode: constants.AbsenceNotPlanned},
 		{name: "a holiday", ctx: planner, absence: holiday, wantStatus: http.StatusConflict, wantCode: constants.AbsenceNotPlanned},
 		{name: "not found", ctx: planner, findErr: gorm.ErrRecordNotFound, wantStatus: http.StatusNotFound, wantCode: constants.AbsenceNotFound},
-		{name: "a lead cannot approve", ctx: asRole("kc-lead", constants.RoleLead), absence: planned(), wantStatus: http.StatusForbidden},
+		{name: "a manager cannot approve", ctx: asRole("kc-manager", constants.RoleManager), absence: planned(), wantStatus: http.StatusForbidden},
 		{name: "a specialist cannot approve their own", ctx: asRole("kc-specialist", constants.RoleSpecialist), absence: planned(),
 			wantStatus: http.StatusForbidden},
 	}
@@ -1479,7 +1479,7 @@ func newTestRouter(cfg *config.Config) *echo.Echo {
 func newTestRouterWith(cfg *config.Config, availability services.AvailabilityService) *echo.Echo {
 	verifier := fakeVerifier{
 		"planner-token":    userClaims("planner", constants.RolePlanner, "offline_access"),
-		"lead-token":       userClaims("lead", constants.RoleLead),
+		"manager-token":       userClaims("manager", constants.RoleManager),
 		"specialist-token": userClaims("specialist", constants.RoleSpecialist),
 		"no-role-token":    userClaims("nobody", "offline_access"),
 	}
@@ -1521,7 +1521,7 @@ func TestRouter_ApproveAbsence_RBAC(t *testing.T) {
 		wantStatus int
 	}{
 		{name: "a planner approves", token: "planner-token", wantStatus: http.StatusOK},
-		{name: "a lead cannot approve", token: "lead-token", wantStatus: http.StatusForbidden},
+		{name: "a manager cannot approve", token: "manager-token", wantStatus: http.StatusForbidden},
 		{name: "a specialist cannot approve", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no token", wantStatus: http.StatusUnauthorized},
 	}
@@ -3137,7 +3137,7 @@ Expected: FAIL: the page test cannot resolve `./component`, and the new breadcru
 `client/src/resources/rbac/permissions.ts`, before `'people:manage'`:
 
 ```ts
-  'people:view': [ROLES.PLANNER, ROLES.LEAD],
+  'people:view': [ROLES.PLANNER, ROLES.MANAGER],
 ```
 
 - [ ] **Step 4: The page**
@@ -3482,7 +3482,7 @@ Run: `make dev` (or `make infra`, then `make server` and `make client`), then `m
 5. Sign in as `specialist` and open My schedule. Expected: the same calendar for their own person.
 6. As `specialist`, call `GET /api/v1/people/<someone else>/schedule?from=2026-W42&to=2026-W43` from the browser console with the session token. Expected: `403`.
 7. As `planner`, on Alex's page click **Approve** on the planned leave from step 4. Expected: the badge turns approved in the list and on the calendar, the week is no longer tentative, and Events lists a new `AbsenceAdded`.
-8. As `lead`, open Alex's page. Expected: calendar only, no absence list, and "People" in the breadcrumb is plain text.
+8. As `manager`, open Alex's page. Expected: calendar only, no absence list, and "People" in the breadcrumb is plain text.
 
 Stop the dev servers you started; leave any server the user already had running.
 

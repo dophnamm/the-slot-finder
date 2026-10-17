@@ -67,6 +67,6 @@ Never use `new Date()` arithmetic, `toLocaleDateString` or hand-written week mat
 |---|---|
 | A shared constant copied into two `constants.ts` files | Move it to `src/utils/constants/<topic>.ts` |
 | `'/api/v1/programs'` written in a feature | `PROGRAM_ENDPOINTS.list` (the base path is added by the HTTP client) |
-| `role === 'lead'` in a component | `can(role, '<permission>')`, adding the permission to `PERMISSIONS` if needed |
+| `role === 'manager'` in a component | `can(role, '<permission>')`, adding the permission to `PERMISSIONS` if needed |
 | `date.getDay()` math to find a week | `toIsoWeek` / `isoWeekRange` |
 | Importing `dayjs` directly from `'dayjs'` | Import from `@/utils/functions` so the plugins are always loaded |

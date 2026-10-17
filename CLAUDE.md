@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-The Slot Finder assigns incoming customer projects to cross-functional squads (PM, Analyst, Engineer, QA), forecasts who is overloaded or idle per ISO week, and re-plans when projects slip or people take leave. `README.md` is the architecture source of truth: goals, data model, metrics formulas, flows and ADRs. `docs/architecture.drawio` mirrors its diagrams. `server/README.md` and `client/README.md` hold the per-side details, API table and screens. `docs/features/` holds one spec per feature in build order (scope, acceptance criteria, tasks); read the feature's spec before building it. `docs/plans/` holds the step-by-step implementation plan of a feature, named like its spec.
+The Slot Finder assigns incoming customer projects to cross-functional squads (PM, Analyst, Engineer, QA), forecasts who is overloaded or idle per ISO week, and re-plans when projects slip or people take leave. `README.md` is the architecture source of truth: goals, data model, metrics formulas, flows and ADRs. `docs/architecture.drawio` mirrors its diagrams. `server/README.md` and `client/README.md` hold the per-side details, API table and screens. `docs/features/` holds one spec per feature in build order (scope, acceptance criteria, tasks); read the feature's spec before building it. `docs/plans/` holds the step-by-step implementation plan of a feature, named like its spec. `docs/user-manual.md` is the manual for people who use the app.
 
-Status: the first sixteen features in `docs/features/README.md` are built (sign-in through guided tour). A program has a team, and the `lead` role, shown as **Manager**, sees and staffs only the teams of the programs they manage.
+Status: the first seventeen features in `docs/features/README.md` are built (sign-in through capacity forecast). A program has a team, and the `manager` role, shown as **Manager**, sees and staffs only the teams of the programs they manage.
 
 ## Repo-wide rules
 
@@ -21,7 +21,7 @@ Run `make` at the repo root to list the shortcuts:
 | Task | Command |
 |---|---|
 | First run: `.env` files and dependencies | `make setup` |
-| Whole stack in Docker: Postgres, Redis, Keycloak, OTel, Jaeger, migrations, API on `:3000` | `make up` · stop with `make down` · logs with `make logs` |
+| Whole stack in Docker: Postgres, Redis, Keycloak, OTel, Jaeger, migrations, API on `:3000` (built image, no hot reload) | `make up` · stop with `make down` · logs with `make logs` |
 | Infra in Docker, server and client on the host | `make dev` (or `make infra`, then `make server` / `make client`) |
 | Lint, test and build both sides, or one side | `make check` · `make check-server` · `make check-client` |
 | Load demo data (expertises, 12 people with skills, leave, holidays, 2 programs with 6 projects, a baseline staffing 3 of them, 2 what-if scenarios; safe to run again) | `make seed` |
@@ -39,7 +39,7 @@ Compose lives in `server/docker-compose.yml` and reads `server/cmd/server/.env`.
 |---|---|
 | First setup | `cp cmd/server/.env.example cmd/server/.env` |
 | Local infra (Postgres, Redis, Keycloak, OTel collector, Jaeger) | `make container-up` |
-| Run API on `:3000` (Swagger at `/swagger/index.html`, non-prod) | `make up` (runs from `cmd/server`, so `.env` there is loaded) |
+| Run API on `:3000` with hot reload through air (`.air.toml`; Swagger at `/swagger/index.html`, non-prod) | `make up` (runs from `cmd/server`, so `.env` there is loaded) |
 | Build / vet | `go build ./...` · `go vet ./...` |
 | Unit tests | `go test ./...` · CI-like: `make tests` (race, coverage, count=1) |
 | Single test | `go test ./internal/services -run TestName -v` |
@@ -78,10 +78,11 @@ A Program contains Projects. A Project is split into ordered **Phases** (week ra
   - `internal/dtos` only at the handler edge
   - a logical module is a set of same-named files across the layers
 - `cmd/server/main.go` wires providers with **Uber FX**. `cmd/server/routes/router.go` holds the middleware chain and routes under `/api/v1`, protected by `AuthMiddleware` + `RequireRole`.
-- Auth uses Keycloak JWTs. Roles `planner`, `lead` (shown as Manager) and `specialist` are in `internal/constants/roles.go`. CSRF is on: unsafe requests need `X-CSRF-Token`, which the server exposes in a response header.
+- Auth uses Keycloak JWTs. Roles `planner`, `manager` and `specialist` are in `internal/constants/roles.go`. CSRF is on: unsafe requests need `X-CSRF-Token`, which the server exposes in a response header.
   - `AuthMiddleware` verifies tokens locally against the realm's cached JWKS (`internal/integration/auth/verifier.go`), with no Keycloak call per request. It puts a `request.Principal` in the request context.
   - Routes add `RequireRole(constants.<X>Roles...)`. Services ask `AuthzService` for named checks (`Require(ctx, CanViewOwnProfile)`).
-  - Keycloak imports `deploy/keycloak/realm.json` on a fresh start (placeholders from `.env`). The demo users `planner`, `lead` and `specialist` are for development only.
+  - Keycloak imports `deploy/keycloak/realm.json` on a fresh start (placeholders from `.env`). The demo users `planner`, `manager` and `specialist` are for development only.
+  - Keycloak imports the realm only on a fresh volume, so existing Keycloak data still has the realm role and demo user `lead`. Run `make reset-data`, or rename the realm role `lead` to `manager` (Realm roles) and the demo user in the Keycloak admin console. A deployed instance needs the same rename, plus `UPDATE people SET role = 'manager' WHERE role = 'lead'`, before this version goes live, or every user with the old role gets `403`.
 - "Now" comes from `clock.Clock` (FX, organization time zone from `TIMEZONE`). Nothing sets `time.Local`.
 - Every response is the envelope `{ meta: { error_code, message, code, page, page_size, total }, data }`, built by `internal/errors` (`AppError`, `ErrorHandler`) and `BaseHandler`.
 - `docs/` is generated Swagger (code-first, Swagger 2.0). Do not edit it by hand.

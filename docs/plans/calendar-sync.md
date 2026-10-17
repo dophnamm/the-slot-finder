@@ -2113,7 +2113,7 @@ func TestCalendarFeedService_GetAndDisconnect(t *testing.T) {
 
 	_, err = service.Connect(specialist, ConnectFeedInput{PersonID: selfPersonID, URL: googleLink})
 	require.NoError(t, err)
-	_, err = service.Get(asRole("kc-lead", constants.RoleLead), selfPersonID)
+	_, err = service.Get(asRole("kc-manager", constants.RoleManager), selfPersonID)
 	requireStatus(t, err, http.StatusForbidden)
 
 	require.NoError(t, service.Disconnect(specialist, selfPersonID))
@@ -2815,7 +2815,7 @@ func TestCalendarFeedHandler_Connect(t *testing.T) {
 ```go
 	// CalendarFeedRoles may reach the calendar-feed routes; the service lets a person act only
 	// on their own calendar unless they hold AbsenceManageRoles.
-	CalendarFeedRoles = []string{RolePlanner, RoleLead, RoleSpecialist}
+	CalendarFeedRoles = []string{RolePlanner, RoleManager, RoleSpecialist}
 ```
 
 - [ ] **Step 5: Write the DTOs.** Create `server/internal/dtos/calendarfeed.go`. The response has no field for the link, by design:

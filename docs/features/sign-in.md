@@ -7,7 +7,7 @@
 
 ## In scope
 
-- Keycloak realm import: the realm, realm roles `planner` / `lead` / `specialist`, a public SPA client (Authorization Code + PKCE S256), the confidential server client, an audience mapper, and one demo user per role (development only).
+- Keycloak realm import: the realm, realm roles `planner` / `manager` / `specialist`, a public SPA client (Authorization Code + PKCE S256), the confidential server client, an audience mapper, and one demo user per role (development only).
 - Client: OIDC sign-in with PKCE, silent token renewal, sign-out, route guards by role.
 - Server: local JWT verification against cached JWKS, claims in the request context, `RequireRole`, `GET /me`.
 - An `authz` service with named checks. It holds role checks now; per-program rules arrive with later features.

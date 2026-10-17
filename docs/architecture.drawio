@@ -422,7 +422,7 @@
         <mxCell id="v-42" value="keycloak_id &lt;i&gt;links Keycloak account&lt;/i&gt;&amp;nbsp;&amp;nbsp;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;html=1;fontSize=11;" vertex="1" parent="v-38">
           <mxGeometry as="geometry" x="0" y="94" width="280" height="22" />
         </mxCell>
-        <mxCell id="v-43" value="role &lt;i&gt;planner / lead / specialist&lt;/i&gt;&amp;nbsp;&amp;nbsp;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;html=1;fontSize=11;" vertex="1" parent="v-38">
+        <mxCell id="v-43" value="role &lt;i&gt;planner / manager / specialist&lt;/i&gt;&amp;nbsp;&amp;nbsp;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;html=1;fontSize=11;" vertex="1" parent="v-38">
           <mxGeometry as="geometry" x="0" y="116" width="280" height="22" />
         </mxCell>
         <mxCell id="v-44" value="weekly_hours &lt;i&gt;until a CAPACITY_CHANGE&lt;/i&gt;&amp;nbsp;&amp;nbsp;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;html=1;fontSize=11;" vertex="1" parent="v-38">

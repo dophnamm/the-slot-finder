@@ -2,12 +2,12 @@
 
 **Goal:** a planner gives each program its team, and the program's manager staffs the program's projects from that team only. A manager sees the people of the programs they manage, not everyone in the company.
 
-**Roles:** planner (adds and removes team members, staffs anything), manager (the `lead` role, shown as **Manager**: reads and staffs the programs they manage), specialist (unchanged).
+**Roles:** planner (adds and removes team members, staffs anything), manager (the `manager` role, shown as **Manager**: reads and staffs the programs they manage), specialist (unchanged).
 **Target:** 14–15 Oct · **Depends on:** [programs-and-demand](programs-and-demand.md), [staffing-draft](staffing-draft.md), [member-calendar](member-calendar.md) · **Branch:** `feat/program-teams` · **Status:** Done
 
 ## In scope
 
-- **Manager.** The realm role stays `lead`; the app shows it as **Manager**. A manager manages a program when they are its lead (`programs.lead_id`).
+- **Manager.** The realm role is `manager`, shown as **Manager**. A manager manages a program when they are its lead (`programs.lead_id`).
 - **Team.** A program has a team: the people a planner added to it. A person may be in several teams. Their weekly capacity is shared: the engine already counts every baseline hour, whatever the program.
   - The planner adds and removes members on the program's **Team** tab, which lists each member with their expertise and the hours they have in this program's baseline.
   - Removing a member keeps their baseline hours; the next draft for the program plans without them.
@@ -25,7 +25,7 @@
 
 - A manager asking the planner for more people (a request flow). The unmet reason tells the planner instead.
 - Hiding another program's project names from a manager on a team member's calendar.
-- Renaming the `lead` realm role in Keycloak.
+- Renaming the realm role (done later: `lead` became `manager`).
 
 ## Server
 
@@ -38,7 +38,7 @@
 - **Data:** `program_team_members (program_id, person_id, created_at)`, unique on the pair, both foreign keys cascade on delete.
 - **Visibility:** `AuthzService.VisiblePeople(ctx)` answers "everyone" for a planner, and for a manager their own id plus the person ids of the teams of the programs they read (they lead it or lead one of its projects). `GET /people`, `GET /people/{id}`, `GET /people/{id}/schedule`, the heatmap and the risks use it.
 - **Programs a manager reads:** `AuthzService.ProgramReader(ctx)` answers "every program" for a planner, and for a manager the programs they lead or lead a project in. `GET /programs`, the project list (intake) and the risks leave the other programs out; `GET /programs/{id}`, its overview, members and projects, and `GET /projects/{id}` answer `403` for them.
-- **Drafts:** the draft routes also admit `lead`; the staffing service lets a manager act only when every project of the draft belongs to a program they lead (else `403`).
+- **Drafts:** the draft routes also admit `manager`; the staffing service lets a manager act only when every project of the draft belongs to a program they lead (else `403`).
 - **Engine:** `engine.Demand.Candidates` (a set of person ids; `nil` means anyone). The staffing snapshot fills it with the team of the demand's program. A person outside the set is never proposed, and their unlocked hours on that demand are dropped; locked hours stay.
 - **Seed:** each demo program gets a team: the people the demo baseline uses, plus one or two more.
 
@@ -54,8 +54,8 @@
 
 1. A planner adds Bao Tran to the team of Acme Commerce Platform; the Team tab lists him with 0 h until a draft gives him hours.
 2. Propose squad for an Acme project proposes only Acme team members. A demand whose expertise nobody in the team has is unmet with **No one in the program team**.
-3. The manager of Acme (Lee Lead) sees only Acme's team on People and the heatmap; opening someone outside it gives `403`.
-4. Lee proposes, edits and accepts a draft for an Acme project. Lee gets `403` on a draft that also covers a Beta project.
+3. The manager of Acme (Mia Manager) sees only Acme's team on People and the heatmap; opening someone outside it gives `403`.
+4. Mia proposes, edits and accepts a draft for an Acme project. Mia gets `403` on a draft that also covers a Beta project.
 5. A planner still sees everyone and staffs any program.
 
 ## Tasks
