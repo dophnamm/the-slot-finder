@@ -1,6 +1,6 @@
 # Ask AI
 
-**Goal:** a planner or a Manager asks a question in plain language, such as "who is overloaded next week?" or "what is at risk in Acme?", from a widget on every screen. The answer comes only from data the assistant reads through read-only tools, and those tools run with the caller's own rights.
+**Goal:** a planner or a Manager asks a question in plain language, such as "who is overloaded next week?" or "what is at risk in Acme?", from a widget on every screen. The answer comes only from data the assistant reads through tools that run with the caller's own rights: the read tools, plus `create_scenario` for planners ([whatif-chat](whatif-chat.md)).
 
 **Roles:** planner and manager (shown as Manager) ask questions; the tools apply their rules, so a Manager gets answers about their own programs and teams only. Specialist sees no widget and gets `403` from the route.
 **Target:** 16 Oct · **Depends on:** [staffing-draft](staffing-draft.md), [team-heatmap](team-heatmap.md), [program-metrics](program-metrics.md), [program-teams](program-teams.md) · **Branch:** `feat/ask-ai` · **Status:** Done, not yet verified end to end (no PR yet, see Still to verify)
@@ -9,7 +9,7 @@
 
 - **Question.** A planner or Manager types a question of up to 500 characters in the **Ask AI** panel. The client sends the current route path as `page_context`, so "this project" can be answered on a project page.
 - **Model.** Gemini through Google AI Studio (default), Groq or OpenRouter, chosen with `LLM_PROVIDER`. Each provider has its own key and model: `GEMINI_API_KEY` and `GEMINI_MODEL` (default `gemini-3.5-flash`), `GROQ_API_KEY` and `GROQ_MODEL` (default `openai/gpt-oss-120b`), `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` (default `openrouter/free`, a router that picks a free model with the features the request needs). Switching provider means changing `LLM_PROVIDER` only, with its key in the environment. `LLM_TEMPERATURE` (default 0.2) goes to every provider. Model IDs change quickly (`gemini-2.5-flash` is closed to new accounts and answers 404), so production should set the model variable explicitly and confirm IDs in AI Studio, the Groq console or openrouter.ai/models. The client sits behind an interface (`llm.Client`), so the service does not know the provider.
-- **Tools.** The model may call six read-only tools. Each one calls an existing service as the caller, so the same checks apply as on the API:
+- **Tools.** The model may call the read tools below and the three what-if tools of [whatif-chat](whatif-chat.md). Each one calls an existing service as the caller, so the same checks apply as on the API:
 
   | Tool | Wraps |
   |---|---|
@@ -38,7 +38,7 @@
 
 ## Not now
 
-- Writing or changing data through the assistant (a draft, an assignment, a leave). Ask AI never writes → [Later](README.md#later).
+- Writing or changing plans, assignments or leave through the assistant → [Later](README.md#later). The one write is a what-if scenario ([whatif-chat](whatif-chat.md)).
 - Streaming the answer as it is written.
 - Chat history kept on the server or in the browser after a reload.
 - Model providers beyond Gemini, Groq and OpenRouter. The interface is there → [Later](README.md#later).
@@ -131,5 +131,5 @@
 
 - **Free-tier data use.** On the free tier, Google may use inputs and outputs to improve its products, and people may read them. Groq's and OpenRouter's data-use terms were not checked. Until the company data policy approves the provider and the key type, use the free key with fake or non-sensitive data only. The server README (section 9) holds the open question.
 - **Cost and quota.** Each question can take up to five model calls, and each call sends the tool results again. Google's free-tier limits are per project and shown in Google AI Studio: per-minute and per-day request limits, and the day resets at midnight Pacific time. Each model call, including each round after a tool call, counts as one request, so one question can use several. Google's pages (checked 2026-10-16) give no numbers, so read them in AI Studio. Groq's limits and prices were not checked. OpenRouter's free accounts get 50 requests a day, or 1,000 with at least 10 credits bought, and 20 a minute (its docs, checked 2026-10-17).
-- **Prompt injection through data.** Names and notes in the data reach the model. The prompt marks results as data, and the tools are read-only, so the worst case is a wrong answer, not a changed record.
+- **Prompt injection through data.** Names and notes in the data reach the model. The prompt marks results as data, and the only write is `create_scenario` (planner, once per question, a copy of the baseline), so the worst case is a wrong answer or one junk scenario.
 - **Answers are checked by eye.** Nothing compares a sentence in the answer with the tool results. The rule in the prompt is the only guard.

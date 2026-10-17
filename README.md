@@ -110,7 +110,7 @@ flowchart TB
   worker --> engine
   worker -->|"read / write"| db
   worker <-->|"calendar sync · notify"| ext
-  api -.->|"AI assistant: Ask AI and draft summary (built)"| llm
+  api -.->|"AI assistant: Ask AI, what-if chat and draft summary (built)"| llm
 ```
 
 | Container | Responsible for | Not responsible for |

@@ -295,7 +295,7 @@ When a program has a re-plan draft, its page shows a **Re-plan** banner. Click i
 
 Ask AI answers from the data you are allowed to see. It cannot change a plan or accept a draft. The only thing it creates is a what-if scenario, for a Planner. It also knows the page you are on, so "this project" works on a project page. Messages stay on screen until you reload the page; there is no history.
 
-If the answer fails, the panel shows an error reply. Click **Try again** to send the question again. At the usage limit it tells you how many seconds to wait. If Ask AI always fails, it is not set up on this server.
+If the answer fails, the panel shows an error reply. Click **Try again** to send the question again. At the usage limit it tells you how many seconds to wait. If Ask AI always fails, it is not set up on this server. If the answer fails after a what-if, check the Scenarios page before asking again; the scenario may already be saved.
 
 ## 12. Guided tour
 
