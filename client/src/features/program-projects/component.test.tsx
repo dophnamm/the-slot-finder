@@ -58,13 +58,13 @@ describe('ProgramProjects ordering', () => {
   })
 
   it('moves a row one place with the arrow keys', () => {
-    renderProjects('lead', 'lee')
+    renderProjects('manager', 'lee')
     fireEvent.keyDown(handle('Loyalty'), { key: 'ArrowUp' })
     expect(reorder.mock.calls[0][0]).toEqual(['b', 'a', 'c'])
   })
 
   it('offers no ordering to someone who cannot edit the program', () => {
-    renderProjects('lead', 'someone-else')
+    renderProjects('manager', 'someone-else')
     expect(screen.queryByRole('button', { name: translate('Move {name}', { name: 'Loyalty' }) })).toBeNull()
   })
 })

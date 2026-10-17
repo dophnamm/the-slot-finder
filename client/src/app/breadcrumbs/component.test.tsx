@@ -64,21 +64,21 @@ describe('Breadcrumbs', () => {
   })
 
   it('names the crumb Person when the person cannot be loaded', () => {
-    useCurrentUser.mockReturnValue({ data: { role: 'lead' } })
+    useCurrentUser.mockReturnValue({ data: { role: 'manager' } })
     usePerson.mockReturnValueOnce({ data: undefined, error: { status: 403 } } as never)
     renderAt('/people/u9')
     expect(screen.getByText('Person').getAttribute('aria-current')).toBe('page')
   })
 
   it('names the crumb Program when the program cannot be loaded', () => {
-    useCurrentUser.mockReturnValue({ data: { role: 'lead' } })
+    useCurrentUser.mockReturnValue({ data: { role: 'manager' } })
     useProgram.mockReturnValueOnce({ data: undefined, error: { status: 403 } } as never)
     renderAt('/programs/g9')
     expect(screen.getByText('Program').getAttribute('aria-current')).toBe('page')
   })
 
   it('names the crumb Project when the project cannot be loaded', () => {
-    useCurrentUser.mockReturnValue({ data: { role: 'lead' } })
+    useCurrentUser.mockReturnValue({ data: { role: 'manager' } })
     useProject.mockReturnValueOnce({ data: undefined, error: { status: 403 } } as never)
     renderAt('/programs/g9/projects/p9')
     expect(screen.getByText('Project').getAttribute('aria-current')).toBe('page')
@@ -92,8 +92,8 @@ describe('Breadcrumbs', () => {
     expect(screen.queryByText('Alex Nguyen')).toBeNull()
   })
 
-  it('links People for a lead too, who may read the People list', () => {
-    useCurrentUser.mockReturnValue({ data: { role: 'lead' } })
+  it('links People for a manager too, who may read the People list', () => {
+    useCurrentUser.mockReturnValue({ data: { role: 'manager' } })
     renderAt('/people/u1')
     expect(screen.getByRole('link', { name: 'People' }).getAttribute('href')).toBe(ROUTES.people)
     expect(screen.getByText('Alex Nguyen').getAttribute('aria-current')).toBe('page')

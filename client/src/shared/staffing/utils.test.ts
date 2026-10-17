@@ -3,7 +3,7 @@ import type { Draft } from './types'
 import { applySetHours, canEditDraft, canStaff } from './utils'
 
 const PLANNER = { role: 'planner', person_id: 'p-planner' }
-const MANAGER = { role: 'lead', person_id: 'p-lee' }
+const MANAGER = { role: 'manager', person_id: 'p-lee' }
 const SPECIALIST = { role: 'specialist', person_id: 'p-ada' }
 
 const draft = (leads: (string | null)[], status: Draft['status'] = 'draft') =>

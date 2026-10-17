@@ -5,6 +5,6 @@ import type { Role } from './types'
 /** Display label of each role, for t(). */
 export const ROLE_LABELS: Record<Role, PlainKey> = {
   [ROLES.PLANNER]: 'Planner',
-  [ROLES.LEAD]: 'Manager',
+  [ROLES.MANAGER]: 'Manager',
   [ROLES.SPECIALIST]: 'Specialist',
 }

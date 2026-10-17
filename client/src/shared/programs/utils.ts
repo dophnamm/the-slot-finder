@@ -3,7 +3,7 @@ import { formatIsoWeekSpan } from '@/utils/functions'
 import { BURN_LABELS, FINAL_STATUSES, PROGRESS_WARNINGS } from './constants'
 import type { BurnMetric, EditorUser, PersonRef, ProgressMetrics, ProjectDetail } from './types'
 
-/** Planners edit everything; a lead edits what one of `leads` names them as lead of. */
+/** Planners edit everything; a manager edits what one of `leads` names them as lead of. */
 export function canEdit(user: EditorUser | undefined, leads: (PersonRef | null | undefined)[]): boolean {
   if (!user) return false
   if (can(user.role as Role, 'programs:manage-all')) return true

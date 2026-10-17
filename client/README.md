@@ -16,7 +16,7 @@ npm run lint
 npx shadcn@latest add <component>   # adds a component to src/shared/ui
 ```
 
-Sign in with a demo user (`planner`, `lead` or `specialist`; the `lead` role is shown as **Manager**; see [`server/README.md`](../server/README.md#0-run-locally)). Keycloak must be running (`make infra` or `make up`).
+Sign in with a demo user (`planner`, `manager` or `specialist`; the `manager` role is shown as **Manager**; see [`server/README.md`](../server/README.md#0-run-locally)). Keycloak must be running (`make infra` or `make up`).
 
 ## 1. Screens
 

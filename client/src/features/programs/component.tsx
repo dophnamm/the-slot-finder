@@ -17,7 +17,7 @@ import type { ProgramsTableProps } from './types'
 import { useOnlyProgramRedirect } from './use-only-program-redirect'
 
 /**
- * Every program with its status, timeline and lead; planners and leads create programs here. A manager whose
+ * Every program with its status, timeline and lead; planners and managers create programs here. A manager whose
  * list is a single program goes straight to it.
  */
 export function ProgramsTable({ onCreated }: ProgramsTableProps) {

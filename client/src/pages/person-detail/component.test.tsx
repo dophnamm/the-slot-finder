@@ -56,21 +56,21 @@ describe('PersonDetailPage', () => {
     expect(screen.getByText('calendar of u1')).toBeTruthy()
   })
 
-  it('shows a lead the schedule only, without tabs', () => {
-    renderPage('lead')
+  it('shows a manager the schedule only, without tabs', () => {
+    renderPage('manager')
     expect(screen.queryByRole('tab')).toBeNull()
     expect(screen.queryByText('absence list')).toBeNull()
     expect(screen.queryByText('calendar of u1')).toBeNull()
   })
 
   it('tells a manager when the person is outside the teams they manage', () => {
-    renderPage('lead', { data: undefined, error: { status: 403 } })
+    renderPage('manager', { data: undefined, error: { status: 403 } })
     expect(screen.getByText(translate('You can’t see this person'))).toBeTruthy()
     expect(screen.queryByText(translate('Loading…'))).toBeNull()
   })
 
   it('loads the calendar only once the person is known, so a forbidden person costs one request', () => {
-    renderPage('lead', { data: undefined, error: null })
+    renderPage('manager', { data: undefined, error: null })
     expect(screen.queryByText('person calendar')).toBeNull()
   })
 })
