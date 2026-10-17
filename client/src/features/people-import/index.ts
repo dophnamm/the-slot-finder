@@ -1,0 +1,1 @@
+export { PeopleImport } from './component'

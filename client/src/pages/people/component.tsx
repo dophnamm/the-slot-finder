@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { HolidaysCard } from '@/features/holidays'
 import { PeopleTable, type Person } from '@/features/people'
+import { PeopleImport } from '@/features/people-import'
 import { TimesheetImport } from '@/features/timesheet-import'
 import { can } from '@/resources/rbac'
 import { useCurrentUser } from '@/shared/auth'
@@ -29,7 +30,12 @@ export function PeoplePage() {
           <PeopleTable
             canManage={can(user?.role, 'people:manage')}
             onShowAbsences={canApprove ? setAbsencesOf : undefined}
-            actions={can(user?.role, 'timesheets:import') && <TimesheetImport />}
+            actions={
+              <>
+                {can(user?.role, 'people:import') && <PeopleImport />}
+                {can(user?.role, 'timesheets:import') && <TimesheetImport />}
+              </>
+            }
           />
         </TabsContent>
         <TabsContent value="holidays" className="flex min-h-0 flex-col">
