@@ -25,7 +25,7 @@ describe('BenchList', () => {
     expect(screen.getByText('Bench (1)')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Quinn' }).getAttribute('href')).toBe('/people/p1')
     expect(screen.getByText('QA')).toBeTruthy()
-    expect(screen.getByText('104 h free in 4 weeks')).toBeTruthy()
+    expect(screen.getByText('104 hrs free in 4 weeks')).toBeTruthy()
   })
 
   it('shows an empty state', () => {

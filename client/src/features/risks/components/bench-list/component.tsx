@@ -44,7 +44,7 @@ export function BenchList() {
             <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
               <span>{person.primary_expertise}</span>
               <span className="tabular-nums">
-                {t('{hours} h free in {weeks} weeks', {
+                {t('{hours} hrs free in {weeks} weeks', {
                   hours: Math.round(person.free_hours),
                   weeks: data?.weeks ?? 0,
                 })}
