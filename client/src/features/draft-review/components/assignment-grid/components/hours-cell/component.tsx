@@ -6,7 +6,13 @@ import { Input } from '@/shared/ui/input'
 import { TableCell } from '@/shared/ui/table'
 import { cn } from '@/utils/functions'
 import { MAX_WEEK_HOURS, WEEK_COLUMN_CLASS } from '../../constants'
-import { DRAG_DATA_TYPE, DRAGGABLE_CLASS, DROP_TARGET_CLASS, HOURS_CELL_PLACEHOLDER } from './constants'
+import {
+  DRAG_DATA_TYPE,
+  DRAGGABLE_CLASS,
+  DROP_TARGET_CLASS,
+  HOURS_CELL_PLACEHOLDER,
+  HOURS_INPUT_CLASS,
+} from './constants'
 import type { HoursCellProps } from './types'
 
 /** One week of an assignment: the hours as text, or an input that saves on blur or Enter. */
@@ -93,7 +99,7 @@ export function HoursCell({
         step="any"
         value={value}
         aria-label={t('Hours in {week}', { week })}
-        className={cn('mx-auto h-8 w-14 bg-transparent text-center', locked && 'border-primary')}
+        className={cn(HOURS_INPUT_CLASS, locked && 'border-primary')}
         onChange={handleChange}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
