@@ -12,7 +12,7 @@ Three accounts are already created, one per role. Sign in with each to see what 
 |---|---|---|---|---|
 | `planner` | `P@ssw0rd123` | Pat Planner | **Planner** | **Dashboard**: the whole team, every program, drafts, scenarios and events |
 | `manager` | `P@ssw0rd123` | Mia Manager | **Manager** | **Dashboard**: only the programs Mia manages (Acme Commerce Platform) |
-| `specialist` | `P@ssw0rd123` | Sam Specialist | **Specialist** | **My schedule**: Sam's own hours, leave and holidays; **Programs**: read only, the projects they work on |
+| `specialist` | `P@ssw0rd123` | Sam Specialist | **Specialist** | **My schedule**: Sam's own hours, leave and holidays; **Programs**: read only, the projects they work on or lead |
 
 ## Contents
 
@@ -34,7 +34,7 @@ Three accounts are already created, one per role. Sign in with each to see what 
 
 ## 1. Sign in
 
-Open the app's address. You are sent to the sign-in page; enter your account there and you return to the page you asked for. If you have no account yet, choose "Don't have an account?" under the sign-in button; it points you to the [accounts for review](#accounts-for-review).
+Open the app's address. You are sent to the sign-in page; enter your account there and you return to the page you asked for. If you have no account yet, use one of the [accounts for review](#accounts-for-review).
 
 1. Open the app.
 2. On the sign-in page, enter your account and sign in.
@@ -61,7 +61,7 @@ Start from the demo data. **Drafts** is empty at first, because the demo baselin
 **Specialist (Sam Specialist)**
 1. **My schedule** shows your approved training on 26 and 27 October.
 2. Under **My absences**, report a day of leave. It stays planned until a Planner approves it.
-3. **Programs** opens the programs you lead, lead a project in, or work on, read only.
+3. **Programs** lists the programs that have a project you work on or lead, read only. A project you do not work on or lead shows "You can’t see this project".
 
 ## 3. Roles
 
@@ -71,12 +71,13 @@ Your role decides which screens appear in the sidebar and which actions you can 
 |---|---|---|---|
 | **Planner** | Dashboard, Programs, Intake, Drafts, Scenarios, People, Events | Everything: the whole team, all programs, all drafts, change history | Everything a Manager can, plus: program teams, approve leave, holidays, timesheet import, scenarios, and staffing drafts for any program. Uses Ask AI |
 | **Manager** | Dashboard, Programs, Intake, Drafts, People (read only) | Only the programs they lead or lead a project in, and the people in those programs' teams (and themselves) | Create programs; edit their programs and projects (phases, demand, done points); reorder projects; propose, edit, accept and reject drafts for the programs they manage. Uses Ask AI |
-| **Specialist** | My schedule, Programs | Their own schedule: hours per project, leave, holidays. Programs read only: those they lead, lead a project in, or have hours in the published baseline; inside a program, only the projects they work on (have hours in, or lead) | Report their own leave; connect their own calendar. Cannot change anything in programs, projects or teams |
+| **Specialist** | My schedule, Programs | Their own schedule: hours per project, leave, holidays. Programs read only: those they lead, lead a project in, or have hours in the published baseline; inside a program, only the projects they work on (have hours in, or lead); a program lead sees all projects of that program. No program Overview tab or figures | Report their own leave; connect their own calendar. Cannot change anything in programs, projects or teams |
 
 Notes:
-- A Manager cannot open a program, project or person outside their teams, and a Specialist cannot open a program, or a project, they do not work on. The screen says "You can’t see this program", "You can’t see this project" or "You can’t see this person".
+- A Manager cannot open a program, project or person outside their teams, and a Specialist cannot open a program, or a project, they do not work on or lead. The screen says "You can’t see this program", "You can’t see this project" or "You can’t see this person". A Specialist who opens a project they cannot see gets the text "Ask a planner if you need access.".
 - Only a Planner can change a program's team, approve leave, or add holidays.
 - Only a Planner sees **Scenarios** and **Events**.
+- Only a Specialist has **My schedule** (`/me`). A Planner or Manager who opens `/me` sees "No access", with a button to their home page (the Dashboard).
 
 ## 4. Dashboard
 
@@ -107,10 +108,12 @@ A hatched cell is **tentative**: it contains leave that is planned but not appro
 
 **How to read a cell (By expertise).** Each cell shows free hours for that expertise in that week (capacity minus load, per person, never below 0).
 - Green: enough free hours.
-- Amber, `Short N hrs`: the unmet demand of planned and active projects, plus the expected demand of incoming projects, is larger than the free hours.
-- Red, `Overloaded`: load is above capacity.
+- Amber, `Short N hrs`: the demand that free hours cannot cover is above 0. That demand is the unmet hours of planned and active projects (hours the baseline does not place), plus the pipeline hours below, minus the free hours.
+- Red, `Overloaded`: load is above capacity. Red wins over amber when both apply.
 
-The tooltip gives capacity, load, unmet and pipeline hours. **Click a cell** to see the people of that expertise in that week, highest load first, with their utilization and free hours. An expertise overloaded for several weeks in a row gets an **Overloaded N weeks in a row** badge.
+**Pipeline hours** are the demand of incoming projects, spread evenly over the weeks left in each demand's window. They count at the pipeline confidence, one global percentage (`PIPELINE_CONFIDENCE_PERCENT`, 50 % by default). A project's priority does not change its weight, and no person is booked for it. A per-project confidence is not built yet.
+
+The tooltip gives capacity, load, unmet and pipeline hours; its pipeline figure is already weighted. **Click a cell** to see the people of that expertise in that week, highest load first, with their utilization and free hours. An expertise overloaded for several weeks in a row gets an **Overloaded N weeks in a row** badge.
 
 **Risks card.** Lists, in this order:
 - **Sustained overload** (people over 100 % for several weeks in a row, such as "Bao Tran: over 100 % for 3 weeks from 2026-W45"). This group is listed first and hidden when nobody has one.
@@ -147,12 +150,18 @@ To load actual hours from a file, see [Import timesheets](#import-timesheets).
 
 ## 6. Programs and projects
 
-**Programs** lists the programs you can see, with their status and timeline. The arrow on a row opens a preview with its figures, projects and members. A Manager with a single program opens it directly.
+**Programs** lists the programs you can see, with their status and timeline. A Manager with a single program opens it directly.
+
+**Program preview (Planner and Manager).** The arrow on a row opens a preview under it; a Specialist has no arrow. The preview shows **Budget**, **Planned** and **Gap** hours and the **Staffing** bar. **Planned** turns red when the program is over-planned, and **Gap** when it is understaffed. Two tabs follow:
+- **Projects**: each project's status and warnings, its deadline and its staffing bar.
+- **Members**: each person with hours on the program, with expertise, hours, weeks and projects.
+
+Click the arrow again (**Hide details**) to close it. Click the program name to open the full program page.
 
 To create a program, click **New program**.
 
-**Program page.** Click a program to open it. It has three tabs:
-- **Overview**: progress bars for **Time**, **Scope**, **Planned burn** (or **Burn**, see below) and **Staffing**; the hours figures **Budget**, **Planned**, **Planned to date**, **Actual**, **Forecast** and **Gap**; staffing by expertise; and the program brief.
+**Program page.** Click a program to open it. Planners and Managers see three tabs, listed below; a Specialist sees Projects and Team only, and the page opens on Projects:
+- **Overview** (Planners and Managers only; a Specialist has no Overview tab): progress bars for **Time**, **Scope**, **Planned burn** (or **Burn**, see below) and **Staffing**; the hours figures **Budget**, **Planned**, **Planned to date**, **Actual**, **Forecast** and **Gap**; staffing by expertise; and the program brief.
   - **Time**: the share of the program's span (start to end date) that has passed.
   - **Scope**: delivered scope points as a share of all scope points.
   - **Planned burn**: planned hours up to this week as a share of budget hours.
@@ -161,7 +170,9 @@ To create a program, click **New program**.
 - **Projects**: the projects in priority order, with the hours planned next week and in the next 3 weeks. Drag a row, or focus its handle and press the arrow keys, to change the order. The top project has the highest priority.
 - **Team**: the people the program's projects are staffed from. Planners use **Add member** and **Remove**. Removing a member keeps their baseline hours.
 
-**Specialist (read only).** A Specialist sees only the **Projects** and **Team** tabs. The team lists the members' names only: no hours, levels, contact details or dates, and a member cannot be opened. The Projects tab lists only the projects they work on (all of them for the program's lead), and any other project answers "You can’t see this project". A project opens read only, with its basic information and phases, but without demand, budget hours or progress figures, and without the Re-plan banner.
+**Specialist (read only).** A Specialist has no Edit, no **⋯** menu, no **Add project** or **New project from a brief**, no **Propose squad** and no Re-plan banner.
+- **Projects**: only the projects they work on or lead (a program lead sees all of them), with no progress or next-weeks hours columns.
+- **Team**: member names only, as plain text (not links), with no email, hours, skills, expertise or projects.
 
 > **Warning:** a Manager can create a program, but only a Planner can add members to its team. If the team is empty, **Propose squad** still makes a draft, but its demands end unmet, with the reason "No one in the program team".
 
@@ -190,7 +201,7 @@ Before the brief goes to the AI, the app hides customer names (the client of eac
 
 If the project is created but its demands fail to save, the message says the project exists without demands and links to it. Add the demands on the project page.
 
-**Project page.** Open a project from the Projects tab. Here you edit the project form, set done points, and manage its phases and demand. **Propose squad** is in the header. A Specialist sees the same page read only (see [Programs and projects](#6-programs-and-projects), Specialist).
+**Project page.** Open a project from the Projects tab. Here you edit the project form, set done points, and manage its phases and demand. **Propose squad** is in the header. A Specialist sees only the summary and phases, read only: no demand, budget hours, scope points or **Propose squad**.
 
 **Phases.** A project is split into ordered phases, such as Discovery, Build and Test, each with a start and end week.
 1. Under **Phases**, click **Add phase** (or edit an existing phase).
@@ -206,6 +217,18 @@ Moving a phase's end later moves every later phase of the same project by the sa
 Budget hours must be whole hours. Otherwise the form shows "Use whole hours" and keeps **Save** off.
 
 **Project status.** A project is **Incoming** until a staffing draft covering it is accepted. Other statuses are **Planned**, **Active**, **On hold**, **Done** and **Cancelled**. The engine plans only projects that are **Incoming**, **Planned** or **Active**.
+
+### Intake
+
+**Intake** (Planner and Manager) lists the projects with status **Incoming**: projects that no staffing draft covers yet. A Planner sees the incoming projects of every program; a Manager sees those of the programs they lead. Highest priority first, then earliest deadline.
+
+Each row shows the project (its priority, and an **At risk** badge), its program, its start and deadline weeks, its current phase and its lead.
+- Click the row or the project name to open the project page.
+- **Propose squad** asks the engine for a staffing draft for that project and opens it for review (see [Staffing drafts](#7-staffing-drafts)). A Planner sees it on every row; a Manager only on programs they lead.
+
+When no project is incoming, the table says "No incoming projects." and "Projects added to a program wait here until a staffing draft covers them."
+
+A project from **New project from a brief** starts as Incoming, so it appears here. The brief only suggests the project; nothing is created until you click **Create project**.
 
 ## 7. Staffing drafts
 
@@ -224,7 +247,7 @@ On the draft review screen:
 - **Changes against the baseline**: who gains or loses hours if the draft is accepted.
 - **Unmet demand**: hours the engine could not place, with a reason (see the table in [Troubleshooting](#14-troubleshooting)).
 
-**Summarize a draft.** Click **Summarize this draft** in the **Summary** card for a short text on the draft as it is now. The label shows who wrote it: **Written by AI**, or **Template summary** when the AI assistant is not available, built from the same numbers. The text is not saved, and it disappears after you edit the draft.
+**Summarize a draft.** A Planner or Manager (the roles that open drafts) clicks **Summarize this draft** in the **Summary** card for a short text on the draft as it is now. The label shows who wrote it: **Written by AI** when the AI assistant answers, or **Template summary**, built from the same numbers, when the AI provider is not set up, the call fails, or the text uses a number that is not in the draft. The text is not saved, and it disappears after you edit the draft.
 
 **Edit a draft.**
 - Type hours into a week cell.
@@ -269,7 +292,7 @@ A scenario that was built on an older baseline is marked **Stale**.
 
 Absences are leave, holidays and training. They lower capacity on the days they cover.
 
-**Schedule.** The person's page has a **Schedule** tab, and **My schedule** shows the same view for a Specialist: a month grid with one row per week. Days off are shaded (leave, training and holidays), and planned leave is marked as planned. Each week shows **Planned** hours against **Capacity**, hatched when it includes leave not approved yet, and **Worked** hours from an imported timesheet. Click **Planned** to list the week's hours per project; each project opens its page. Use the arrows and **Today** to move between months. A Manager sees the schedule of people in their teams, without the absences list. For a Specialist, each project (one they work on) opens read only.
+**Schedule.** The person's page has a **Schedule** tab, and **My schedule** shows the same view for a Specialist: a month grid with one row per week. Days off are shaded (leave, training and holidays), and planned leave is marked as planned. Each week shows **Planned** hours against **Capacity**, hatched when it includes leave not approved yet, and **Worked** hours from an imported timesheet. Click **Planned** to list the week's hours per project; each project name links to that project's page. Use the arrows and **Today** to move between months. A Manager sees the schedule of people in their teams, without the absences list. For a Specialist, each project (one they work on) opens read only.
 
 **Report leave (Specialist).** Open **My absences** on **My schedule** and report the dates and hours per day. The page says: "Report leave or training. A planner approves it." Your leave stays planned until a Planner approves it.
 
@@ -305,6 +328,8 @@ A change that creates a conflict produces one re-plan draft. Several changes clo
 
 When a program has a re-plan draft, its page shows a **Re-plan** banner (not shown to a Specialist). Click it to open the draft, review it, and accept or reject it as in [Staffing drafts](#7-staffing-drafts).
 
+**Not available yet:** email and Slack notifications (a re-plan shows only in **Events** and on the **Re-plan** banner), a settings screen, and a theme or a language other than English.
+
 ## 11. Ask AI
 
 **Ask AI** is a question panel for Planners and Managers. The round button sits at the bottom right of every screen.
@@ -337,11 +362,14 @@ The guided tour explains the sidebar. It starts once on your first visit, on a w
 | **Utilization** | Planned hours divided by a person's capacity in a week. Over 100 % is overloaded. |
 | **Free hours** | Capacity minus load, per person and never below 0. The capacity forecast adds them up per expertise. |
 | **Shortfall** | Demand that free hours cannot cover. Shown as `Short N hrs` in the capacity forecast. |
-| **Pipeline** | The demand of incoming projects, not yet staffed. It shows only in the capacity forecast, not in anyone's schedule. |
+| **Pipeline** | The demand of incoming projects, not yet staffed, weighted by the pipeline confidence (50 % by default). It shows only in the capacity forecast, not in anyone's schedule. |
 | **Bench** | People under 50 % utilization in each of the coming weeks, most free hours first. Listed at the end of the Dashboard risks card. |
 | **Sustained overload** | A person over 100 % for several weeks in a row. It is a burnout risk and is listed before single overloaded weeks. |
 | **Expertise** | A kind of work: PM, Analyst, Engineer or QA. Each person has one primary expertise and may hold others at a level from 1 to 5. |
 | **Program team** | The people a program's projects are staffed from. A Planner adds and removes them; a staffing draft takes people only from this team. |
+| **Program lead** | The person named as lead of a program. Sees all projects of that program. |
+| **Project lead** | The person named as lead of a project. |
+| **Work on** | A person has hours in the published baseline for a project. |
 | **Cross-expertise** | An assignment in an expertise other than the person's primary one, at or above the level the demand needs. |
 | **Stretch** | An assignment below the demand's minimum level, or without the expertise. Added by hand by a Planner or the program's Manager, locked, and confirmed on accept. |
 | **Phase** | An ordered stage of a project with its own week range, such as Discovery, Build or Test. |
@@ -368,7 +396,8 @@ The guided tour explains the sidebar. It starts once on your first visit, on a w
 | "This sign-in page has expired" | You took too long, or the sign-in page was opened twice. | Click **Start again**, or **Continue** to pick up where you left off. |
 | "Your session has ended. Sign in again." | Your sign-in expired. | Sign in again. |
 | "Your role cannot open this page." / "No access" | Your role has no access to the screen. | Ask a Planner if you need access. |
-| "You can’t see this program / project / person" | A Manager or Specialist opened something outside their programs or teams. | Ask a Planner to check the team. |
+| "You can’t see this program / project / person" | A Manager opened something outside the programs or teams they manage. | Ask a Planner to check the team. |
+| "You can’t see this program / project" | A Specialist opened a program, or a project, they do not work on or lead. | Ask a Planner if you need access. |
 | "There is no … at this address." / "Page not found" | The link points to something that does not exist, or was removed. | Go back to the Dashboard and find it again. |
 | "Too many requests. Try again in N seconds." | You sent too many requests in a short time. | Wait, then try again. |
 | "The assistant is at its usage limit. Try again in N seconds." | Ask AI reached its limit. | Wait, then ask again. |
@@ -403,7 +432,7 @@ Planner. Open **People**, then the **Holidays** tab, and click **Import holidays
 
 ### Calendar sync
 
-Each person connects their own calendar, on **My schedule**. A Planner can also connect anyone's, on the person's **Calendar sync** tab.
+A Specialist connects their own calendar, on **My schedule** (the **Calendar sync** tab). A Planner can also connect anyone's, on the person's **Calendar sync** tab. A Manager has no calendar sync screen.
 
 1. Copy the secret iCal address from Google Calendar (Settings and sharing, Integrate calendar, Secret address in iCal format) or from Outlook (Settings, Calendar, Shared calendars, Publish a calendar, ICS link).
 2. Click **Connect calendar**, paste the address into **Secret iCal address**, and save.
