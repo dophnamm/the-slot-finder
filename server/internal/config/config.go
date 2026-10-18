@@ -121,6 +121,9 @@ type Config struct {
 	AuthJWKSRefreshWaitMax     time.Duration
 	AuthClockSkew              time.Duration
 
+	// SeedEmailDomain is the email domain `make seed` gives the demo people.
+	SeedEmailDomain string
+
 	// Email configuration
 	EmailProvider   string
 	AWSSESRegion    string
@@ -310,6 +313,7 @@ func Load() (*Config, error) {
 		AuthJWKSUnknownKIDInterval:   getEnvAsDuration("AUTH_JWKS_UNKNOWN_KID_INTERVAL", time.Minute),
 		AuthJWKSRefreshWaitMax:       getEnvAsDuration("AUTH_JWKS_REFRESH_WAIT_MAX", time.Second),
 		AuthClockSkew:                getEnvAsDuration("AUTH_CLOCK_SKEW", 30*time.Second),
+		SeedEmailDomain:              getEnv("SEED_EMAIL_DOMAIN", constants.DefaultSeedEmailDomain),
 		EmailProvider:                getEnv("EMAIL_PROVIDER", "ses"),
 		AWSSESRegion:                 getEnv("AWS_SES_REGION", ""),
 		AWSSESAccessKey:              getEnv("AWS_SES_ACCESS_KEY", ""),

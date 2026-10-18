@@ -34,7 +34,7 @@ func main() {
 	}
 	defer func() { _ = database.Close() }()
 
-	if err := database.Transaction(seed); err != nil {
+	if err := database.Transaction(seed(cfg.SeedEmailDomain)); err != nil {
 		logger.Sugar.Fatalf("seed: %v", err)
 	}
 	logger.Sugar.Infof("Seed data loaded: %d expertises, %d people, %d absences, %d holidays, %d programs",
@@ -56,22 +56,28 @@ func main() {
 	logger.Sugar.Infof("Actual hours added: %d rows", actuals)
 }
 
-func seed(tx *gorm.DB) error {
-	expertiseIDs, err := seedExpertises(tx)
-	if err != nil {
-		return err
+// seed returns the transaction body; people are keyed by the local part of their email.
+func seed(domain string) func(tx *gorm.DB) error {
+	return func(tx *gorm.DB) error {
+		if err := renameLegacyPeople(tx, domain); err != nil {
+			return err
+		}
+		expertiseIDs, err := seedExpertises(tx)
+		if err != nil {
+			return err
+		}
+		personIDs, err := seedPeople(tx, expertiseIDs, domain)
+		if err != nil {
+			return err
+		}
+		if err := seedAbsences(tx, personIDs); err != nil {
+			return err
+		}
+		if err := seedHolidays(tx); err != nil {
+			return err
+		}
+		return seedPrograms(tx, personIDs, expertiseIDs)
 	}
-	personIDs, err := seedPeople(tx, expertiseIDs)
-	if err != nil {
-		return err
-	}
-	if err := seedAbsences(tx, personIDs); err != nil {
-		return err
-	}
-	if err := seedHolidays(tx); err != nil {
-		return err
-	}
-	return seedPrograms(tx, personIDs, expertiseIDs)
 }
 
 func seedExpertises(tx *gorm.DB) (map[string]string, error) {
@@ -86,17 +92,18 @@ func seedExpertises(tx *gorm.DB) (map[string]string, error) {
 	return ids, nil
 }
 
-func seedPeople(tx *gorm.DB, expertiseIDs map[string]string) (map[string]string, error) {
+func seedPeople(tx *gorm.DB, expertiseIDs map[string]string, domain string) (map[string]string, error) {
 	ids := make(map[string]string, len(people))
 	for _, p := range people {
+		email := emailOf(p.local, domain)
 		row := models.Person{
-			Name: p.name, Email: p.email, Role: p.role, WeeklyHours: p.weeklyHours,
+			Name: p.name, Email: email, Role: p.role, WeeklyHours: p.weeklyHours,
 			NonProjectHours: p.nonProjectHours, StartDate: p.startDate, Active: true,
 		}
-		if err := tx.Where(models.Person{Email: p.email}).Attrs(row).FirstOrCreate(&row).Error; err != nil {
-			return nil, fmt.Errorf("person %s: %w", p.email, err)
+		if err := tx.Where(models.Person{Email: email}).Attrs(row).FirstOrCreate(&row).Error; err != nil {
+			return nil, fmt.Errorf("person %s: %w", email, err)
 		}
-		ids[p.email] = row.ID
+		ids[p.local] = row.ID
 
 		var existing int64
 		if err := tx.Model(&models.PersonSkill{}).Where("person_id = ?", row.ID).Count(&existing).Error; err != nil {
@@ -110,7 +117,7 @@ func seedPeople(tx *gorm.DB, expertiseIDs map[string]string) (map[string]string,
 			skills = append(skills, models.PersonSkill{PersonID: row.ID, ExpertiseID: expertiseIDs[s.expertise], Level: s.level, IsPrimary: s.primary})
 		}
 		if err := tx.Omit("Expertise").Create(&skills).Error; err != nil {
-			return nil, fmt.Errorf("skills of %s: %w", p.email, err)
+			return nil, fmt.Errorf("skills of %s: %w", email, err)
 		}
 	}
 	return ids, nil
@@ -118,7 +125,7 @@ func seedPeople(tx *gorm.DB, expertiseIDs map[string]string) (map[string]string,
 
 func seedAbsences(tx *gorm.DB, personIDs map[string]string) error {
 	for _, a := range absences {
-		personID := personIDs[a.email]
+		personID := personIDs[a.local]
 		row := models.Absence{
 			PersonID: &personID, FromDate: a.from, ToDate: a.to,
 			HoursPerDay: a.hoursPerDay, Type: a.kind, Status: a.status,
@@ -126,7 +133,7 @@ func seedAbsences(tx *gorm.DB, personIDs map[string]string) error {
 		err := tx.Where("person_id = ? AND from_date = ? AND to_date = ? AND type = ?", personID, a.from, a.to, a.kind).
 			Attrs(row).FirstOrCreate(&row).Error
 		if err != nil {
-			return fmt.Errorf("absence of %s: %w", a.email, err)
+			return fmt.Errorf("absence of %s: %w", a.local, err)
 		}
 	}
 	return nil
@@ -150,7 +157,7 @@ func seedHolidays(tx *gorm.DB) error {
 
 func seedPrograms(tx *gorm.DB, personIDs, expertiseIDs map[string]string) error {
 	for _, p := range programs {
-		lead := personIDs[p.leadEmail]
+		lead := personIDs[p.leadLocal]
 		row := models.Program{
 			Name: p.name, Client: p.client, Status: constants.ProgramStatusOpen, StartDate: p.start, EndDate: p.end,
 			Goal: p.goal, Objectives: p.objectives, LeadID: &lead,
@@ -158,8 +165,8 @@ func seedPrograms(tx *gorm.DB, personIDs, expertiseIDs map[string]string) error 
 		if err := tx.Where(models.Program{Name: p.name}).Attrs(row).FirstOrCreate(&row).Error; err != nil {
 			return fmt.Errorf("program %s: %w", p.name, err)
 		}
-		for _, email := range p.team {
-			member := models.ProgramTeamMember{ProgramID: row.ID, PersonID: personIDs[email]}
+		for _, local := range p.team {
+			member := models.ProgramTeamMember{ProgramID: row.ID, PersonID: personIDs[local]}
 			if err := tx.Where(member).FirstOrCreate(&member).Error; err != nil {
 				return fmt.Errorf("team of %s: %w", p.name, err)
 			}
@@ -174,7 +181,7 @@ func seedPrograms(tx *gorm.DB, personIDs, expertiseIDs map[string]string) error 
 }
 
 func seedOneProject(tx *gorm.DB, programID string, p seedProject, personIDs, expertiseIDs map[string]string) error {
-	lead := personIDs[p.leadEmail]
+	lead := personIDs[p.leadLocal]
 	row := models.Project{
 		ProgramID: programID, Name: p.name, Priority: p.priority, Status: constants.ProjectStatusIncoming,
 		StartEarliest: p.start, Deadline: p.deadline, ScopePoints: p.scopePoints, DonePoints: p.donePts, LeadID: &lead,

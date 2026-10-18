@@ -27,6 +27,7 @@ func TestMain(m *testing.M) {
 func seedConfig() *config.Config {
 	return &config.Config{
 		Timezone:                  "UTC",
+		SeedEmailDomain:           constants.LegacySeedEmailDomain,
 		WorkingWeekdays:           []time.Weekday{time.Monday, time.Tuesday, time.Wednesday, time.Thursday, time.Friday},
 		CountPlannedAbsence:       true,
 		PlanningTargetUtilization: 0.85, PlanningMaxUtilization: 1, PlanningMaxExpertisesPerPersonWeek: 2,
@@ -41,7 +42,7 @@ func seedConfig() *config.Config {
 func TestSeedPlans_Postgres(t *testing.T) {
 	pdb := dbtest.NewPostgres(t)
 	dbtest.ApplyMigrations(t, pdb)
-	require.NoError(t, pdb.Transaction(seed))
+	require.NoError(t, pdb.Transaction(seed(constants.LegacySeedEmailDomain)))
 
 	first, err := seedPlans(pdb, seedConfig())
 	require.NoError(t, err)
@@ -56,7 +57,7 @@ func TestSeedPlans_Postgres(t *testing.T) {
 	assert.Positive(t, staffed, "accepted projects move to planned")
 
 	var person models.Person
-	require.NoError(t, pdb.Where("email = ?", overtime.personEmail).First(&person).Error)
+	require.NoError(t, pdb.Where("email = ?", emailOf(overtime.personLocal, constants.LegacySeedEmailDomain)).First(&person).Error)
 	for _, week := range overtime.weeks {
 		var load float64
 		require.NoError(t, pdb.Raw(`SELECT COALESCE(SUM(allocations.hours), 0) FROM allocations
@@ -83,7 +84,7 @@ func TestSeedPlans_Postgres(t *testing.T) {
 func TestSeedActuals_Postgres(t *testing.T) {
 	pdb := dbtest.NewPostgres(t)
 	dbtest.ApplyMigrations(t, pdb)
-	require.NoError(t, pdb.Transaction(seed))
+	require.NoError(t, pdb.Transaction(seed(constants.LegacySeedEmailDomain)))
 	_, err := seedPlans(pdb, seedConfig())
 	require.NoError(t, err)
 

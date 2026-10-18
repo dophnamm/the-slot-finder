@@ -27,18 +27,20 @@ import (
 var staffedProjects = []string{"Checkout Revamp", "Data Migration", "Patient App"}
 
 // seedPlanner is who the seed acts as: the demo planner.
-var seedPlanner = request.Principal{Subject: "seed", Username: constants.RolePlanner, Name: "Pat Planner",
-	Email: "planner@slot-finder.local", Role: constants.RolePlanner, Roles: []string{constants.RolePlanner}}
+func seedPlanner(domain string) request.Principal {
+	return request.Principal{Subject: "seed", Username: constants.RolePlanner, Name: "Pat Planner",
+		Email: emailOf("planner", domain), Role: constants.RolePlanner, Roles: []string{constants.RolePlanner}}
+}
 
 // overtime puts one person over capacity for three weeks in a row in the seeded baseline, so the
 // risks list shows a sustained overload (the engine itself never plans anyone over 100 %).
 var overtime = struct {
-	personEmail string
+	personLocal string
 	weeks       []time.Time
 	// hours over the person's weekly capacity in each week
 	hours float64
 }{
-	personEmail: "bao@slot-finder.local",
+	personLocal: "bao",
 	weeks:       []time.Time{day(2026, time.November, 2), day(2026, time.November, 9), day(2026, time.November, 16)},
 	hours:       6,
 }
@@ -49,14 +51,14 @@ type seedScenario struct {
 	project string
 	weeks   int
 	// add_absence
-	personEmail string
+	personLocal string
 	from, to    time.Time
 	hoursPerDay float64
 }
 
 var scenarios = []seedScenario{
 	{name: "Checkout Revamp slips two weeks", project: "Checkout Revamp", weeks: 2},
-	{name: "Alex away 26 Oct – 6 Nov", personEmail: "alex@slot-finder.local", from: day(2026, time.October, 26),
+	{name: "Alex away 26 Oct – 6 Nov", personLocal: "alex", from: day(2026, time.October, 26),
 		to: day(2026, time.November, 6), hoursPerDay: 8},
 }
 
@@ -83,7 +85,7 @@ func seedPlans(database *db.PostgresDB, cfg *config.Config) (planResult, error) 
 	staffing := services.ProvideStaffingService(plans, projects, people, absences, repositories.ProvideAuditRepository(database),
 		repositories.ProvideChangeEventRepository(database), finder, authz, tx, clk, cfg, teams)
 	scenarioService := services.ProvideScenarioService(plans, projects, people, absences, finder, authz, tx, clk, cfg, teams)
-	ctx := request.NewPrincipalContext(context.Background(), seedPlanner)
+	ctx := request.NewPrincipalContext(context.Background(), seedPlanner(cfg.SeedEmailDomain))
 
 	if err := plans.EnsureBaseline(ctx); err != nil {
 		return result, fmt.Errorf("baseline: %w", err)
@@ -100,7 +102,7 @@ func seedPlans(database *db.PostgresDB, cfg *config.Config) (planResult, error) 
 		if err != nil {
 			return result, fmt.Errorf("baseline: %w", err)
 		}
-		if err := addOvertime(database.DB, staffed.ID); err != nil {
+		if err := addOvertime(database.DB, staffed.ID, cfg.SeedEmailDomain); err != nil {
 			return result, err
 		}
 		result.staffed = true
@@ -120,7 +122,7 @@ func seedPlans(database *db.PostgresDB, cfg *config.Config) (planResult, error) 
 		if names[s.name] {
 			continue
 		}
-		in, err := scenarioInput(database.DB, s)
+		in, err := scenarioInput(database.DB, s, cfg.SeedEmailDomain)
 		if err != nil {
 			return result, err
 		}
@@ -154,10 +156,11 @@ func staffBaseline(ctx context.Context, tx *gorm.DB, staffing services.StaffingS
 
 // addOvertime raises the person's largest baseline allocation in each overtime week until the
 // week's load is the overtime hours above their weekly capacity.
-func addOvertime(tx *gorm.DB, baselineID string) error {
+func addOvertime(tx *gorm.DB, baselineID, domain string) error {
 	var person models.Person
-	if err := tx.Where("email = ?", overtime.personEmail).First(&person).Error; err != nil {
-		return fmt.Errorf("person %s: %w", overtime.personEmail, err)
+	email := emailOf(overtime.personLocal, domain)
+	if err := tx.Where("email = ?", email).First(&person).Error; err != nil {
+		return fmt.Errorf("person %s: %w", email, err)
 	}
 	capacity := person.WeeklyHours - person.NonProjectHours
 	for _, week := range overtime.weeks {
@@ -186,7 +189,7 @@ func addOvertime(tx *gorm.DB, baselineID string) error {
 	return nil
 }
 
-func scenarioInput(tx *gorm.DB, s seedScenario) (services.CreateScenarioInput, error) {
+func scenarioInput(tx *gorm.DB, s seedScenario, domain string) (services.CreateScenarioInput, error) {
 	in := services.CreateScenarioInput{Name: s.name}
 	if s.project != "" {
 		id, err := projectID(tx, s.project)
@@ -195,10 +198,11 @@ func scenarioInput(tx *gorm.DB, s seedScenario) (services.CreateScenarioInput, e
 		}
 		in.Assumptions = append(in.Assumptions, services.AssumptionInput{Type: constants.AssumptionShiftProject, ProjectID: id, Weeks: s.weeks})
 	}
-	if s.personEmail != "" {
+	if s.personLocal != "" {
 		var person models.Person
-		if err := tx.Where("email = ?", s.personEmail).First(&person).Error; err != nil {
-			return in, fmt.Errorf("person %s: %w", s.personEmail, err)
+		email := emailOf(s.personLocal, domain)
+		if err := tx.Where("email = ?", email).First(&person).Error; err != nil {
+			return in, fmt.Errorf("person %s: %w", email, err)
 		}
 		in.Assumptions = append(in.Assumptions, services.AssumptionInput{Type: constants.AssumptionAddAbsence, PersonID: person.ID,
 			FromDate: s.from, ToDate: s.to, HoursPerDay: s.hoursPerDay})

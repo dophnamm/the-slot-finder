@@ -38,7 +38,7 @@ func seedActuals(database *db.PostgresDB, cfg *config.Config) (int, error) {
 	timesheets := services.ProvideTimesheetService(repositories.ProvideActualHoursRepository(database), people,
 		repositories.ProvideProjectRepository(database), repositories.ProvidePlanRepository(database),
 		services.ProvideAuthzService(finder), tx, clk, cfg)
-	ctx := request.NewPrincipalContext(context.Background(), seedPlanner)
+	ctx := request.NewPrincipalContext(context.Background(), seedPlanner(cfg.SeedEmailDomain))
 
 	template, err := timesheets.Template(ctx, services.TemplateInput{})
 	if err != nil {

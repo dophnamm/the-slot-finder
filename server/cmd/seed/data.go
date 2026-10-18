@@ -22,7 +22,7 @@ type seedSkill struct {
 
 type seedPerson struct {
 	name            string
-	email           string
+	local           string
 	role            string
 	weeklyHours     float64
 	nonProjectHours float64
@@ -31,7 +31,7 @@ type seedPerson struct {
 }
 
 type seedAbsence struct {
-	email       string
+	local       string
 	from, to    time.Time
 	hoursPerDay float64
 	kind        string
@@ -63,39 +63,39 @@ var expertises = []seedExpertise{
 }
 
 var people = []seedPerson{
-	{name: "Pat Planner", email: "planner@slot-finder.local", role: constants.RolePlanner, weeklyHours: 40, nonProjectHours: 12,
+	{name: "Pat Planner", local: "planner", role: constants.RolePlanner, weeklyHours: 40, nonProjectHours: 12,
 		skills: []seedSkill{{expertisePM, 4, true}, {expertiseAnalyst, 3, false}}},
-	{name: "Mia Manager", email: "manager@slot-finder.local", role: constants.RoleManager, weeklyHours: 40, nonProjectHours: 8,
+	{name: "Mia Manager", local: "manager", role: constants.RoleManager, weeklyHours: 40, nonProjectHours: 8,
 		skills: []seedSkill{{expertisePM, 5, true}, {expertiseEngineer, 3, false}}},
-	{name: "Sam Specialist", email: "specialist@slot-finder.local", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,
+	{name: "Sam Specialist", local: "specialist", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,
 		skills: []seedSkill{{expertiseEngineer, 4, true}, {expertiseQA, 3, false}}},
-	{name: "Alex Nguyen", email: "alex@slot-finder.local", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,
+	{name: "Alex Nguyen", local: "alex", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,
 		skills: []seedSkill{{expertiseEngineer, 5, true}}},
-	{name: "Bao Tran", email: "bao@slot-finder.local", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,
+	{name: "Bao Tran", local: "bao", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,
 		skills: []seedSkill{{expertiseEngineer, 3, true}, {expertiseQA, 2, false}}},
-	{name: "Chi Le", email: "chi@slot-finder.local", role: constants.RoleSpecialist, weeklyHours: 32, nonProjectHours: 4,
+	{name: "Chi Le", local: "chi", role: constants.RoleSpecialist, weeklyHours: 32, nonProjectHours: 4,
 		skills: []seedSkill{{expertiseEngineer, 4, true}, {expertiseAnalyst, 2, false}}},
-	{name: "Dung Pham", email: "dung@slot-finder.local", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,
+	{name: "Dung Pham", local: "dung", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,
 		skills: []seedSkill{{expertiseQA, 4, true}}},
-	{name: "Hoa Vo", email: "hoa@slot-finder.local", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,
+	{name: "Hoa Vo", local: "hoa", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,
 		skills: []seedSkill{{expertiseQA, 3, true}, {expertiseEngineer, 2, false}}},
-	{name: "Khanh Do", email: "khanh@slot-finder.local", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,
+	{name: "Khanh Do", local: "khanh", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,
 		skills: []seedSkill{{expertiseAnalyst, 4, true}, {expertisePM, 2, false}}},
-	{name: "Linh Hoang", email: "linh@slot-finder.local", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,
+	{name: "Linh Hoang", local: "linh", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,
 		skills: []seedSkill{{expertiseAnalyst, 3, true}, {expertiseQA, 3, false}}},
-	{name: "Minh Bui", email: "minh@slot-finder.local", role: constants.RoleManager, weeklyHours: 40, nonProjectHours: 8,
+	{name: "Minh Bui", local: "minh", role: constants.RoleManager, weeklyHours: 40, nonProjectHours: 8,
 		skills: []seedSkill{{expertisePM, 3, true}}},
 	// Joins in November: capacity is 0 before the start date.
-	{name: "Quang Ngo", email: "quang@slot-finder.local", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,
+	{name: "Quang Ngo", local: "quang", role: constants.RoleSpecialist, weeklyHours: 40, nonProjectHours: 4,
 		startDate: new(day(2026, time.November, 2)), skills: []seedSkill{{expertiseEngineer, 2, true}}},
 }
 
 var absences = []seedAbsence{
-	{email: "alex@slot-finder.local", from: day(2026, time.October, 19), to: day(2026, time.October, 23), hoursPerDay: 8,
+	{local: "alex", from: day(2026, time.October, 19), to: day(2026, time.October, 23), hoursPerDay: 8,
 		kind: constants.AbsenceTypeLeave, status: constants.AbsenceStatusApproved},
-	{email: "dung@slot-finder.local", from: day(2026, time.November, 2), to: day(2026, time.November, 6), hoursPerDay: 8,
+	{local: "dung", from: day(2026, time.November, 2), to: day(2026, time.November, 6), hoursPerDay: 8,
 		kind: constants.AbsenceTypeLeave, status: constants.AbsenceStatusPlanned},
-	{email: "specialist@slot-finder.local", from: day(2026, time.October, 26), to: day(2026, time.October, 27), hoursPerDay: 8,
+	{local: "specialist", from: day(2026, time.October, 26), to: day(2026, time.October, 27), hoursPerDay: 8,
 		kind: constants.AbsenceTypeTraining, status: constants.AbsenceStatusApproved},
 }
 
