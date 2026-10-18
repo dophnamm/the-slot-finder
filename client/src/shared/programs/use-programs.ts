@@ -78,8 +78,8 @@ export function useProgramAction(id: string) {
 
 /** People with a role that can lead (LEAD_ROLES); only fetched when `enabled` (planners). */
 /** Progress, cost figures and staffing by expertise; refetched with the program's other data. */
-export function useProgramOverview(id: string) {
-  return useQuery({ queryKey: programOverviewQueryKey(id), queryFn: () => getProgramOverview(id) })
+export function useProgramOverview(id: string, enabled = true) {
+  return useQuery({ queryKey: programOverviewQueryKey(id), queryFn: () => getProgramOverview(id), enabled })
 }
 
 export function useLeadOptions(enabled: boolean) {

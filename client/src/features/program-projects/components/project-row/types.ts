@@ -14,6 +14,8 @@ export interface ProjectRowReorder {
 
 export interface ProjectRowProps {
   project: Project
+  /** Shows the progress and upcoming hours cells; the server sends no figures to a specialist. */
+  showFigures: boolean
   /** Given when the user may change the order: a handle, and drag events on the row. */
   reorder?: ProjectRowReorder
 }

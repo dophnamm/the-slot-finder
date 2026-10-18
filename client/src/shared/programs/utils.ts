@@ -3,9 +3,9 @@ import { formatIsoWeekSpan } from '@/utils/functions'
 import { BURN_LABELS, FINAL_STATUSES, PROGRESS_WARNINGS } from './constants'
 import type { BurnMetric, EditorUser, PersonRef, ProgressMetrics, ProjectDetail } from './types'
 
-/** Planners edit everything; a manager edits what one of `leads` names them as lead of. */
+/** Planners edit everything; a manager edits what one of `leads` names them as lead of. A specialist never edits. */
 export function canEdit(user: EditorUser | undefined, leads: (PersonRef | null | undefined)[]): boolean {
-  if (!user) return false
+  if (!user || !can(user.role as Role, 'programs:manage')) return false
   if (can(user.role as Role, 'programs:manage-all')) return true
   return user.person_id !== null && leads.some((lead) => lead?.id === user.person_id)
 }

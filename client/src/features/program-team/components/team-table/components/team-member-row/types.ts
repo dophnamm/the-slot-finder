@@ -4,6 +4,7 @@ export interface TeamMemberRowProps {
   member: TeamMember
   programId: string
   canManage: boolean
+  canViewPeople: boolean
   removing: boolean
   onRemove: (member: TeamMember) => void
 }

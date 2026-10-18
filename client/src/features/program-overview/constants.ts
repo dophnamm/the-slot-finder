@@ -3,3 +3,6 @@ import type { ProgramTab } from './types'
 
 /** The program page opens on the overview: is it on track, and who is missing. */
 export const DEFAULT_PROGRAM_TAB: ProgramTab = PROGRAM_TABS.overview
+
+/** Who has no overview opens on the projects. */
+export const NO_OVERVIEW_PROGRAM_TAB: ProgramTab = PROGRAM_TABS.projects

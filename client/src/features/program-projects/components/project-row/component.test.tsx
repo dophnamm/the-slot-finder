@@ -52,7 +52,7 @@ function renderRow(metrics: ProgressMetrics) {
     <MemoryRouter>
       <Table>
         <TableBody>
-          <ProjectRow project={project(metrics)} />
+          <ProjectRow project={project(metrics)} showFigures />
         </TableBody>
       </Table>
     </MemoryRouter>,

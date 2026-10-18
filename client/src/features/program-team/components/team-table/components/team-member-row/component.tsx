@@ -11,7 +11,7 @@ import { formatIsoWeekSpan } from '@/utils/functions'
 import type { TeamMemberRowProps } from './types'
 
 /** One member: name, skills, hours and weeks in this program, its projects, and Remove for planners. */
-export function TeamMemberRow({ member, programId, canManage, removing, onRemove }: TeamMemberRowProps) {
+export function TeamMemberRow({ member, programId, canManage, canViewPeople, removing, onRemove }: TeamMemberRowProps) {
   const { t } = useTranslation()
   const expertiseBadge = useExpertiseBadge()
   const { person } = member
@@ -22,45 +22,53 @@ export function TeamMemberRow({ member, programId, canManage, removing, onRemove
     <TableRow>
       <TableCell>
         <div className="flex flex-col">
-          <TextLink to={generatePath(ROUTES.personDetail, { id: person.id })}>{person.name}</TextLink>
-          <span className="text-xs text-muted-foreground">{person.email}</span>
+          {canViewPeople ? (
+            <TextLink to={generatePath(ROUTES.personDetail, { id: person.id })}>{person.name}</TextLink>
+          ) : (
+            <span className="font-medium">{person.name}</span>
+          )}
+          {person.email && <span className="text-xs text-muted-foreground">{person.email}</span>}
         </div>
       </TableCell>
-      <TableCell>
-        <div className="flex flex-wrap gap-1">
-          {person.skills.map((skill) => (
-            <Badge
-              key={skill.expertise_id}
-              variant={expertiseBadge(skill.expertise_id)}
-              title={skill.primary ? t('Primary expertise') : undefined}
-            >
-              {skill.primary && <Star data-icon="inline-start" aria-hidden />}
-              {t('{expertise} · level {level}', { expertise: skill.expertise, level: skill.level })}
-            </Badge>
-          ))}
-        </div>
-      </TableCell>
-      <TableCell className="text-right tabular-nums">{t('{hours} hrs', { hours: member.total_hours })}</TableCell>
-      <TableCell className="text-sm">
-        {member.from_week && member.to_week ? (
-          formatIsoWeekSpan(member.from_week, member.to_week)
-        ) : (
-          <span className="text-muted-foreground">{t('Not staffed yet')}</span>
-        )}
-      </TableCell>
-      <TableCell>
-        <div className="flex flex-wrap gap-x-3 gap-y-1">
-          {member.projects.map((project) => (
-            <TextLink
-              key={project.id}
-              className="text-sm"
-              to={generatePath(ROUTES.projectDetail, { programId, id: project.id })}
-            >
-              {project.name}
-            </TextLink>
-          ))}
-        </div>
-      </TableCell>
+      {canViewPeople && (
+        <>
+          <TableCell>
+            <div className="flex flex-wrap gap-1">
+              {person.skills.map((skill) => (
+                <Badge
+                  key={skill.expertise_id}
+                  variant={expertiseBadge(skill.expertise_id)}
+                  title={skill.primary ? t('Primary expertise') : undefined}
+                >
+                  {skill.primary && <Star data-icon="inline-start" aria-hidden />}
+                  {t('{expertise} · level {level}', { expertise: skill.expertise, level: skill.level })}
+                </Badge>
+              ))}
+            </div>
+          </TableCell>
+          <TableCell className="text-right tabular-nums">{t('{hours} hrs', { hours: member.total_hours })}</TableCell>
+          <TableCell className="text-sm">
+            {member.from_week && member.to_week ? (
+              formatIsoWeekSpan(member.from_week, member.to_week)
+            ) : (
+              <span className="text-muted-foreground">{t('Not staffed yet')}</span>
+            )}
+          </TableCell>
+          <TableCell>
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
+              {member.projects.map((project) => (
+                <TextLink
+                  key={project.id}
+                  className="text-sm"
+                  to={generatePath(ROUTES.projectDetail, { programId, id: project.id })}
+                >
+                  {project.name}
+                </TextLink>
+              ))}
+            </div>
+          </TableCell>
+        </>
+      )}
       {canManage && (
         <TableCell>
           <div className="flex justify-end">

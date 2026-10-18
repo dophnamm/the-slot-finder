@@ -28,9 +28,13 @@ vi.mock('@/shared/programs', async (importOriginal) => ({
   useProgramOverview: () => ({ data: undefined }),
   useProgramAction: () => ({ mutate: vi.fn(), isPending: false }),
 }))
-vi.mock('@/shared/auth', () => ({ useCurrentUser: () => ({ data: { role: 'planner' } }) }))
+const useCurrentUser = vi.hoisted(() => vi.fn())
+vi.mock('@/shared/auth', () => ({ useCurrentUser }))
 
-beforeEach(() => useProgram.mockReturnValue({ data: PROGRAM, isPending: false }))
+beforeEach(() => {
+  useProgram.mockReturnValue({ data: PROGRAM, isPending: false })
+  useCurrentUser.mockReturnValue({ data: { role: 'planner' } })
+})
 afterEach(cleanup)
 
 function renderAt(path: string) {
@@ -65,6 +69,14 @@ describe('ProgramOverview', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: translate('Team') }))
     expect(screen.getByText('team table')).toBeTruthy()
+  })
+
+  it('gives a specialist no overview tab and opens the projects instead', () => {
+    useCurrentUser.mockReturnValue({ data: { role: 'specialist' } })
+    renderAt('/programs/g1')
+    expect(screen.queryByRole('tab', { name: translate('Overview') })).toBeNull()
+    expect(screen.getByText('projects table')).toBeTruthy()
+    expect(screen.queryByText(translate('Program brief'))).toBeNull()
   })
 
   it('says "not found" only for a 404; another failure offers a retry', () => {

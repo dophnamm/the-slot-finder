@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { generatePath } from 'react-router'
 import { toast } from 'sonner'
+import { can } from '@/resources/rbac'
 import { ROUTES } from '@/resources/routes'
 import { NOT_FOUND_STATUS } from '@/shared/api/constants'
 import { useCurrentUser } from '@/shared/auth'
@@ -94,9 +95,11 @@ export function ProjectSummary({ projectId }: ProjectSummaryProps) {
           </TextLink>
         </Fact>
         <Fact label={t('Lead')}>{project.lead?.name ?? t('No lead')}</Fact>
-        <Fact label={t('Scope')}>
-          <ScopePoints project={project} editable={editable && isOpenStatus(project.status)} />
-        </Fact>
+        {can(user?.role, 'project-demands:view') && (
+          <Fact label={t('Scope')}>
+            <ScopePoints project={project} editable={editable && isOpenStatus(project.status)} />
+          </Fact>
+        )}
         <Fact label={t('Earliest start')}>
           {t('{date} ({week})', { date: formatDate(project.start_earliest), week: project.start_week })}
         </Fact>

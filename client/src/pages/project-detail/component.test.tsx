@@ -8,6 +8,8 @@ import { ProjectDetailPage } from './component'
 
 const { useProject } = vi.hoisted(() => ({ useProject: vi.fn() }))
 vi.mock('@/shared/programs', () => ({ useProject }))
+const { role } = vi.hoisted(() => ({ role: { current: 'planner' } }))
+vi.mock('@/shared/auth', () => ({ useCurrentUser: () => ({ data: { role: role.current } }) }))
 vi.mock('@/features/project-summary', () => ({ ProjectSummary: () => 'project summary' }))
 vi.mock('@/features/replan-banner', () => ({ ReplanBanner: () => null }))
 vi.mock('@/features/project-phases', () => ({ ProjectPhases: () => null }))
@@ -30,6 +32,7 @@ function renderPage(project: unknown) {
 afterEach(() => {
   cleanup()
   useProject.mockReset()
+  role.current = 'planner'
 })
 
 describe('ProjectDetailPage', () => {
@@ -42,5 +45,11 @@ describe('ProjectDetailPage', () => {
     renderPage({ data: undefined, error: { status: FORBIDDEN_STATUS }, isPending: false })
     expect(screen.getByText(translate('You can’t see this project'))).toBeTruthy()
     expect(screen.queryByText('project summary', PART)).toBeNull()
+  })
+
+  it('does not name the manager rule to a specialist', () => {
+    role.current = 'specialist'
+    renderPage({ data: undefined, error: { status: FORBIDDEN_STATUS }, isPending: false })
+    expect(screen.getByText(translate('Ask a planner if you need access.'))).toBeTruthy()
   })
 })

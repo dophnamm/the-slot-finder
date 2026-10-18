@@ -30,11 +30,17 @@ export function ProgramDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <ReplanBanner programId={id} />
+      {can(user?.role, 'programs:manage') && <ReplanBanner programId={id} />}
       <ProgramOverview
         programId={id}
         projects={<ProgramProjects programId={id} />}
-        team={<ProgramTeam programId={id} canManage={can(user?.role, 'program-teams:manage')} />}
+        team={
+          <ProgramTeam
+            programId={id}
+            canManage={can(user?.role, 'program-teams:manage')}
+            canViewPeople={can(user?.role, 'people:view')}
+          />
+        }
       />
     </div>
   )

@@ -7,6 +7,8 @@ export interface TeamTableProps {
   programId: string
   /** Adds a column with Remove on each row. */
   canManage: boolean
+  /** Links names to the person page and adds the expertise, hours, weeks and projects columns. */
+  canViewPeople: boolean
   /** The member being removed: their row shows a spinner. */
   removingId: string | undefined
   onRemove: (member: TeamMember) => void

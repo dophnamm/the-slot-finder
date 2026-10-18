@@ -20,8 +20,8 @@ describe('MySchedulePage', () => {
   it('shows the calendar of the signed-in person', () => {
     useCurrentUser.mockReturnValue({ data: { role: 'specialist', person_id: 'u1' }, isPending: false })
     render(<MySchedulePage />)
-    // A specialist cannot open project pages, so the calendar names projects without links.
-    expect(screen.getByText('u1 without project links')).toBeTruthy()
+    // A specialist reads the projects of their programs, so the calendar links them.
+    expect(screen.getByText('u1 with project links')).toBeTruthy()
     fireEvent.click(screen.getByRole('tab', { name: 'My absences' }))
     expect(screen.getByText('absence list')).toBeTruthy()
   })
