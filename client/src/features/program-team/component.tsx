@@ -11,7 +11,7 @@ import type { ProgramTeamProps, TeamMember } from './types'
 import { useProgramTeam, useRemoveTeamMember } from './use-program-team'
 
 /** Team tab of the program page: the people its projects are staffed from; planners add and remove them. */
-export function ProgramTeam({ programId, canManage }: ProgramTeamProps) {
+export function ProgramTeam({ programId, canManage, canViewPeople }: ProgramTeamProps) {
   const { t } = useTranslation()
   const [adding, setAdding] = useState(false)
   const { data: members = [], isPending } = useProgramTeam(programId)
@@ -49,6 +49,7 @@ export function ProgramTeam({ programId, canManage }: ProgramTeamProps) {
         isPending={isPending}
         programId={programId}
         canManage={canManage}
+        canViewPeople={canViewPeople}
         removingId={remove.isPending ? remove.variables : undefined}
         onRemove={handleRemove}
       />

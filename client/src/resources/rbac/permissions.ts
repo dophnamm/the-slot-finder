@@ -7,7 +7,10 @@ import type { Permission, Role } from './types'
  */
 export const PERMISSIONS = {
   'dashboard:view': [ROLES.PLANNER, ROLES.MANAGER],
-  'programs:view': [ROLES.PLANNER, ROLES.MANAGER],
+  'programs:view': [ROLES.PLANNER, ROLES.MANAGER, ROLES.SPECIALIST],
+  // The program Overview tab and the figures (metrics, progress) on projects; a specialist gets none.
+  'program-overview:view': [ROLES.PLANNER, ROLES.MANAGER],
+  'project-demands:view': [ROLES.PLANNER, ROLES.MANAGER],
   'programs:manage': [ROLES.PLANNER, ROLES.MANAGER],
   'programs:manage-all': [ROLES.PLANNER],
   // A manager whose programs list holds a single program opens it instead of the list.
@@ -16,7 +19,7 @@ export const PERMISSIONS = {
   'staffing-drafts:view': [ROLES.PLANNER, ROLES.MANAGER],
   'staffing-drafts:manage': [ROLES.PLANNER, ROLES.MANAGER],
   'staffing-drafts:manage-all': [ROLES.PLANNER],
-  'program-teams:view': [ROLES.PLANNER, ROLES.MANAGER],
+  'program-teams:view': [ROLES.PLANNER, ROLES.MANAGER, ROLES.SPECIALIST],
   'program-teams:manage': [ROLES.PLANNER],
   'scenarios:view': [ROLES.PLANNER],
   'people:view': [ROLES.PLANNER, ROLES.MANAGER],

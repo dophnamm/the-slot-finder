@@ -67,6 +67,7 @@ export type LanguageKey = {
   Approve: string
   Approved: string
   'Approved absence always lowers capacity; planned absence does when the setting is on.': string
+  'Ask a planner if you need access.': string
   'Ask a question about your data, such as who is overloaded or which project is at risk.': string
   'Ask AI': string
   Assigned: string
@@ -551,6 +552,7 @@ export type LanguageKey = {
   'The level must be a whole number from 1 to 5.': string
   'The link does not return a calendar. Your organization may block secret calendar links.': string
   'The name is empty or too long.': string
+  'The people this program’s projects are staffed from show here.': string
   'The people this program’s projects are staffed from. A draft proposes only them.': string
   'The plan in force: the staffing everyone works to until a newer draft is accepted.': string
   'The program team has nobody else with this expertise at this level.': string

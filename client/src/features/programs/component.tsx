@@ -53,7 +53,7 @@ export function ProgramsTable({ onCreated }: ProgramsTableProps) {
         </TableHeader>
         <TableBody>
           {programs.map((program) => (
-            <ProgramRow key={program.id} program={program} />
+            <ProgramRow key={program.id} program={program} canPreview={can(user?.role, 'program-overview:view')} />
           ))}
           {isPending && <TableLoading columns={PROGRAM_TABLE_COLUMNS} />}
           {!isPending && programs.length === 0 && (

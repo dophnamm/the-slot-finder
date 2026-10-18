@@ -15,7 +15,7 @@ import { cn, formatIsoWeekSpan, shortWeekLabel } from '@/utils/functions'
 import { DRAG_DATA_TYPE, MOVE_KEYS, NO_UPCOMING_HOURS } from './constants'
 import type { ProjectRowProps } from './types'
 
-export function ProjectRow({ project, reorder }: ProjectRowProps) {
+export function ProjectRow({ project, showFigures, reorder }: ProjectRowProps) {
   const { t } = useTranslation()
   const detailPath = generatePath(ROUTES.projectDetail, { programId: project.program_id, id: project.id })
   const phase = project.current_phase
@@ -111,26 +111,40 @@ export function ProjectRow({ project, reorder }: ProjectRowProps) {
           <span className="text-muted-foreground">{t('No phases yet')}</span>
         )}
       </TableCell>
-      <TableCell>
-        {metrics && burn && (
-          <div className="grid min-w-56 grid-cols-2 gap-x-4 gap-y-1">
-            <MetricBar compact label={t('Time')} value={metrics.time_percent} warning={metrics.past_end} />
-            <MetricBar compact label={t('Scope')} value={metrics.scope_percent} warning={metrics.behind_on_delivery} />
-            <MetricBar compact label={t(burn.label)} value={burn.value} />
-            <MetricBar compact label={t('Staffing')} value={metrics.staffing_percent} warning={metrics.understaffed} />
-          </div>
-        )}
-      </TableCell>
-      <TableCell className="text-right text-sm tabular-nums">
-        {metrics &&
-          (metrics.next_week_hours > 0 ? t('{hours} hrs', { hours: metrics.next_week_hours }) : NO_UPCOMING_HOURS)}
-      </TableCell>
-      <TableCell className="text-right text-sm tabular-nums">
-        {metrics &&
-          (metrics.next_three_weeks_hours > 0
-            ? t('{hours} hrs', { hours: metrics.next_three_weeks_hours })
-            : NO_UPCOMING_HOURS)}
-      </TableCell>
+      {showFigures && (
+        <>
+          <TableCell>
+            {metrics && burn && (
+              <div className="grid min-w-56 grid-cols-2 gap-x-4 gap-y-1">
+                <MetricBar compact label={t('Time')} value={metrics.time_percent} warning={metrics.past_end} />
+                <MetricBar
+                  compact
+                  label={t('Scope')}
+                  value={metrics.scope_percent}
+                  warning={metrics.behind_on_delivery}
+                />
+                <MetricBar compact label={t(burn.label)} value={burn.value} />
+                <MetricBar
+                  compact
+                  label={t('Staffing')}
+                  value={metrics.staffing_percent}
+                  warning={metrics.understaffed}
+                />
+              </div>
+            )}
+          </TableCell>
+          <TableCell className="text-right text-sm tabular-nums">
+            {metrics &&
+              (metrics.next_week_hours > 0 ? t('{hours} hrs', { hours: metrics.next_week_hours }) : NO_UPCOMING_HOURS)}
+          </TableCell>
+          <TableCell className="text-right text-sm tabular-nums">
+            {metrics &&
+              (metrics.next_three_weeks_hours > 0
+                ? t('{hours} hrs', { hours: metrics.next_three_weeks_hours })
+                : NO_UPCOMING_HOURS)}
+          </TableCell>
+        </>
+      )}
       <TableCell>{project.lead?.name ?? t('No lead')}</TableCell>
       <TableCell className="text-right">
         <ProposeSquadButton projectId={project.id} status={project.status} programLeadId={project.program_lead_id} />

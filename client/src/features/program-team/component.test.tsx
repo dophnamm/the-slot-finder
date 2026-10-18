@@ -55,10 +55,10 @@ afterEach(() => {
   removeMember.mockReset()
 })
 
-function renderTeam(canManage: boolean) {
+function renderTeam(canManage: boolean, canViewPeople = true) {
   render(
     <MemoryRouter>
-      <ProgramTeam programId="g1" canManage={canManage} />
+      <ProgramTeam programId="g1" canManage={canManage} canViewPeople={canViewPeople} />
     </MemoryRouter>,
   )
 }
@@ -70,7 +70,19 @@ describe('ProgramTeam', () => {
     expect(screen.getAllByText('QA · level 3')).toHaveLength(2)
     expect(screen.getByText('80 hrs')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Checkout' }).getAttribute('href')).toBe('/programs/g1/projects/p1')
+    expect(screen.getByText(translate('Projects'))).toBeTruthy()
     expect(screen.getByText(translate('Not staffed yet'))).toBeTruthy()
+  })
+
+  it('shows a specialist plain names, without person detail, hours or projects', () => {
+    renderTeam(false, false)
+    expect(screen.getByText('Ada Ng')).toBeTruthy()
+    expect(screen.queryByRole('link', { name: 'Ada Ng' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Checkout' })).toBeNull()
+    expect(screen.queryByText(translate('Projects'))).toBeNull()
+    expect(screen.queryByText('80 hrs')).toBeNull()
+    expect(screen.queryByText(translate('Hours in this program'))).toBeNull()
+    expect(screen.queryByText('QA · level 3')).toBeNull()
   })
 
   it('shows a manager the team read-only', () => {

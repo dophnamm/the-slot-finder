@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ProgressMetrics } from './types'
-import { burnMetric } from './utils'
+import { burnMetric, canEdit } from './utils'
 
 const metrics = (overrides: Partial<ProgressMetrics>): ProgressMetrics => ({
   time_percent: 40,
@@ -35,5 +35,18 @@ describe('burnMetric', () => {
       term: 'burnPercent',
       value: 0,
     })
+  })
+})
+
+describe('canEdit', () => {
+  const lead = { id: 'u1', name: 'Ada' }
+
+  it('lets a planner and the lead manager edit', () => {
+    expect(canEdit({ role: 'planner', person_id: null }, [])).toBe(true)
+    expect(canEdit({ role: 'manager', person_id: 'u1' }, [lead])).toBe(true)
+  })
+
+  it('never lets a specialist edit, even as the project lead', () => {
+    expect(canEdit({ role: 'specialist', person_id: 'u1' }, [lead])).toBe(false)
   })
 })

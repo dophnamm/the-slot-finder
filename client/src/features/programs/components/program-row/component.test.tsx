@@ -43,7 +43,7 @@ describe('ProgramRow', () => {
       <MemoryRouter>
         <Table>
           <TableBody>
-            <ProgramRow program={program} />
+            <ProgramRow program={program} canPreview />
           </TableBody>
         </Table>
       </MemoryRouter>,
@@ -58,5 +58,18 @@ describe('ProgramRow', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Hide details' }))
     expect(screen.queryByText('Bo')).toBeNull()
+  })
+
+  it('has no preview arrow when the viewer may not read the overview', () => {
+    render(
+      <MemoryRouter>
+        <Table>
+          <TableBody>
+            <ProgramRow program={program} canPreview={false} />
+          </TableBody>
+        </Table>
+      </MemoryRouter>,
+    )
+    expect(screen.queryByRole('button', { name: 'Show details' })).toBeNull()
   })
 })

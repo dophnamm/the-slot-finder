@@ -15,7 +15,7 @@ import { ProgramPreview } from '../program-preview'
 import type { ProgramRowProps } from './types'
 
 /** A program; the arrow opens a preview of its figures, projects and members under the row. */
-export function ProgramRow({ program }: ProgramRowProps) {
+export function ProgramRow({ program, canPreview }: ProgramRowProps) {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
   const detailPath = generatePath(ROUTES.programDetail, { id: program.id })
@@ -27,15 +27,17 @@ export function ProgramRow({ program }: ProgramRowProps) {
       <LinkRow to={detailPath}>
         <TableCell>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-expanded={expanded}
-              aria-label={expanded ? t('Hide details') : t('Show details')}
-              onClick={handleToggle}
-            >
-              <ChevronRight className={cn('transition-transform', expanded && 'rotate-90')} />
-            </Button>
+            {canPreview && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-expanded={expanded}
+                aria-label={expanded ? t('Hide details') : t('Show details')}
+                onClick={handleToggle}
+              >
+                <ChevronRight className={cn('transition-transform', expanded && 'rotate-90')} />
+              </Button>
+            )}
             <div className="flex flex-col">
               <TextLink to={detailPath}>{program.name}</TextLink>
               <span className="text-xs text-muted-foreground">{program.client}</span>
@@ -48,7 +50,7 @@ export function ProgramRow({ program }: ProgramRowProps) {
         <TableCell className="text-sm">{weekSpan(program.start_week, program.end_week)}</TableCell>
         <TableCell>{program.lead?.name ?? t('No manager')}</TableCell>
       </LinkRow>
-      {expanded && (
+      {canPreview && expanded && (
         <TableRow className="hover:bg-transparent">
           <TableCell colSpan={PROGRAM_TABLE_COLUMNS} className="bg-muted/30 p-4 whitespace-normal">
             <ProgramPreview programId={program.id} />
