@@ -1,10 +1,10 @@
-import { type ChangeEvent, type FormEvent, useState } from 'react'
+import { type FormEvent, useState } from 'react'
 import { toast } from 'sonner'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { Label } from '@/shared/ui/label'
-import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
+import { Select } from '@/shared/ui/select'
 import { useAddTeamMember, useTeamCandidates } from '../../use-program-team'
 import type { AddMemberDialogProps } from './types'
 import { candidateOptions } from './utils'
@@ -16,8 +16,16 @@ export function AddMemberDialog({ open, programId, teamIds, onOpenChange }: AddM
   const { data: people = [], isPending } = useTeamCandidates(open)
   const add = useAddTeamMember(programId)
   const options = candidateOptions(people, teamIds)
+  const selectOptions = [
+    { value: '', label: t('Choose a person') },
+    ...options.map((option) => ({
+      value: option.id,
+      label: option.expertise
+        ? t('{name} · {expertise}', { name: option.name, expertise: option.expertise })
+        : option.name,
+    })),
+  ]
 
-  const handleChange = (event: ChangeEvent<HTMLSelectElement>) => setPersonId(event.target.value)
   const handleOpenChange = (next: boolean) => {
     onOpenChange(next)
     if (!next) setPersonId('')
@@ -43,23 +51,15 @@ export function AddMemberDialog({ open, programId, teamIds, onOpenChange }: AddM
           </DialogHeader>
           <div className="flex flex-col gap-2">
             <Label htmlFor="team-member">{t('Person')}</Label>
-            <NativeSelect
+            <Select
               id="team-member"
               className="w-full"
+              options={selectOptions}
               value={personId}
               isLoading={isPending}
-              onChange={handleChange}
+              onValueChange={setPersonId}
               required
-            >
-              <NativeSelectOption value="">{t('Choose a person')}</NativeSelectOption>
-              {options.map((option) => (
-                <NativeSelectOption key={option.id} value={option.id}>
-                  {option.expertise
-                    ? t('{name} · {expertise}', { name: option.name, expertise: option.expertise })
-                    : option.name}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
+            />
             {!isPending && options.length === 0 && (
               <p className="text-sm text-muted-foreground">{t('Everyone is already in this team.')}</p>
             )}

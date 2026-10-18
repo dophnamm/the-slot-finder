@@ -48,13 +48,15 @@ describe('DashboardPage', () => {
 
   it('switches to the forecast by expertise and keeps the week range', async () => {
     renderPage()
-    fireEvent.change(screen.getByLabelText('Weeks'), { target: { value: '8' } })
+    fireEvent.click(screen.getByLabelText('Weeks'))
+    const option = await screen.findByRole('option', { name: NEXT_RANGE })
+    fireEvent.pointerDown(option)
+    fireEvent.click(option)
 
     fireEvent.click(screen.getByRole('tab', { name: 'By expertise' }))
 
     expect(screen.getByText('Capacity forecast')).toBeTruthy()
-    expect((screen.getByLabelText('Weeks') as HTMLSelectElement).value).toBe('8')
-    expect(screen.getByRole('option', { name: NEXT_RANGE })).toBeTruthy()
+    expect(screen.getByLabelText('Weeks').textContent).toBe(NEXT_RANGE)
     await waitFor(() => expect(screen.getByText('Analyst')).toBeTruthy())
   })
 })

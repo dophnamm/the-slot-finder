@@ -4,7 +4,7 @@ import { Button } from '@/shared/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
-import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
+import { Select } from '@/shared/ui/select'
 import { SKILL_LEVELS } from '@/utils/constants'
 import { DEMAND_LIMITS } from '../../constants'
 import { demandWindow, isHoursStep, isValidDraft } from '../../utils'
@@ -26,15 +26,20 @@ export function DemandDialog({
   const hoursOff = !isHoursStep(draft.total_hours)
   const weeks = demandWindow(project, draft.phase_id || null)
 
-  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const expertiseOptions = expertises.map((expertise) => ({ value: expertise.id, label: expertise.name }))
+  const phaseOptions = [
+    { value: '', label: t('Whole project') },
+    ...project.phases.map((phase) => ({ value: phase.id, label: phase.name })),
+  ]
+  const levelOptions = SKILL_LEVELS.map((level) => ({ value: String(level), label: t('Level {level}', { level }) }))
+  const handleExpertiseChange = (value: string) => setDraft((current) => ({ ...current, expertise_id: value }))
+  const handlePhaseChange = (value: string) => setDraft((current) => ({ ...current, phase_id: value }))
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const field = event.target.name as DemandTextField
     const { value } = event.target
     setDraft((current) => ({ ...current, [field]: value }))
   }
-  const handleLevelChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const level = Number(event.target.value)
-    setDraft((current) => ({ ...current, min_level: level }))
-  }
+  const handleLevelChange = (value: string) => setDraft((current) => ({ ...current, min_level: Number(value) }))
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     onSubmit(draft)
@@ -53,52 +58,34 @@ export function DemandDialog({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <Label htmlFor="demand-expertise">{t('Expertise')}</Label>
-              <NativeSelect
+              <Select
                 id="demand-expertise"
-                name="expertise_id"
                 className="w-full"
+                options={expertiseOptions}
                 value={draft.expertise_id}
                 isLoading={expertisesLoading}
-                onChange={handleChange}
-              >
-                {expertises.map((expertise) => (
-                  <NativeSelectOption key={expertise.id} value={expertise.id}>
-                    {expertise.name}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
+                onValueChange={handleExpertiseChange}
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="demand-phase">{t('Phase')}</Label>
-              <NativeSelect
+              <Select
                 id="demand-phase"
-                name="phase_id"
                 className="w-full"
+                options={phaseOptions}
                 value={draft.phase_id}
-                onChange={handleChange}
-              >
-                <NativeSelectOption value="">{t('Whole project')}</NativeSelectOption>
-                {project.phases.map((phase) => (
-                  <NativeSelectOption key={phase.id} value={phase.id}>
-                    {phase.name}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
+                onValueChange={handlePhaseChange}
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="demand-level">{t('Minimum level')}</Label>
-              <NativeSelect
+              <Select
                 id="demand-level"
                 className="w-full"
+                options={levelOptions}
                 value={String(draft.min_level)}
-                onChange={handleLevelChange}
-              >
-                {SKILL_LEVELS.map((level) => (
-                  <NativeSelectOption key={level} value={String(level)}>
-                    {t('Level {level}', { level })}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
+                onValueChange={handleLevelChange}
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="demand-headcount">{t('Headcount')}</Label>

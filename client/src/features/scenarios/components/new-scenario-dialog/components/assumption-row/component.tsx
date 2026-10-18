@@ -10,7 +10,7 @@ import {
 } from '@/shared/scenarios'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
-import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
+import { Select } from '@/shared/ui/select'
 import { MAX_HOURS_PER_DAY } from '@/utils/constants'
 import { ASSUMPTION_TYPE_OPTIONS } from './constants'
 import type { AssumptionRowProps } from './types'
@@ -28,9 +28,22 @@ export function AssumptionRow({
 }: AssumptionRowProps) {
   const { t } = useTranslation()
 
-  const handleTypeChange = (event: ChangeEvent<HTMLSelectElement>) =>
-    onChange({ ...draft, type: event.target.value as AssumptionType })
-  const handleTextChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+  const typeOptions = ASSUMPTION_TYPE_OPTIONS.map((type) => ({ value: type, label: t(ASSUMPTION_TYPE_LABELS[type]) }))
+  const projectOptions = [
+    { value: '', label: t('Choose a project') },
+    ...projects.map((project) => ({
+      value: project.id,
+      label: t('{project} ({program})', { project: project.name, program: project.program_name ?? '' }),
+    })),
+  ]
+  const personOptions = [
+    { value: '', label: t('Choose a person') },
+    ...people.map((person) => ({ value: person.id, label: person.name })),
+  ]
+  const handleTypeChange = (value: string) => onChange({ ...draft, type: value as AssumptionType })
+  const handleProjectChange = (value: string) => onChange({ ...draft, project_id: value })
+  const handlePersonChange = (value: string) => onChange({ ...draft, person_id: value })
+  const handleTextChange = (event: ChangeEvent<HTMLInputElement>) =>
     onChange({ ...draft, [event.target.name]: event.target.value })
   const handleDateChange = (value: string, name: string) => onChange({ ...draft, [name]: value })
   const handleRemove = () => onRemove(draft.key)
@@ -39,33 +52,20 @@ export function AssumptionRow({
     <div className="flex flex-wrap items-end gap-3 rounded-lg border p-3">
       <div className="flex flex-col gap-1">
         <span className="text-xs text-muted-foreground">{t('Change')}</span>
-        <NativeSelect aria-label={t('Change')} value={draft.type} onChange={handleTypeChange}>
-          {ASSUMPTION_TYPE_OPTIONS.map((type) => (
-            <NativeSelectOption key={type} value={type}>
-              {t(ASSUMPTION_TYPE_LABELS[type])}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
+        <Select aria-label={t('Change')} options={typeOptions} value={draft.type} onValueChange={handleTypeChange} />
       </div>
       {draft.type === SHIFT_PROJECT ? (
         <>
           <div className="flex min-w-56 flex-1 flex-col gap-1">
             <span className="text-xs text-muted-foreground">{t('Project')}</span>
-            <NativeSelect
+            <Select
               className="w-full"
-              name="project_id"
               aria-label={t('Project')}
+              options={projectOptions}
               value={draft.project_id}
               isLoading={projectsLoading}
-              onChange={handleTextChange}
-            >
-              <NativeSelectOption value="">{t('Choose a project')}</NativeSelectOption>
-              {projects.map((project) => (
-                <NativeSelectOption key={project.id} value={project.id}>
-                  {t('{project} ({program})', { project: project.name, program: project.program_name ?? '' })}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
+              onValueChange={handleProjectChange}
+            />
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-xs text-muted-foreground">{t('Weeks (minus is earlier)')}</span>
@@ -87,21 +87,14 @@ export function AssumptionRow({
         <>
           <div className="flex min-w-44 flex-1 flex-col gap-1">
             <span className="text-xs text-muted-foreground">{t('Person')}</span>
-            <NativeSelect
+            <Select
               className="w-full"
-              name="person_id"
               aria-label={t('Person')}
+              options={personOptions}
               value={draft.person_id}
               isLoading={peopleLoading}
-              onChange={handleTextChange}
-            >
-              <NativeSelectOption value="">{t('Choose a person')}</NativeSelectOption>
-              {people.map((person) => (
-                <NativeSelectOption key={person.id} value={person.id}>
-                  {person.name}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
+              onValueChange={handlePersonChange}
+            />
           </div>
           <div className="flex w-40 flex-col gap-1">
             <span className="text-xs text-muted-foreground">{t('From')}</span>

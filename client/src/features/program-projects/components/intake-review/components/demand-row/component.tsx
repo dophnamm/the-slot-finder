@@ -3,7 +3,7 @@ import type { ChangeEvent } from 'react'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
-import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
+import { Select } from '@/shared/ui/select'
 import { SKILL_LEVELS } from '@/utils/constants'
 import { INTAKE_HOURS_MAX } from '../../constants'
 import type { DemandRowField, DemandRowProps } from './types'
@@ -13,28 +13,26 @@ export function DemandRow({ demand, expertises, expertisesLoading, onChange, onR
   const { t } = useTranslation()
   const known = expertises.some((expertise) => expertise.id === demand.expertise_id)
 
-  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+  const expertiseOptions = [
+    { value: '', label: t('Select an expertise') },
+    ...expertises.map((expertise) => ({ value: expertise.id, label: expertise.name })),
+  ]
+  const handleExpertiseChange = (value: string) => onChange(demand.key, 'expertise_id', value)
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) =>
     onChange(demand.key, event.target.name as DemandRowField, event.target.value)
   const handleRemove = () => onRemove(demand.key)
 
   return (
     <li className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
-        <NativeSelect
-          name="expertise_id"
+        <Select
           aria-label={t('Expertise')}
           className="flex-1"
+          options={expertiseOptions}
           value={known ? demand.expertise_id : ''}
           isLoading={expertisesLoading}
-          onChange={handleChange}
-        >
-          <NativeSelectOption value="">{t('Select an expertise')}</NativeSelectOption>
-          {expertises.map((expertise) => (
-            <NativeSelectOption key={expertise.id} value={expertise.id}>
-              {expertise.name}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
+          onValueChange={handleExpertiseChange}
+        />
         <Input
           name="total_hours"
           placeholder={t('e.g. 320')}

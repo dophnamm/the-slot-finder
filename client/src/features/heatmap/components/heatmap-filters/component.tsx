@@ -6,7 +6,7 @@ import { useTranslation } from '@/shared/i18n'
 import { useProgramOptions } from '@/shared/programs'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
-import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
+import { Select } from '@/shared/ui/select'
 import { useHeatmapFilters } from '../../use-heatmap-filters'
 
 /** Week range, expertise and program of the heatmap. */
@@ -16,8 +16,14 @@ export function HeatmapFilters() {
   const { data: programs = [], isPending: programsLoading } = useProgramOptions()
   const { expertiseId, programId, search, setExpertiseId, setProgramId, setSearch } = useHeatmapFilters()
 
-  const handleExpertiseChange = (event: ChangeEvent<HTMLSelectElement>) => setExpertiseId(event.target.value)
-  const handleProgramChange = (event: ChangeEvent<HTMLSelectElement>) => setProgramId(event.target.value)
+  const expertiseOptions = [
+    { value: '', label: t('All expertises') },
+    ...expertises.map((expertise) => ({ value: expertise.id, label: expertise.name })),
+  ]
+  const programOptions = [
+    { value: '', label: t('All programs') },
+    ...programs.map((program) => ({ value: program.id, label: program.name })),
+  ]
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)
 
   return (
@@ -39,30 +45,23 @@ export function HeatmapFilters() {
       <WeekRangeFilters />
       <div className="flex flex-col gap-2">
         <Label htmlFor="heatmap-expertise">{t('Expertise')}</Label>
-        <NativeSelect
+        <Select
           id="heatmap-expertise"
+          options={expertiseOptions}
           value={expertiseId}
           isLoading={expertisesLoading}
-          onChange={handleExpertiseChange}
-        >
-          <NativeSelectOption value="">{t('All expertises')}</NativeSelectOption>
-          {expertises.map((expertise) => (
-            <NativeSelectOption key={expertise.id} value={expertise.id}>
-              {expertise.name}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
+          onValueChange={setExpertiseId}
+        />
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="heatmap-program">{t('Program')}</Label>
-        <NativeSelect id="heatmap-program" value={programId} isLoading={programsLoading} onChange={handleProgramChange}>
-          <NativeSelectOption value="">{t('All programs')}</NativeSelectOption>
-          {programs.map((program) => (
-            <NativeSelectOption key={program.id} value={program.id}>
-              {program.name}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
+        <Select
+          id="heatmap-program"
+          options={programOptions}
+          value={programId}
+          isLoading={programsLoading}
+          onValueChange={setProgramId}
+        />
       </div>
     </div>
   )

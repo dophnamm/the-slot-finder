@@ -31,12 +31,15 @@ describe('AllocateHoursDialog', () => {
     ])
   })
 
-  it('previews a total spread over the open weeks', () => {
+  it('previews a total spread over the open weeks', async () => {
     render(
       <AllocateHoursDialog assignment={ASSIGNMENT} weeks={WEEKS} busy={false} onSave={vi.fn()} onCancel={vi.fn()} />,
     )
 
-    fireEvent.change(screen.getByLabelText('Mode'), { target: { value: 'total' } })
+    fireEvent.click(screen.getByLabelText('Mode'))
+    const option = await screen.findByRole('option', { name: 'Total hours' })
+    fireEvent.pointerDown(option)
+    fireEvent.click(option)
     fireEvent.change(screen.getByLabelText('Total hours'), { target: { value: '30' } })
     expect(screen.getByText('30 hrs over 3 weeks ≈ 10 hrs/week')).toBeTruthy()
   })

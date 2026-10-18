@@ -51,7 +51,10 @@ describe('DemandEditor', () => {
     render(<DemandEditor project={PROJECT} expertises={EXPERTISES} expertisesLoading={false} editable />)
     fireEvent.click(screen.getByRole('button', { name: translate('Add demand') }))
     const dialog = await screen.findByRole('dialog')
-    fireEvent.change(screen.getByLabelText(translate('Expertise')), { target: { value: 'e2' } })
+    fireEvent.click(screen.getByLabelText(translate('Expertise')))
+    const option = await screen.findByRole('option', { name: 'QA' })
+    fireEvent.pointerDown(option)
+    fireEvent.click(option)
     fireEvent.change(screen.getByLabelText(translate('Budget hours')), { target: { value: '100' } })
     fireEvent.submit(dialog.querySelector('form') as HTMLFormElement)
     expect(replace).toHaveBeenCalledWith(
