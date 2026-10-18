@@ -16,7 +16,7 @@ export interface IntakeDemand {
   expertise_id: string
   expertise_name: string
   total_hours: number
-  min_level: number
+  min_level: number | null
   quote: string
 }
 
