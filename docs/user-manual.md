@@ -12,7 +12,7 @@ Three accounts are already created, one per role. Sign in with each to see what 
 |---|---|---|---|---|
 | `planner` | `P@ssw0rd123` | Pat Planner | **Planner** | **Dashboard**: the whole team, every program, drafts, scenarios and events |
 | `manager` | `P@ssw0rd123` | Mia Manager | **Manager** | **Dashboard**: only the programs Mia manages (Acme Commerce Platform) |
-| `specialist` | `P@ssw0rd123` | Sam Specialist | **Specialist** | **My schedule**: Sam's own hours, leave and holidays |
+| `specialist` | `P@ssw0rd123` | Sam Specialist | **Specialist** | **My schedule**: Sam's own hours, leave and holidays; **Programs**: read only, the projects they work on |
 
 ## Contents
 
@@ -61,6 +61,7 @@ Start from the demo data. **Drafts** is empty at first, because the demo baselin
 **Specialist (Sam Specialist)**
 1. **My schedule** shows your approved training on 26 and 27 October.
 2. Under **My absences**, report a day of leave. It stays planned until a Planner approves it.
+3. **Programs** opens the programs you lead, lead a project in, or work on, read only.
 
 ## 3. Roles
 
@@ -70,10 +71,10 @@ Your role decides which screens appear in the sidebar and which actions you can 
 |---|---|---|---|
 | **Planner** | Dashboard, Programs, Intake, Drafts, Scenarios, People, Events | Everything: the whole team, all programs, all drafts, change history | Everything a Manager can, plus: program teams, approve leave, holidays, timesheet import, scenarios, and staffing drafts for any program. Uses Ask AI |
 | **Manager** | Dashboard, Programs, Intake, Drafts, People (read only) | Only the programs they lead or lead a project in, and the people in those programs' teams (and themselves) | Create programs; edit their programs and projects (phases, demand, done points); reorder projects; propose, edit, accept and reject drafts for the programs they manage. Uses Ask AI |
-| **Specialist** | My schedule | Their own schedule: hours per project, leave, holidays | Report their own leave; connect their own calendar |
+| **Specialist** | My schedule, Programs | Their own schedule: hours per project, leave, holidays. Programs read only: those they lead, lead a project in, or have hours in the published baseline; inside a program, only the projects they work on (have hours in, or lead) | Report their own leave; connect their own calendar. Cannot change anything in programs, projects or teams |
 
 Notes:
-- A Manager cannot open a program, project or person outside their teams. The screen says "You can’t see this program", "You can’t see this project" or "You can’t see this person".
+- A Manager cannot open a program, project or person outside their teams, and a Specialist cannot open a program, or a project, they do not work on. The screen says "You can’t see this program", "You can’t see this project" or "You can’t see this person".
 - Only a Planner can change a program's team, approve leave, or add holidays.
 - Only a Planner sees **Scenarios** and **Events**.
 
@@ -160,6 +161,8 @@ To create a program, click **New program**.
 - **Projects**: the projects in priority order, with the hours planned next week and in the next 3 weeks. Drag a row, or focus its handle and press the arrow keys, to change the order. The top project has the highest priority.
 - **Team**: the people the program's projects are staffed from. Planners use **Add member** and **Remove**. Removing a member keeps their baseline hours.
 
+**Specialist (read only).** A Specialist sees only the **Projects** and **Team** tabs. The team lists the members' names only: no hours, levels, contact details or dates, and a member cannot be opened. The Projects tab lists only the projects they work on (all of them for the program's lead), and any other project answers "You can’t see this project". A project opens read only, with its basic information and phases, but without demand, budget hours or progress figures, and without the Re-plan banner.
+
 > **Warning:** a Manager can create a program, but only a Planner can add members to its team. If the team is empty, **Propose squad** still makes a draft, but its demands end unmet, with the reason "No one in the program team".
 
 **Burn and actual hours.** The fourth bar reads **Planned burn** until a timesheet is imported. Then it reads **Burn**, and the **Actual** figure shows the imported hours. In the demo, Checkout Revamp and Data Migration already have actual hours.
@@ -187,7 +190,7 @@ Before the brief goes to the AI, the app hides customer names (the client of eac
 
 If the project is created but its demands fail to save, the message says the project exists without demands and links to it. Add the demands on the project page.
 
-**Project page.** Open a project from the Projects tab. Here you edit the project form, set done points, and manage its phases and demand. **Propose squad** is in the header.
+**Project page.** Open a project from the Projects tab. Here you edit the project form, set done points, and manage its phases and demand. **Propose squad** is in the header. A Specialist sees the same page read only (see [Programs and projects](#6-programs-and-projects), Specialist).
 
 **Phases.** A project is split into ordered phases, such as Discovery, Build and Test, each with a start and end week.
 1. Under **Phases**, click **Add phase** (or edit an existing phase).
@@ -266,7 +269,7 @@ A scenario that was built on an older baseline is marked **Stale**.
 
 Absences are leave, holidays and training. They lower capacity on the days they cover.
 
-**Schedule.** The person's page has a **Schedule** tab, and **My schedule** shows the same view for a Specialist: a month grid with one row per week. Days off are shaded (leave, training and holidays), and planned leave is marked as planned. Each week shows **Planned** hours against **Capacity**, hatched when it includes leave not approved yet, and **Worked** hours from an imported timesheet. Click **Planned** to list the week's hours per project; each project opens its page. Use the arrows and **Today** to move between months. A Manager sees the schedule of people in their teams, without the absences list.
+**Schedule.** The person's page has a **Schedule** tab, and **My schedule** shows the same view for a Specialist: a month grid with one row per week. Days off are shaded (leave, training and holidays), and planned leave is marked as planned. Each week shows **Planned** hours against **Capacity**, hatched when it includes leave not approved yet, and **Worked** hours from an imported timesheet. Click **Planned** to list the week's hours per project; each project opens its page. Use the arrows and **Today** to move between months. A Manager sees the schedule of people in their teams, without the absences list. For a Specialist, each project (one they work on) opens read only.
 
 **Report leave (Specialist).** Open **My absences** on **My schedule** and report the dates and hours per day. The page says: "Report leave or training. A planner approves it." Your leave stays planned until a Planner approves it.
 
@@ -300,7 +303,7 @@ A skill change re-plans the person's projects from that week on. A program end-d
 
 A change that creates a conflict produces one re-plan draft. Several changes close together are merged into one open draft. The draft keeps the Planner's edits and locks, and an older version is marked superseded.
 
-When a program has a re-plan draft, its page shows a **Re-plan** banner. Click it to open the draft, review it, and accept or reject it as in [Staffing drafts](#7-staffing-drafts).
+When a program has a re-plan draft, its page shows a **Re-plan** banner (not shown to a Specialist). Click it to open the draft, review it, and accept or reject it as in [Staffing drafts](#7-staffing-drafts).
 
 ## 11. Ask AI
 
@@ -365,7 +368,7 @@ The guided tour explains the sidebar. It starts once on your first visit, on a w
 | "This sign-in page has expired" | You took too long, or the sign-in page was opened twice. | Click **Start again**, or **Continue** to pick up where you left off. |
 | "Your session has ended. Sign in again." | Your sign-in expired. | Sign in again. |
 | "Your role cannot open this page." / "No access" | Your role has no access to the screen. | Ask a Planner if you need access. |
-| "You can’t see this program / project / person" | A Manager opened something outside their programs or teams. | Ask a Planner to check the team. |
+| "You can’t see this program / project / person" | A Manager or Specialist opened something outside their programs or teams. | Ask a Planner to check the team. |
 | "There is no … at this address." / "Page not found" | The link points to something that does not exist, or was removed. | Go back to the Dashboard and find it again. |
 | "Too many requests. Try again in N seconds." | You sent too many requests in a short time. | Wait, then try again. |
 | "The assistant is at its usage limit. Try again in N seconds." | Ask AI reached its limit. | Wait, then ask again. |
