@@ -29,6 +29,7 @@ Details per part:
 |---|---|
 | **Program** | A customer engagement that groups several projects, with one timeline, a brief (goal, objectives) and a charter |
 | **Project** | A unit of delivery inside a program, with its own deadline and staffing demand |
+| **Program team** | The people a Planner assigns to a program. A Manager staffs only from their program's team |
 | **Phase** | An ordered stage of a project (e.g. Discovery → Build → Test) with its own week range. When a phase ends later, every later phase of the project moves by the same number of weeks |
 | **Expertise** | A kind of work: PM, Analyst, Engineer, QA. A person holds one or more expertises, each at a level, and exactly one is their **primary** expertise. The data model stores this as `PERSON_SKILL`; the UI always says *expertise*, never *skill* |
 | **Demand** | Hours a project needs from one expertise, at a minimum level, inside one phase (or across the whole project). Its hours are the **budget hours** |
@@ -39,9 +40,9 @@ Details per part:
 | **Actual hours** | Hours a person really worked on a project in one week, imported from a timesheet CSV. Planned hours come from the baseline |
 | **Calendar feed** | A person's secret ICS link from Google Calendar or Outlook. Out-of-office events in it become planned leave |
 | **Cross-expertise** | An assignment whose expertise is not the person's primary one, e.g. an Engineer covering QA. Allowed when the person has that skill at the demand's minimum level |
-| **Stretch** | An assignment below the demand's minimum level (or without the skill), for cover or cross-training. Only a Planner can create one, by hand, and it is always flagged |
-| **Member** | A person with at least one assignment in a program's projects |
-| **AI assistant** | Translates between natural language and the system's structured data. Ask AI (Q&A and what-if chat) and draft summary are built; the rest is later |
+| **Stretch** | An assignment below the demand's minimum level (or without the skill), for cover or cross-training. A Planner, or the Manager of the program, can add one by hand, and it is always flagged |
+| **Member** | A person with allocations in a program's projects in the baseline, plus the program and project leads |
+| **AI assistant** | Translates between natural language and the system's structured data. Intake extraction, Ask AI (Q&A and what-if chat) and draft summary are built; the rest is later |
 
 ---
 
@@ -53,11 +54,11 @@ flowchart LR
   lead["Manager<br/>manages programs"]
   spec["Specialist<br/>PM · Analyst · Engineer · QA"]
   sf(["<b>The Slot Finder</b><br/>assigns projects to cross-functional squads"])
-  intake["Incoming projects<br/>Sales/CRM, CSV"]
-  hr["HR / Leave system"]
+  intake["Incoming projects<br/>Sales/CRM (later)"]
+  hr["HR / Leave system (later)"]
   cal["Google / Outlook calendar<br/>secret ICS link"]
   timesheet["Timesheet CSV<br/>actual hours"]
-  notify["Email / Slack / Teams"]
+  notify["Email / Slack / Teams (later)"]
   llm["LLM API<br/>function calling · Gemini, Groq or OpenRouter"]
 
   planner -->|"reviews drafts, runs what-ifs, imports timesheets and people"| sf
@@ -67,7 +68,7 @@ flowchart LR
   hr -->|"leave calendar"| sf
   cal -->|"out-of-office events"| sf
   timesheet -->|"actual hours"| sf
-  sf -->|"assignments, alerts"| notify
+  sf -->|"assignments, alerts (later)"| notify
   sf -.->|"AI assistant: text ↔ structured data"| llm
 ```
 
@@ -94,11 +95,11 @@ flowchart TB
     api["<b>Server API</b><br/>modular monolith · REST/JSON"]
     engine["<b>Planning Engine</b><br/>pure library, no I/O"]
     queue[["Job queue"]]
-    worker["<b>Background Worker</b><br/>re-plan · calendar sync · notify"]
+    worker["<b>Background Worker</b><br/>re-plan · calendar sync · notify (later)"]
     db[("<b>Database</b><br/>relational")]
   end
 
-  ext["External systems<br/>CSV · HR · calendars (ICS) · Email/Slack"]
+  ext["External systems<br/>CSV · HR (later) · calendars (ICS) · Email/Slack (later)"]
   llm["LLM API<br/>function calling · Gemini, Groq or OpenRouter"]
 
   users --> client
@@ -109,8 +110,8 @@ flowchart TB
   queue --> worker
   worker --> engine
   worker -->|"read / write"| db
-  worker <-->|"calendar sync · notify"| ext
-  api -.->|"AI assistant: Ask AI, what-if chat and draft summary (built)"| llm
+  worker <-->|"calendar sync · notify (later)"| ext
+  api -.->|"AI assistant: intake extraction, Ask AI, what-if chat and draft summary (built)"| llm
 ```
 
 | Container | Responsible for | Not responsible for |
@@ -118,7 +119,7 @@ flowchart TB
 | **Client** | Shows heatmaps, program pages, forms, drafts and diffs; calls the API | Computing plans or metrics, deciding permissions |
 | **Server API** | Source of truth: data, permissions, state transitions, transactions, metrics | The scheduling algorithm (that lives in the Engine) |
 | **Planning Engine** | The pure function `propose(snapshot, policy) → result` | Database or network access |
-| **Background Worker** | Heavy or asynchronous jobs: re-planning after changes, calendar sync, notifications. These run inside the server process; a separate worker process comes later | Serving user requests |
+| **Background Worker** | Heavy or asynchronous jobs: re-planning after changes, calendar sync, notifications (later). These run inside the server process; a separate worker process comes later | Serving user requests |
 | **Job queue** | Passes jobs from the API to the Worker: rows in Postgres (change events as a transactional outbox), claimed with `FOR UPDATE SKIP LOCKED`. No separate queue service | |
 | **Database** | Stores people, skills, absences and holidays, calendar feeds, programs and their teams, projects, demand, plans, allocations, actual hours, events and audit records. | |
 
@@ -193,8 +194,8 @@ See [`server/README.md`](server/README.md) for details.
 
 **Strategies** (same interface, swappable):
 1. **Greedy** (built): sort demand by priority, then deadline, then scarcity of the expertise. Pick the best-scoring person (primary-expertise match first) and spread the hours flat.
-2. **Greedy + repair pass** (after the MVP): local swaps that free scarce cross-expertise people for demand nobody else can cover.
-3. **Solver** (after the MVP): constraint programming or MILP for a global optimum.
+2. **Greedy + repair pass** (later): local swaps that free scarce cross-expertise people for demand nobody else can cover.
+3. **Solver** (later): constraint programming or MILP for a global optimum.
 
 Sample input and output are in [`server/README.md#4-planning-engine`](server/README.md#4-planning-engine).
 
@@ -245,8 +246,6 @@ erDiagram
     decimal non_project_hours "kept for meetings, support, management; default from config"
     date start_date "null = already working"
     date end_date "null = open-ended"
-    string location "later: selects the holiday calendar"
-    string timezone "later"
     bool active
   }
   PERSON_SKILL {
@@ -262,7 +261,6 @@ erDiagram
   ABSENCE {
     uuid id PK
     uuid person_id FK "null = holiday"
-    string location "later: holidays per location; now always company-wide"
     string name "holidays: e.g. National Day; empty for leave"
     date from_date
     date to_date
@@ -373,10 +371,17 @@ erDiagram
     string kind "baseline / draft / scenario"
     string status "draft / published / rejected / superseded"
     int version
+    string name "scenario label; empty for other kinds"
     json assumptions "hypothetical changes of a scenario"
+    json summary "scenario: people changed, hours moved, unmet hours"
+    json project_ids "projects a draft was generated for"
+    json unmet "demand the engine could not cover"
     json score "later"
     uuid created_by FK
     datetime created_at
+    datetime published_at
+    uuid published_by FK
+    uuid superseded_by FK "newer version of a re-plan draft"
   }
   ASSIGNMENT {
     uuid id PK
@@ -400,13 +405,25 @@ Not built yet: `PLAN.score` (the engine's score is not stored).
 
 ### 6.4 Changes and actuals
 
-What happens after planning: change events that lead to re-plan drafts, and the hours people actually worked.
+What happens after planning: change events that lead to re-plan drafts, the hours people actually worked, and the audit trail.
 
 ```mermaid
 erDiagram
   CHANGE_EVENT }o--o| PLAN : "triggers draft"
   PERSON ||--o{ ACTUAL_HOURS : worked
   PROJECT ||--o{ ACTUAL_HOURS : "worked on"
+  PERSON |o--o{ AUDIT_EVENT : "acted"
+
+  AUDIT_EVENT {
+    uuid id PK
+    uuid actor_id FK "null when the user has no person record"
+    string actor_subject "Keycloak subject"
+    string action
+    string resource
+    uuid resource_id
+    json before
+    json after
+  }
 
   CHANGE_EVENT {
     uuid id PK
@@ -414,7 +431,11 @@ erDiagram
     json payload
     datetime occurred_at
     string status "pending / no_impact / draft_created / failed"
+    datetime available_at "when the runner may claim it again"
+    int attempts
+    string last_error "error code"
     uuid draft_id FK "many events may share one draft"
+    json project_ids "projects the change touches"
   }
   ACTUAL_HOURS {
     uuid id PK
@@ -441,7 +462,7 @@ erDiagram
 
 **Derived values for programs and projects** are defined in [section 7](#7-metrics).
 
-**Leave from calendars:** an out-of-office event in a person's calendar feed becomes `planned` leave with `source = calendar` and the event's UID. Each sync makes these absences match the calendar (create, move, delete) and records their change events. Absences entered by hand are never touched. The Planner approves calendar leave like any reported leave.
+**Leave from calendars:** an out-of-office event in a person's calendar feed becomes `planned` leave with `source = calendar` and the event's UID. Each sync makes these absences match the calendar (create, move, delete) and records their change events. Absences entered by hand are never touched. Calendar leave that a person deletes by hand stays deleted: it is kept as `source = calendar_dismissed`, so the next sync does not create it again. The Planner approves calendar leave like any reported leave.
 
 **Actual hours** are recorded per person × project × week from a timesheet CSV. They feed Actual hours and Burn % (section 7). Planning and capacity never read them.
 
@@ -452,7 +473,7 @@ erDiagram
   - `primary` when the demand's expertise is the person's primary skill
   - `cross_expertise` when it is another skill at ≥ `min_level`
   - `stretch` when the level is lower or the skill is missing
-- The engine proposes `primary` and `cross_expertise` only. A Planner can add a `stretch` assignment by hand in a staffing draft. It is locked and flagged, and accepting the draft needs an explicit confirmation.
+- The engine proposes `primary` and `cross_expertise` only. A Planner, or the Manager of the program, can add a `stretch` assignment by hand in a staffing draft. It is locked and flagged, and accepting the draft needs an explicit confirmation.
 - Capacity belongs to the person, not to an expertise. One person covering Engineer and QA in the same week has both counted against the same weekly hours.
 - Tracking: load is also reported per expertise (`load(person, week, expertise)`), per program member, and as the **cross-expertise share** (section 7, later).
 
@@ -526,7 +547,7 @@ Gap hours and Staffing % show the same shortfall, once in hours and once as a pe
 ```mermaid
 sequenceDiagram
   autonumber
-  actor L as Program Lead
+  actor L as Manager
   actor P as Planner
   participant C as Client
   participant API as Server API
@@ -557,7 +578,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
   autonumber
-  actor S as Specialist / Lead
+  actor S as Specialist / Manager
   participant API as Server API
   participant W as Worker
   participant ENG as Planning Engine
@@ -622,7 +643,7 @@ stateDiagram-v2
 ```
 
 - Only the Server changes a program's or project's state. The Client sends **actions** (e.g. `hold`, `close`), never a new `status`.
-- When a program is cancelled, its open projects are cancelled too, and their future allocations are removed in a new baseline.
+- When a program is cancelled, its open projects are cancelled too, and one `ProjectStatusChanged` event is recorded for them. From the current week on their hours stop counting as load; the stored plan keeps them.
 ### 8.4 Out of office in a calendar → planned leave
 
 ```mermaid
@@ -683,7 +704,7 @@ sequenceDiagram
 | **Errors** | Every response, success or error, uses one envelope: `{ meta: { error_code, message, code, page, page_size, total }, data }`, with a meaningful HTTP status. Field errors go in `data` |
 | **Audit** | Accepting a plan is recorded: who, when, which version. Later: edit and lock of allocations, budget and forecast changes, each with the value before and after. An action taken through the AI assistant (later) records the user as the actor and `via = ai_assistant` |
 | **Time** | Stored in UTC. Weeks follow ISO-8601. The organization's timezone is configuration |
-| **Rate limits** | Every request counts against an allowance per client IP. Routes that run the planning engine, read an uploaded file or fetch a URL also count against a tighter allowance per signed-in user and route. Over a limit the Server answers `429` with `Retry-After`, and the Client says how long to wait instead of retrying |
+| **Rate limits** | Every request counts against an allowance per client IP. Routes that run the planning engine or the AI assistant, read an uploaded file (people and timesheet imports) or fetch a URL also count against a tighter allowance per signed-in user and route. Over a limit the Server answers `429` with `Retry-After`, and the Client says how long to wait instead of retrying |
 | **Links from users** | A calendar link is a secret and a fetch target. It is stored encrypted and never logged or returned. The Server fetches it over https from allowed hosts only, never to a private IP, with a timeout and a size cap |
 | **Observability** | Structured logs with a request id; metrics for engine run time and `unmet` count (later) |
 
@@ -708,8 +729,8 @@ sequenceDiagram
 |---|---|
 | **Engine** | Golden tests on fixed snapshots. Property tests that check it never exceeds capacity, always respects expertise and level, never schedules outside a demand's week window, never changes a locked allocation, never proposes a stretch assignment, never exceeds the expertises-per-week limit, never allocates below `min_hours_per_week` except a demand's last remainder, lays hours out flat (`profile` shapes: later), never allocates to an assistant (later), never allocates outside a person's start and end dates, and picks a primary-expertise person over a cross-expertise one when both fit |
 | **Server** | API + DB integration tests, contract tests against OpenAPI, permission tests for each role, metric tests for every formula in section 7 that is built (including Planned burn %; EAC hours later), phase slip propagation (later phases move, last phase past the deadline flags at risk), re-plan merge (a second event during an open auto draft gives one new draft version that keeps the Planner's edits and locks, and supersedes the old one) |
-| **Client** | Component tests (heatmap, program header, staffing table, demand form, diff). One end-to-end test: add project to program → propose squad → accept → program staffing and heatmap update |
-| **AI assistant** (later) | Unit tests use a fake LLM provider. An evaluation set of sample briefs with their expected demand runs against the configured provider on demand, not in CI: expertise, level and hours must match, and every source quote must appear in the brief. Permission tests through the AI tools: each tool gives the same result as its route for every role, and a specialist cannot read another person's schedule. Draft summaries may only contain numbers present in the engine output |
+| **Client** | Component tests (heatmap, program header, staffing table, demand form, diff). One end-to-end test (later): add project to program → propose squad → accept → program staffing and heatmap update |
+| **AI assistant** | Unit tests use a fake LLM provider. An evaluation set (later) of sample briefs with their expected demand runs against the configured provider on demand, not in CI: expertise, level and hours must match, and every source quote must appear in the brief. Permission tests through the AI tools: each tool gives the same result as its route for every role, and a specialist cannot read another person's schedule. Draft summaries may only contain numbers present in the engine output |
 | **Sample data** | One shared seed for demos and tests (`make seed`): 2 programs, 6 projects (3 of them staffed in a baseline), 12 people with expertise and levels, one of them a planned hire with a future start date, company-wide holidays, leave periods, actual hours, 2 what-if scenarios. Locations: later |
 
 ---
@@ -744,7 +765,10 @@ the-slot-finder/
 ├── Makefile                  ← make setup · up · dev · check (run `make` to list)
 ├── CLAUDE.md                 ← guidance for Claude Code; conventions live in .claude/skills/
 ├── docs/
-│   └── architecture.drawio   ← same diagrams, for draw.io
+│   ├── architecture.drawio   ← same diagrams, for draw.io
+│   ├── features/             ← one spec per feature, in build order
+│   ├── plans/                ← implementation plan per feature
+│   └── user-manual.md        ← manual for people who use the app
 ├── client/                   ← React SPA (see client/README.md)
 │   ├── README.md
 │   ├── package.json
@@ -754,7 +778,10 @@ the-slot-finder/
     ├── cmd/                  ← server entry point + routes, migrations
     ├── internal/             ← handlers · services · repositories · models · dtos · engine
     ├── docs/                 ← generated Swagger (contract for the client)
-    ├── deploy/otel/          ← local OpenTelemetry collector config
+    ├── deploy/               ← Keycloak realm, Postgres init scripts, OpenTelemetry collector config
+    │   ├── keycloak/
+    │   ├── postgres/
+    │   └── otel/
     └── docker-compose.yml    ← Postgres, Redis, Keycloak, OTel collector, Jaeger
 ```
 
@@ -774,7 +801,7 @@ the-slot-finder/
 | ADR-8 | **Cost is hours only**; no money, no billing, no score | Hours are what staffing decisions need | Financial reporting stays in other tools |
 | ADR-9 | **Scope points are entered by hand** at project level | Gives a delivery signal without task tracking | Depends on leads keeping them up to date |
 | ADR-10 | **Forecast = planned hours**, with an optional override (override: later) | Stays in sync with the plan automatically | Overrides can go stale; they are audited |
-| ADR-12 | Engine plans are called **staffing drafts** | Avoids confusion with business proposals | |
+| ADR-12 | Engine plans are called **staffing drafts** | Avoids confusion with business proposals | A draft is not in force until a Planner accepts it |
 | ADR-13 | Server built on a **production-ready Go template** (Echo, FX, GORM, Keycloak, OTel) | Auth, errors, logging, tracing and migrations come ready-made | Layer-based layout (`handlers/services/repositories`) instead of per-module folders; Swagger is generated from code |
 | ADR-14 | Client uses **React + TanStack Query + Zustand + Axios + shadcn/ui** | Clear split between server state and UI state; accessible components out of the box | Typed API hooks are written by hand until a generator is added |
 | ADR-15 | **Phases** carry the dependencies between expertises: ordered, each with a week range; a later end shifts the later phases | Covers "QA waits for Engineering" and slip propagation while the engine stays greedy and phase-agnostic | Only whole-phase finish-to-start; no dependency graph between individual demands |
@@ -786,6 +813,8 @@ the-slot-finder/
 | ADR-22 | Calendars come in through each person's **secret ICS link**, not OAuth | Works for Google and Outlook with one code path, without app registration or admin consent | The link is a secret to protect; out-of-office is found from Outlook's `OOF` flag or title keywords; recurring events are skipped |
 | ADR-23 | Calendar out-of-office becomes **planned** leave that a Planner approves | A mislabelled event never becomes approved leave on its own (ADR-5) | One more approval for the Planner |
 | ADR-24 | **Actual hours** are kept per person × project × week and imported from a **template CSV** built from the baseline | Matches how timesheets are kept; matching by project id never picks the wrong project; burn shows real hours | No actual hours per demand or per day; the template is filled in by hand or by a script |
+
+ADR-11 and ADR-20 were dropped with the features they described.
 
 ---
 
@@ -812,10 +841,10 @@ the-slot-finder/
 **How it plugs in:**
 - A server module `ai`. It calls an LLM API with function calling through a provider interface: Gemini, Groq or OpenRouter, chosen by config.
 - Each tool wraps an existing service method and runs **with the caller's identity and role**. The tool checks the same role list as the matching route, and the service applies the per-program rules, so a specialist sees only their own schedule here too. The model is offered only the tools the caller's role allows. The AI assistant never touches the database.
-- Writes are limited to creating scenarios and staffing drafts. Intake suggestions are returned, not stored. It never changes the baseline and never accepts a draft.
+- The only write is creating a scenario (what-if chat). Staffing drafts are later. Intake suggestions are returned, not stored. It never changes the baseline and never accepts a draft.
 - A customer brief is data, never instructions: intake extraction has no tools.
-- Every action it takes is audited with the user as the actor and `via = ai_assistant`.
-- The Server keeps no chat history. The Client sends the visible conversation with each message.
+- Actions through the AI assistant are not audited yet; `create_scenario` records the planner as `CreatedBy`.
+- The Server keeps no chat history. Each question is sent alone, with the page path as `page_context`. Sending the conversation with each message is later, with the chat panel.
 - Provider, key, the model per task and limits are server config ([`server/README.md`](server/README.md#8-settings)). Details: [`server/README.md`](server/README.md#9-ai-assistant).
 
 The draft summary sends only counts, hours, week labels, expertise names and project names, never person names, emails or customer names.
