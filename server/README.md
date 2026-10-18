@@ -21,6 +21,8 @@ make seed      # demo data: expertises, 12 people with skills, leave, holidays, 
                # a baseline staffing 3 of them and 2 what-if scenarios (safe to run again)
 ```
 
+**Demo email domain.** `SEED_EMAIL_DOMAIN` (default `slot-finder.com`) is the domain of the demo people. On an existing database, run `make seed` (set `SEED_EMAIL_DOMAIN` first to use another domain): people on `@slot-finder.local` are renamed in place (no duplicates; a person whose new email already exists is skipped, and the log counts both), then the rest is seeded as usual. Running it again renames nothing. Seed does not touch Keycloak, so on a VM also change the emails of the demo users `planner`, `manager` and `specialist` in the Keycloak admin console (Users, keep Email verified on). A fresh realm import reads the same variable (`${SEED_EMAIL_DOMAIN:slot-finder.com}` in `realm.json`).
+
 Inside `server/`:
 
 ```bash
