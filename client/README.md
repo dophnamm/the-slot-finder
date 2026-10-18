@@ -39,7 +39,6 @@ Sign in with a demo user (`planner`, `manager` or `specialist`; the `manager` ro
 
 **Later** (not routed or not built yet):
 
-- `/intake/from-document`: intake from a document with AI. The suggested project is reviewed field by field, each with its source quote, and nothing is saved before **Confirm**.
 - `/insights`: plan churn over time.
 - Forecast editing on the program overview (`PATCH /programs/:id/forecast`).
 
@@ -80,7 +79,7 @@ flowchart LR
 - **EAC hours** (later): the Cost card will show them from the overview, hidden while the Server returns `null` (too little scope done), with ⚠ when the Server flags **likely over budget**.
 - **Staffing and gap** are shown together, e.g. "Staffing 80% · 40 h gap", because they show the same shortfall.
 - **Re-plan banner** appears when `/events?programId=` returns an event with status `draft_created`. It links to the staffing draft.
-- **Projects** are listed in priority order, each with the hours planned **Next week** and in the **Next 3 weeks**. Planners and the program's manager drag a row (or focus its handle and press ↑ / ↓) to change the order; the top project has the highest priority, and the new order is saved with `PUT /programs/:id/project-order`.
+- **Projects** are listed in priority order, each with the hours planned **Next week** and in the **Next 3 weeks**. Planners and the program's manager drag a row (or focus its handle and press ↑ / ↓) to change the order; the top project has the highest priority, and the new order is saved with `PUT /programs/:id/project-order`. **New project from a brief** (next to **Add project**) opens a dialog: paste the brief, optionally list names to hide, then review the suggested project with each demand's quote before **Create project**.
 - **Propose squad** is visible to planners and to the program's manager for a project in a plannable status. It calls `POST /staffing-drafts { projectIds: [id] }` and opens the draft.
 - **Team** lists the people the program's projects are staffed from: expertise, hours and weeks in this program's baseline ("Not staffed yet" before a draft gives them hours) and projects. Planners get **Add member** (a dialog to pick a person outside the team) and **Remove** on each row, with a confirm; removing keeps the member's baseline hours. The manager reads the team.
 
@@ -135,7 +134,6 @@ flowchart TB
 | **Diff viewer** | Baseline versus a draft or scenario: who was added or removed, how hours changed, which projects changed risk status. |
 | **Ask AI widget** | A round button fixed at the bottom-right of every screen in the app layout. Only planners and Managers see it (permission `ai:ask`). It opens a small panel over a dimmed, blurred layer; clicking the layer or pressing Escape closes it. The panel fades and slides in and out, and its header button toggles a larger size (width and height animate). Each question goes to `/ai/ask` with the current route path as `page_context` (up to 200 characters), and the answer shows under it. Questions are limited to 500 characters. Messages live in memory only: a reload clears them, and there is no history. While an answer is pending, a three-dot typing indicator shows. The wrapper ignores the mouse except the round button and the open panel. A failed question gets no toast: the chat adds a reply in the error colour (red border and text) that says to try again, and at the usage limit how many seconds to wait; the question stays in the list. The error reply has a **Try again** button (on the last message only, hidden while a question is pending) that re-sends the last question without adding a user message, and removes the error reply. A planner's what-if question saves a scenario; the answer names it and says it is on the Scenarios page (no link) |
 | **Guided tour** | Starts once per user on the first visit, with one step per sidebar link the role can see, one on the Ask AI button for the roles that can use it, and one on the account menu. The account menu's **Take the tour** starts it again; the close button or Esc ends it. Not started when the sidebar is hidden (below `lg`) or the browser's storage is unavailable. Drawn by driver.js, styled with the app tokens in `index.css` |
-| **Intake extraction review** (later) | The suggested project from `/ai/intake-extractions`, field by field. Each field shows its source quote, highlighted in the document; flagged fields (unknown expertise, hours suggested from points) are marked. The lead edits, then **Confirm** saves through the normal project, phase and demand calls. Nothing is saved before that |
 | **AI chat panel** (later) | A side panel on every page for planners, managers and specialists. Sends the visible conversation to `/ai/chat`, shows the reply and links to any scenario or draft it created. Marked as AI-generated |
 
 ## 5. Data and state rules

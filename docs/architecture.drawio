@@ -178,7 +178,7 @@
         <mxCell id="v-3" value="&lt;b&gt;Integrations&lt;/b&gt;&lt;br&gt;&lt;i&gt;calendar feeds (ICS)&lt;br&gt;notifier · LLM client&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="400" y="80" width="280" height="80" />
         </mxCell>
-        <mxCell id="v-4" value="&lt;b&gt;AI assistant&lt;/b&gt;&lt;br&gt;&lt;i&gt;Ask AI, what-if chat and draft summary (built)&lt;br&gt;later: intake extraction&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+        <mxCell id="v-4" value="&lt;b&gt;AI assistant&lt;/b&gt;&lt;br&gt;&lt;i&gt;Intake extraction, Ask AI, what-if chat and draft summary (built)&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="90" y="82" width="220" height="90" />
         </mxCell>
         <mxCell id="v-5" value="Data modules" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8f9fb;strokeColor=#b0b8c4;verticalAlign=top;align=left;spacingLeft=12;spacingTop=6;fontStyle=1;" vertex="1" parent="1">
@@ -1352,9 +1352,6 @@
         </mxCell>
         <mxCell id="v-6" value="/intake" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="396" y="100" width="104" height="80" />
-        </mxCell>
-        <mxCell id="v-7" value="/intake/from-document" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" vertex="1" parent="1">
-          <mxGeometry as="geometry" x="508" y="100" width="104" height="80" />
         </mxCell>
         <mxCell id="v-8" value="/projects/:id" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="620" y="100" width="104" height="80" />
