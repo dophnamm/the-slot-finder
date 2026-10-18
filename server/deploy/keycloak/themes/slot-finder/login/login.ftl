@@ -40,20 +40,6 @@
                 <input type="hidden" id="id-hidden-input" name="credentialId" <#if auth.selectedCredential?has_content>value="${auth.selectedCredential}"</#if>/>
                 <input tabindex="4" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!}" name="login" id="kc-login" type="submit" value="${msg("doLogIn")}"/>
             </form>
-            <button type="button" id="sf-account-help-open" class="sf-link sf-link-button" aria-haspopup="dialog">${msg("sfAccountHelpLink")}</button>
-            <dialog id="sf-account-help" class="sf-dialog" aria-labelledby="sf-account-help-title">
-                <div class="sf-dialog-body">
-                    <h2 id="sf-account-help-title" class="sf-dialog-title">${msg("sfAccountHelpTitle")}</h2>
-                    <p class="sf-dialog-text">${msg("sfAccountHelpBody")}</p>
-                    <div class="sf-actions">
-                        <a class="sf-button sf-button-primary" href="${msg("sfAccountHelpManualUrl")}" target="_blank" rel="noopener noreferrer">${msg("sfAccountHelpOpenManual")}</a>
-                        <form method="dialog" class="sf-actions">
-                            <button class="sf-button sf-button-secondary" autofocus>${msg("sfAccountHelpClose")}</button>
-                        </form>
-                    </div>
-                </div>
-            </dialog>
-            <script src="${url.resourcesPath}/js/account-help.js" type="module"></script>
         </#if>
     <#elseif section = "info">
         <#if realm.password && realm.registrationAllowed && !registrationDisabled??>
