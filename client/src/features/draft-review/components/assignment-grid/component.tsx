@@ -91,7 +91,7 @@ export function AssignmentGrid({ draft, editable }: AssignmentGridProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className={cn(PERSON_COLUMN_CLASS, 'bg-muted')}>{t('Person')}</TableHead>
+            <TableHead className={cn(PERSON_COLUMN_CLASS, 'bg-background')}>{t('Person')}</TableHead>
             {draft.weeks.map((week) => (
               <TableHead key={week} className={WEEK_COLUMN_CLASS}>
                 <div className="flex flex-col leading-tight">
