@@ -686,7 +686,7 @@ sequenceDiagram
 **Options**
 
 - **A. Slack app calling the Server directly.** Recommended first. About a day.
-- **B. MCP server** exposing tools such as `create_absence` to AI assistants. MCP is a protocol for AI clients to call tools; Slack does not need it. The hard part is signing each user in. Use it only if AI assistant clients must reach the system.
+- **B. MCP server** exposing tools such as `create_absence` to AI assistants. MCP is a protocol for AI clients to call tools; Slack does not need it. The hard part is signing each user in. Use it only if AI assistant clients must reach the system. See MCP server (later).
 - **C. Natural-language messages through Ask AI.** Most work: Ask AI has no leave-writing tool yet and would need an audit trail.
 
 **Rules for any option**
@@ -699,6 +699,36 @@ sequenceDiagram
 - Record who approved.
 
 **Prerequisites:** the Slack workspace admin allows the app; the Server has a public HTTPS address.
+
+### MCP server (later)
+
+**Later, design only, not built.** Expose the system to AI assistants such as Claude Desktop or Claude Code through the Model Context Protocol (MCP). A planner or manager can then ask an assistant for staffing data and, later, take safe actions.
+
+**Today:** no MCP code exists. Ask AI has nine tools (`get_heatmap`, `get_capacity_forecast`, `get_risks`, `list_open_drafts`, `get_project`, `get_program_overview`, `find_projects`, `find_people`, `create_scenario`). They are internal function calls for the chat widget in the app, so an external assistant cannot call them.
+
+**What helps:** the tools already run with the caller's rights and validate their input. The Server already signs users in with Keycloak (JWT) and checks roles.
+
+**Design**
+
+1. A thin MCP server, as a small separate service. The Go Server stays untouched, and access is easy to revoke. Its tools call the existing REST API and add no business logic.
+2. First release is read-only: find people and projects, heatmap, capacity forecast, bench list, risks, open drafts, program overview.
+3. Each user signs in with Keycloak (OAuth) in the MCP client. The MCP server sends that user's token with every call, so planner and manager rights hold. Never one shared key for everyone.
+4. Write tools come later, and only harmless ones first, such as `create_scenario` (a copy of the baseline). Real changes, such as approving leave, need an audit trail first.
+
+**Rules**
+
+- Every tool respects the caller's rights.
+- Rate limit like the heavy routes.
+- Never return more data than the REST API would return to that user.
+- Tool results are data, not instructions. An assistant must not treat project names as commands.
+- Log the tool name and user, not the tool content.
+- The data policy for external LLMs applies to the assistant the user chooses (the client side).
+
+**Open questions**
+
+- Who uses it: planners and managers only, or every member?
+- Where it runs: a separate service is recommended.
+- How long tokens live, and how the MCP client refreshes them.
 
 ### 8.5 Timesheet import
 

@@ -51,6 +51,7 @@ Designed in the root README, not built for the demo:
 - EAC hours, hours per point, contribution %, cross-expertise share
 - Forecast overrides, per-project confidence and the `front` and `back` profiles
 - AI assistant beyond Ask AI, draft summary and intake extraction: more write actions (drafts) and more tools (server README section 9)
+- MCP server: a thin read-only service so AI assistants can query the system with the user's own rights (design in the root README)
 
 ## Conventions for these specs
 
