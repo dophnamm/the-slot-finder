@@ -178,7 +178,7 @@ Both dates must lie within 156 weeks before or after the current week.
 5. Check the review form. Fix the name, dates, scope points or demands, or remove a demand. Each demand shows the quote from the brief it came from. The warnings list what the app dropped or changed.
 6. Click **Create project**. The project is created with its demands.
 
-Before the brief goes to the AI, the app hides customer names (the client of each program you can see, and the names you type), email addresses and phone numbers. Dates are kept. The notice shows how many of each it hid, such as "Hidden before sending: 2 emails, 1 customer name".
+Before the brief goes to the AI, the app hides customer names (the client of each program you can see, and the names you type), email addresses and phone numbers. Dates are kept. The notice shows how many of each it hid, such as "Hidden before sending: 2 emails, 1 customer name, 0 phones".
 
 If the project is created but its demands fail to save, the message says the project exists without demands and links to it. Add the demands on the project page.
 
