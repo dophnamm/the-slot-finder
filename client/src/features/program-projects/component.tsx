@@ -86,7 +86,7 @@ export function ProgramProjects({ programId }: ProgramProjectsProps) {
         </TableBody>
       </Table>
       {adding && <ProjectFormDialog open={adding} programId={programId} project={null} onOpenChange={setAdding} />}
-      {suggesting && <IntakeDialog open={suggesting} onOpenChange={setSuggesting} />}
+      {suggesting && <IntakeDialog open={suggesting} programId={programId} onOpenChange={setSuggesting} />}
     </Section>
   )
 }

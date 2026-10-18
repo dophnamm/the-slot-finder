@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { IntakeSuggestion } from '@/shared/ai'
 import { translate } from '@/shared/i18n'
@@ -17,6 +18,8 @@ const SUGGESTION: IntakeSuggestion = {
 
 const { mutate, state } = vi.hoisted(() => ({ mutate: vi.fn(), state: { isPending: false } }))
 vi.mock('@/shared/ai', () => ({ useExtractIntake: () => ({ mutate, isPending: state.isPending }) }))
+vi.mock('@/shared/expertises', () => ({ useExpertises: () => ({ data: [], isPending: false }) }))
+vi.mock('@/shared/programs', () => ({ useCreateProject: () => ({ mutate: vi.fn(), isPending: false }) }))
 
 afterEach(() => {
   cleanup()
@@ -29,7 +32,12 @@ const brief = () => screen.getByLabelText(t('Brief'))
 const terms = () => screen.getByLabelText(t('Customer or contact names to hide (comma separated)'))
 const suggest = () => screen.getByRole('button', { name: t('Suggest project') })
 const type = (el: HTMLElement, value: string) => fireEvent.change(el, { target: { value } })
-const open = () => render(<IntakeDialog open onOpenChange={vi.fn()} />)
+const open = () =>
+  render(
+    <MemoryRouter>
+      <IntakeDialog open programId="g1" onOpenChange={vi.fn()} />
+    </MemoryRouter>,
+  )
 
 describe('IntakeDialog', () => {
   it('requests nothing on open and disables Suggest while the brief is empty', () => {

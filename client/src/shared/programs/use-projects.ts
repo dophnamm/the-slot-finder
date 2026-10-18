@@ -86,6 +86,27 @@ export function useSaveProject(programId: string, projectId?: string) {
   })
 }
 
+/**
+ * Adds a project and then its demands. When the demands call fails the project still exists: the result says
+ * so (`demandsSaved: false`) instead of throwing, so the caller can point at the project.
+ */
+export function useCreateProject(programId: string) {
+  const invalidate = useInvalidateProjects()
+  return useMutation({
+    mutationFn: async ({ project, demands }: { project: ProjectInput; demands: DemandInput[] }) => {
+      const created = await createProject(programId, project)
+      if (demands.length === 0) return { project: created, demandsSaved: true }
+      try {
+        await replaceDemands(created.id, demands)
+        return { project: created, demandsSaved: true }
+      } catch {
+        return { project: created, demandsSaved: false }
+      }
+    },
+    onSettled: invalidate,
+  })
+}
+
 /** Saves a program's project order; it resolves once the lists show the new priorities. */
 export function useReorderProjects(programId: string) {
   const invalidate = useInvalidateProjects()
