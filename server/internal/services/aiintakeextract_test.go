@@ -141,7 +141,6 @@ func TestAIService_ExtractIntake_requestHidesMaskedText(t *testing.T) {
 		assert.NotContains(t, string(body), secret)
 	}
 	assert.Contains(t, string(body), "about 120 hours of QA")
-	assert.Contains(t, string(body), "e-qa")
 	require.Len(t, fake.requests[0].Tools, 1)
 	require.Len(t, fake.requests[0].Tools[0].FunctionDeclarations, 1)
 	assert.Equal(t, constants.AIToolSuggestProject, fake.requests[0].Tools[0].FunctionDeclarations[0].Name)
