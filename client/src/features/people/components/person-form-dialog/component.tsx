@@ -7,7 +7,7 @@ import { Button } from '@/shared/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
-import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
+import { Select } from '@/shared/ui/select'
 import { useExpertises } from '@/shared/expertises'
 import { useSavePerson } from '../../use-people'
 import { SkillsEditor } from '../skills-editor'
@@ -31,12 +31,16 @@ export function PersonFormDialog({ open, person, onOpenChange }: PersonFormDialo
   }
   const handleDateChange = (value: string, name: string) =>
     setValues((current) => ({ ...current, [name as PersonTextField]: value }))
-  const handleRoleChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const { value } = event.target
+  const roleOptions = roles.map((role) => ({ value: role, label: t(ROLE_LABELS[role]) }))
+  const activeOptions = [
+    { value: ACTIVE_OPTION.yes, label: t('Active') },
+    { value: ACTIVE_OPTION.no, label: t('Inactive') },
+  ]
+  const handleRoleChange = (value: string) => {
     if (isRole(value, roles)) setValues((current) => ({ ...current, role: value }))
   }
-  const handleActiveChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const active = event.target.value === ACTIVE_OPTION.yes
+  const handleActiveChange = (value: string) => {
+    const active = value === ACTIVE_OPTION.yes
     setValues((current) => ({ ...current, active }))
   }
   const handleSaved = () => {
@@ -93,26 +97,24 @@ export function PersonFormDialog({ open, person, onOpenChange }: PersonFormDialo
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="person-role">{t('Role')}</Label>
-              <NativeSelect id="person-role" className="w-full" value={values.role} onChange={handleRoleChange}>
-                {roles.map((role) => (
-                  <NativeSelectOption key={role} value={role}>
-                    {t(ROLE_LABELS[role])}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
+              <Select
+                id="person-role"
+                className="w-full"
+                options={roleOptions}
+                value={values.role}
+                onValueChange={handleRoleChange}
+              />
             </div>
             {person && (
               <div className="flex flex-col gap-2">
                 <Label htmlFor="person-active">{t('Status')}</Label>
-                <NativeSelect
+                <Select
                   id="person-active"
                   className="w-full"
+                  options={activeOptions}
                   value={values.active ? ACTIVE_OPTION.yes : ACTIVE_OPTION.no}
-                  onChange={handleActiveChange}
-                >
-                  <NativeSelectOption value={ACTIVE_OPTION.yes}>{t('Active')}</NativeSelectOption>
-                  <NativeSelectOption value={ACTIVE_OPTION.no}>{t('Inactive')}</NativeSelectOption>
-                </NativeSelect>
+                  onValueChange={handleActiveChange}
+                />
               </div>
             )}
             <div className="flex flex-col gap-2">

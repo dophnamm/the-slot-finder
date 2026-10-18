@@ -1,8 +1,7 @@
 import { Trash2 } from 'lucide-react'
-import type { ChangeEvent } from 'react'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
-import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
+import { Select } from '@/shared/ui/select'
 import { SKILL_LEVELS } from '@/utils/constants'
 import { PRIMARY_RADIO_NAME } from './constants'
 import type { SkillRowProps } from './types'
@@ -10,35 +9,29 @@ import type { SkillRowProps } from './types'
 export function SkillRow({ index, skill, expertises, expertisesLoading, onChange, onRemove }: SkillRowProps) {
   const { t } = useTranslation()
 
-  const handleExpertiseChange = (event: ChangeEvent<HTMLSelectElement>) =>
-    onChange(index, { ...skill, expertise_id: event.target.value })
-  const handleLevelChange = (event: ChangeEvent<HTMLSelectElement>) =>
-    onChange(index, { ...skill, level: Number(event.target.value) })
+  const expertiseOptions = expertises.map((expertise) => ({ value: expertise.id, label: expertise.name }))
+  const levelOptions = SKILL_LEVELS.map((level) => ({ value: String(level), label: t('Level {level}', { level }) }))
+  const handleExpertiseChange = (value: string) => onChange(index, { ...skill, expertise_id: value })
+  const handleLevelChange = (value: string) => onChange(index, { ...skill, level: Number(value) })
   const handlePrimaryChange = () => onChange(index, { ...skill, primary: true })
   const handleRemove = () => onRemove(index)
 
   return (
     <div className="flex items-center gap-2">
-      <NativeSelect
+      <Select
         className="flex-1"
         aria-label={t('Expertise')}
+        options={expertiseOptions}
         value={skill.expertise_id}
         isLoading={expertisesLoading}
-        onChange={handleExpertiseChange}
-      >
-        {expertises.map((expertise) => (
-          <NativeSelectOption key={expertise.id} value={expertise.id}>
-            {expertise.name}
-          </NativeSelectOption>
-        ))}
-      </NativeSelect>
-      <NativeSelect aria-label={t('Level')} value={String(skill.level)} onChange={handleLevelChange}>
-        {SKILL_LEVELS.map((level) => (
-          <NativeSelectOption key={level} value={String(level)}>
-            {t('Level {level}', { level })}
-          </NativeSelectOption>
-        ))}
-      </NativeSelect>
+        onValueChange={handleExpertiseChange}
+      />
+      <Select
+        aria-label={t('Level')}
+        options={levelOptions}
+        value={String(skill.level)}
+        onValueChange={handleLevelChange}
+      />
       <label className="flex items-center gap-2 text-sm">
         <input
           type="radio"

@@ -18,21 +18,28 @@ afterEach(() => {
 })
 
 describe('HeatmapFilters program select', () => {
-  it('starts on all programs and lists the programs', () => {
+  it('starts on all programs and lists the programs', async () => {
     render(<HeatmapFilters />)
 
-    expect((screen.getByLabelText('Program') as HTMLSelectElement).value).toBe('')
-    expect(screen.getByRole('option', { name: ALL_PROGRAMS })).toBeTruthy()
+    expect(screen.getByLabelText('Program').textContent).toBe(ALL_PROGRAMS)
+    fireEvent.click(screen.getByLabelText('Program'))
+    expect(await screen.findByRole('option', { name: ALL_PROGRAMS })).toBeTruthy()
     expect(screen.getByRole('option', { name: PROGRAM_NAME })).toBeTruthy()
   })
 
-  it('keeps the chosen program in the filters, and clears it again', () => {
+  it('keeps the chosen program in the filters, and clears it again', async () => {
     render(<HeatmapFilters />)
 
-    fireEvent.change(screen.getByLabelText('Program'), { target: { value: PROGRAM_ID } })
+    fireEvent.click(screen.getByLabelText('Program'))
+    const option = await screen.findByRole('option', { name: PROGRAM_NAME })
+    fireEvent.pointerDown(option)
+    fireEvent.click(option)
     expect(useHeatmapFilters.getState().programId).toBe(PROGRAM_ID)
 
-    fireEvent.change(screen.getByLabelText('Program'), { target: { value: '' } })
+    fireEvent.click(screen.getByLabelText('Program'))
+    const allOption = await screen.findByRole('option', { name: ALL_PROGRAMS })
+    fireEvent.pointerDown(allOption)
+    fireEvent.click(allOption)
     expect(useHeatmapFilters.getState().programId).toBe('')
   })
 })

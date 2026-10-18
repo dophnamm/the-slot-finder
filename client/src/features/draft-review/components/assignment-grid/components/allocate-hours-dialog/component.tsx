@@ -4,7 +4,7 @@ import { Button } from '@/shared/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
-import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
+import { Select } from '@/shared/ui/select'
 import { formatIsoWeekRange } from '@/utils/functions'
 import { MAX_WEEK_HOURS } from '../../constants'
 import { ALLOCATE_MODE } from './constants'
@@ -40,9 +40,15 @@ export function AllocateHoursDialog({ assignment, weeks, busy, onSave, onCancel 
       hours: averageHours(hours, count),
     })
   }
-  const handleFrom = (event: ChangeEvent<HTMLSelectElement>) => setFrom(event.target.value)
-  const handleTo = (event: ChangeEvent<HTMLSelectElement>) => setTo(event.target.value)
-  const handleMode = (event: ChangeEvent<HTMLSelectElement>) => setMode(event.target.value as AllocateMode)
+  const weekOptions = weeks.map((week) => ({
+    value: week,
+    label: t('{week} · {range}', { week, range: formatIsoWeekRange(week) }),
+  }))
+  const modeOptions = [
+    { value: ALLOCATE_MODE.perWeek, label: t('Hours per week') },
+    { value: ALLOCATE_MODE.total, label: t('Total hours') },
+  ]
+  const handleMode = (value: string) => setMode(value as AllocateMode)
   const handleValue = (event: ChangeEvent<HTMLInputElement>) => setValue(event.target.value)
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) onCancel()
@@ -67,30 +73,27 @@ export function AllocateHoursDialog({ assignment, weeks, busy, onSave, onCancel 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <Label htmlFor="allocate-from">{t('From week')}</Label>
-              <NativeSelect id="allocate-from" className="w-full" value={from} onChange={handleFrom}>
-                {weeks.map((week) => (
-                  <NativeSelectOption key={week} value={week}>
-                    {t('{week} · {range}', { week, range: formatIsoWeekRange(week) })}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
+              <Select
+                id="allocate-from"
+                className="w-full"
+                options={weekOptions}
+                value={from}
+                onValueChange={setFrom}
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="allocate-to">{t('To week')}</Label>
-              <NativeSelect id="allocate-to" className="w-full" value={to} onChange={handleTo}>
-                {weeks.map((week) => (
-                  <NativeSelectOption key={week} value={week}>
-                    {t('{week} · {range}', { week, range: formatIsoWeekRange(week) })}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
+              <Select id="allocate-to" className="w-full" options={weekOptions} value={to} onValueChange={setTo} />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="allocate-mode">{t('Mode')}</Label>
-              <NativeSelect id="allocate-mode" className="w-full" value={mode} onChange={handleMode}>
-                <NativeSelectOption value={ALLOCATE_MODE.perWeek}>{t('Hours per week')}</NativeSelectOption>
-                <NativeSelectOption value={ALLOCATE_MODE.total}>{t('Total hours')}</NativeSelectOption>
-              </NativeSelect>
+              <Select
+                id="allocate-mode"
+                className="w-full"
+                options={modeOptions}
+                value={mode}
+                onValueChange={handleMode}
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="allocate-hours">{hoursLabel}</Label>

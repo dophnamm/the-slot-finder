@@ -6,7 +6,7 @@ import { Button } from '@/shared/ui/button'
 import { DialogFooter } from '@/shared/ui/dialog'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
-import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select'
+import { Select } from '@/shared/ui/select'
 import { MAX_HOURS_PER_DAY } from '@/utils/constants'
 import { ABSENCE_STATUS_LABELS, ABSENCE_STATUSES, ABSENCE_TYPE_LABELS, PERSONAL_ABSENCE_TYPES } from '../../constants'
 import { useCreateAbsence } from '../../use-absences'
@@ -27,14 +27,14 @@ export function AbsenceForm({ personId, canApprove, onCreated }: AbsenceFormProp
   }
   const handleDateChange = (value: string, name: string) =>
     setValues((current) => ({ ...current, [name as AbsenceTextField]: value }))
-  const handleTypeChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const { value } = event.target
+  const handleTypeChange = (value: string) => {
     if (isAbsenceType(value)) setValues((current) => ({ ...current, type: value }))
   }
-  const handleStatusChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const { value } = event.target
+  const handleStatusChange = (value: string) => {
     if (isAbsenceStatus(value)) setValues((current) => ({ ...current, status: value }))
   }
+  const typeOptions = PERSONAL_ABSENCE_TYPES.map((type) => ({ value: type, label: t(ABSENCE_TYPE_LABELS[type]) }))
+  const statusOptions = ABSENCE_STATUSES.map((status) => ({ value: status, label: t(ABSENCE_STATUS_LABELS[status]) }))
   const handleCreated = () => {
     toast.success(t('Absence added.'))
     setValues(EMPTY_ABSENCE)
@@ -84,34 +84,24 @@ export function AbsenceForm({ personId, canApprove, onCreated }: AbsenceFormProp
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor={`absence-type-${personId}`}>{t('Type')}</Label>
-          <NativeSelect
+          <Select
             id={`absence-type-${personId}`}
             className="w-full"
+            options={typeOptions}
             value={values.type}
-            onChange={handleTypeChange}
-          >
-            {PERSONAL_ABSENCE_TYPES.map((type) => (
-              <NativeSelectOption key={type} value={type}>
-                {t(ABSENCE_TYPE_LABELS[type])}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
+            onValueChange={handleTypeChange}
+          />
         </div>
         {canApprove && (
           <div className="flex flex-col gap-2">
             <Label htmlFor={`absence-status-${personId}`}>{t('Status')}</Label>
-            <NativeSelect
+            <Select
               id={`absence-status-${personId}`}
               className="w-full"
+              options={statusOptions}
               value={values.status}
-              onChange={handleStatusChange}
-            >
-              {ABSENCE_STATUSES.map((status) => (
-                <NativeSelectOption key={status} value={status}>
-                  {t(ABSENCE_STATUS_LABELS[status])}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
+              onValueChange={handleStatusChange}
+            />
           </div>
         )}
       </div>
