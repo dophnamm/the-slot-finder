@@ -131,6 +131,7 @@ export type LanguageKey = {
   Coverage: string
   Covered: string
   Covers: string
+  'Create project': string
   'Create scenario': string
   Created: string
   'Created {created}, updated {updated}, unchanged {unchanged}': string
@@ -376,6 +377,7 @@ export type LanguageKey = {
   'Open Ask AI': string
   'Open draft ({status})': string
   'Open navigation': string
+  'Open project': string
   'Open staffing drafts': string
   'Open the charter': string
   'Open the latest version': string
@@ -438,6 +440,7 @@ export type LanguageKey = {
   Programs: string
   Progress: string
   Project: string
+  'Project created.': string
   'Project not found': string
   'Project saved.': string
   'Project updated.': string
@@ -470,6 +473,7 @@ export type LanguageKey = {
   Resume: string
   'Review draft': string
   'Review staffing drafts, edit the weekly hours, then accept one as the new baseline.': string
+  'Review the suggestion and fix anything wrong. Nothing is saved until you create the project.': string
   Risks: string
   Role: string
   'Run again': string
@@ -487,6 +491,7 @@ export type LanguageKey = {
   Search: string
   'Secret iCal address': string
   'See who is overloaded or idle each week, and which deadlines are at risk.': string
+  'Select an expertise': string
   Send: string
   'Sets the hours of {name} for many weeks at once. Locked weeks keep their hours.': string
   'Short of free hours': string
@@ -549,6 +554,7 @@ export type LanguageKey = {
   'The people this program’s projects are staffed from. A draft proposes only them.': string
   'The plan in force: the staffing everyone works to until a newer draft is accepted.': string
   'The program team has nobody else with this expertise at this level.': string
+  'The project was created without its demand. Add the demand on the project page.': string
   'The real plan is not affected.': string
   'The role must be planner, manager or specialist.': string
   'The same email appears more than once.': string
