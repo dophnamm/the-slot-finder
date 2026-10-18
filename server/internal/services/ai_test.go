@@ -29,7 +29,7 @@ type listProjects struct {
 }
 
 func (l listProjects) ListByStatus(ctx context.Context, in ListProjectsInput) (*dtos.DataResponse[models.Project], error) {
-	if _, err := l.authz.ProgramReader(ctx); err != nil {
+	if _, err := l.authz.Require(ctx, CanUsePrograms); err != nil {
 		return nil, err
 	}
 	*l.got = in

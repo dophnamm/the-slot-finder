@@ -62,9 +62,16 @@ func (s *programTeamService) List(ctx context.Context, programID string) ([]mode
 	if err := requireProgramReader(ctx, s.authz, s.projects, program, opListTeam); err != nil {
 		return nil, err
 	}
+	principal, err := s.authz.Principal(ctx)
+	if err != nil {
+		return nil, err
+	}
 	members, err := s.teams.ListByProgram(ctx, programID)
 	if err != nil {
 		return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(opListTeam).WithResource(resourceTeam)
+	}
+	if !CanUsePrograms(principal) {
+		return specialistTeam(members), nil
 	}
 	baseline, err := findBaseline(ctx, s.plans, opListTeam, true)
 	if err != nil {
@@ -83,6 +90,18 @@ func (s *programTeamService) List(ctx context.Context, programID string) ([]mode
 		out = append(out, member)
 	}
 	return out, nil
+}
+
+// specialistTeam is a program's team as a specialist may see it: names only,
+// with no skills, hours, levels, contact details, capacity or dates.
+func specialistTeam(members []models.ProgramTeamMember) []models.TeamMember {
+	out := make([]models.TeamMember, 0, len(members))
+	for _, m := range members {
+		person := models.Person{BaseModel: models.BaseModel{ID: m.Person.ID}, Name: m.Person.Name, Active: m.Person.Active,
+			Skills: []models.PersonSkill{}}
+		out = append(out, models.TeamMember{Person: person})
+	}
+	return out
 }
 
 func (s *programTeamService) Add(ctx context.Context, programID, personID string) error {

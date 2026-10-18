@@ -36,6 +36,9 @@ var (
 	// ProgramRoles may reach the program and project routes; managers may edit only the
 	// programs and projects they lead (checked in the service).
 	ProgramRoles = []string{RolePlanner, RoleManager}
+	// ProgramViewRoles may read programs, their projects and phases, and a program's team:
+	// read-only for a specialist, and only the programs they work on (checked in the service).
+	ProgramViewRoles = []string{RolePlanner, RoleManager, RoleSpecialist}
 	// ProgramManageAllRoles may edit every program and project and choose their leads.
 	ProgramManageAllRoles = []string{RolePlanner}
 	// PlanViewRoles may read the baseline and staffing drafts.
@@ -46,8 +49,9 @@ var (
 	// a manager acts only on drafts whose projects all belong to programs they lead
 	// (checked in the staffing service).
 	DraftRoles = []string{RolePlanner, RoleManager}
-	// ProgramTeamViewRoles may read a program's team; a manager only for the programs they lead.
-	ProgramTeamViewRoles = []string{RolePlanner, RoleManager}
+	// ProgramTeamViewRoles may read a program's team; a manager only for the programs they lead,
+	// a specialist only for the programs they work on and without hours or contact details.
+	ProgramTeamViewRoles = []string{RolePlanner, RoleManager, RoleSpecialist}
 	// ProgramTeamManageRoles may add and remove team members.
 	ProgramTeamManageRoles = []string{RolePlanner}
 	// PersonAssignmentRoles may reach a person's assignments; the service lets a specialist

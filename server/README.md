@@ -127,27 +127,27 @@ All paths below are under **`/api/v1`**. Every endpoint except health checks req
 
 **Programs and projects**
 
-A manager reads only the programs they lead or lead a project in, and the people of those programs' teams: `GET /programs`, `GET /projects` and the risks leave the others out, and the routes of another program or its projects answer `403`.
+A manager reads only the programs they lead or lead a project in, and the people of those programs' teams: `GET /programs`, `GET /projects` and the risks leave the others out, and the routes of another program or its projects answer `403`. A specialist reads, read only, the programs they lead, lead a project in, or have baseline hours in: the program GET routes, the team, and the project GET routes for the projects they lead or have baseline hours on (all of a program's projects when they lead it; another project answers `403`), with no demand, budget or progress figures and team members by name only.
 
 | Method | Path | Purpose | Roles |
 |---|---|---|---|
-| GET, POST | `/programs` | List or create programs | planner, manager |
-| GET | `/programs/{id}` | Program record: brief, timeline, status | planner, manager |
+| GET, POST | `/programs` | List or create programs | planner, manager; GET also specialist (read only) |
+| GET | `/programs/{id}` | Program record: brief, timeline, status | planner, manager, specialist (read only) |
 | PATCH | `/programs/{id}` | Edit a program. Records `ProgramSlipped` when the end date changes | planner, manager (own) |
 | POST | `/programs/{id}/actions/{hold\|resume\|start-closing\|close\|cancel}` | Change program state through an action. `cancel` also cancels the program's open projects | planner, manager (own) |
 | GET | `/programs/{id}/overview` | Header metrics (Time, Scope, Planned burn, Burn from actual hours, Staffing with warnings), cost figures (budget, planned, planned to date, actual, forecast, gap; EAC hours later), staffing by expertise | planner, manager |
-| GET | `/programs/{id}/projects` | Projects tab: rows in priority order with a `metrics` object (Time / Scope / Planned burn / Burn / Staffing and warnings, and the baseline hours planned next week and in the next three weeks: `next_week_hours`, `next_three_weeks_hours`) | planner, manager |
+| GET | `/programs/{id}/projects` | Projects tab: rows in priority order with a `metrics` object (Time / Scope / Planned burn / Burn / Staffing and warnings, and the baseline hours planned next week and in the next three weeks: `next_week_hours`, `next_three_weeks_hours`); a specialist gets only the projects they work on, without `metrics` | planner, manager, specialist (read only) |
 | POST | `/programs/{id}/projects` | Add a project to the program; it goes last in the priority order unless `priority` is sent. Its start and deadline must lie within `PROJECT_WINDOW_WEEKS` of the current week, else `400 WEEK_OUT_OF_WINDOW` | planner, manager (own) |
 | PUT | `/programs/{id}/project-order` | Set the priority order: `{ project_ids }` lists every project of the program, highest priority first, and they get priority 1..N. `422 PROJECT_ORDER_MISMATCH` when the list is not exactly the program's projects | planner, manager (own) |
 | GET | `/programs/{id}/members` | The Programs list preview: everyone with baseline hours on the program's projects, most hours first, with hours per expertise and kind, first and last week, and projects (overall utilization later) | planner, manager |
-| GET | `/programs/{id}/team` | Team tab: the people the program's projects are staffed from, each with their skills and their hours, first and last week and projects in this program's baseline (0 h until a draft gives them some) | planner, manager (own) |
+| GET | `/programs/{id}/team` | Team tab: the people the program's projects are staffed from, each with their skills and their hours, first and last week and projects in this program's baseline (0 h until a draft gives them some); a specialist gets names only | planner, manager (own), specialist (read only, programs they work on) |
 | POST | `/programs/{id}/team` | Add a member: `{ person_id }`; `409 TEAM_MEMBER_EXISTS` when already in | planner |
 | DELETE | `/programs/{id}/team/{personId}` | Remove a member; their baseline hours stay, the next draft plans without them (`404 TEAM_MEMBER_NOT_FOUND`) | planner |
 | GET | `/projects` | Projects across programs (filter by `status`) | planner, manager |
-| GET | `/projects/{id}` | Project record with its phases, its demand (each row with the weeks it may be staffed in) and the program's lead | planner, manager |
+| GET | `/projects/{id}` | Project record with its phases, its demand (each row with the weeks it may be staffed in) and the program's lead; a specialist gets no demand, and `403` on a project they do not work on | planner, manager, specialist (read only) |
 | PATCH | `/projects/{id}` | Edit a project, including `scope_points` and `done_points` (`confidence`: later). Moving the deadline emits `ProjectSlipped`. A changed date outside `PROJECT_WINDOW_WEEKS` gets `400 WEEK_OUT_OF_WINDOW` | planner, manager (own) |
 | POST | `/projects/{id}/actions/{hold\|resume\|complete\|cancel}` | Change project state through an action | planner, manager (own) |
-| GET, PUT | `/projects/{id}/phases` | Ordered phases of a project (PUT replaces the whole list; removing a phase that still has demand gets `409 PHASE_IN_USE`; a changed week outside `PROJECT_WINDOW_WEEKS` gets `400 WEEK_OUT_OF_WINDOW`, and a new or moved phase outside the project's start and deadline weeks gets `400 PHASE_OUTSIDE_PROJECT`, but a rename of an old phase still works) | planner, manager (own) |
+| GET, PUT | `/projects/{id}/phases` | Ordered phases of a project (PUT replaces the whole list; removing a phase that still has demand gets `409 PHASE_IN_USE`; a changed week outside `PROJECT_WINDOW_WEEKS` gets `400 WEEK_OUT_OF_WINDOW`, and a new or moved phase outside the project's start and deadline weeks gets `400 PHASE_OUTSIDE_PROJECT`, but a rename of an old phase still works) | GET: planner, manager, specialist (read only, projects they work on); PUT: planner, manager (own) |
 | PATCH | `/phases/{id}` | Edit a phase. Moving its end week later shifts every later phase by the same weeks and emits `PhaseSlipped`. Returns every phase it changed. A changed week outside `PROJECT_WINDOW_WEEKS` gets `400 WEEK_OUT_OF_WINDOW`; the edited phase must lie within the project's start and deadline weeks (`400 PHASE_OUTSIDE_PROJECT`), but phases shifted by the slip may pass the deadline | planner, manager (own) |
 | PUT | `/projects/{id}/demands` | Staffing demand: budget hours per expertise and level, each with an optional `phase_id`, `headcount` and `profile` (`flat` only). `400 DEMAND_HOURS_STEP` when a total is not a multiple of `PLANNING_HOUR_STEP`; `409 DEMAND_IN_USE` when a removed demand holds staffed hours in past weeks of the baseline | planner, manager (own) |
 

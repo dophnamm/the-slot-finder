@@ -171,3 +171,15 @@ func TestAIService_ExtractIntake_providerErrors(t *testing.T) {
 }
 
 func intakeLead(id string) *string { return &id }
+
+// A specialist is turned away before any program is read.
+func TestAIService_ExtractIntake_specialistReadsNothing(t *testing.T) {
+	var in ListProgramsInput
+	svc := &aiService{llm: &scriptedLLM{}, authz: ProvideAuthzService(leadPeople{}), people: intakeExpertises{},
+		programs: intakePrograms{got: &in}, cfg: &config.Config{LLMAPIKey: "k"}}
+	_, err := svc.ExtractIntake(asRole("kc-specialist", constants.RoleSpecialist), IntakeInput{Text: intakeBrief})
+	var appErr *errors.AppError
+	require.ErrorAs(t, err, &appErr)
+	assert.Equal(t, constants.Forbidden, appErr.Code)
+	assert.Zero(t, in.PageSize)
+}

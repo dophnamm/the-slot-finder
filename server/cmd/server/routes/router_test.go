@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"the-slot-finder/server/internal/clock"
 	"the-slot-finder/server/internal/config"
 	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/dtos"
@@ -77,6 +78,13 @@ func newTestRouter(cfg *config.Config) *echo.Echo {
 
 // newTestRouterWith is newTestRouter with an availability service behind the absence routes.
 func newTestRouterWith(cfg *config.Config, availability services.AvailabilityService) *echo.Echo {
+	return newTestRouterWithPrograms(cfg, availability, nil, nil, nil)
+}
+
+// newTestRouterWithPrograms is newTestRouterWith with services behind the program, project and team routes.
+func newTestRouterWithPrograms(cfg *config.Config, availability services.AvailabilityService, programs services.ProgramService,
+	projects services.ProjectService, teams services.ProgramTeamService,
+) *echo.Echo {
 	verifier := fakeVerifier{
 		"planner-token":    userClaims("planner", constants.RolePlanner, "offline_access"),
 		"manager-token":    userClaims("manager", constants.RoleManager),
@@ -88,8 +96,8 @@ func newTestRouterWith(cfg *config.Config, availability services.AvailabilitySer
 	health := handlers.ProvideHealthHandler(cfg, nil)
 	person := handlers.ProvidePersonHandler(nil, authz, nil)
 	absence := handlers.ProvideAbsenceHandler(availability, nil)
-	program := handlers.ProvideProgramHandler(nil, nil)
-	project := handlers.ProvideProjectHandler(nil, nil, nil, nil)
+	program := handlers.ProvideProgramHandler(programs, nil)
+	project := handlers.ProvideProjectHandler(projects, nil, clock.NewFixed(time.Date(2026, time.October, 12, 0, 0, 0, 0, time.UTC)), nil)
 	plan := handlers.ProvidePlanHandler(nil, nil)
 	staffing := handlers.ProvideStaffingHandler(nil, nil)
 	insights := handlers.ProvideInsightsHandler(nil, nil)
@@ -99,7 +107,7 @@ func newTestRouterWith(cfg *config.Config, availability services.AvailabilitySer
 	timesheets := handlers.ProvideTimesheetHandler(nil, nil)
 	calendarFeeds := handlers.ProvideCalendarFeedHandler(nil, nil)
 	return Router(health, identity, person, absence, program, project, plan, staffing, insights, events, scenarios, schedule,
-		timesheets, calendarFeeds, handlers.ProvideProgramTeamHandler(nil, nil),
+		timesheets, calendarFeeds, handlers.ProvideProgramTeamHandler(teams, nil),
 		handlers.ProvideHolidayImportHandler(nil, nil), handlers.ProvidePeopleImportHandler(nil), handlers.ProvideAIHandler(fakeAI{}, validator.New()), verifier, cfg)
 }
 
@@ -268,13 +276,16 @@ func TestRouter_People_RBAC(t *testing.T) {
 		{name: "no token", method: http.MethodGet, path: constants.PathExpertises, wantStatus: http.StatusUnauthorized},
 		{name: "manager cannot add holidays", method: http.MethodPost, path: constants.PathHolidays, token: "manager-token", wantStatus: http.StatusForbidden},
 		{name: "manager cannot import holidays", method: http.MethodPost, path: constants.PathHolidayImport, token: "manager-token", wantStatus: http.StatusForbidden},
-		{name: "specialist cannot list programs", method: http.MethodGet, path: constants.PathPrograms, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot create programs", method: http.MethodPost, path: constants.PathPrograms, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the intake queue", method: http.MethodGet, path: constants.PathProjects, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot move phases", method: http.MethodPatch, path: "/phases/0192f3a4-0000-7000-8000-0000000000aa", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot reorder projects", method: http.MethodPut, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/project-order", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no role cannot read absences", method: http.MethodGet, path: "/people/0192f3a4-0000-7000-8000-0000000000aa/absences", token: "no-role-token", wantStatus: http.StatusForbidden},
-		{name: "specialist cannot read a program team", method: http.MethodGet, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/team", token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot add a team member", method: http.MethodPost, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/team", token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot edit a program", method: http.MethodPatch, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa", token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot edit a project", method: http.MethodPatch, path: "/projects/0192f3a4-0000-7000-8000-0000000000aa", token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot replace demand", method: http.MethodPut, path: "/projects/0192f3a4-0000-7000-8000-0000000000aa/demands", token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot replace phases", method: http.MethodPut, path: "/projects/0192f3a4-0000-7000-8000-0000000000aa/phases", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "manager cannot add a team member", method: http.MethodPost, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/team", token: "manager-token", wantStatus: http.StatusForbidden},
 		{name: "manager cannot remove a team member", method: http.MethodDelete, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/team/0192f3a4-0000-7000-8000-0000000000bb", token: "manager-token", wantStatus: http.StatusForbidden},
 		{name: "no token cannot read a program team", method: http.MethodGet, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/team", wantStatus: http.StatusUnauthorized},
@@ -291,6 +302,9 @@ func TestRouter_People_RBAC(t *testing.T) {
 		{name: "specialist cannot read a scenario", method: http.MethodGet, path: "/scenarios/0192f3a4-0000-7000-8000-0000000000aa", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "manager cannot run a scenario again", method: http.MethodPost, path: "/scenarios/0192f3a4-0000-7000-8000-0000000000aa/rerun", token: "manager-token", wantStatus: http.StatusForbidden},
 		{name: "manager cannot delete a scenario", method: http.MethodDelete, path: "/scenarios/0192f3a4-0000-7000-8000-0000000000aa", token: "manager-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot add a project", method: http.MethodPost, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/projects", token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot act on a program", method: http.MethodPost, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/actions/" + constants.ProgramActionHold, token: "specialist-token", wantStatus: http.StatusForbidden},
+		{name: "specialist cannot act on a project", method: http.MethodPost, path: "/projects/0192f3a4-0000-7000-8000-0000000000aa/actions/" + constants.ProjectActionComplete, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read program members", method: http.MethodGet, path: "/programs/0192f3a4-0000-7000-8000-0000000000aa/members", token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "specialist cannot read the bench", method: http.MethodGet, path: constants.PathBench, token: "specialist-token", wantStatus: http.StatusForbidden},
 		{name: "no role cannot read the bench", method: http.MethodGet, path: constants.PathBench, token: "no-role-token", wantStatus: http.StatusForbidden},
@@ -337,6 +351,43 @@ func TestRouter_People_RBAC(t *testing.T) {
 			rec := httptest.NewRecorder()
 			e.ServeHTTP(rec, req)
 			assert.Equal(t, tt.wantStatus, rec.Code, rec.Body.String())
+		})
+	}
+}
+
+// The fakes below answer a program, project or team read with an empty result, so a request
+// that passes the role check gets 200.
+type viewingPrograms struct{ services.ProgramService }
+
+func (viewingPrograms) List(context.Context, services.ListProgramsInput) (*dtos.DataResponse[models.Program], error) {
+	return &dtos.DataResponse[models.Program]{Data: []models.Program{}, Pageable: &dtos.Pageable{}}, nil
+}
+
+type viewingProjects struct{ services.ProjectService }
+
+func (viewingProjects) Get(context.Context, string) (*models.Project, error) {
+	return &models.Project{}, nil
+}
+
+func (viewingProjects) ListByProgram(context.Context, string) ([]models.Project, error) {
+	return []models.Project{{}}, nil
+}
+
+type viewingTeams struct{ services.ProgramTeamService }
+
+func (viewingTeams) List(context.Context, string) ([]models.TeamMember, error) { return nil, nil }
+
+// A specialist reads programs, a program's team and a project's phases; the service narrows them.
+func TestRouter_Programs_SpecialistReads(t *testing.T) {
+	e := newTestRouterWithPrograms(baseConfig(), nil, viewingPrograms{}, viewingProjects{}, viewingTeams{})
+	id := "0192f3a4-0000-7000-8000-0000000000aa"
+	for _, path := range []string{constants.PathPrograms, "/programs/" + id + "/team", "/projects/" + id + "/phases", "/programs/" + id + "/projects"} {
+		t.Run(path, func(t *testing.T) {
+			rec := get(e, constants.PathAPIBase+path, "specialist-token")
+			assert.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+			if strings.HasSuffix(path, "/projects") {
+				assert.NotContains(t, rec.Body.String(), `"metrics"`)
+			}
 		})
 	}
 }

@@ -60,6 +60,12 @@ func CanUsePrograms(principal request.Principal) bool {
 	return principal.HasAnyRole(constants.ProgramRoles...)
 }
 
+// CanViewPrograms allows planners, managers and specialists to read programs and projects;
+// the program reader narrows which ones.
+func CanViewPrograms(principal request.Principal) bool {
+	return principal.HasAnyRole(constants.ProgramViewRoles...)
+}
+
 // CanViewPlans allows planners and leads to read the baseline and staffing drafts.
 func CanViewPlans(principal request.Principal) bool {
 	return principal.HasAnyRole(constants.PlanViewRoles...)
@@ -106,8 +112,8 @@ type AuthzService interface {
 	// and answers 403 otherwise.
 	RequireVisiblePerson(ctx context.Context, personID string) (request.Principal, error)
 	// ProgramReader says whose programs the signed-in user may read: every program for a
-	// planner, and for a manager the programs they lead or lead a project in. Anyone
-	// else gets a 403 error.
+	// planner, and for a manager the programs they lead or lead a project in. A specialist
+	// reads those too, plus the programs their baseline assignments touch (OnBaseline).
 	ProgramReader(ctx context.Context) (ProgramReader, error)
 }
 
@@ -115,8 +121,12 @@ type AuthzService interface {
 type ProgramReader struct {
 	// All is true for a planner, who reads every program.
 	All bool
-	// LeadID is a manager's person id; empty when they have no person record, so they read none.
+	// LeadID is a manager's or specialist's person id; empty when they have no person record,
+	// so they read none.
 	LeadID string
+	// OnBaseline is true for a specialist, who also reads a program when LeadID has baseline
+	// hours on one of its projects.
+	OnBaseline bool
 }
 
 // PeopleScope is whose people data the signed-in user may read.
@@ -285,7 +295,7 @@ func (s authzService) RequireVisiblePerson(ctx context.Context, personID string)
 }
 
 func (s authzService) ProgramReader(ctx context.Context) (ProgramReader, error) {
-	principal, err := s.Require(ctx, CanUsePrograms)
+	principal, err := s.Require(ctx, CanViewPrograms)
 	if err != nil {
 		return ProgramReader{}, err
 	}
@@ -303,5 +313,5 @@ func (s authzService) ProgramReader(ctx context.Context) (ProgramReader, error) 
 	if self == nil {
 		return ProgramReader{}, nil
 	}
-	return ProgramReader{LeadID: self.ID}, nil
+	return ProgramReader{LeadID: self.ID, OnBaseline: !CanUsePrograms(principal)}, nil
 }

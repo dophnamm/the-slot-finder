@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"the-slot-finder/server/internal/clock"
 	"the-slot-finder/server/internal/constants"
 	"the-slot-finder/server/internal/dtos"
 	"the-slot-finder/server/internal/models"
@@ -32,6 +33,18 @@ func (l ledProjects) LeadsProjectIn(_ context.Context, programID, personID strin
 	return false, nil
 }
 
+func (ledProjects) OnBaselineIn(context.Context, string, string) (bool, error) { return false, nil }
+
+// workedPrograms adds, per program, who has baseline hours on one of its projects.
+type workedPrograms struct {
+	ledProjects
+	worked ledProjects
+}
+
+func (w workedPrograms) OnBaselineIn(ctx context.Context, programID, personID string) (bool, error) {
+	return w.worked.LeadsProjectIn(ctx, programID, personID)
+}
+
 func ledProgram(id, leadID string) *models.Program {
 	return &models.Program{BaseModel: models.BaseModel{ID: id}, LeadID: &leadID}
 }
@@ -51,12 +64,20 @@ func TestAuthzService_ProgramReader(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, ProgramReader{}, unknown, "a manager without a person record reads no program")
 
-	_, err = authz.ProgramReader(asRole("kc-specialist", constants.RoleSpecialist))
+	specialist, err := authz.ProgramReader(asRole("kc-specialist", constants.RoleSpecialist))
+	require.NoError(t, err)
+	assert.Equal(t, ProgramReader{LeadID: selfPersonID, OnBaseline: true}, specialist, "a specialist also reads where they have baseline hours")
+
+	none, err := authz.ProgramReader(asRole("kc-unknown-specialist", constants.RoleSpecialist))
+	require.NoError(t, err)
+	assert.Equal(t, ProgramReader{}, none, "a specialist without a person record reads no program")
+
+	_, err = authz.ProgramReader(asRole("kc-nobody", "offline_access"))
 	requireStatus(t, err, http.StatusForbidden)
 }
 
 func TestRequireProgramReader(t *testing.T) {
-	projects := ledProjects{projectProgramID: {managerPersonID}}
+	projects := workedPrograms{ledProjects: ledProjects{projectProgramID: {managerPersonID}}, worked: ledProjects{ownProgramID: {selfPersonID}}}
 	tests := []struct {
 		name    string
 		ctx     context.Context
@@ -73,6 +94,12 @@ func TestRequireProgramReader(t *testing.T) {
 			program: ledProgram(foreignProgramID, outsiderPersonID)},
 		{name: "a manager without a person record reads none", ctx: asRole("kc-unknown-manager", constants.RoleManager),
 			program: ledProgram(ownProgramID, managerPersonID)},
+		{name: "a specialist reads a program where they have baseline hours", ctx: asRole("kc-specialist", constants.RoleSpecialist),
+			program: ledProgram(ownProgramID, outsiderPersonID), allowed: true},
+		{name: "a specialist cannot read a program where they have none", ctx: asRole("kc-specialist", constants.RoleSpecialist),
+			program: ledProgram(foreignProgramID, outsiderPersonID)},
+		{name: "a manager does not read a program by baseline hours", ctx: asRole("kc-manager", constants.RoleManager),
+			program: ledProgram(ownProgramID, outsiderPersonID)},
 		{name: "a program without a lead is the planner's", ctx: asRole("kc-manager", constants.RoleManager),
 			program: &models.Program{BaseModel: models.BaseModel{ID: foreignProgramID}}},
 	}
@@ -122,7 +149,7 @@ func TestProgramService_List_ByReader(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			repo := new(MockProgramRepository)
 			if tt.listed {
-				repo.On("List", mock.Anything, mock.Anything, readerIs(tt.readerID)).
+				repo.On("List", mock.Anything, mock.Anything, readerIs(tt.readerID), false).
 					Return(&dtos.DataResponse[models.Program]{Data: []models.Program{{Name: "Acme"}}}, nil)
 			}
 			page, err := newProgramService(repo).List(tt.ctx, ListProgramsInput{Page: 1, PageSize: 20})
@@ -131,6 +158,138 @@ func TestProgramService_List_ByReader(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+}
+
+func TestProgramService_List_Specialist(t *testing.T) {
+	self := selfPersonID
+	repo := new(MockProgramRepository)
+	repo.On("List", mock.Anything, mock.Anything, readerIs(&self), true).
+		Return(&dtos.DataResponse[models.Program]{Data: []models.Program{{Name: "Acme"}}}, nil)
+	service := ProvideProgramService(repo, nil, leadPeople{}, ProvideAuthzService(selfFinder{"kc-specialist": selfPersonID}),
+		passthroughTx{}, &recordedEvents{})
+
+	page, err := service.List(asRole("kc-specialist", constants.RoleSpecialist), ListProgramsInput{Page: 1, PageSize: 20})
+	require.NoError(t, err)
+	assert.Len(t, page.Data, 1)
+	repo.AssertExpectations(t)
+
+	page, err = service.List(asRole("kc-unknown-specialist", constants.RoleSpecialist), ListProgramsInput{Page: 1, PageSize: 20})
+	require.NoError(t, err)
+	assert.Empty(t, page.Data, "a specialist without a person record lists none")
+}
+
+func TestProjectService_Specialist_ReadsWithoutWork(t *testing.T) {
+	other := otherPersonID2
+	specialist := asRole("kc-specialist", constants.RoleSpecialist)
+	newService := func(projects *MockProjectRepository, programs *MockProgramRepository) ProjectService {
+		people := knownExpertisePeople{}
+		return ProvideProjectService(projects, programs, people, ProvideAuthzService(selfFinder{"kc-specialist": selfPersonID}),
+			passthroughTx{}, &recordedEvents{}, projectConfig(), clock.NewFixed(acceptedAt))
+	}
+	detail := func() *models.Project {
+		return &models.Project{BaseModel: models.BaseModel{ID: projectID}, ProgramID: programID, ScopePoints: 40, DonePoints: 10,
+			Program: &models.Program{BaseModel: models.BaseModel{ID: programID}, LeadID: &other},
+			Demands: []models.Demand{{TotalHours: 120}}}
+	}
+
+	t.Run("project detail has no demand or points", func(t *testing.T) {
+		projects := new(MockProjectRepository)
+		projects.On("FindDetail", mock.Anything, projectID).Return(detail(), nil)
+		projects.On("LeadsProjectIn", mock.Anything, programID, selfPersonID).Return(false, nil)
+		projects.On("OnBaselineIn", mock.Anything, programID, selfPersonID).Return(true, nil)
+		projects.On("OnBaselineProjects", mock.Anything, programID, selfPersonID).Return([]string{projectID}, nil)
+		project, err := newService(projects, nil).Get(specialist, projectID)
+		require.NoError(t, err)
+		assert.Empty(t, project.Demands)
+		assert.Zero(t, project.ScopePoints+project.DonePoints)
+	})
+
+	t.Run("a manager still gets the demand", func(t *testing.T) {
+		projects := new(MockProjectRepository)
+		projects.On("FindDetail", mock.Anything, projectID).Return(detail(), nil)
+		projects.On("LeadsProjectIn", mock.Anything, programID, leadPersonID).Return(true, nil)
+		project, err := newProjectService(projects, nil).Get(asRole("kc-manager", constants.RoleManager), projectID)
+		require.NoError(t, err)
+		assert.Len(t, project.Demands, 1)
+		assert.Equal(t, 40.0, project.ScopePoints)
+	})
+
+	t.Run("project list has no points", func(t *testing.T) {
+		projects, programs := new(MockProjectRepository), new(MockProgramRepository)
+		programs.On("FindWithLead", mock.Anything, programID).Return(program(constants.ProgramStatusOpen, &other), nil)
+		projects.On("LeadsProjectIn", mock.Anything, programID, selfPersonID).Return(false, nil)
+		projects.On("OnBaselineIn", mock.Anything, programID, selfPersonID).Return(true, nil)
+		projects.On("OnBaselineProjects", mock.Anything, programID, selfPersonID).Return([]string{projectID}, nil)
+		projects.On("ListByProgram", mock.Anything, programID).Return([]models.Project{*detail()}, nil)
+		list, err := newService(projects, programs).ListByProgram(specialist, programID)
+		require.NoError(t, err)
+		require.Len(t, list, 1)
+		assert.Zero(t, list[0].ScopePoints+list[0].DonePoints)
+	})
+
+	t.Run("project list keeps only the projects they work on or lead", func(t *testing.T) {
+		const worked, led, notMine = "p-worked", "p-led", "p-not-mine"
+		self := selfPersonID
+		projects, programs := new(MockProjectRepository), new(MockProgramRepository)
+		programs.On("FindWithLead", mock.Anything, programID).Return(program(constants.ProgramStatusOpen, &other), nil)
+		projects.On("LeadsProjectIn", mock.Anything, programID, selfPersonID).Return(true, nil)
+		projects.On("OnBaselineProjects", mock.Anything, programID, selfPersonID).Return([]string{worked}, nil)
+		projects.On("ListByProgram", mock.Anything, programID).Return([]models.Project{
+			{BaseModel: models.BaseModel{ID: worked}}, {BaseModel: models.BaseModel{ID: notMine}}, {BaseModel: models.BaseModel{ID: led}, LeadID: &self}}, nil)
+		list, err := newService(projects, programs).ListByProgram(specialist, programID)
+		require.NoError(t, err)
+		require.Len(t, list, 2)
+		assert.Equal(t, []string{worked, led}, []string{list[0].ID, list[1].ID})
+	})
+
+	t.Run("the program lead sees every project", func(t *testing.T) {
+		self := selfPersonID
+		projects, programs := new(MockProjectRepository), new(MockProgramRepository)
+		programs.On("FindWithLead", mock.Anything, programID).Return(program(constants.ProgramStatusOpen, &self), nil)
+		projects.On("ListByProgram", mock.Anything, programID).Return([]models.Project{{BaseModel: models.BaseModel{ID: "a"}}, {BaseModel: models.BaseModel{ID: "b"}}}, nil)
+		list, err := newService(projects, programs).ListByProgram(specialist, programID)
+		require.NoError(t, err)
+		assert.Len(t, list, 2)
+	})
+
+	t.Run("a project they lead is readable without hours", func(t *testing.T) {
+		self := selfPersonID
+		d := detail()
+		d.LeadID = &self
+		projects := new(MockProjectRepository)
+		projects.On("FindDetail", mock.Anything, projectID).Return(d, nil)
+		projects.On("LeadsProjectIn", mock.Anything, programID, selfPersonID).Return(true, nil)
+		projects.On("OnBaselineProjects", mock.Anything, programID, selfPersonID).Return(nil, nil)
+		_, err := newService(projects, nil).Get(specialist, projectID)
+		require.NoError(t, err)
+	})
+
+	t.Run("another project of a readable program gets 403, for the project and its phases", func(t *testing.T) {
+		projects := new(MockProjectRepository)
+		projects.On("FindDetail", mock.Anything, projectID).Return(detail(), nil)
+		projects.On("LeadsProjectIn", mock.Anything, programID, selfPersonID).Return(false, nil)
+		projects.On("OnBaselineIn", mock.Anything, programID, selfPersonID).Return(true, nil)
+		projects.On("OnBaselineProjects", mock.Anything, programID, selfPersonID).Return([]string{"another-project"}, nil)
+		// The phases route reads through Get.
+		_, err := newService(projects, nil).Get(specialist, projectID)
+		requireStatus(t, err, http.StatusForbidden)
+	})
+
+	t.Run("not on the baseline gets 403", func(t *testing.T) {
+		projects := new(MockProjectRepository)
+		projects.On("FindDetail", mock.Anything, projectID).Return(detail(), nil)
+		projects.On("LeadsProjectIn", mock.Anything, programID, selfPersonID).Return(false, nil)
+		projects.On("OnBaselineIn", mock.Anything, programID, selfPersonID).Return(false, nil)
+		_, err := newService(projects, nil).Get(specialist, projectID)
+		requireStatus(t, err, http.StatusForbidden)
+	})
+}
+
+func TestInsightsService_ProjectMetrics_NotForSpecialist(t *testing.T) {
+	authz := ProvideAuthzService(selfFinder{"kc-specialist": selfPersonID})
+	service, _ := newMetricsServiceWith(t, map[string]float64{}, authz)
+	_, err := service.ProjectMetrics(asRole("kc-specialist", constants.RoleSpecialist), metricsProgramID)
+	requireStatus(t, err, http.StatusForbidden)
 }
 
 func TestProgramService_Get_ByReader(t *testing.T) {
@@ -170,6 +329,16 @@ func TestProjectService_ListByStatus_ByReader(t *testing.T) {
 			projects.AssertExpectations(t)
 		})
 	}
+}
+
+func TestProjectService_ListByStatus_NotForSpecialist(t *testing.T) {
+	projects := new(MockProjectRepository)
+	people := knownExpertisePeople{}
+	service := ProvideProjectService(projects, nil, people, ProvideAuthzService(selfFinder{"kc-specialist": selfPersonID}),
+		passthroughTx{}, &recordedEvents{}, projectConfig(), clock.NewFixed(acceptedAt))
+	_, err := service.ListByStatus(asRole("kc-specialist", constants.RoleSpecialist), ListProjectsInput{Page: 1, PageSize: 20})
+	requireStatus(t, err, http.StatusForbidden)
+	projects.AssertNotCalled(t, "ListByStatus", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 }
 
 func TestProjectService_Get_ByReader(t *testing.T) {

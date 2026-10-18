@@ -153,7 +153,8 @@ func ProvideProjectService(projects repositories.ProjectRepository, programs rep
 }
 
 func (s *projectService) ListByProgram(ctx context.Context, programID string) ([]models.Project, error) {
-	if _, err := s.authz.Require(ctx, CanUsePrograms); err != nil {
+	principal, err := s.authz.Require(ctx, CanViewPrograms)
+	if err != nil {
 		return nil, err
 	}
 	program, err := s.findProgram(ctx, programID, opListProjects)
@@ -167,10 +168,46 @@ func (s *projectService) ListByProgram(ctx context.Context, programID string) ([
 	if err != nil {
 		return nil, errors.DatabaseError(constants.MsgProjectListFailed, err).WithOperation(opListProjects).WithResource(resourceProject)
 	}
+	if !CanUsePrograms(principal) {
+		works, err := s.specialistWorks(ctx, program, opListProjects)
+		if err != nil {
+			return nil, err
+		}
+		// A specialist sees the projects they work on, where they stand in time, not their size or progress.
+		mine := projects[:0]
+		for _, project := range projects {
+			if works(&project) {
+				project.ScopePoints, project.DonePoints = 0, 0
+				mine = append(mine, project)
+			}
+		}
+		projects = mine
+	}
 	return projects, nil
 }
 
+// specialistWorks tells which of a program's projects a specialist may read: those they lead
+// or have baseline hours on, or all of them when they lead the program.
+func (s *projectService) specialistWorks(ctx context.Context, program *models.Program, op string) (func(*models.Project) bool, error) {
+	reader, err := s.authz.ProgramReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if isPerson(program.LeadID, reader.LeadID) {
+		return func(*models.Project) bool { return true }, nil
+	}
+	ids, err := s.projects.OnBaselineProjects(ctx, program.ID, reader.LeadID)
+	if err != nil {
+		return nil, errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(op).WithResource(resourceProject)
+	}
+	return func(p *models.Project) bool { return isPerson(p.LeadID, reader.LeadID) || slices.Contains(ids, p.ID) }, nil
+}
+
 func (s *projectService) ListByStatus(ctx context.Context, in ListProjectsInput) (*dtos.DataResponse[models.Project], error) {
+	// The intake queue stays closed to a specialist, who passes ProgramReader.
+	if _, err := s.authz.Require(ctx, CanUsePrograms); err != nil {
+		return nil, err
+	}
 	reader, err := s.authz.ProgramReader(ctx)
 	if err != nil {
 		return nil, err
@@ -187,7 +224,8 @@ func (s *projectService) ListByStatus(ctx context.Context, in ListProjectsInput)
 }
 
 func (s *projectService) Get(ctx context.Context, id string) (*models.Project, error) {
-	if _, err := s.authz.Require(ctx, CanUsePrograms); err != nil {
+	principal, err := s.authz.Require(ctx, CanViewPrograms)
+	if err != nil {
 		return nil, err
 	}
 	project, err := s.find(ctx, id, opGetProject)
@@ -196,6 +234,17 @@ func (s *projectService) Get(ctx context.Context, id string) (*models.Project, e
 	}
 	if err := requireProgramReader(ctx, s.authz, s.projects, programOf(project), opGetProject); err != nil {
 		return nil, err
+	}
+	if !CanUsePrograms(principal) {
+		works, err := s.specialistWorks(ctx, programOf(project), opGetProject)
+		if err != nil {
+			return nil, err
+		}
+		if !works(project) {
+			return nil, errors.ForbiddenError(constants.MsgInsufficientPermissions, nil).WithOperation(opGetProject).WithResource(resourceProject)
+		}
+		project.Demands = nil // a specialist does not see budget hours
+		project.ScopePoints, project.DonePoints = 0, 0
 	}
 	return project, nil
 }

@@ -292,6 +292,9 @@ const intakeAttempts = 2
 
 func (s *aiService) ExtractIntake(ctx context.Context, in IntakeInput) (*IntakeResult, error) {
 	// Creating a project needs a planner, or a manager who leads a program; the program is chosen later.
+	if _, err := s.authz.Require(ctx, CanUsePrograms); err != nil {
+		return nil, err
+	}
 	reader, err := s.authz.ProgramReader(ctx)
 	if err != nil {
 		return nil, err
