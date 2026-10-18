@@ -28,7 +28,7 @@ One spec per feature, in build order. Each spec holds the goal, scope, server an
 | 20 | [People import](people-import.md) | CSV import of many people at once: new emails are created, known ones updated, all or nothing | 17–18 Oct | people-and-skills, skill-and-program-events | Done |
 | 21 | [Draft summary](draft-summary.md) | A short AI-written summary of a staffing draft, checked against the draft's numbers, with a template fallback | 17–18 Oct | staffing-draft, ask-ai | Done |
 | 22 | [What-if chat](whatif-chat.md) | Ask AI can run a what-if for a planner: it saves a scenario from a plain-language question and reports the result | 17–18 Oct | scenarios, ask-ai | Done |
-| 23 | [Intake extraction](intake-extraction.md) | Paste a customer brief and get a suggested project (dates, scope, hours per expertise) to review and create, with customer names and emails hidden before the text goes to the AI | 17–18 Oct | programs-and-demand, ask-ai | Planned |
+| 23 | [Intake extraction](intake-extraction.md) | Paste a customer brief and get a suggested project (dates, scope, hours per expertise) to review and create, with customer names, emails and phone numbers hidden before the text goes to the AI | 17–18 Oct | programs-and-demand, ask-ai | Done |
 
 ## Schedule
 
@@ -49,7 +49,7 @@ Designed in the root README, not built for the demo:
 - Plan churn
 - EAC hours, hours per point, contribution %, cross-expertise share
 - Forecast overrides, per-project confidence and the `front` and `back` profiles
-- AI assistant beyond Ask AI and draft summary: more write actions (drafts), intake extraction and more tools (server README section 9)
+- AI assistant beyond Ask AI, draft summary and intake extraction: more write actions (drafts) and more tools (server README section 9)
 
 ## Conventions for these specs
 

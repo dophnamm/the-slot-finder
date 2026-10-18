@@ -1,6 +1,6 @@
 # The Slot Finder: System Architecture
 
-> **Status:** design v0.4. Twenty-two features are built ([`docs/features/README.md`](docs/features/README.md)). Parts marked **(later)** are design only and not built.
+> **Status:** design v0.4. Twenty-three features are built ([`docs/features/README.md`](docs/features/README.md)). Parts marked **(later)** are design only and not built.
 > **Technology:** Go server (Echo, Uber FX, GORM, PostgreSQL, Redis, Keycloak) and React client (Vite, Tailwind, shadcn/ui, TanStack Query, Zustand, Axios). See [section 12](#12-tech-stack). Sections 1–11 and 15 describe the design independently of the stack.
 > **Diagrams:** rendered inline below (Mermaid). The same set is in [`docs/architecture.drawio`](docs/architecture.drawio) for draw.io (9 pages).
 
@@ -131,7 +131,7 @@ The `server/` folder holds the Server API, the Background Worker and the Plannin
 ```mermaid
 flowchart TB
   integ["<b>Integrations</b><br/>calendar feeds (ICS) · LLM client · email sender<br/>notifier: later"]
-  ai["<b>AI assistant</b><br/>Ask AI, what-if chat and draft summary (built)<br/>later: intake extraction"]
+  ai["<b>AI assistant</b><br/>Intake extraction, Ask AI, what-if chat and draft summary (built)"]
 
   subgraph data["Data modules"]
     direction LR
@@ -791,19 +791,21 @@ the-slot-finder/
 
 ## 15. AI assistant
 
-> **Ask AI, what-if chat and the draft summary are built** (capabilities 2, 3 and 4). What-if chat is the only write, and it saves a scenario. It stays off until the chosen provider's key is configured, and the company data policy must approve sending data to that provider. The other capabilities are later.
+> **Intake extraction, Ask AI, what-if chat and the draft summary are built** (capabilities 1 to 4). Intake extraction and the draft summary write nothing. What-if chat is the only write, and it saves a scenario. The AI features stay off until the chosen provider's key is configured, and the company data policy must approve sending data to that provider. The other capabilities are later.
 
 **Principle:** the AI assistant translates between natural language and structured data. The Planning Engine still makes every allocation decision, and a human still accepts every plan.
 
 | # | Capability (build order) | Input → output | Writes |
 |---|---|---|---|
-| 1 | **Intake extraction** (first; demo candidate) | A customer brief, SOW or email, pasted or uploaded → a suggested project: phases, demand (expertise, minimum level, hours, profile), each field with the source quote it came from | Nothing. The lead edits and confirms through the normal project, phase and demand endpoints |
+| 1 | **Intake extraction** (built) | A customer brief, pasted → a suggested project: name, dates, scope points, demand (expertise, minimum level, hours), each demand with the source quote it came from | Nothing. The planner or manager edits and creates the project through the normal project and demand endpoints |
 | 2 | **What-if chat** (built as Ask AI tools) | "What if project X slips 2 weeks and Alex is on leave all of December?" → scenario `assumptions`, a scenario through the scenario API, and a summary of its diff | A scenario |
 | 3 | **Draft explanation** (built for a staffing draft; diff and notification text later) | A staffing draft or re-plan diff → a plain-language summary, also used as notification text. It states only facts and numbers present in the engine's output (reasons, diff, unmet) | Nothing |
 | 4 | **Q&A over plan data** (built as Ask AI) | "Which QA level ≥ 3 is free in W48?", "Which program will go over budget?" → an answer built from the insights tools | Nothing |
 | 5 | **Skill suggestions** (after 1–4) | A CV or past projects → suggested levels | Nothing until the Planner approves; never applied automatically |
 
-**Hours in an intake extraction:** hours stated in the text are used as written. When the text gives only scope points, the Server, not the LLM, fills in the hours from the hours-per-point suggestion (section 7) and marks them as suggested.
+**Hours in an intake extraction:** the suggestion uses only hours the text states. Estimating hours from scope points (section 7) is later.
+
+**Data policy:** intake extraction masks emails, customer names and phone numbers on the server before the brief reaches the LLM. Details: [`server/README.md`](server/README.md#9-ai-assistant).
 
 **Not for:** allocation decisions, metric calculations, accepting or publishing plans, evaluating or ranking people.
 
@@ -811,11 +813,11 @@ the-slot-finder/
 - A server module `ai`. It calls an LLM API with function calling through a provider interface: Gemini, Groq or OpenRouter, chosen by config.
 - Each tool wraps an existing service method and runs **with the caller's identity and role**. The tool checks the same role list as the matching route, and the service applies the per-program rules, so a specialist sees only their own schedule here too. The model is offered only the tools the caller's role allows. The AI assistant never touches the database.
 - Writes are limited to creating scenarios and staffing drafts. Intake suggestions are returned, not stored. It never changes the baseline and never accepts a draft.
-- A customer document is data, never instructions: intake extraction has no tools that read other data or write anything.
+- A customer brief is data, never instructions: intake extraction has no tools.
 - Every action it takes is audited with the user as the actor and `via = ai_assistant`.
 - The Server keeps no chat history. The Client sends the visible conversation with each message.
 - Provider, key, the model per task and limits are server config ([`server/README.md`](server/README.md#8-settings)). Details: [`server/README.md`](server/README.md#9-ai-assistant).
 
 The draft summary sends only counts, hours, week labels, expertise names and project names, never person names, emails or customer names.
 
-**Open question:** customer documents and personnel data would be sent to an external LLM. The company data policy must approve this before the feature is enabled.
+The company data policy must still approve the LLM provider and key type before real data is sent.
