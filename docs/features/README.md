@@ -46,6 +46,7 @@ Designed in the root README, not built for the demo:
 - Holidays per location
 - More scenario assumptions (new project, planned hire, demand change) and turning a scenario into a draft
 - Email and Slack notifications
+- Slack leave booking: a slash command or form creates pending leave, planners approve from Slack (design in the root README)
 - Plan churn
 - EAC hours, hours per point, contribution %, cross-expertise share
 - Forecast overrides, per-project confidence and the `front` and `back` profiles

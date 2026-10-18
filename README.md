@@ -670,6 +670,36 @@ sequenceDiagram
 - An event counts when Outlook marks it out of office (`OOF`) or its title holds a keyword from `CALENDAR_LEAVE_KEYWORDS`.
 - A failed fetch changes nothing and stores an error code. The link itself is never logged or returned.
 
+### Slack leave booking (later)
+
+**Later, design only, not built.** A member books leave from Slack. The system records it and tells the planners.
+
+1. A member sends `/off <from> <to>` (or uses a Slack form).
+2. Slack calls a new Server endpoint. The Server checks Slack's signing secret.
+3. The Server finds the person by matching the verified Slack email to the person's email. It creates the absence with status `planned` (waiting for approval).
+4. The existing flow runs: `AbsenceAdded` is recorded, and the re-plan runner builds or merges a draft (8.2).
+5. The Server posts to the planners' Slack channel with Approve and Reject buttons. The button handler maps the Slack user to a person and checks the planner role in the system, not in Slack, before it approves.
+
+**Built:** creating and approving absences, `AbsenceAdded` and the automatic re-plan, calendar sync (8.4).
+**Missing:** the Slack endpoint with signature check, sending messages to Slack (the notifier, also later), the Slack user to person link, a public HTTPS address for Slack to call.
+
+**Options**
+
+- **A. Slack app calling the Server directly.** Recommended first. About a day.
+- **B. MCP server** exposing tools such as `create_absence` to AI assistants. MCP is a protocol for AI clients to call tools; Slack does not need it. The hard part is signing each user in. Use it only if AI assistant clients must reach the system.
+- **C. Natural-language messages through Ask AI.** Most work: Ask AI has no leave-writing tool yet and would need an audit trail.
+
+**Rules for any option**
+
+- Leave booked from Slack always starts as `planned`, which waits for approval.
+- Verify Slack's signature. Answer Slack within 3 seconds.
+- Handle a command delivered twice. The same person and dates create nothing new.
+- Rate limit requests.
+- A Slack user never acts for another person.
+- Record who approved.
+
+**Prerequisites:** the Slack workspace admin allows the app; the Server has a public HTTPS address.
+
 ### 8.5 Timesheet import
 
 ```mermaid
