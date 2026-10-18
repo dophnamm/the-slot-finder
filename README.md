@@ -76,7 +76,7 @@ flowchart LR
 |---|---|
 | **Resource Planner** | Sees team-wide load and each person's schedule, gives each program its team, generates staffing drafts, edits by hand, approves, builds what-if scenarios, imports timesheets |
 | **Manager** (role `manager`) | Manages the programs they lead: creates projects, declares demand (budget hours per expertise) and scope points. Sees only the people in the teams of those programs, and proposes, edits and accepts staffing drafts for their projects from those teams |
-| **Specialist** | Sees which projects they work on, which weeks and for how many hours; reports leave; connects their calendar so out-of-office time becomes leave |
+| **Specialist** | Sees which projects they work on, which weeks and for how many hours; reads, read only, the programs they lead or work on, and in them only the projects they work on (projects, phases, team names); reports leave; connects their calendar so out-of-office time becomes leave |
 
 ---
 
@@ -758,7 +758,7 @@ sequenceDiagram
 | Topic | Decision |
 |---|---|
 | **Authentication** | Keycloak (OIDC) issues the JWT; the Client sends it as `Authorization: Bearer`. Unsafe requests also carry `X-CSRF-Token`. `/me` returns the user's role and person record  |
-| **Authorization** | Keycloak roles: `planner` (everything), `manager` (shown as **Manager**: own programs and projects, the people of their program teams, drafts that cover only their programs), `specialist` (own schedule and leave), checked per route. Per-program rules (manager of this program, the people they may see) are checked in services against the database. **Everything is checked on the Server.** The Client uses roles only to show or hide controls |
+| **Authorization** | Keycloak roles: `planner` (everything), `manager` (shown as **Manager**: own programs and projects, the people of their program teams, drafts that cover only their programs), `specialist` (own schedule and leave; read only on the programs and projects they work on), checked per route. Per-program rules (manager of this program, the people they may see) are checked in services against the database. **Everything is checked on the Server.** The Client uses roles only to show or hide controls |
 | **Concurrency** | `PLAN.version`. Accepting a draft requires `baseVersion`. If the baseline has changed, the Server returns `409` and the Client regenerates the draft |
 | **Transactions** | One business action is one transaction (accept = write all allocations + update plan states) |
 | **Errors** | Every response, success or error, uses one envelope: `{ meta: { error_code, message, code, page, page_size, total }, data }`, with a meaningful HTTP status. Field errors go in `data` |
