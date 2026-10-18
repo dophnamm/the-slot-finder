@@ -124,11 +124,11 @@ Open **People** from the sidebar. The screen has two tabs: **People** and **Holi
 
 **People tab (Planner).**
 1. Click **Add person**.
-2. Enter the name, email, location, start and end dates, weekly hours and non-project hours.
+2. Enter the name, email, start and end dates, weekly hours and non-project hours.
 3. Set the expertises: each person has one **Primary expertise** and any number of other expertises, each at a level from 1 to 5. Exactly one expertise must be primary.
 4. Save.
 
-Click a row to open the person's page (see [Leave and absences](#9-leave-and-absences)). Rows show each person's expertise and level matrix, start and end dates and location.
+Click a row to open the person's page (see [Leave and absences](#9-leave-and-absences)). Rows show each person's expertise and level matrix and start and end dates.
 
 **Import people (Planner).** Click **Import people** to add or update many people from a CSV file.
 1. Click **Download template**. The file has the column headers and one example row.
@@ -152,6 +152,11 @@ To create a program, click **New program**.
 
 **Program page.** Click a program to open it. It has three tabs:
 - **Overview**: progress bars for **Time**, **Scope**, **Planned burn** (or **Burn**, see below) and **Staffing**; the hours figures **Budget**, **Planned**, **Planned to date**, **Actual**, **Forecast** and **Gap**; staffing by expertise; and the program brief.
+  - **Time**: the share of the program's span (start to end date) that has passed.
+  - **Scope**: delivered scope points as a share of all scope points.
+  - **Planned burn**: planned hours up to this week as a share of budget hours.
+  - **Staffing**: planned hours as a share of budget hours. Under 100 % with unmet demand means people are missing.
+  - **Forecast**: the planned hours of each demand. **Gap** is budget hours minus forecast hours; above 0 means understaffed.
 - **Projects**: the projects in priority order, with the hours planned next week and in the next 3 weeks. Drag a row, or focus its handle and press the arrow keys, to change the order. The top project has the highest priority.
 - **Team**: the people the program's projects are staffed from. Planners use **Add member** and **Remove**. Removing a member keeps their baseline hours.
 
@@ -208,7 +213,7 @@ A staffing draft is a plan the engine proposes for one or more projects. It beco
 2. Click **Propose squad** on the project.
 3. The draft opens for review.
 
-**Review a draft.** Open **Drafts** from the sidebar, or follow the link from a project or from a re-plan alert. The list shows every open draft, newest first, with its origin (manual or re-plan), the projects and programs it covers, the baseline version it was made on (with **Stale** when the baseline has moved on), and its unmet demands. Click a row, or **Review draft**, to open it.
+**Review a draft.** Open **Drafts** from the sidebar, or follow the link from a project or from a re-plan alert. The list shows every open draft, newest first, with its origin (manual or re-plan), the projects and programs it covers, the baseline version it was made on (with **Stale** when the baseline has moved on), and its unmet demands. Click a row, or **Review draft**, to open it. The **Drafts** item in the sidebar shows the number of open drafts.
 
 On the draft review screen:
 - Each row is one person's assignment to one demand. Each week shows the person's weekly load, coloured with the same bands as the heatmap.
@@ -261,6 +266,8 @@ A scenario that was built on an older baseline is marked **Stale**.
 
 Absences are leave, holidays and training. They lower capacity on the days they cover.
 
+**Schedule.** The person's page has a **Schedule** tab, and **My schedule** shows the same view for a Specialist: a month grid with one row per week. Days off are shaded (leave, training and holidays), and planned leave is marked as planned. Each week shows **Planned** hours against **Capacity**, hatched when it includes leave not approved yet, and **Worked** hours from an imported timesheet. Click **Planned** to list the week's hours per project; each project opens its page. Use the arrows and **Today** to move between months. A Manager sees the schedule of people in their teams, without the absences list.
+
 **Report leave (Specialist).** Open **My absences** on **My schedule** and report the dates and hours per day. The page says: "Report leave or training. A planner approves it." Your leave stays planned until a Planner approves it.
 
 **Add or approve leave (Planner).**
@@ -272,7 +279,7 @@ Absences are leave, holidays and training. They lower capacity on the days they 
 - **Add holiday** adds one holiday with its name and date.
 - **Import holidays** loads many at once; see [Import holidays](#import-holidays).
 
-Holidays lower everyone's capacity on those days, or only the people at the holiday's location.
+Holidays are company-wide and lower everyone's capacity on those days.
 
 **Hours rules.**
 - Approved absence always lowers capacity.
@@ -303,7 +310,7 @@ When a program has a re-plan draft, its page shows a **Re-plan** banner. Click i
 2. Type your question in **Your question** (up to 500 characters), for example "Who is overloaded next week?" and click **Send**.
 3. The answer appears in the panel. A typing indicator shows while it is pending.
 
-**What-if questions (Planner only).** Ask what would happen if something changed, for example "What if Checkout Revamp slips 3 weeks?" or "What if Quinn is away from 2026-11-02 to 2026-11-13?". Ask AI saves a scenario named `What-if (AI): <your question>` and answers with the people changed, the hours moved and the unmet hours. The scenario appears on the Scenarios page, where you can read or delete it. The baseline does not change. A Manager gets no what-if: Ask AI says it cannot run one.
+**What-if questions (Planner only).** Ask what would happen if something changed, for example "What if Checkout Revamp slips 3 weeks?" or "What if Dung Pham is away from 2026-11-02 to 2026-11-13?". Ask AI saves a scenario named `What-if (AI): <your question>` and answers with the people changed, the hours moved and the unmet hours. The scenario appears on the Scenarios page, where you can read or delete it. The baseline does not change. A Manager gets no what-if: Ask AI says it cannot run one.
 
 Ask AI answers from the data you are allowed to see. It cannot change a plan or accept a draft. The only thing it creates is a what-if scenario, for a Planner. It also knows the page you are on, so "this project" works on a project page. Messages stay on screen until you reload the page; there is no history.
 
@@ -311,7 +318,7 @@ If the answer fails, the panel shows an error reply. Click **Try again** to send
 
 ## 12. Guided tour
 
-The guided tour explains the sidebar. It starts once on your first visit, on a wide screen, with one step per screen you can open and one on the Ask AI button (Planner and Manager).
+The guided tour explains the sidebar. It starts once on your first visit, on a wide screen, with one step per screen you can open, one on the Ask AI button (Planner and Manager), and one on the account menu.
 
 - Move with **Back** and **Next**. The last step ends with **Done**.
 - Press **Esc** or the close button to end the tour.
@@ -327,16 +334,26 @@ The guided tour explains the sidebar. It starts once on your first visit, on a w
 | **Utilization** | Planned hours divided by a person's capacity in a week. Over 100 % is overloaded. |
 | **Free hours** | Capacity minus load, per person and never below 0. The capacity forecast adds them up per expertise. |
 | **Shortfall** | Demand that free hours cannot cover. Shown as `Short N hrs` in the capacity forecast. |
+| **Pipeline** | The demand of incoming projects, not yet staffed. It shows only in the capacity forecast, not in anyone's schedule. |
+| **Bench** | People under 50 % utilization in each of the coming weeks, most free hours first. Listed at the end of the Dashboard risks card. |
 | **Sustained overload** | A person over 100 % for several weeks in a row. It is a burnout risk and is listed before single overloaded weeks. |
 | **Expertise** | A kind of work: PM, Analyst, Engineer or QA. Each person has one primary expertise and may hold others at a level from 1 to 5. |
+| **Program team** | The people a program's projects are staffed from. A Planner adds and removes them; a staffing draft takes people only from this team. |
 | **Cross-expertise** | An assignment in an expertise other than the person's primary one, at or above the level the demand needs. |
 | **Stretch** | An assignment below the demand's minimum level, or without the expertise. Added by hand by a Planner or the program's Manager, locked, and confirmed on accept. |
 | **Phase** | An ordered stage of a project with its own week range, such as Discovery, Build or Test. |
 | **Demand** | The budget hours one expertise needs at a minimum level, inside one phase or across the whole project. |
 | **Budget hours** | The hours a demand is planned to use. |
+| **Headcount** | The number of people working one demand in parallel. |
+| **Burn** | Actual hours as a share of budget hours, after a timesheet import. Until then the bar shows **Planned burn**. |
+| **Gap** | Budget hours minus forecast hours. Above 0 means the program is understaffed. |
+| **Scope** | Delivered scope points as a share of all scope points. |
+| **Time** | The share of the program's span (start to end date) that has passed. |
 | **Scenario** | A what-if plan built from changes you choose. It does not change the baseline. |
 | **Stale** | A draft or scenario built on a baseline that has since changed. |
 | **Unmet demand** | Hours the engine could not place, with the reason. |
+| **Re-plan** | A new draft that a change such as leave or a slipped phase creates. The program page shows a **Re-plan** banner for it. |
+| **Events** | The change history (Planner only): leave, holidays, skill changes and slipped phases or deadlines, each with its status. |
 | **Tentative** | Planned leave that is not approved yet. It is shown hatched. |
 | **Week** | Monday to Sunday, written like `2026-W42`. |
 
@@ -359,6 +376,7 @@ The guided tour explains the sidebar. It starts once on your first visit, on a w
 | "Use whole hours" | Budget hours must be whole numbers. | Enter whole hours. |
 | "Project dates and phase weeks must lie within 156 weeks of the current week." | A date is too far from the current week. | Pick a date within 156 weeks before or after today. |
 | "A phase must lie between the project's start_earliest and deadline weeks" | A new or moved phase is outside the project's start and deadline. | Move the phase inside the project, or move the project dates first. |
+| "The new dates would leave a phase outside the project; move the phase first" | A new start or deadline would cut an existing phase. Nothing was saved. | Move the phase inside the new dates, then save the project again. |
 | "The last phase ends after the deadline week." | A warning: the project is at risk. | Move the deadline or shorten a phase. |
 | "A phase that still has demand cannot be removed; move or delete its demand first." | The phase still holds demand. | Move or delete that demand, then remove the phase. |
 | "Weeks before the current week cannot be changed." | Past weeks are fixed. | Change only the current and future weeks. |
