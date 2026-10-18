@@ -663,9 +663,9 @@ export type LanguageKey = {
   '{expertise}, {hours} hrs per week, {nonProject} hrs of them non-project': string
   '{free} of {capacity} hrs free in the window': string
   '{gap} hrs short of {budget} hrs': string
-  '{hours} h free in {weeks} weeks': string
   '{hours} hrs': string
   '{hours} hrs free': string
+  '{hours} hrs free in {weeks} weeks': string
   '{hours} hrs non-project': string
   '{hours} hrs per day': string
   '{hours} hrs per week': string
