@@ -354,7 +354,7 @@ func TestPropose_LastRemainderMayBeBelowMinimum(t *testing.T) {
 	result := Propose(req)
 	require.Len(t, result.Assignments, 1)
 	assert.Equal(t, map[string]float64{"2026-W42": 5}, hoursByWeek(result.Assignments[0]))
-	assert.Contains(t, result.Assignments[0].Reason, "covers the last 5 h of the demand")
+	assert.Contains(t, result.Assignments[0].Reason, "covers the last 5 hrs of the demand")
 }
 
 func TestPropose_IsDeterministic(t *testing.T) {

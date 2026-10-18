@@ -75,15 +75,15 @@ func (p *planner) loadReason(person *Person, d Demand, added float64) string {
 }
 
 func partialReason(d Demand, covered, need float64) string {
-	return fmt.Sprintf("covers %s of %s h: nobody had the whole seat free in %s", formatHours(covered), formatHours(need), windowLabel(d))
+	return fmt.Sprintf("covers %s of %s hrs: nobody had the whole seat free in %s", formatHours(covered), formatHours(need), windowLabel(d))
 }
 
 func splitReason(d Demand, need, covered float64) string {
-	return fmt.Sprintf("seat split: nobody had %s h free in %s; covers %s h", formatHours(need), windowLabel(d), formatHours(covered))
+	return fmt.Sprintf("seat split: nobody had %s hrs free in %s; covers %s hrs", formatHours(need), windowLabel(d), formatHours(covered))
 }
 
 func remainderReason(covered float64) string {
-	return fmt.Sprintf("covers the last %s h of the demand", formatHours(covered))
+	return fmt.Sprintf("covers the last %s hrs of the demand", formatHours(covered))
 }
 
 func windowLabel(d Demand) string {

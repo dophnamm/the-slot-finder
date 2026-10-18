@@ -98,7 +98,7 @@ func TestTemplateSummary(t *testing.T) {
 			facts: draftFacts{People: 4, Assignments: 6, Projects: 2, PlannedHours: 312, Unmet: []unmetFact{
 				{Expertise: "QA", Project: "Checkout Revamp", Hours: 20, FirstWeek: "2026-W45", LastWeek: "2026-W47"}}},
 			want: "4 people on 6 assignments across 2 projects, 312 planned hours. " +
-				"20 h of QA is still uncovered on Checkout Revamp (2026-W45 to 2026-W47).",
+				"20 hrs of QA is still uncovered on Checkout Revamp (2026-W45 to 2026-W47).",
 		},
 		{
 			name:  "every count at 1",

@@ -75,7 +75,7 @@ func templateSummary(f draftFacts) string {
 		b.WriteString(" All demand is covered.")
 	}
 	for _, u := range f.Unmet {
-		fmt.Fprintf(&b, " %s h of %s is still uncovered on %s (%s to %s).", formatHours(u.Hours), u.Expertise, u.Project,
+		fmt.Fprintf(&b, " %s hrs of %s is still uncovered on %s (%s to %s).", formatHours(u.Hours), u.Expertise, u.Project,
 			u.FirstWeek, u.LastWeek)
 	}
 	return b.String()
