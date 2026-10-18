@@ -145,3 +145,36 @@ func TestProgramTeamService_AddAndRemove(t *testing.T) {
 		require.Error(t, svc.Add(planner, teamProgramID, teamPersonID))
 	})
 }
+
+// richTeams lists one person with contact details, capacity and two skills.
+type richTeams struct{ *memoryTeams }
+
+func (richTeams) ListByProgram(_ context.Context, programID string) ([]models.ProgramTeamMember, error) {
+	person := &models.Person{BaseModel: models.BaseModel{ID: teamPersonID}, Name: "Quinn", Email: "quinn@example.test", Role: constants.RoleSpecialist,
+		WeeklyHours: 40, NonProjectHours: 4, Active: true,
+		Skills: []models.PersonSkill{
+			{ExpertiseID: "e-qa", Level: 4, IsPrimary: true, Expertise: models.Expertise{Name: "QA"}},
+			{ExpertiseID: "e-eng", Level: 2, Expertise: models.Expertise{Name: "Engineer"}},
+		}}
+	return []models.ProgramTeamMember{{ProgramID: programID, PersonID: teamPersonID, Person: person}}, nil
+}
+
+func TestProgramTeamService_List_Specialist(t *testing.T) {
+	projects := new(MockProjectRepository)
+	projects.On("LeadsProjectIn", mock.Anything, teamProgramID, selfPersonID).Return(false, nil)
+	projects.On("OnBaselineIn", mock.Anything, teamProgramID, selfPersonID).Return(true, nil)
+	programs := new(MockProgramRepository)
+	lead := leadPersonID
+	programs.On("FindWithLead", mock.Anything, teamProgramID).Return(&models.Program{BaseModel: models.BaseModel{ID: teamProgramID}, LeadID: &lead}, nil)
+	// No FindBaseline expectation: a specialist's team read must not load anyone's hours.
+	service := ProvideProgramTeamService(richTeams{&memoryTeams{}}, programs, projects, new(MockPersonRepository), new(MockPlanRepository),
+		ProvideAuthzService(selfFinder{"kc-specialist": selfPersonID}), passthroughTx{}, &recordedEvents{})
+
+	members, err := service.List(asRole("kc-specialist", constants.RoleSpecialist), teamProgramID)
+	require.NoError(t, err)
+	require.Len(t, members, 1)
+	assert.Nil(t, members[0].Hours)
+	assert.Equal(t, models.Person{BaseModel: models.BaseModel{ID: teamPersonID}, Name: "Quinn", Active: true,
+		Skills: []models.PersonSkill{}}, members[0].Person,
+		"name only, no skills")
+}

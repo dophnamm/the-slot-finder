@@ -2320,7 +2320,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "A manager gets the programs they lead or lead a project in.",
+                "description": "A manager gets the programs they lead or lead a project in. A specialist gets those too, plus the programs where the published baseline gives them hours.",
                 "produces": [
                     "application/json"
                 ],
@@ -2426,7 +2426,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "A manager reaches only the programs they lead or lead a project in.",
+                "description": "A manager reaches only the programs they lead or lead a project in; a specialist also those where the published baseline gives them hours.",
                 "produces": [
                     "application/json"
                 ],
@@ -2830,7 +2830,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Projects by priority, then deadline, each with its current phase, at_risk and metrics (Time, Scope, Planned burn, Staffing). A manager reaches only the programs they lead or lead a project in.",
+                "description": "Projects by priority, then deadline, each with its current phase, at_risk and metrics (Time, Scope, Planned burn, Staffing). A manager reaches only the programs they lead or lead a project in; a specialist only the projects they lead or have baseline hours on (all of them when they lead the program), without metrics or scope points.",
                 "produces": [
                     "application/json"
                 ],
@@ -2960,7 +2960,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "The people a planner gave the program, with their skills and their hours, weeks and projects in its baseline. The planner and the program's manager may read it.",
+                "description": "The people a planner gave the program, with their skills and their hours, weeks and projects in its baseline. The planner and the program's manager may read it; a specialist who works on the program gets names only, with no skills, hours or contact details.",
                 "produces": [
                     "application/json"
                 ],
@@ -3230,7 +3230,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "The project with its phases and demand; each demand lists the weeks it may be staffed in. A manager reaches only the programs they lead or lead a project in.",
+                "description": "The project with its phases and demand; each demand lists the weeks it may be staffed in. A manager reaches only the programs they lead or lead a project in; a specialist only a project they lead or have baseline hours on (403 otherwise), and gets no demand or points.",
                 "produces": [
                     "application/json"
                 ],

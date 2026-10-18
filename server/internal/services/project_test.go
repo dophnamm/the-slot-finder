@@ -81,6 +81,17 @@ func (m *MockProjectRepository) LeadsProjectIn(ctx context.Context, programID, p
 	return args.Bool(0), args.Error(1)
 }
 
+func (m *MockProjectRepository) OnBaselineIn(ctx context.Context, programID, personID string) (bool, error) {
+	args := m.Called(ctx, programID, personID)
+	return args.Bool(0), args.Error(1)
+}
+
+func (m *MockProjectRepository) OnBaselineProjects(ctx context.Context, programID, personID string) ([]string, error) {
+	args := m.Called(ctx, programID, personID)
+	ids, _ := args.Get(0).([]string)
+	return ids, args.Error(1)
+}
+
 func (m *MockProjectRepository) FindDetail(ctx context.Context, id string) (*models.Project, error) {
 	args := m.Called(ctx, id)
 	return projectOrNil(args.Get(0)), args.Error(1)

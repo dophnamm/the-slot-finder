@@ -27,7 +27,7 @@ func ProvideProgramHandler(programs services.ProgramService, validate *validator
 
 // List godoc
 // @Summary List programs
-// @Description A manager gets the programs they lead or lead a project in.
+// @Description A manager gets the programs they lead or lead a project in. A specialist gets those too, plus the programs where the published baseline gives them hours.
 // @Tags Programs
 // @Produce json
 // @Security BearerAuth
@@ -50,7 +50,7 @@ func (h *ProgramHandler) List(c *echo.Context) error {
 
 // Get godoc
 // @Summary Get a program
-// @Description A manager reaches only the programs they lead or lead a project in.
+// @Description A manager reaches only the programs they lead or lead a project in; a specialist also those where the published baseline gives them hours.
 // @Tags Programs
 // @Produce json
 // @Security BearerAuth

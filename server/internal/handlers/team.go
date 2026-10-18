@@ -26,7 +26,7 @@ func ProvideProgramTeamHandler(teams services.ProgramTeamService, validate *vali
 
 // List godoc
 // @Summary A program's team
-// @Description The people a planner gave the program, with their skills and their hours, weeks and projects in its baseline. The planner and the program's manager may read it.
+// @Description The people a planner gave the program, with their skills and their hours, weeks and projects in its baseline. The planner and the program's manager may read it; a specialist who works on the program gets names only, with no skills, hours or contact details.
 // @Tags Programs
 // @Produce json
 // @Security BearerAuth

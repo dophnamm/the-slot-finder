@@ -6,6 +6,7 @@ import (
 	"the-slot-finder/server/internal/dtos"
 	"the-slot-finder/server/internal/errors"
 	"the-slot-finder/server/internal/isoweek"
+	"the-slot-finder/server/internal/request"
 	"the-slot-finder/server/internal/services"
 
 	"github.com/go-playground/validator/v10"
@@ -32,7 +33,7 @@ func (h *ProjectHandler) thisWeek() isoweek.Week { return isoweek.Of(h.clock.Now
 
 // ListByProgram godoc
 // @Summary A program's projects
-// @Description Projects by priority, then deadline, each with its current phase, at_risk and metrics (Time, Scope, Planned burn, Staffing). A manager reaches only the programs they lead or lead a project in.
+// @Description Projects by priority, then deadline, each with its current phase, at_risk and metrics (Time, Scope, Planned burn, Staffing). A manager reaches only the programs they lead or lead a project in; a specialist only the projects they lead or have baseline hours on (all of them when they lead the program), without metrics or scope points.
 // @Tags Projects
 // @Produce json
 // @Security BearerAuth
@@ -49,11 +50,16 @@ func (h *ProjectHandler) ListByProgram(c *echo.Context) error {
 	if err != nil {
 		return h.HandleError(c, err)
 	}
-	progress, err := h.insights.ProjectMetrics(c.Request().Context(), programID)
-	if err != nil {
-		return h.HandleError(c, err)
+	rows := dtos.NewProjectResponses(projects, h.thisWeek())
+	// A specialist reads the list without metrics; the service already checked they may read it.
+	if principal, _ := request.PrincipalFromContext(c.Request().Context()); services.CanUsePrograms(principal) {
+		progress, err := h.insights.ProjectMetrics(c.Request().Context(), programID)
+		if err != nil {
+			return h.HandleError(c, err)
+		}
+		rows = dtos.WithMetrics(rows, progress)
 	}
-	return h.SuccessResponse(c, constants.MsgProjectsListed, dtos.WithMetrics(dtos.NewProjectResponses(projects, h.thisWeek()), progress), nil)
+	return h.SuccessResponse(c, constants.MsgProjectsListed, rows, nil)
 }
 
 // List godoc
@@ -86,7 +92,7 @@ func (h *ProjectHandler) List(c *echo.Context) error {
 
 // Get godoc
 // @Summary Get a project
-// @Description The project with its phases and demand; each demand lists the weeks it may be staffed in. A manager reaches only the programs they lead or lead a project in.
+// @Description The project with its phases and demand; each demand lists the weeks it may be staffed in. A manager reaches only the programs they lead or lead a project in; a specialist only a project they lead or have baseline hours on (403 otherwise), and gets no demand or points.
 // @Tags Projects
 // @Produce json
 // @Security BearerAuth

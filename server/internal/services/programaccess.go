@@ -12,10 +12,12 @@ import (
 // projectLeadLookup tells whether a person leads one of a program's projects.
 type projectLeadLookup interface {
 	LeadsProjectIn(ctx context.Context, programID, personID string) (bool, error)
+	OnBaselineIn(ctx context.Context, programID, personID string) (bool, error)
 }
 
 // requireProgramReader lets a planner read any program, and a manager a program they lead or
-// lead one of its projects. Anyone else gets a 403 error.
+// lead one of its projects. A specialist reads those too, and a program where they have baseline
+// hours. Anyone else gets a 403 error.
 func requireProgramReader(ctx context.Context, authz AuthzService, projects projectLeadLookup, program *models.Program, op string) error {
 	reader, err := authz.ProgramReader(ctx)
 	if err != nil {
@@ -34,6 +36,15 @@ func requireProgramReader(ctx context.Context, authz AuthzService, projects proj
 		}
 		if led {
 			return nil
+		}
+		if reader.OnBaseline {
+			worked, err := projects.OnBaselineIn(ctx, program.ID, reader.LeadID)
+			if err != nil {
+				return errors.DatabaseError(constants.MsgDatabaseReadFailed, err).WithOperation(op).WithResource(resourceProgram)
+			}
+			if worked {
+				return nil
+			}
 		}
 	}
 	return errors.ForbiddenError(constants.MsgInsufficientPermissions, nil).WithOperation(op).WithResource(resourceProgram)

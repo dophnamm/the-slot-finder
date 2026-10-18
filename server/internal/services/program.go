@@ -115,7 +115,7 @@ func (s *programService) List(ctx context.Context, in ListProgramsInput) (*dtos.
 	if !reader.All && reader.LeadID == "" {
 		return emptyPage[models.Program](request), nil
 	}
-	page, err := s.programs.List(ctx, request, readerLeadID(reader))
+	page, err := s.programs.List(ctx, request, readerLeadID(reader), reader.OnBaseline)
 	if err != nil {
 		return nil, errors.DatabaseError(constants.MsgProgramListFailed, err).WithOperation(opListPrograms).WithResource(resourceProgram)
 	}
@@ -123,7 +123,7 @@ func (s *programService) List(ctx context.Context, in ListProgramsInput) (*dtos.
 }
 
 func (s *programService) Get(ctx context.Context, id string) (*models.Program, error) {
-	if _, err := s.authz.Require(ctx, CanUsePrograms); err != nil {
+	if _, err := s.authz.Require(ctx, CanViewPrograms); err != nil {
 		return nil, err
 	}
 	program, err := s.find(ctx, id, opGetProgram)

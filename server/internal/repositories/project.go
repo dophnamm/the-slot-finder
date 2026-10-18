@@ -35,6 +35,12 @@ type ProjectRepository interface {
 	ListByStatus(ctx context.Context, status string, readerID *string, page *dtos.PageableRequest) (*dtos.DataResponse[models.Project], error)
 	// LeadsProjectIn reports whether the person leads one of the program's projects.
 	LeadsProjectIn(ctx context.Context, programID, personID string) (bool, error)
+	// OnBaselineIn reports whether the person has baseline hours on one of the program's
+	// projects: an assignment with an allocation above 0 in the published baseline.
+	OnBaselineIn(ctx context.Context, programID, personID string) (bool, error)
+	// OnBaselineProjects returns the ids of the program's projects where the person has baseline
+	// hours.
+	OnBaselineProjects(ctx context.Context, programID, personID string) ([]string, error)
 	// FindDetail returns one project with its program, lead, phases and demand.
 	FindDetail(ctx context.Context, id string) (*models.Project, error)
 	FindPhase(ctx context.Context, id string) (*models.ProjectPhase, error)
@@ -114,6 +120,20 @@ func (r *projectRepository) LeadsProjectIn(ctx context.Context, programID, perso
 	err := r.db.From(ctx).Model(&models.Project{}).
 		Where("program_id = ? AND lead_id = ?", programID, personID).Count(&count).Error
 	return count > 0, err
+}
+
+func (r *projectRepository) OnBaselineIn(ctx context.Context, programID, personID string) (bool, error) {
+	var count int64
+	err := r.db.From(ctx).Table("(?) AS on_baseline", programIDsOnBaseline(r.db.From(ctx), personID)).
+		Where("on_baseline.program_id = ?", programID).Count(&count).Error
+	return count > 0, err
+}
+
+func (r *projectRepository) OnBaselineProjects(ctx context.Context, programID, personID string) ([]string, error) {
+	var ids []string
+	err := baselineWork(r.db.From(ctx), personID).Where("projects.program_id = ?", programID).
+		Distinct().Pluck("projects.id", &ids).Error
+	return ids, err
 }
 
 func (r *projectRepository) FindDetail(ctx context.Context, id string) (*models.Project, error) {
