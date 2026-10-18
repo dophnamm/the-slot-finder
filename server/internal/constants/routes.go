@@ -72,9 +72,9 @@ const (
 	PathPeopleImportTemplate = "/people/import-template"
 )
 
-// SecretBodyPaths are routes whose request body holds a secret (a calendar link). The request
+// SecretBodyPaths are routes whose request body holds a secret (a calendar link, a customer brief). The request
 // log and error reports keep a placeholder instead of the body, even when the request is refused.
-var SecretBodyPaths = []string{PathAPIBase + PathPersonCalendarFeed, PathAPIBase + PathHolidayImport}
+var SecretBodyPaths = []string{PathAPIBase + PathPersonCalendarFeed, PathAPIBase + PathHolidayImport, PathAPIBase + PathAIIntakeExtractions}
 
 // Ask AI.
 const (

@@ -437,6 +437,23 @@ func TestLogBody(t *testing.T) {
 		assert.Equal(t, body, seen)
 	})
 
+	t.Run("an intake brief is never kept", func(t *testing.T) {
+		e := echo.New()
+		var logged any
+		e.Use(LogBody(&config.Config{LogBodyMaxBytes: 256}))
+		e.POST(constants.PathAPIBase+constants.PathAIIntakeExtractions, func(c *echo.Context) error {
+			logged = c.Get(LogBodyKey)
+			return c.NoContent(http.StatusNoContent)
+		})
+		req := httptest.NewRequest(http.MethodPost, constants.PathAPIBase+constants.PathAIIntakeExtractions,
+			strings.NewReader(`{"text":"Acme asks for a checkout, ana@acme.com"}`))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusNoContent, rec.Code)
+		assert.Equal(t, redactedBody, logged) // the Sentry scope reads this same key
+	})
+
 	t.Run("body over the limit gets 413", func(t *testing.T) {
 		_, _, code := capture(t, echo.MIMEApplicationJSON, strings.Repeat("x", 32))
 		assert.Equal(t, http.StatusRequestEntityTooLarge, code)

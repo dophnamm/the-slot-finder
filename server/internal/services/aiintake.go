@@ -33,9 +33,9 @@ type maskCounts struct {
 var (
 	emailPattern = regexp.MustCompile(`[\p{L}\p{N}._%+\-']+@[\p{L}\p{N}\-]+(?:\.[\p{L}\p{N}\-]+)+`)
 	// The date alternative comes first, so an ISO date is matched whole and kept.
-	// A gap of up to two characters keeps "+84 (0) 912" together.
-	phonePattern = regexp.MustCompile(`\d{4}-\d{2}-\d{2}|[+(]?\d(?:[ \t\n().-]{0,2}\d)*`)
-	trailingDate = regexp.MustCompile(`[ \t\n().-]\d{4}-\d{2}-\d{2}$`)
+	// A gap of up to three characters keeps "+84 (0) 912" and "0912 - 345" together.
+	phonePattern = regexp.MustCompile(`\d{4}-\d{2}-\d{2}|[+(]?\d(?:[ \t\n().-]{0,3}\d)*`)
+	trailingDate = regexp.MustCompile(`[ \t\n().-]{1,3}\d{4}-\d{2}-\d{2}$`)
 	datePattern  = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
 )
 
@@ -43,7 +43,7 @@ const minPhoneDigits = 7
 
 // maskBrief hides emails, known customers, typed terms and phones, in that order.
 // Customer and term matches are case-insensitive and whole word. Empty terms are ignored.
-// The text and terms are NFC-normalised and stripped of invisible characters first, so a hidden name cannot slip by.
+// The text and terms are NFKC-normalised and stripped of invisible characters first, so a hidden name cannot slip by.
 func maskBrief(text string, customers []string, extra []string) (masked string, counts maskCounts) {
 	text = normalizeText(text)
 	masked = emailPattern.ReplaceAllStringFunc(text, func(string) string {
@@ -77,7 +77,7 @@ func maskBrief(text string, customers []string, extra []string) (masked string, 
 
 var placeholderWords = map[string]bool{"email": true, "customer": true, "phone": true}
 
-// normalizeText applies NFC, removes zero-width characters and the soft hyphen, and turns a no-break space into a space.
+// normalizeText applies NFKC, removes zero-width characters and the soft hyphen, and turns a no-break space into a space.
 func normalizeText(s string) string {
 	return strings.Map(func(r rune) rune {
 		switch r {
@@ -87,7 +87,7 @@ func normalizeText(s string) string {
 			return ' '
 		}
 		return r
-	}, norm.NFC.String(s))
+	}, norm.NFKC.String(s))
 }
 
 func digitsOnly(r rune) rune {
@@ -104,8 +104,13 @@ func maskTerms(lists ...[]string) []string {
 	for _, list := range lists {
 		for _, t := range list {
 			t = strings.TrimSpace(normalizeText(t))
-			// A term equal to a placeholder word would hit the placeholders already written.
-			if key := strings.ToLower(t); t != "" && !seen[key] && !placeholderWords[key] {
+			// A term with no letter or digit (like "-") would mangle dates. A term equal to a placeholder, with or
+			// without its brackets, would hit the placeholders already written.
+			key := strings.ToLower(t)
+			if !strings.ContainsFunc(t, isWordRune) || isPlaceholder(key) {
+				continue
+			}
+			if !seen[key] {
 				seen[key] = true
 				terms = append(terms, t)
 			}
@@ -113,6 +118,11 @@ func maskTerms(lists ...[]string) []string {
 	}
 	sort.SliceStable(terms, func(i, j int) bool { return utf8.RuneCountInString(terms[i]) > utf8.RuneCountInString(terms[j]) })
 	return terms
+}
+
+func isPlaceholder(key string) bool {
+	// Trimming the brackets also covers the Mask* constants, which are "[" + word + "]".
+	return placeholderWords[strings.Trim(key, "[]")]
 }
 
 func isWordRune(r rune) bool { return r == '_' || unicode.IsLetter(r) || unicode.IsNumber(r) }
@@ -311,7 +321,7 @@ func (s *aiService) ExtractIntake(ctx context.Context, in IntakeInput) (*IntakeR
 	masked, counts := maskBrief(in.Text, customers, in.MaskTerms)
 	var names strings.Builder
 	for _, e := range catalogue {
-		fmt.Fprintf(&names, "- %s (id %s)\n", e.Name, e.ID)
+		fmt.Fprintf(&names, "- %s\n", e.Name)
 	}
 	req := llm.Request{
 		SystemInstruction: &llm.Content{Parts: []llm.Part{{Text: aiIntakePrompt + names.String()}}},
