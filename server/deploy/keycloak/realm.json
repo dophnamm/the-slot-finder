@@ -68,7 +68,7 @@
   "users": [
     {
       "username": "planner",
-      "email": "planner@slot-finder.local",
+      "email": "planner@${SEED_EMAIL_DOMAIN:slot-finder.com}",
       "firstName": "Pat",
       "lastName": "Planner",
       "enabled": true,
@@ -78,7 +78,7 @@
     },
     {
       "username": "manager",
-      "email": "manager@slot-finder.local",
+      "email": "manager@${SEED_EMAIL_DOMAIN:slot-finder.com}",
       "firstName": "Mia",
       "lastName": "Manager",
       "enabled": true,
@@ -88,7 +88,7 @@
     },
     {
       "username": "specialist",
-      "email": "specialist@slot-finder.local",
+      "email": "specialist@${SEED_EMAIL_DOMAIN:slot-finder.com}",
       "firstName": "Sam",
       "lastName": "Specialist",
       "enabled": true,
