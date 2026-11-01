@@ -397,3 +397,26 @@ func TestAISystemPrompt_WhatIfRules(t *testing.T) {
 		assert.Contains(t, aiSystemPrompt, want)
 	}
 }
+
+type heatmapSpy struct {
+	InsightsService
+	got HeatmapInput
+}
+
+func (h *heatmapSpy) Heatmap(_ context.Context, in HeatmapInput) (*models.Heatmap, error) {
+	h.got = in
+	return &models.Heatmap{}, nil
+}
+
+func TestAIService_DispatchHeatmapNullArgs(t *testing.T) {
+	// Some models send null for an optional argument; it must read as not given.
+	spy := &heatmapSpy{}
+	svc := &aiService{insights: spy}
+	args := map[string]any{"expertise_id": nil, "program_id": nil, "from": "2026-W42", "to": "2026-W45"}
+	_, err := svc.dispatch(context.Background(), llm.FunctionCall{Name: constants.AIToolHeatmap, Args: args}, "", new(int))
+	require.NoError(t, err)
+	assert.Empty(t, spy.got.ExpertiseID)
+	assert.Empty(t, spy.got.ProgramID)
+	require.NotNil(t, spy.got.From)
+	require.NotNil(t, spy.got.To)
+}

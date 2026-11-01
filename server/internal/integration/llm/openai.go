@@ -189,7 +189,8 @@ func joinText(parts []Part) string {
 }
 
 // lowerTypes copies a schema with every "type" value lower-cased: Gemini writes STRING and
-// OBJECT, JSON schema wants string and object.
+// OBJECT, JSON schema wants string and object. A property that is not required (and has no enum)
+// also accepts null, because some models send null for an optional argument and the provider checks it.
 func lowerTypes(schema map[string]any) map[string]any {
 	if schema == nil {
 		return nil
@@ -208,5 +209,32 @@ func lowerTypes(schema map[string]any) map[string]any {
 			out[key] = value
 		}
 	}
+	if props, ok := out["properties"].(map[string]any); ok {
+		required := requiredNames(schema["required"])
+		for name, prop := range props {
+			p, isMap := prop.(map[string]any)
+			kind, isString := p["type"].(string)
+			if _, hasEnum := p["enum"]; isMap && isString && !hasEnum && !required[name] {
+				p["type"] = []string{kind, "null"}
+			}
+		}
+	}
 	return out
+}
+
+func requiredNames(value any) map[string]bool {
+	names := map[string]bool{}
+	switch v := value.(type) {
+	case []string:
+		for _, n := range v {
+			names[n] = true
+		}
+	case []any:
+		for _, n := range v {
+			if s, ok := n.(string); ok {
+				names[s] = true
+			}
+		}
+	}
+	return names
 }

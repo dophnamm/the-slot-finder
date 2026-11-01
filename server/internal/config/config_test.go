@@ -316,6 +316,8 @@ func TestLoad_CalendarSettings(t *testing.T) {
 	t.Setenv("CALENDAR_ALLOWED_HOSTS", "")
 	t.Setenv("CALENDAR_LEAVE_KEYWORDS", " OOO , Out of office ,, ")
 	t.Setenv("CALENDAR_MAX_BYTES", "1048576")
+	t.Setenv("CALENDAR_SYNC_INTERVAL", "")
+	t.Setenv("CALENDAR_SYNC_WEEKS", "")
 	cfg, err := Load()
 	require.NoError(t, err)
 	assert.Empty(t, cfg.CalendarFeedKey, "no key: calendar sync is off")
