@@ -79,7 +79,7 @@ Response (`data`):
 - The name is trimmed to 200 characters. A name containing a mask placeholder keeps the placeholder and gets a warning.
 
 **Retry and errors**
-- No function call, or arguments that are not valid JSON: retry once. A second failure is `502 AI_UPSTREAM_FAILED`.
+- No function call, arguments that are not valid JSON, or a tool call the provider rejects against the schema (Groq `tool_use_failed`): retry once. A second failure is `502 AI_UPSTREAM_FAILED`.
 - Not configured: `503 AI_NOT_CONFIGURED`. Provider failure: `502 AI_UPSTREAM_FAILED`. Rate limited: `429 AI_RATE_LIMITED`. Unlike the draft summary, there is no template fallback.
 - Body errors (empty text, text over 8000, too many or too long `mask_terms`): `400`. A specialist gets `403`.
 
