@@ -24,6 +24,8 @@ Run `make` at the repo root to list the shortcuts:
 | Whole stack in Docker: Postgres, Redis, Keycloak, OTel, Jaeger, migrations, API on `:3000` (built image, no hot reload) | `make up` · stop with `make down` · logs with `make logs` |
 | Infra in Docker, server and client on the host | `make dev` (or `make infra`, then `make server` / `make client`) |
 | Lint, test and build both sides, or one side | `make check` · `make check-server` · `make check-client` |
+| Frozen-file rules against a base branch (default `main`): applied migrations unchanged, `server/docs` Swagger matches the annotations (prints PASS, FAIL or SKIP) | `make check-frozen` · `make check-frozen BASE=<branch>` |
+| Five-level review of the current change before a PR: L0 machine checks (`check-server` / `check-client` / `check-frozen` for the changed sides) gate four AI reviewers, L1 functional, L2 maintainability, L3 software design, L4 architecture compliance. Saved workflow in `.claude/workflows/review-levels.js` | `/review-levels` (base branch as the argument, default `main`) |
 | Load demo data (expertises, 12 people with skills, leave, holidays, 2 programs with 6 projects, a baseline staffing 3 of them, 2 what-if scenarios; safe to run again) | `make seed` |
 | Wipe local data (DB and Keycloak volumes) | `make reset-data` |
 | Check the Ask AI provider in `server/cmd/server/.env`: one tiny request, status, meaning and rate limits (exits non-zero on a non-200) | `make check-llm` |
