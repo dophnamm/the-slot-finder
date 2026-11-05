@@ -159,11 +159,22 @@ format:
 ########################################################################################
 # Swagger
 ########################################################################################
+# Same swag version as go.mod. check-frozen sets SWAGGER_OUT to a temp dir to compare with docs/.
+SWAG ?= go run github.com/swaggo/swag/cmd/swag@v1.16.6
+SWAGGER_OUT ?= ./docs
 swagger-load:
-	swag init \
+	$(SWAG) init \
 		-g main.go \
 		-d ./cmd/server,./internal/handlers,./internal/middlewares,./internal/services,./internal/repositories,./internal/models,./internal/utils,./internal/config,./internal/constants,./internal/dtos,./internal/logger,./internal/db \
-		--output ./docs
+		--output $(SWAGGER_OUT)
+
+########################################################################################
+# Frozen files: applied migrations unchanged, docs/ matches the annotations
+########################################################################################
+BASE ?= main
+.PHONY: check-frozen
+check-frozen:
+	@sh scripts/check-frozen.sh $(BASE) $(patsubst file://%,%,$(MIGRATION_DIR)) "$(SWAG)"
 
 ########################################################################################
 # Testing

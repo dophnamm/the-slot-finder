@@ -45,7 +45,7 @@ Compose lives in `server/docker-compose.yml` and reads `server/cmd/server/.env`.
 | Single test | `go test ./internal/services -run TestName -v` |
 | Integration tests (testcontainers, needs Docker) | `go test -tags=integration ./...` |
 | Lint | `make lint` (golangci-lint v2 via `go run`; the version is in `.golangci-lint-version`, which CI reads too) |
-| Regenerate Swagger after changing handler annotations | `make swagger-load` (needs `swag`), or `go run github.com/swaggo/swag/cmd/swag@v1.16.6 init` with the same flags as the Makefile |
+| Regenerate Swagger after changing handler annotations | `make swagger-load` (runs the pinned swag through `go run`; check with `make check-frozen`) |
 | New migration from GORM models (needs Atlas CLI + Docker) | `make migrate-generate name=<name>`, then `make migrate-up` |
 
 ### Client (`cd client`)
