@@ -40,6 +40,26 @@
                 <input type="hidden" id="id-hidden-input" name="credentialId" <#if auth.selectedCredential?has_content>value="${auth.selectedCredential}"</#if>/>
                 <input tabindex="4" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!}" name="login" id="kc-login" type="submit" value="${msg("doLogIn")}"/>
             </form>
+            <#-- Demo one-click sign-in. demo/password.js is written at container start from KEYCLOAK_DEMO_PASSWORD (see docker-compose.yml). -->
+            <div class="sf-form">
+                <#list ["planner", "manager", "specialist"] as demoUser>
+                    <button type="button" class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonBlockClass!}" data-demo-user="${demoUser}">${msg("sfDemoSignInAs", demoUser)}</button>
+                </#list>
+            </div>
+            <script src="${url.resourcesPath}/demo/password.js"></script>
+            <script>
+                document.querySelectorAll('[data-demo-user]').forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        var form = document.getElementById('kc-form-login')
+                        var username = document.getElementById('username')
+                        var password = document.getElementById('password')
+                        if (!form || !username || !password) return
+                        username.value = button.dataset.demoUser
+                        password.value = window.sfDemoPassword || ''
+                        form.requestSubmit()
+                    })
+                })
+            </script>
         </#if>
     <#elseif section = "info">
         <#if realm.password && realm.registrationAllowed && !registrationDisabled??>
