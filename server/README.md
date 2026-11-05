@@ -29,7 +29,8 @@ Inside `server/`:
 make up                                      # API on the host (reads cmd/server/.env)
 make tests                                   # unit tests with race + coverage
 make lint                                    # golangci-lint
-make swagger-load                            # regenerate docs/ after changing handler annotations (needs swag)
+make swagger-load                            # regenerate docs/ after changing handler annotations (pinned swag through go run)
+make check-frozen BASE=main                  # applied migrations unchanged, docs/ matches the annotations
 make migrate-generate name=<change>          # Atlas diff from GORM models (needs the Atlas CLI + Docker)
 ```
 

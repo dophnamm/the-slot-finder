@@ -6,9 +6,10 @@ SERVER_ENV := $(SERVER_DIR)/cmd/server/.env
 CLIENT_ENV := $(CLIENT_DIR)/.env
 COMPOSE    := docker compose -f $(SERVER_DIR)/docker-compose.yml --env-file $(SERVER_ENV)
 INFRA      := postgres redis keycloak otel-collector jaeger
+BASE       ?= main
 
 .DEFAULT_GOAL := help
-.PHONY: help setup env up down logs ps infra dev server client migrate seed keycloak-theme lint lint-server lint-client test test-server test-client build build-server build-client check check-server check-client check-llm reset-data
+.PHONY: help setup env up down logs ps infra dev server client migrate seed keycloak-theme lint lint-server lint-client test test-server test-client build build-server build-client check check-server check-client check-frozen check-llm reset-data
 
 help: ## List the commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -97,6 +98,9 @@ check: check-server check-client ## Lint, test and build everything
 check-server: lint-server test-server build-server ## Lint, test and build the server only
 
 check-client: lint-client test-client build-client ## Lint, test and build the client only
+
+check-frozen: ## Check generated and applied files against BASE (default main): migrations, Swagger
+	cd $(SERVER_DIR) && $(MAKE) -s check-frozen BASE=$(BASE)
 
 check-llm: ## Send one tiny request to the Ask AI provider in server/.env and show the status and limits
 	@sh scripts/check-llm.sh
