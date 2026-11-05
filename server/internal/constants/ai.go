@@ -43,6 +43,10 @@ const (
 
 	// LLMMaxErrorBodyBytes is how much of an error reply is kept in the error.
 	LLMMaxErrorBodyBytes = 512
+	// LLMMaxErrorReadBytes is how much of an error reply is read to find its error code.
+	LLMMaxErrorReadBytes = 64 << 10
+	// LLMToolUseFailedCode is the error code Groq sends when the model's tool call does not match its schema.
+	LLMToolUseFailedCode = "tool_use_failed"
 )
 
 // Tools the model may call. Each one reads through an existing service, so roles apply.

@@ -86,6 +86,14 @@ type RateLimitedError struct {
 
 func (e *RateLimitedError) Error() string { return "model service rate limited" }
 
+// ToolCallRejectedError is returned when the provider rejects the model's own tool call because its
+// arguments do not match the schema. The model chose them, so asking again can succeed.
+type ToolCallRejectedError struct {
+	Detail string
+}
+
+func (e *ToolCallRejectedError) Error() string { return "model tool call rejected: " + e.Detail }
+
 // ProvideClient creates the client for LLM_PROVIDER. A blank key is allowed: the service
 // reports the feature as off, so the server still starts. An unknown provider fails here.
 func ProvideClient(cfg *config.Config) (Client, error) {
@@ -136,7 +144,17 @@ func postJSON(ctx context.Context, hc *http.Client, url, authHeader, authValue s
 		return &RateLimitedError{RetryAfter: max(retryAfter, 0)}
 	}
 	if resp.StatusCode != http.StatusOK {
-		snippet, _ := io.ReadAll(io.LimitReader(resp.Body, constants.LLMMaxErrorBodyBytes))
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, constants.LLMMaxErrorReadBytes))
+		snippet := string(body[:min(len(body), constants.LLMMaxErrorBodyBytes)])
+		var reply struct {
+			Error struct {
+				Code string `json:"code"`
+			} `json:"error"`
+		}
+		if resp.StatusCode == http.StatusBadRequest && json.Unmarshal(body, &reply) == nil &&
+			reply.Error.Code == constants.LLMToolUseFailedCode {
+			return &ToolCallRejectedError{Detail: snippet}
+		}
 		return fmt.Errorf("model returned status %d: %s", resp.StatusCode, snippet)
 	}
 	if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
