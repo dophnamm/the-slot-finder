@@ -14,6 +14,8 @@ Three accounts are already created, one per role. Sign in with each to see what 
 | `manager` | `P@ssw0rd123` | Mia Manager | **Manager** | **Dashboard**: only the programs Mia manages (Acme Commerce Platform) |
 | `specialist` | `P@ssw0rd123` | Sam Specialist | **Specialist** | **My schedule**: Sam's own hours, leave and holidays; **Programs**: read only, the projects they work on or lead |
 
+The sign-in page has three buttons, "Sign in as planner", "Sign in as manager" and "Sign in as specialist", that fill in the account and sign in with one click.
+
 ## Contents
 
 1. [Sign in](#1-sign-in)
