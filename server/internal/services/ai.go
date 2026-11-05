@@ -73,7 +73,7 @@ const aiIntakePrompt = `You read a customer brief and suggest one project by cal
 - Use only facts that are in the text. Leave a field null when the text does not say it. Never invent hours.
 - Placeholders such as ` + constants.MaskEmail + `, ` + constants.MaskCustomer + ` and ` + constants.MaskPhone + ` hide private text; keep them as they are.
 - Write dates as YYYY-MM-DD.
-- Each demand is hours of one expertise. "expertise_name" is exactly one name from the list below. "quote" is the exact span of the text that supports the demand, copied word for word.
+- Each demand is hours of one expertise. "expertise_name" is exactly one name from the list below. "total_hours" is the number of hours the text states for it. "quote" is the exact span of the text that supports the demand, copied word for word.
 - Answer only with the function call.
 
 Expertises:
