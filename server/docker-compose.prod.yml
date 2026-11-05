@@ -1,0 +1,38 @@
+# Production override on the VM: `docker compose -f docker-compose.yml -f docker-compose.prod.yml`.
+# Caddy is the only public entry (80/443); API, Keycloak and the database stay on loopback.
+services:
+  server:
+    ports: !override
+      - "127.0.0.1:3000:3000"
+    environment:
+      HTTP_TRUST_PROXY: "true"
+
+  keycloak:
+    environment:
+      KC_HOSTNAME: https://${PUBLIC_HOST}/auth
+      KC_PROXY_HEADERS: xforwarded
+    ports: !override
+      - "127.0.0.1:8080:8080"
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../client/dist:/srv/client:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - server
+      - keycloak
+    networks:
+      - app-network
+
+volumes:
+  caddy_data:
+  caddy_config:

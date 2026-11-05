@@ -1,0 +1,22 @@
+{$PUBLIC_HOST} {
+	handle /api/* {
+		reverse_proxy server:3000
+	}
+
+	# The web app's OIDC callback lives under /auth too: serve it from the SPA, not Keycloak.
+	handle /auth/callback {
+		root * /srv/client
+		try_files {path} /index.html
+		file_server
+	}
+
+	handle /auth/* {
+		reverse_proxy keycloak:8080
+	}
+
+	handle {
+		root * /srv/client
+		try_files {path} /index.html
+		file_server
+	}
+}
