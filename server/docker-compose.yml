@@ -58,6 +58,16 @@ services:
     # Imports deploy/keycloak/realm.json when the realm does not exist yet (fresh data, or after
     # `make reset-data`). ${...} placeholders in it are filled from cmd/server/.env.
     command: ["start-dev", "--import-realm"]
+    # Generates the demo password.js from cmd/server/.env into the runtime-only tmpfs below;
+    # this change does not write the value to any file.
+    entrypoint:
+      - bash
+      - -c
+      - >-
+        printf 'window.sfDemoPassword = "%s"\n' "$$KEYCLOAK_DEMO_PASSWORD"
+        > /opt/keycloak/themes/slot-finder/login/resources/demo/password.js &&
+        exec /opt/keycloak/bin/kc.sh "$$@"
+      - kc
     environment:
       # Serves /health/ready on the management port (9000) for the healthcheck below.
       KC_HEALTH_ENABLED: "true"
@@ -80,6 +90,11 @@ services:
       - ./deploy/keycloak:/opt/keycloak/data/import:ro
       # The sign-in pages' look; start-dev does not cache themes, so edits show on reload.
       - ./deploy/keycloak/themes/slot-finder:/opt/keycloak/themes/slot-finder:ro
+      # Long form so the tmpfs is world-writable (1777); Keycloak runs as uid 1000, not root.
+      - type: tmpfs
+        target: /opt/keycloak/themes/slot-finder/login/resources/demo
+        tmpfs:
+          mode: 01777
     networks:
       - app-network
 
