@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	stderrors "errors"
 	"fmt"
 	"math"
 	"net/http"
@@ -333,6 +334,10 @@ func (s *aiService) ExtractIntake(ctx context.Context, in IntakeInput) (*IntakeR
 	}
 	for attempt := 0; attempt < intakeAttempts; attempt++ {
 		resp, err := s.llm.Generate(ctx, req)
+		if _, rejected := stderrors.AsType[*llm.ToolCallRejectedError](err); rejected {
+			logger.Log.Warn("Intake extraction tool call was rejected", zap.Int("attempt", attempt+1), zap.Error(err))
+			continue
+		}
 		if err != nil {
 			logger.Log.Warn("Intake extraction model call failed", zap.Error(err))
 			return nil, upstreamError(err).WithOperation(opIntakeAI).WithResource(resourceAI)

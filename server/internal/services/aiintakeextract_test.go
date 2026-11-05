@@ -148,15 +148,19 @@ func TestAIService_ExtractIntake_requestHidesMaskedText(t *testing.T) {
 
 func TestAIService_ExtractIntake_providerErrors(t *testing.T) {
 	tests := []struct {
+		name     string
 		err      error
 		wantCode string
 		status   int
+		calls    int
 	}{
-		{err: &llm.RateLimitedError{}, wantCode: constants.AIRateLimited, status: 429},
-		{err: fmt.Errorf("boom"), wantCode: constants.AIUpstreamFailed, status: 502},
+		{name: "rate limited", err: &llm.RateLimitedError{}, wantCode: constants.AIRateLimited, status: 429, calls: 1},
+		{name: "other failure", err: fmt.Errorf("boom"), wantCode: constants.AIUpstreamFailed, status: 502, calls: 1},
+		// A rejected tool call is the model's mistake, so it is asked again.
+		{name: "tool call rejected twice", err: &llm.ToolCallRejectedError{}, wantCode: constants.AIUpstreamFailed, status: 502, calls: 2},
 	}
 	for _, tt := range tests {
-		t.Run(tt.wantCode, func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			fake := &failingLLM{err: tt.err}
 			svc := &aiService{llm: fake, authz: ProvideAuthzService(leadPeople{}), people: intakeExpertises{},
 				programs: intakePrograms{got: new(ListProgramsInput)}, cfg: &config.Config{LLMAPIKey: "k"}}
@@ -165,7 +169,7 @@ func TestAIService_ExtractIntake_providerErrors(t *testing.T) {
 			require.ErrorAs(t, err, &appErr)
 			assert.Equal(t, tt.wantCode, appErr.Code)
 			assert.Equal(t, tt.status, appErr.HTTPStatus)
-			assert.Equal(t, 1, fake.calls)
+			assert.Equal(t, tt.calls, fake.calls)
 		})
 	}
 }
