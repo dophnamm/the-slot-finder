@@ -2,9 +2,10 @@
 .DS_Store
 .idea/
 
-# Local Claude Code state; the project skills in .claude/skills are shared
+# Local Claude Code state; the project skills and workflows are shared
 .claude/*
 !.claude/skills/
+!.claude/workflows/
 
 # Local environment files (the .env.example files are committed)
 .env
